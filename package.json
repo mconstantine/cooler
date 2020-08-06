@@ -1,0 +1,31 @@
+{
+  "name": "cooler-server",
+  "version": "1.0.0",
+  "description": "Cooler server.",
+  "private": true,
+  "main": "build/index",
+  "dependencies": {
+    "apollo-server": "^2.16.1",
+    "graphql": "^15.3.0",
+    "jest": "^26.2.2",
+    "sql-template-strings": "^2.2.2",
+    "sqlite": "^4.0.12",
+    "sqlite3": "^5.0.0"
+  },
+  "scripts": {
+    "test": "jest",
+    "start": "ts-node-dev --respawn --transpile-only src/index.ts",
+    "build": "tsc"
+  },
+  "author": "Mauro Constantinescu",
+  "license": "ISC",
+  "devDependencies": {
+    "@babel/core": "^7.11.1",
+    "@babel/preset-env": "^7.11.0",
+    "@babel/preset-typescript": "^7.10.4",
+    "@types/jest": "^26.0.9",
+    "babel-jest": "^26.2.2",
+    "ts-node-dev": "^1.0.0-pre.56",
+    "typescript": "^3.9.7"
+  }
+}
