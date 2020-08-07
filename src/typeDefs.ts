@@ -13,8 +13,8 @@ const defaultTypeDefs = gql`
 
   interface Node {
     id: Int
-    created_at: String!
-    updated_at: String!
+    created_at: String
+    updated_at: String
   }
 
   interface Edge {

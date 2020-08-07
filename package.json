@@ -6,6 +6,7 @@
   "main": "build/index",
   "dependencies": {
     "apollo-server": "^2.16.1",
+    "faker": "^4.1.0",
     "graphql": "^15.3.0",
     "jest": "^26.2.2",
     "sql-template-strings": "^2.2.2",
@@ -23,6 +24,7 @@
     "@babel/core": "^7.11.1",
     "@babel/preset-env": "^7.11.0",
     "@babel/preset-typescript": "^7.10.4",
+    "@types/faker": "^4.1.12",
     "@types/jest": "^26.0.9",
     "babel-jest": "^26.2.2",
     "ts-node-dev": "^1.0.0-pre.56",
