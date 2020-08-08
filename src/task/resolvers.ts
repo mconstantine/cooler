@@ -3,7 +3,8 @@ import { Task } from './Task'
 import { getDatabase } from '../misc/getDatabase'
 import { Project } from '../project/Project'
 import SQL from 'sql-template-strings'
-import { createTask } from './model'
+import { createTask, listTasks } from './model'
+import { ConnectionQueryArgs } from '../misc/ConnectionQueryArgs'
 
 interface TaskResolvers {
   Task: {
@@ -14,6 +15,7 @@ interface TaskResolvers {
   }
   Query: {
     task: GraphQLFieldResolver<any, { id: number }>
+    tasks: GraphQLFieldResolver<any, ConnectionQueryArgs & { description?: string }>
   }
 }
 
@@ -33,6 +35,9 @@ export default {
     task: async (_parent, { id }) => {
       const db = await getDatabase()
       return await db.get<Project>(SQL`SELECT * FROM task WHERE id = ${id}`)
+    },
+    tasks: (_parent, args) => {
+      return listTasks(args)
     }
   }
 } as TaskResolvers

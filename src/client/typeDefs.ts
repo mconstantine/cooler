@@ -36,5 +36,6 @@ export default gql`
 
   extend type Query {
     client(id: Int!): Client
+    clients(name: String, first: Int, last: Int, before: String, after: String): ClientConnection!
   }
 `

@@ -1,6 +1,6 @@
 import { GraphQLFieldResolver } from 'graphql'
 import { Project } from './Project'
-import { createProject } from './model'
+import { createProject, listProjects } from './model'
 import { getDatabase } from '../misc/getDatabase'
 import { Client } from '../client/Client'
 import SQL from 'sql-template-strings'
@@ -17,6 +17,7 @@ interface ProjectResolvers {
   }
   Query: {
     project: GraphQLFieldResolver<any, { id: number }>
+    projects: GraphQLFieldResolver<any, ConnectionQueryArgs & { name?: string }>
   }
 }
 
@@ -39,6 +40,9 @@ export default {
     project: async (_parent, { id }) => {
       const db = await getDatabase()
       return await db.get<Project>(SQL`SELECT * FROM project WHERE id = ${id}`)
+    },
+    projects: (_parent, args) => {
+      return listProjects(args)
     }
   }
 } as ProjectResolvers
