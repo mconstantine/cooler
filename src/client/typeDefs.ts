@@ -17,7 +17,7 @@ export default gql`
     name: String!
     created_at: String
     updated_at: String
-    projects: ProjectConnection
+    projects(first: Int, last: Int, before: String, after: String): ProjectConnection
   }
 
   input ClientCreationInput {
