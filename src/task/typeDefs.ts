@@ -41,4 +41,8 @@ export default gql`
     updateTask(id: Int!, task: TaskUpdateInput): Task!
     deleteTask(id: Int!): Task!
   }
+
+  extend type Query {
+    task(id: Int!): Task
+  }
 `

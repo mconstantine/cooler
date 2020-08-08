@@ -39,4 +39,8 @@ export default gql`
     updateProject(id: Int!, project: ProjectUpdateInput!): Project!
     deleteProject(id: Int!): Project!
   }
+
+  extend type Query {
+    project(id: Int): Project
+  }
 `

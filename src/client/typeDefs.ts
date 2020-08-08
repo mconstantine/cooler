@@ -33,4 +33,8 @@ export default gql`
     updateClient(id: Int!, client: ClientUpdateInput!): Client!
     deleteClient(id: Int!): Client!
   }
+
+  extend type Query {
+    client(id: Int!): Client
+  }
 `

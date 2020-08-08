@@ -12,6 +12,9 @@ interface TaskResolvers {
   Mutation: {
     createTask: GraphQLFieldResolver<any, { task: Partial<Task> }>
   }
+  Query: {
+    task: GraphQLFieldResolver<any, { id: number }>
+  }
 }
 
 export default {
@@ -24,6 +27,12 @@ export default {
   Mutation: {
     createTask: (_parent, { task }) => {
       return createTask(task)
+    }
+  },
+  Query: {
+    task: async (_parent, { id }) => {
+      const db = await getDatabase()
+      return await db.get<Project>(SQL`SELECT * FROM task WHERE id = ${id}`)
     }
   }
 } as TaskResolvers

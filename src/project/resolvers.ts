@@ -12,6 +12,9 @@ interface ProjectResolvers {
   Mutation: {
     createProject: GraphQLFieldResolver<any, { project: Partial<Project> }>
   }
+  Query: {
+    project: GraphQLFieldResolver<any, { id: number }>
+  }
 }
 
 export default {
@@ -24,6 +27,12 @@ export default {
   Mutation: {
     createProject: (_parent, { project }) => {
       return createProject(project)
+    }
+  },
+  Query: {
+    project: async (_parent, { id }) => {
+      const db = await getDatabase()
+      return await db.get<Project>(SQL`SELECT * FROM project WHERE id = ${id}`)
     }
   }
 } as ProjectResolvers
