@@ -18,5 +18,10 @@ export default async function init() {
     FOR EACH ROW BEGIN
       UPDATE project SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
     END;
+
+    CREATE TRIGGER IF NOT EXISTS project_client_deleted AFTER DELETE ON client
+    BEGIN
+      DELETE FROM project WHERE client = OLD.id;
+    END;
   `)
 }

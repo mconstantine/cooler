@@ -3,18 +3,20 @@ import initProject from '../project/init'
 import initClient from '../client/init'
 import { getDatabase } from '../misc/getDatabase'
 import { Database } from 'sqlite'
-import { insert, update } from '../misc/dbUtils'
+import { insert, update, remove } from '../misc/dbUtils'
 import { getFakeTask } from '../test/getFakeTask'
 import SQL from 'sql-template-strings'
 import { Task } from './Task'
 import { Project } from '../project/Project'
 import { getFakeProject } from '../test/getFakeProject'
 import { getFakeClient } from '../test/getFakeClient'
+import { Client } from '../client/Client'
 
 describe('initTask', () => {
   describe('happy path', () => {
     let db: Database
     let project: Project
+    let client: Client
 
     beforeAll(async () => {
       db = await getDatabase()
@@ -29,6 +31,7 @@ describe('initTask', () => {
       const { lastID: projectId } = await insert('project', projectData)
 
       project = { ...projectData, id: projectId! }
+      client = { ...clientData, id: clientId! } as Client
     })
 
     it('should create a database table', async () => {
@@ -62,6 +65,19 @@ describe('initTask', () => {
       )!.updated_at
 
       expect(updateDateBefore).not.toBe(updateDateAfter)
+    })
+
+    it("should delete all project's tasks when a project is deleted", async () => {
+      const projectData = getFakeProject({ client: client.id })
+      const { lastID: projectId } = await insert('project', projectData)
+      const taskData = getFakeTask({ project: projectId })
+      const { lastID: taskId1 } = await insert('task', taskData)
+
+      await remove('project', { id: projectId })
+
+      const task = await db.get<Task>(SQL`SELECT * FROM task WHERE id = ${taskId1}`)
+
+      expect(task).toBeUndefined()
     })
   })
 })

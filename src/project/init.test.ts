@@ -2,7 +2,7 @@ import init from './init'
 import initClient from '../client/init'
 import { getDatabase } from '../misc/getDatabase'
 import { Database } from 'sqlite'
-import { insert, update } from '../misc/dbUtils'
+import { insert, update, remove } from '../misc/dbUtils'
 import { getFakeProject } from '../test/getFakeProject'
 import SQL from 'sql-template-strings'
 import { Project } from './Project'
@@ -57,6 +57,19 @@ describe('initProject', () => {
       )!.updated_at
 
       expect(updateDateBefore).not.toBe(updateDateAfter)
+    })
+
+    it("should delete all client's projects when the client is deleted", async () => {
+      const clientData = getFakeClient()
+      const { lastID: clientId } = await insert('client', clientData)
+      const projectData = getFakeProject({ client: clientId })
+      const { lastID: projectId } = await insert('project', projectData)
+
+      await remove('client', { id: clientId })
+
+      const project = await db.get<Project>(SQL`SELECT * FROM project WHERE id = ${projectId}`)
+
+      expect(project).toBeUndefined()
     })
   })
 })

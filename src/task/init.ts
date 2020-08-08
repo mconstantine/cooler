@@ -8,7 +8,7 @@ export default async function init() {
       id INTEGER PRIMARY KEY,
       description TEXT NOT NULL,
       expectedWorkingHours NUMBER NOT NULL,
-      actualWorkingHours NUMBER NOT NULL,
+      actualWorkingHours NUMBER NOT NULL DEFAULT 0,
       project INTEGER NOT NULL,
       created_at STRING NOT NULL DEFAULT CURRENT_TIMESTAMP,
       updated_at STRING NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -18,6 +18,11 @@ export default async function init() {
     CREATE TRIGGER IF NOT EXISTS task_updated_at AFTER UPDATE ON task
     FOR EACH ROW BEGIN
       UPDATE task SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
+    END;
+
+    CREATE TRIGGER IF NOT EXISTS task_project_deleted AFTER DELETE ON project
+    BEGIN
+      DELETE FROM task WHERE project = OLD.id;
     END;
   `)
 }
