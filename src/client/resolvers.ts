@@ -21,7 +21,7 @@ interface ClientResolvers {
 export default {
   Client: {
     projects: (client, args, _context) => {
-      return queryToConnection(args, ['*'], 'project', undefined, SQL`WHERE client = ${client.id}`)
+      return queryToConnection(args, ['*'], 'project', SQL`WHERE client = ${client.id}`)
     }
   },
   Mutation: {

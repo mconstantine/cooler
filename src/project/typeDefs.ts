@@ -19,7 +19,7 @@ export default gql`
     created_at: String
     updated_at: String
     client: Client!
-    tasks(first: Int, last: Int, before: String, after: String): TaskConnection
+    tasks(first: Int, last: Int, before: String, after: String, orderBy: String): TaskConnection
   }
 
   input ProjectCreationInput {

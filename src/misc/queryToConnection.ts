@@ -15,12 +15,13 @@ export async function queryToConnection<T extends { id: number }>(
   args: ConnectionQueryArgs,
   select: string[],
   from: string,
-  orderBy: string = 'id ASC',
   rest?: SQLStatement
 ): Promise<Connection<T>> {
   if ((args.first && args.before) || (args.last && args.after)) {
     throw new Error('You must use either "first" and "after" or "last" and "before". You cannot mix and match them')
   }
+
+  const orderBy = args.orderBy || 'id ASC'
 
   const query = SQL``.append(`
     WITH preset as (

@@ -27,7 +27,7 @@ export default {
       return await db.get<Client>(SQL`SELECT * FROM client WHERE id = ${project.client}`)
     },
     tasks: (project, args) => {
-      return queryToConnection(args, ['*'], 'task', undefined, SQL`WHERE project = ${project.id}`)
+      return queryToConnection(args, ['*'], 'task', SQL`WHERE project = ${project.id}`)
     }
   },
   Mutation: {

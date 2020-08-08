@@ -69,8 +69,8 @@ describe('queryToConnection', () => {
 
   it('should handle "first" and "after" (one per page)', async () => {
     const result = await queryToConnection({
-      first: 2, after: toCursor(3)
-    }, ['id', 'char', 'number'], 'test', 'number ASC')
+      first: 2, after: toCursor(3), orderBy: 'number ASC'
+    }, ['id', 'char', 'number'], 'test')
 
     expect(result.totalCount).toBe(4)
     expect(result.edges.length).toBe(2)
@@ -85,8 +85,8 @@ describe('queryToConnection', () => {
   it('should handle "first" and "after" (two per page)', async () => {
 
     const result = await queryToConnection({
-      first: 1, after: toCursor(3)
-    }, ['id', 'char', 'number'], 'test', 'number ASC')
+      first: 1, after: toCursor(3), orderBy: 'number ASC'
+    }, ['id', 'char', 'number'], 'test')
 
     expect(result.totalCount).toBe(4)
     expect(result.edges.length).toBe(1)
@@ -100,8 +100,8 @@ describe('queryToConnection', () => {
 
   it('should handle "last" and "before" (one per page)', async () => {
     const result = await queryToConnection({
-      last: 1, before: toCursor(2)
-    }, ['id', 'char', 'number'], 'test', 'char ASC', SQL`WHERE char != ${'D'}`)
+      last: 1, before: toCursor(2), orderBy: 'char ASC'
+    }, ['id', 'char', 'number'], 'test', SQL`WHERE char != ${'D'}`)
 
     expect(result.totalCount).toBe(3)
     expect(result.edges.length).toBe(1)
@@ -115,8 +115,8 @@ describe('queryToConnection', () => {
 
   it('should handle "last" and "before" (two per page)', async () => {
     const result = await queryToConnection({
-      last: 2, before: toCursor(2)
-    }, ['id', 'char', 'number'], 'test', 'char ASC', SQL`WHERE char != ${'D'}`)
+      last: 2, before: toCursor(2), orderBy: 'char ASC'
+    }, ['id', 'char', 'number'], 'test', SQL`WHERE char != ${'D'}`)
 
     expect(result.totalCount).toBe(3)
     expect(result.edges.length).toBe(2)
@@ -133,7 +133,6 @@ describe('queryToConnection', () => {
       {},
       ['id', 'char', 'number'],
       'test',
-      undefined,
       SQL`WHERE char = ${'Z'}`
     )
 

@@ -3,4 +3,5 @@ export interface ConnectionQueryArgs {
   last?: number
   before?: string
   after?: string
+  orderBy?: string
 }
