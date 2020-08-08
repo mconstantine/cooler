@@ -20,7 +20,6 @@ export default gql`
     created_at: String
     updated_at: String
     project: Project!
-    client: Client!
   }
 
   input TaskCreationInput {

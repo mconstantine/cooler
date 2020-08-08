@@ -8,7 +8,7 @@ export default async function init() {
       id INTEGER PRIMARY KEY,
       description TEXT NOT NULL,
       expectedWorkingHours NUMBER NOT NULL,
-      actualWorkingHours NUMBER NOT NULL DEFAULT 0,
+      actualWorkingHours NUMBER NOT NULL,
       project INTEGER NOT NULL,
       created_at STRING NOT NULL DEFAULT CURRENT_TIMESTAMP,
       updated_at STRING NOT NULL DEFAULT CURRENT_TIMESTAMP,
