@@ -44,6 +44,13 @@ export default gql`
 
   extend type Query {
     task(id: Int!): Task
-    tasks(description: String, first: Int, last: Int, before: String, after: String): TaskConnection!
+    tasks(
+      description: String,
+      first: Int,
+      last: Int,
+      before: String,
+      after: String,
+      orderBy: String
+    ): TaskConnection!
   }
 `

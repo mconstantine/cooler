@@ -42,6 +42,13 @@ export default gql`
 
   extend type Query {
     project(id: Int): Project
-    projects(name: String, first: Int, last: Int, before: String, after: String): ProjectConnection!
+    projects(
+      name: String,
+      first: Int,
+      last: Int,
+      before: String,
+      after: String,
+      orderBy: String
+    ): ProjectConnection!
   }
 `
