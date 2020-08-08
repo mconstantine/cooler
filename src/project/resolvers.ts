@@ -1,6 +1,6 @@
 import { GraphQLFieldResolver } from 'graphql'
 import { Project } from './Project'
-import { createProject, listProjects, updateProject } from './model'
+import { createProject, listProjects, updateProject, deleteProject } from './model'
 import { getDatabase } from '../misc/getDatabase'
 import { Client } from '../client/Client'
 import SQL from 'sql-template-strings'
@@ -15,6 +15,7 @@ interface ProjectResolvers {
   Mutation: {
     createProject: GraphQLFieldResolver<any, { project: Partial<Project> }>
     updateProject: GraphQLFieldResolver<any, { id: number, project: Partial<Project> }>
+    deleteProject: GraphQLFieldResolver<any, { id: number }>
   }
   Query: {
     project: GraphQLFieldResolver<any, { id: number }>
@@ -38,6 +39,9 @@ export default {
     },
     updateProject: (_parent, { id, project }) => {
       return updateProject(id, project)
+    },
+    deleteProject: (_parent, { id }) => {
+      return deleteProject(id)
     }
   },
   Query: {

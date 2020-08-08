@@ -38,8 +38,8 @@ export default gql`
 
   extend type Mutation {
     createTask(task: TaskCreationInput): Task!
-    updateTask(id: Int!, task: TaskUpdateInput): Task!
-    deleteTask(id: Int!): Task!
+    updateTask(id: Int!, task: TaskUpdateInput): Task
+    deleteTask(id: Int!): Task
   }
 
   extend type Query {

@@ -1,6 +1,6 @@
 import { Project } from './Project'
 import { getDatabase } from '../misc/getDatabase'
-import { insert, update } from '../misc/dbUtils'
+import { insert, update, remove } from '../misc/dbUtils'
 import SQL from 'sql-template-strings'
 import { ConnectionQueryArgs } from '../misc/ConnectionQueryArgs'
 import { queryToConnection } from '../misc/queryToConnection'
@@ -33,4 +33,17 @@ export async function updateProject(id: number, project: Partial<Project>) {
   }
 
   return await db.get<Project>(SQL`SELECT * FROM project WHERE id = ${id}`)
+}
+
+export async function deleteProject(id: number) {
+  const db = await getDatabase()
+  const project = await db.get<Project>(SQL`SELECT * FROM project WHERE id = ${id}`)
+
+  if (!project) {
+    return null
+  }
+
+  await remove('project', { id })
+
+  return project
 }

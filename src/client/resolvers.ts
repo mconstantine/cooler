@@ -1,6 +1,6 @@
 import { GraphQLFieldResolver } from 'graphql'
 import { Client } from './Client'
-import { createClient, listClients, updateClient } from './model'
+import { createClient, listClients, updateClient, deleteClient } from './model'
 import { getDatabase } from '../misc/getDatabase'
 import SQL from 'sql-template-strings'
 import { ConnectionQueryArgs } from '../misc/ConnectionQueryArgs'
@@ -13,6 +13,7 @@ interface ClientResolvers {
   Mutation: {
     createClient: GraphQLFieldResolver<any, { client: Partial<Client> }>
     updateClient: GraphQLFieldResolver<any, { id: number, client: Partial<Client> }>
+    deleteClient: GraphQLFieldResolver<any, { id: number }>
   }
   Query: {
     client: GraphQLFieldResolver<any, { id: number }>
@@ -32,6 +33,9 @@ export default {
     },
     updateClient: (_parent, { id, client }) => {
       return updateClient(id, client)
+    },
+    deleteClient: (_parent, { id }) => {
+      return deleteClient(id)
     }
   },
   Query: {

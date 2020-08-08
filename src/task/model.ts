@@ -1,6 +1,6 @@
 import { Task } from './Task'
 import { getDatabase } from '../misc/getDatabase'
-import { insert, update } from '../misc/dbUtils'
+import { insert, update, remove } from '../misc/dbUtils'
 import SQL from 'sql-template-strings'
 import { ConnectionQueryArgs } from '../misc/ConnectionQueryArgs'
 import { queryToConnection } from '../misc/queryToConnection'
@@ -41,4 +41,17 @@ export async function updateTask(id: number, task: Partial<Task>) {
   }
 
   return await db.get<Task>(SQL`SELECT * FROM task WHERE id = ${id}`)
+}
+
+export async function deleteTask(id: number) {
+  const db = await getDatabase()
+  const task = await db.get<Task>(SQL`SELECT * FROM task WHERE id = ${id}`)
+
+  if (!task) {
+    return null
+  }
+
+  await remove('task', { id })
+
+  return task
 }

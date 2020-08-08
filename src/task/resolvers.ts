@@ -3,7 +3,7 @@ import { Task } from './Task'
 import { getDatabase } from '../misc/getDatabase'
 import { Project } from '../project/Project'
 import SQL from 'sql-template-strings'
-import { createTask, listTasks, updateTask } from './model'
+import { createTask, listTasks, updateTask, deleteTask } from './model'
 import { ConnectionQueryArgs } from '../misc/ConnectionQueryArgs'
 
 interface TaskResolvers {
@@ -13,6 +13,7 @@ interface TaskResolvers {
   Mutation: {
     createTask: GraphQLFieldResolver<any, { task: Partial<Task> }>
     updateTask: GraphQLFieldResolver<any, { id: number, task: Partial<Task> }>
+    deleteTask: GraphQLFieldResolver<any, { id: number }>
   }
   Query: {
     task: GraphQLFieldResolver<any, { id: number }>
@@ -33,6 +34,9 @@ export default {
     },
     updateTask: (_parent, { id, task }) => {
       return updateTask(id, task)
+    },
+    deleteTask: (_parent, { id }) => {
+      return deleteTask(id)
     }
   },
   Query: {
