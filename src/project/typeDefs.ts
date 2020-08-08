@@ -1,11 +1,42 @@
 import { gql } from 'apollo-server'
 
 export default gql`
+  type ProjectEdge implements Edge {
+    cursor: String!
+    node: Project!
+  }
+
+  type ProjectConnection implements Connection {
+    pageInfo: PageInfo!
+    edges: [ProjectEdge]!
+    totalCount: Int!
+  }
+
   type Project implements Node {
     id: Int
     name: String!
     description: String
     created_at: String
     updated_at: String
+    client: Client!
+    tasks: TaskConnection
+  }
+
+  input ProjectCreationInput {
+    name: String!
+    description: String
+    client: Int!
+  }
+
+  input ProjectUpdateInput {
+    name: String
+    description: String
+    client: Int
+  }
+
+  extend type Mutation {
+    createProject(project: ProjectCreationInput!): Project!
+    updateProject(id: Int!, project: ProjectUpdateInput!): Project!
+    deleteProject(id: Int!): Project!
   }
 `
