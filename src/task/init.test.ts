@@ -1,6 +1,7 @@
 import init from './init'
 import initProject from '../project/init'
 import initClient from '../client/init'
+import initUser from '../user/init'
 import { getDatabase } from '../misc/getDatabase'
 import { Database } from 'sqlite'
 import { insert, update, remove } from '../misc/dbUtils'
@@ -11,6 +12,7 @@ import { Project } from '../project/Project'
 import { getFakeProject } from '../test/getFakeProject'
 import { getFakeClient } from '../test/getFakeClient'
 import { Client } from '../client/Client'
+import { getFakeUser } from '../test/getFakeUser'
 
 describe('initTask', () => {
   describe('happy path', () => {
@@ -21,11 +23,14 @@ describe('initTask', () => {
     beforeAll(async () => {
       db = await getDatabase()
 
+      await initUser()
       await initClient()
       await initProject()
       await init()
 
-      const clientData = getFakeClient()
+      const userData = getFakeUser()
+      const { lastID: userId } = await insert('user', userData)
+      const clientData = getFakeClient({ user: userId })
       const { lastID: clientId } = await insert('client', clientData)
       const projectData = getFakeProject({ client: clientId }) as Project
       const { lastID: projectId } = await insert('project', projectData)
@@ -76,6 +81,26 @@ describe('initTask', () => {
       await remove('project', { id: projectId })
 
       const task = await db.get<Task>(SQL`SELECT * FROM task WHERE id = ${taskId1}`)
+
+      expect(task).toBeUndefined()
+    })
+  })
+
+  describe('deletion chain', () => {
+    it('should make user deletion bubble down to tasks', async () => {
+      const db = await getDatabase()
+      const userData = getFakeUser()
+      const { lastID: userId } = await insert('user', userData)
+      const clientData = getFakeClient({ user: userId })
+      const { lastID: clientId } = await insert('client', clientData)
+      const projectData = getFakeProject({ client: clientId })
+      const { lastID: projectId } = await insert('project', projectData)
+      const taskData = getFakeTask({ project: projectId })
+      const { lastID: taskId } = await insert('task', taskData)
+
+      await remove('user', { id: userId })
+
+      const task = await db.get<Task>(SQL`SELECT * FROM task WHERE id = ${taskId}`)
 
       expect(task).toBeUndefined()
     })

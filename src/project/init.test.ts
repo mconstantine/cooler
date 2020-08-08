@@ -1,5 +1,6 @@
 import init from './init'
 import initClient from '../client/init'
+import initUser from '../user/init'
 import { getDatabase } from '../misc/getDatabase'
 import { Database } from 'sqlite'
 import { insert, update, remove } from '../misc/dbUtils'
@@ -8,22 +9,29 @@ import SQL from 'sql-template-strings'
 import { Project } from './Project'
 import { Client } from '../client/Client'
 import { getFakeClient } from '../test/getFakeClient'
+import { getFakeUser } from '../test/getFakeUser'
+import { User } from '../user/User'
 
 describe('initProject', () => {
   describe('happy path', () => {
     let db: Database
     let client: Client
+    let user: User
 
     beforeAll(async () => {
       db = await getDatabase()
 
+      await initUser()
       await initClient()
       await init()
 
-      const clientData = getFakeClient()
-      const { lastID } = await insert('client', clientData)
+      const userData = getFakeUser()
+      const { lastID: userId } = await insert('user', userData)
+      const clientData = getFakeClient({ user: userId })
+      const { lastID: clientId } = await insert('client', clientData)
 
-      client = { ...clientData, id: lastID! } as Client
+      user = { ...userData, id: userId! } as User
+      client = { ...clientData, id: clientId! } as Client
     })
 
     it('should create a database table', async () => {
@@ -60,7 +68,7 @@ describe('initProject', () => {
     })
 
     it("should delete all client's projects when the client is deleted", async () => {
-      const clientData = getFakeClient()
+      const clientData = getFakeClient({ user: user.id })
       const { lastID: clientId } = await insert('client', clientData)
       const projectData = getFakeProject({ client: clientId })
       const { lastID: projectId } = await insert('project', projectData)
