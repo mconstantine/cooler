@@ -4,10 +4,14 @@ import { insert, update, remove } from '../misc/dbUtils'
 import SQL from 'sql-template-strings'
 import { ConnectionQueryArgs } from '../misc/ConnectionQueryArgs'
 import { queryToConnection } from '../misc/queryToConnection'
+import { UserContext } from '../user/User'
 
-export async function createClient(client: Partial<Client>) {
+export async function createClient(client: Partial<Client>, context: UserContext) {
   const db = await getDatabase()
-  const { lastID } = await insert('client', client)
+  const { lastID } = await insert('client', {
+    ...client,
+    user: context.user!.id
+  })
 
   return await db.get<Client>(SQL`SELECT * FROM client WHERE id = ${lastID}`)
 }

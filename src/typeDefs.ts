@@ -1,3 +1,4 @@
+import userTypeDefs from './user/typeDefs'
 import clientTypeDefs from './client/typeDefs'
 import projectTypeDefs from './project/typeDefs'
 import taskTypeDefs from './task/typeDefs'
@@ -37,4 +38,4 @@ const defaultTypeDefs = gql`
   }
 `
 
-export const typeDefs = [defaultTypeDefs, clientTypeDefs, projectTypeDefs, taskTypeDefs]
+export const typeDefs = [defaultTypeDefs, userTypeDefs, clientTypeDefs, projectTypeDefs, taskTypeDefs]
