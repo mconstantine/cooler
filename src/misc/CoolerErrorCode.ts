@@ -1,1 +1,0 @@
-export const COOLER_ERROR_CODE = 'COOLER_ERROR'
