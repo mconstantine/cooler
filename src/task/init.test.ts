@@ -52,9 +52,9 @@ describe('initTask', () => {
 
     it('should keep track of the time of the last update', async () => {
       const task = getFakeTask({ project: project.id })
-      const updated: Partial<Task> = { description: 'Some weird description' }
+      const updated: Partial<Task> = { name: 'Some weird name' }
 
-      expect(task.description).not.toBe(updated.description)
+      expect(task.name).not.toBe(updated.name)
 
       const { lastID } = await insert('task', task)
 

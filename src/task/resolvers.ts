@@ -19,7 +19,7 @@ interface TaskResolvers {
   }
   Query: {
     task: GraphQLFieldResolver<any, UserContext, { id: number }>
-    tasks: GraphQLFieldResolver<any, UserContext, ConnectionQueryArgs & { description?: string }>
+    tasks: GraphQLFieldResolver<any, UserContext, ConnectionQueryArgs & { name?: string }>
   }
 }
 

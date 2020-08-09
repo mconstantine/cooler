@@ -6,7 +6,8 @@ export default async function init() {
   await db.exec(`
     CREATE TABLE IF NOT EXISTS task (
       id INTEGER PRIMARY KEY,
-      description TEXT NOT NULL,
+      name TEXT NOT NULL,
+      description TEXT,
       expectedWorkingHours NUMBER NOT NULL,
       actualWorkingHours NUMBER NOT NULL,
       project INTEGER NOT NULL,

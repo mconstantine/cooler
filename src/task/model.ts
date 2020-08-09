@@ -15,22 +15,22 @@ export async function createTask(task: Partial<Task>) {
   return await db.get<Task>(SQL`SELECT * FROM task WHERE id = ${lastID}`)
 }
 
-export async function listTasks(args: ConnectionQueryArgs & { description?: string }) {
+export async function listTasks(args: ConnectionQueryArgs & { name?: string }) {
   return await queryToConnection(
     args,
     ['*'],
     'task',
-    args.description ? SQL`WHERE description like ${`%${args.description}%`}` : undefined
+    args.name ? SQL`WHERE name like ${`%${args.name}%`}` : undefined
   )
 }
 
 export async function updateTask(id: number, task: Partial<Task>) {
   const db = await getDatabase()
-  const { description, expectedWorkingHours, actualWorkingHours, project } = task
+  const { name, description, expectedWorkingHours, actualWorkingHours, project } = task
 
-  if (description || expectedWorkingHours || actualWorkingHours || project) {
+  if (name || description || expectedWorkingHours || actualWorkingHours || project) {
     const args = Object.entries(
-      { description, expectedWorkingHours, actualWorkingHours, project }
+      { name, description, expectedWorkingHours, actualWorkingHours, project }
     ).filter(
       ([, value]) => !!value
     ).reduce(

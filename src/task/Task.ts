@@ -1,6 +1,7 @@
 export interface Task {
   id: number
-  description: string
+  name: string
+  description?: string
   expectedWorkingHours: number
   actualWorkingHours: number
   project: number
