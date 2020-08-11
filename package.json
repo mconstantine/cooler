@@ -20,7 +20,8 @@
   "scripts": {
     "test": "jest",
     "start": "ts-node-dev --respawn --transpile-only src/index.ts",
-    "build": "tsc"
+    "build": "tsc",
+    "fillDatabase": "ts-node-dev bin/fill-database.ts"
   },
   "author": "Mauro Constantinescu",
   "license": "ISC",
