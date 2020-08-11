@@ -51,7 +51,7 @@ export default gql`
     createUser(user: UserCreationInput): TokenResponse!
     loginUser(user: UserLoginInput): TokenResponse!
     updateUser(id: Int, user: UserUpdateInput): Task
-    deleteUser(id: Int!): User
+    deleteUser(id: Int): User
     refreshToken(refreshToken: String!): TokenResponse!
   }
 
