@@ -14,7 +14,8 @@ export default gql`
 
   type Task implements Node {
     id: Int
-    description: String!
+    name: String!
+    description: String
     expectedWorkingHours: Int!
     actualWorkingHours: Int
     created_at: String
