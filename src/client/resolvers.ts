@@ -19,7 +19,9 @@ interface ClientResolvers {
   }
   Query: {
     client: GraphQLFieldResolver<any, UserContext, { id: number }>
-    clients: GraphQLFieldResolver<any, UserContext, ConnectionQueryArgs & { name?: string }>
+    clients: GraphQLFieldResolver<any, UserContext, ConnectionQueryArgs & {
+      name?: string, user?: number
+    }>
   }
 }
 
@@ -51,7 +53,11 @@ export default {
     },
     clients: async (_parent, args, context) => {
       ensureUser(context)
-      return listClients(args)
+
+      return listClients({
+        ...args,
+        user: args.user || context.user!.id
+      })
     }
   }
 } as ClientResolvers

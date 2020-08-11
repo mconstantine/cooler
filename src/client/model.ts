@@ -16,10 +16,10 @@ export async function createClient(client: Partial<Client>, context: UserContext
   return await db.get<Client>(SQL`SELECT * FROM client WHERE id = ${lastID}`)
 }
 
-export async function listClients(args: ConnectionQueryArgs & { name?: string }) {
-  return queryToConnection(
-    args, ['*'], 'client', args.name ? SQL`WHERE name LIKE ${`%${args.name}%`}` : undefined
-  )
+export async function listClients(args: ConnectionQueryArgs & { name?: string, user: number }) {
+  const where = SQL`WHERE user = ${args.user}`
+  args.name && where.append(SQL` AND name LIKE ${`%${args.name}%`}`)
+  return queryToConnection(args, ['*'], 'client', where)
 }
 
 export async function updateClient(id: number, client: Partial<Client>) {
