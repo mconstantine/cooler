@@ -94,7 +94,9 @@ export async function updateUser(id: number, user: Partial<User>) {
       throw new ApolloError('Invalid e-mail format', 'COOLER_400')
     }
 
-    const duplicate = await db.get<User>(SQL`SELECT id FROM user WHERE email = ${email}`)
+    const duplicate = await db.get<User>(SQL`
+      SELECT id FROM user WHERE email = ${email} AND id != ${id}
+    `)
 
     if (duplicate) {
       throw new ApolloError('Duplicate user', 'COOLER_409')
