@@ -17,7 +17,7 @@ interface UserResolvers {
     createUser: GraphQLFieldResolver<any, UserContext, { user: Partial<User> }>
     loginUser: GraphQLFieldResolver<any, { user: Partial<User> }>
     refreshToken: GraphQLFieldResolver<any, { refreshToken: string }>
-    updateUser: GraphQLFieldResolver<any, UserContext, { id: number, user: Partial<User> }>
+    updateUser: GraphQLFieldResolver<any, UserContext, { id?: number, user: Partial<User> }>
     deleteUser: GraphQLFieldResolver<any, UserContext, { id: number }>
   }
   Query: {
@@ -61,6 +61,11 @@ export default {
     },
     updateUser: (_parent, { id, user }, context) => {
       ensureUser(context)
+
+      if (!id) {
+        id = context.user!.id
+      }
+
       return updateUser(id, user)
     },
     deleteUser(_parent, { id }, context) {

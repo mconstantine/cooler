@@ -50,7 +50,7 @@ export default gql`
   extend type Mutation {
     createUser(user: UserCreationInput): TokenResponse!
     loginUser(user: UserLoginInput): TokenResponse!
-    updateUser(id: Int!, user: UserUpdateInput): Task
+    updateUser(id: Int, user: UserUpdateInput): Task
     deleteUser(id: Int!): User
     refreshToken(refreshToken: String!): TokenResponse!
   }
