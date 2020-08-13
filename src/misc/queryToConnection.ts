@@ -21,7 +21,7 @@ export async function queryToConnection<T extends { id: number }>(
     throw new Error('You must use either "first" and "after" or "last" and "before". You cannot mix and match them')
   }
 
-  const orderBy = args.orderBy || `${from}.id ASC`
+  const orderBy = args.orderBy ? `${from}.${args.orderBy}` : `${from}.id ASC`
 
   const query = SQL``.append(`
     WITH preset as (
