@@ -4,6 +4,7 @@ import { insert, update, remove } from '../misc/dbUtils'
 import SQL from 'sql-template-strings'
 import { ConnectionQueryArgs } from '../misc/ConnectionQueryArgs'
 import { queryToConnection } from '../misc/queryToConnection'
+import { User } from '../user/User'
 
 export async function createProject(project: Partial<Project>) {
   const db = await getDatabase()
@@ -12,12 +13,17 @@ export async function createProject(project: Partial<Project>) {
   return await db.get<Project>(SQL`SELECT * FROM project WHERE id = ${lastID}`)
 }
 
-export async function listProjects(args: ConnectionQueryArgs & { name?: string }) {
-  return await queryToConnection(
-    args, ['*'], 'project', args.name ? SQL`WHERE name LIKE ${`%${args.name}%`}` : undefined
-  )
+export async function listProjects(args: ConnectionQueryArgs & { name?: string }, user: User) {
+  const sql = SQL`
+    JOIN client ON project.client = client.id
+    WHERE client.user = ${user.id}
+  `
+
+  args.name && sql.append(SQL` AND project.name LIKE ${`%${args.name}%`}`)
+  return await queryToConnection(args, ['project.*'], 'project', sql)
 }
 
+// TODO: make sure that the user can update the project
 export async function updateProject(id: number, project: Partial<Project>) {
   const db = await getDatabase()
   const { name, description, client } = project
@@ -35,6 +41,7 @@ export async function updateProject(id: number, project: Partial<Project>) {
   return await db.get<Project>(SQL`SELECT * FROM project WHERE id = ${id}`)
 }
 
+// TODO: make sure that the user can delete the project
 export async function deleteProject(id: number) {
   const db = await getDatabase()
   const project = await db.get<Project>(SQL`SELECT * FROM project WHERE id = ${id}`)

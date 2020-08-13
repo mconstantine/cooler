@@ -57,7 +57,7 @@ export default {
     },
     projects: (_parent, args, context) => {
       ensureUser(context)
-      return listProjects(args)
+      return listProjects(args, context.user!)
     }
   }
 } as ProjectResolvers
