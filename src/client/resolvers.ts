@@ -19,9 +19,7 @@ interface ClientResolvers {
   }
   Query: {
     client: GraphQLFieldResolver<any, UserContext, { id: number }>
-    clients: GraphQLFieldResolver<any, UserContext, ConnectionQueryArgs & {
-      name?: string, user?: number
-    }>
+    clients: GraphQLFieldResolver<any, UserContext, ConnectionQueryArgs & { name?: string }>
   }
 }
 
@@ -34,15 +32,15 @@ export default {
   Mutation: {
     createClient: (_parent, { client }, context) => {
       ensureUser(context)
-      return createClient(client, context)
+      return createClient({ ...client, user: context.user!.id })
     },
     updateClient: (_parent, { id, client }, context) => {
       ensureUser(context)
-      return updateClient(id, client)
+      return updateClient(id, client, context.user!)
     },
     deleteClient: (_parent, { id }, context) => {
       ensureUser(context)
-      return deleteClient(id)
+      return deleteClient(id, context.user!)
     }
   },
   Query: {
@@ -56,7 +54,7 @@ export default {
 
       return listClients({
         ...args,
-        user: args.user || context.user!.id
+        user: context.user!.id
       })
     }
   }

@@ -6,8 +6,6 @@ import { insert, update, remove, toSQLDate } from '../misc/dbUtils'
 import { hashSync, compareSync } from 'bcryptjs'
 import { sign, verify } from 'jsonwebtoken'
 import { validate as isEmail } from 'isemail'
-import { ConnectionQueryArgs } from '../misc/ConnectionQueryArgs'
-import { queryToConnection } from '../misc/queryToConnection'
 
 export async function createUser(
   { name, email, password }: Pick<User, 'name' | 'email' | 'password'>,
@@ -74,15 +72,6 @@ export async function refreshToken({ refreshToken }: { refreshToken: string }) {
   }
 
   return generateTokens(user.id, refreshToken)
-}
-
-export async function listUsers(args: ConnectionQueryArgs & { name?: string, email?: string }) {
-  const where = SQL`WHERE 1`
-
-  args.name && where.append(SQL` AND name LIKE ${`%${args.name}%`}`)
-  args.email && where.append(SQL` AND email LIKE ${`%${args.email}%`}`)
-
-  return queryToConnection(args, ['*'], 'user', where)
 }
 
 export async function updateUser(id: number, user: Partial<User>) {

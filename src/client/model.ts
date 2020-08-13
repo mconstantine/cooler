@@ -4,14 +4,12 @@ import { insert, update, remove } from '../misc/dbUtils'
 import SQL from 'sql-template-strings'
 import { ConnectionQueryArgs } from '../misc/ConnectionQueryArgs'
 import { queryToConnection } from '../misc/queryToConnection'
-import { UserContext } from '../user/User'
+import { User } from '../user/User'
+import { ApolloError } from 'apollo-server'
 
-export async function createClient(client: Partial<Client>, context: UserContext) {
+export async function createClient(client: Partial<Client>) {
   const db = await getDatabase()
-  const { lastID } = await insert('client', {
-    ...client,
-    user: context.user!.id
-  })
+  const { lastID } = await insert('client', client)
 
   return await db.get<Client>(SQL`SELECT * FROM client WHERE id = ${lastID}`)
 }
@@ -22,8 +20,18 @@ export async function listClients(args: ConnectionQueryArgs & { name?: string, u
   return queryToConnection(args, ['*'], 'client', where)
 }
 
-export async function updateClient(id: number, client: Partial<Client>) {
+export async function updateClient(id: number, client: Partial<Client>, user: User) {
   const db = await getDatabase()
+  const savedClient = await db.get<Client>(SQL`SELECT * FROM client WHERE id = ${id}`)
+
+  if (!savedClient) {
+    return null
+  }
+
+  if (client.user !== user.id) {
+    throw new ApolloError('You cannot update this client', 'COOLER_403')
+  }
+
   const { name } = client
 
   if (name) {
@@ -33,7 +41,7 @@ export async function updateClient(id: number, client: Partial<Client>) {
   return await db.get<Client>(SQL`SELECT * FROM client WHERE id = ${id}`)
 }
 
-export async function deleteClient(id: number) {
+export async function deleteClient(id: number, user: User) {
   const db = await getDatabase()
   const client = await db.get<Client>(SQL`SELECT * FROM client WHERE id = ${id}`)
 
@@ -41,7 +49,10 @@ export async function deleteClient(id: number) {
     return null
   }
 
-  await remove('client', { id })
+  if (client.user !== user.id) {
+    throw new ApolloError('You cannot delete this client', 'COOLER_403')
+  }
 
+  await remove('client', { id })
   return client
 }

@@ -1,11 +1,10 @@
 import { GraphQLFieldResolver } from 'graphql'
 import { User, UserContext } from './User'
 import { ConnectionQueryArgs } from '../misc/ConnectionQueryArgs'
-import { createUser, loginUser, refreshToken, updateUser, deleteUser, listUsers } from './model'
+import { createUser, loginUser, refreshToken, updateUser, deleteUser } from './model'
 import { queryToConnection } from '../misc/queryToConnection'
 import SQL from 'sql-template-strings'
 import { ensureUser } from '../misc/ensureUser'
-import { getDatabase } from '../misc/getDatabase'
 
 interface UserResolvers {
   User: {
@@ -17,16 +16,11 @@ interface UserResolvers {
     createUser: GraphQLFieldResolver<any, UserContext, { user: Partial<User> }>
     loginUser: GraphQLFieldResolver<any, { user: Partial<User> }>
     refreshToken: GraphQLFieldResolver<any, { refreshToken: string }>
-    updateUser: GraphQLFieldResolver<any, UserContext, { id?: number, user: Partial<User> }>
-    deleteUser: GraphQLFieldResolver<any, UserContext, { id?: number }>
+    updateMe: GraphQLFieldResolver<any, UserContext, { user: Partial<User> }>
+    deleteMe: GraphQLFieldResolver<any, UserContext, {}>
   }
   Query: {
     me: GraphQLFieldResolver<any, UserContext, {}>
-    user: GraphQLFieldResolver<any, UserContext, { id: number }>
-    users: GraphQLFieldResolver<any, UserContext, ConnectionQueryArgs & {
-      name?: string,
-      email?: string
-    }>
   }
 }
 
@@ -59,15 +53,13 @@ export default {
     refreshToken: (_parent, { refreshToken: token }) => {
       return refreshToken({ refreshToken: token })
     },
-    updateUser: (_parent, { id, user }, context) => {
+    updateMe: (_parent, { user }, context) => {
       ensureUser(context)
-      id = id || context.user!.id
-      return updateUser(id, user)
+      return updateUser(context.user!.id, user)
     },
-    deleteUser(_parent, { id }, context) {
+    deleteMe(_parent, _args, context) {
       ensureUser(context)
-      id = id || context.user!.id
-      return deleteUser(id)
+      return deleteUser(context.user!.id)
     }
   },
   Query: {
@@ -77,15 +69,6 @@ export default {
       }
 
       return context.user
-    },
-    user: async (_parent, { id }, context) => {
-      ensureUser(context)
-      const db = await getDatabase()
-      return await db.get<User>(SQL`SELECT * FROM user WHERE id = ${id}`)
-    },
-    users: (_parent, args, context) => {
-      ensureUser(context)
-      return listUsers(args)
     }
   }
 } as UserResolvers
