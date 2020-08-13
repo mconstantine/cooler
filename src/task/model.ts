@@ -5,6 +5,7 @@ import SQL from 'sql-template-strings'
 import { ConnectionQueryArgs } from '../misc/ConnectionQueryArgs'
 import { queryToConnection } from '../misc/queryToConnection'
 
+// TODO: make sure that the project is owned by the user
 export async function createTask(task: Partial<Task>) {
   const db = await getDatabase()
   const { lastID } = await insert('task', {
@@ -15,6 +16,7 @@ export async function createTask(task: Partial<Task>) {
   return await db.get<Task>(SQL`SELECT * FROM task WHERE id = ${lastID}`)
 }
 
+// TODO: list only tasks the user can see
 export async function listTasks(args: ConnectionQueryArgs & { name?: string }) {
   return await queryToConnection(
     args,
@@ -24,6 +26,7 @@ export async function listTasks(args: ConnectionQueryArgs & { name?: string }) {
   )
 }
 
+// TODO: make sure that the user can update the task
 export async function updateTask(id: number, task: Partial<Task>) {
   const db = await getDatabase()
   const { name, description, expectedWorkingHours, actualWorkingHours, project } = task
@@ -43,6 +46,7 @@ export async function updateTask(id: number, task: Partial<Task>) {
   return await db.get<Task>(SQL`SELECT * FROM task WHERE id = ${id}`)
 }
 
+// TODO: make sure that the user can delete the task
 export async function deleteTask(id: number) {
   const db = await getDatabase()
   const task = await db.get<Task>(SQL`SELECT * FROM task WHERE id = ${id}`)
