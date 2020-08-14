@@ -67,7 +67,13 @@ describe('queryToConnection', () => {
     expect(result.pageInfo.hasPreviousPage).toBe(false)
   })
 
-  it('should handle "first" and "after" (one per page)', async () => {
+  it('should handle "first" and "after" (two per page)', async () => {
+    /*
+    [
+      { id: 2, char: 'C', number: 3 },
+      { id: 1, char: 'A', number: 4 }
+    ]
+    */
     const result = await queryToConnection({
       first: 2, after: toCursor(3), orderBy: 'number ASC'
     }, ['id', 'char', 'number'], 'test')
@@ -76,14 +82,18 @@ describe('queryToConnection', () => {
     expect(result.edges.length).toBe(2)
     expect(result.edges.map(edge => edge.node)).toEqual([data[1], data[0]])
 
-    expect(result.pageInfo.startCursor).toBe(toCursor(4))
+    expect(result.pageInfo.startCursor).toBe(toCursor(2))
     expect(result.pageInfo.endCursor).toBe(toCursor(1))
     expect(result.pageInfo.hasNextPage).toBe(false)
     expect(result.pageInfo.hasPreviousPage).toBe(true)
   })
 
-  it('should handle "first" and "after" (two per page)', async () => {
-
+  it('should handle "first" and "after" (one per page)', async () => {
+    /*
+    [
+      { id: 2, char: 'C', number: 3 }
+    ]
+    */
     const result = await queryToConnection({
       first: 1, after: toCursor(3), orderBy: 'number ASC'
     }, ['id', 'char', 'number'], 'test')
@@ -92,13 +102,18 @@ describe('queryToConnection', () => {
     expect(result.edges.length).toBe(1)
     expect(result.edges.map(edge => edge.node)).toEqual([data[1]])
 
-    expect(result.pageInfo.startCursor).toBe(toCursor(4))
-    expect(result.pageInfo.endCursor).toBe(toCursor(1))
+    expect(result.pageInfo.startCursor).toBe(toCursor(2))
+    expect(result.pageInfo.endCursor).toBe(toCursor(2))
     expect(result.pageInfo.hasNextPage).toBe(true)
     expect(result.pageInfo.hasPreviousPage).toBe(true)
   })
 
   it('should handle "last" and "before" (one per page)', async () => {
+    /*
+    [
+      { id: 3, char: 'B', number: 2 }
+    ]
+    */
     const result = await queryToConnection({
       last: 1, before: toCursor(2), orderBy: 'char ASC'
     }, ['id', 'char', 'number'], 'test', SQL`WHERE char != ${'D'}`)
@@ -107,13 +122,19 @@ describe('queryToConnection', () => {
     expect(result.edges.length).toBe(1)
     expect(result.edges.map(edge => edge.node)).toEqual([data[2]])
 
-    expect(result.pageInfo.startCursor).toBe(toCursor(1))
-    expect(result.pageInfo.endCursor).toBe(toCursor(2))
+    expect(result.pageInfo.startCursor).toBe(toCursor(3))
+    expect(result.pageInfo.endCursor).toBe(toCursor(3))
     expect(result.pageInfo.hasNextPage).toBe(true)
     expect(result.pageInfo.hasPreviousPage).toBe(true)
   })
 
   it('should handle "last" and "before" (two per page)', async () => {
+    /*
+    [
+      { id: 1, char: 'A', number: 4 },
+      { id: 3, char: 'B', number: 2 }
+    ]
+    */
     const result = await queryToConnection({
       last: 2, before: toCursor(2), orderBy: 'char ASC'
     }, ['id', 'char', 'number'], 'test', SQL`WHERE char != ${'D'}`)
@@ -123,7 +144,7 @@ describe('queryToConnection', () => {
     expect(result.edges.map(edge => edge.node)).toEqual([data[0], data[2]])
 
     expect(result.pageInfo.startCursor).toBe(toCursor(1))
-    expect(result.pageInfo.endCursor).toBe(toCursor(2))
+    expect(result.pageInfo.endCursor).toBe(toCursor(3))
     expect(result.pageInfo.hasNextPage).toBe(true)
     expect(result.pageInfo.hasPreviousPage).toBe(false)
   })

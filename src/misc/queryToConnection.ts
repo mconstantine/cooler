@@ -96,8 +96,6 @@ export async function queryToConnection<T extends { id: number }>(
 
   const firstResult = results[0]
   const lastResult = results[results.length - 1]
-  const first = firstResult._first
-  const last = firstResult._last
 
   return {
     totalCount: firstResult.totalCount,
@@ -112,10 +110,10 @@ export async function queryToConnection<T extends { id: number }>(
       })
     ),
     pageInfo: {
-      startCursor: toCursor(first),
-      endCursor: toCursor(last),
-      hasPreviousPage: firstResult.id !== first,
-      hasNextPage: lastResult.id !== last
+      startCursor: toCursor(firstResult.id),
+      endCursor: toCursor(lastResult.id),
+      hasPreviousPage: firstResult.id !== firstResult._first,
+      hasNextPage: lastResult.id !== firstResult._last
     }
   }
 }
