@@ -97,7 +97,7 @@ export async function updateUser(id: number, user: Partial<User>) {
     email,
     password: password ? hashSync(password, 10) : undefined
   }).filter(
-    ([, value]) => !!value
+    ([, value]) => value !== undefined
   ).reduce(
     (res, [key, value]) => ({ ...res, [key]: value }), {}
   )

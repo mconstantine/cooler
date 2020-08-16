@@ -30,7 +30,7 @@ export async function updateProject(id: number, project: Partial<Project>) {
 
   if (name || description || client) {
     const args = Object.entries({ name, description, client }).filter(
-      ([, value]) => !!value
+      ([, value]) => value !== undefined
     ).reduce(
       (res, [key, value]) => ({ ...res, [key]: value }), {}
     )

@@ -48,7 +48,7 @@ export async function updateTask(id: number, task: Partial<Task>) {
     const args = Object.entries(
       { name, description, expectedWorkingHours, actualWorkingHours, project }
     ).filter(
-      ([, value]) => !!value
+      ([, value]) => value !== undefined
     ).reduce(
       (res, [key, value]) => ({ ...res, [key]: value }), {}
     )
