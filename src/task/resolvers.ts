@@ -33,7 +33,7 @@ export default {
   Mutation: {
     createTask: (_parent, { task }, context) => {
       ensureUser(context)
-      return createTask(task)
+      return createTask(task, context.user!)
     },
     updateTask: (_parent, { id, task }, context) => {
       ensureUser(context)

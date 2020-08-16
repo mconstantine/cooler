@@ -4,10 +4,23 @@ import { insert, update, remove } from '../misc/dbUtils'
 import SQL from 'sql-template-strings'
 import { ConnectionQueryArgs } from '../misc/ConnectionQueryArgs'
 import { queryToConnection } from '../misc/queryToConnection'
+import { User } from '../user/User'
+import { Project } from '../project/Project'
+import { ApolloError } from 'apollo-server'
 
-// TODO: make sure that the project is owned by the user
-export async function createTask(task: Partial<Task>) {
+export async function createTask(task: Partial<Task>, user: User) {
   const db = await getDatabase()
+  const project = await db.get<Project & { user: number }>(SQL`
+    SELECT project.*, client.user
+    FROM project
+    JOIN client on project.client = client.id
+    WHERE project.id = ${task.project}
+  `)
+
+  if (!project || project.user !== user.id) {
+    throw new ApolloError('Unauthorized', 'COOLER_403')
+  }
+
   const { lastID } = await insert('task', {
     ...task,
     actualWorkingHours: task.actualWorkingHours || 0
