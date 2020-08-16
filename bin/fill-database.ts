@@ -47,7 +47,7 @@ import { getFakeTask } from '../src/test/getFakeTask'
 
   for (const user of users) {
     for (let i = 0; i < 20; i++) {
-      await createClient(getFakeClient(), { user })
+      await createClient({ ...getFakeClient(), user: user.id })
     }
   }
 
