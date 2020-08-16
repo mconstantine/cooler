@@ -15,19 +15,22 @@ import { Client } from '../client/Client'
 import { getFakeUser } from '../test/getFakeUser'
 
 describe('initTask', () => {
+  let project: Project
+  let db: Database
+
+  beforeAll(async () => {
+    db = await getDatabase()
+
+    await initUser()
+    await initClient()
+    await initProject()
+    await init()
+  })
+
   describe('happy path', () => {
-    let db: Database
-    let project: Project
     let client: Client
 
     beforeAll(async () => {
-      db = await getDatabase()
-
-      await initUser()
-      await initClient()
-      await initProject()
-      await init()
-
       const userData = getFakeUser()
       const { lastID: userId } = await insert('user', userData)
       const clientData = getFakeClient({ user: userId })
@@ -88,7 +91,6 @@ describe('initTask', () => {
 
   describe('deletion chain', () => {
     it('should make user deletion bubble down to tasks', async () => {
-      const db = await getDatabase()
       const userData = getFakeUser()
       const { lastID: userId } = await insert('user', userData)
       const clientData = getFakeClient({ user: userId })
@@ -103,6 +105,23 @@ describe('initTask', () => {
       const task = await db.get<Task>(SQL`SELECT * FROM task WHERE id = ${taskId}`)
 
       expect(task).toBeUndefined()
+    })
+  })
+
+  describe('project update', () => {
+    it('should update the project where a task is created for it', async () => {
+      const projectUpdatedAtBefore = (
+        await db.get<Project>(SQL`SELECT * FROM project WHERE id = ${project.id}`)
+      )!.updated_at
+
+      await (() => new Promise(done => setTimeout(() => done(), 1000)))()
+      await insert('task', getFakeTask({ project: project.id }))
+
+      const projectUpdatedAtAfter = (
+        await db.get<Project>(SQL`SELECT * FROM project WHERE id = ${project.id}`)
+      )!.updated_at
+
+      expect(projectUpdatedAtBefore).not.toBe(projectUpdatedAtAfter)
     })
   })
 })

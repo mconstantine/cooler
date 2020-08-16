@@ -22,8 +22,13 @@ export default async function init() {
     END;
 
     CREATE TRIGGER IF NOT EXISTS task_project_deleted AFTER DELETE ON project
-    BEGIN
+    FOR EACH ROW BEGIN
       DELETE FROM task WHERE project = OLD.id;
+    END;
+
+    CREATE TRIGGER IF NOT EXISTS project_task_created AFTER INSERT ON task
+    FOR EACH ROW BEGIN
+      UPDATE project SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.project;
     END;
   `)
 }
