@@ -28,7 +28,7 @@ export async function updateClient(id: number, client: Partial<Client>, user: Us
     return null
   }
 
-  if (client.user !== user.id) {
+  if (savedClient.user !== user.id) {
     throw new ApolloError('You cannot update this client', 'COOLER_403')
   }
 
