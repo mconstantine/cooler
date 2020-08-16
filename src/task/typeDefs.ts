@@ -24,13 +24,15 @@ export default gql`
   }
 
   input TaskCreationInput {
-    description: String!
+    name: String!
+    description: String
     expectedWorkingHours: Int!
     actualWorkingHours: Int
     project: Int!
   }
 
   input TaskUpdateInput {
+    name: String
     description: String
     expectedWorkingHours: Int
     actualWorkingHours: Int
