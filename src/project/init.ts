@@ -20,7 +20,7 @@ export default async function init() {
     END;
 
     CREATE TRIGGER IF NOT EXISTS project_client_deleted AFTER DELETE ON client
-    BEGIN
+    FOR EACH ROW BEGIN
       DELETE FROM project WHERE client = OLD.id;
     END;
   `)

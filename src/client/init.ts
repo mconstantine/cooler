@@ -19,7 +19,7 @@ export default async function init() {
     END;
 
     CREATE TRIGGER IF NOT EXISTS client_user_deleted AFTER DELETE ON user
-    BEGIN
+    FOR EACH ROW BEGIN
       DELETE FROM client WHERE user = OLD.id;
     END;
   `)
