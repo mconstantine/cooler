@@ -7,15 +7,15 @@ import { queryToConnection } from '../misc/queryToConnection'
 import { User } from '../user/User'
 import { ApolloError } from 'apollo-server'
 
-export async function createClient(client: Partial<Client>) {
+export async function createClient(client: Partial<Client>, user: User) {
   const db = await getDatabase()
-  const { lastID } = await insert('client', client)
+  const { lastID } = await insert('client', { ...client, user: user.id })
 
   return await db.get<Client>(SQL`SELECT * FROM client WHERE id = ${lastID}`)
 }
 
-export async function listClients(args: ConnectionQueryArgs & { name?: string, user: number }) {
-  const where = SQL`WHERE user = ${args.user}`
+export async function listClients(args: ConnectionQueryArgs & { name?: string }, user: User) {
+  const where = SQL`WHERE user = ${user.id}`
   args.name && where.append(SQL` AND name LIKE ${`%${args.name}%`}`)
   return queryToConnection(args, ['*'], 'client', where)
 }

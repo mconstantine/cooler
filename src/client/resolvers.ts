@@ -32,7 +32,7 @@ export default {
   Mutation: {
     createClient: (_parent, { client }, context) => {
       ensureUser(context)
-      return createClient({ ...client, user: context.user!.id })
+      return createClient({ ...client }, context.user!)
     },
     updateClient: (_parent, { id, client }, context) => {
       ensureUser(context)
@@ -51,11 +51,7 @@ export default {
     },
     clients: async (_parent, args, context) => {
       ensureUser(context)
-
-      return listClients({
-        ...args,
-        user: context.user!.id
-      })
+      return listClients(args, context.user!)
     }
   }
 } as ClientResolvers
