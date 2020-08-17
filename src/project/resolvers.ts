@@ -38,15 +38,15 @@ export default {
   Mutation: {
     createProject: (_parent, { project }, context) => {
       ensureUser(context)
-      return createProject(project)
+      return createProject(project, context.user!)
     },
     updateProject: (_parent, { id, project }, context) => {
       ensureUser(context)
-      return updateProject(id, project)
+      return updateProject(id, project, context.user!)
     },
     deleteProject: (_parent, { id }, context) => {
       ensureUser(context)
-      return deleteProject(id)
+      return deleteProject(id, context.user!)
     }
   },
   Query: {
