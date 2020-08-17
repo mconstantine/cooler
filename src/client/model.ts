@@ -22,7 +22,7 @@ export async function listClients(args: ConnectionQueryArgs & { name?: string },
 
 export async function updateClient(id: number, client: Partial<Client>, user: User) {
   const db = await getDatabase()
-  const savedClient = await db.get<Client>(SQL`SELECT * FROM client WHERE id = ${id}`)
+  const savedClient = await db.get<Client>(SQL`SELECT user FROM client WHERE id = ${id}`)
 
   if (!savedClient) {
     return null
