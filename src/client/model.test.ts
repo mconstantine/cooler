@@ -68,7 +68,7 @@ describe('updateClient', () => {
     client1 = result
   })
 
-  it("should not allow users to update other user's clients", async () => {
+  it("should not allow users to update other users' clients", async () => {
     await expect(async () => {
       await updateClient(client1.id, getFakeClient(), user2)
     }).rejects.toBeInstanceOf(ApolloError)
@@ -88,7 +88,7 @@ describe('deleteClient', () => {
     expect(await deleteClient(client1.id, user1)).toMatchObject(client1)
   })
 
-  it("should not allow users to delete other user's clients", async () => {
+  it("should not allow users to delete other users' clients", async () => {
     await expect(async () => {
       await deleteClient(client2.id, user1)
     }).rejects.toBeInstanceOf(ApolloError)
