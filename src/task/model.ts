@@ -5,19 +5,24 @@ import SQL from 'sql-template-strings'
 import { ConnectionQueryArgs } from '../misc/ConnectionQueryArgs'
 import { queryToConnection } from '../misc/queryToConnection'
 import { User } from '../user/User'
-import { Project } from '../project/Project'
 import { ApolloError } from 'apollo-server'
+import { Project } from '../project/Project'
 
 export async function createTask(task: Partial<Task>, user: User) {
   const db = await getDatabase()
-  const project = await db.get<Project & { user: number }>(SQL`
-    SELECT project.*, client.user
+
+  const project = await db.get<{ user: number }>(SQL`
+    SELECT client.user
     FROM project
     JOIN client on project.client = client.id
     WHERE project.id = ${task.project}
   `)
 
-  if (!project || project.user !== user.id) {
+  if (!project) {
+    return null
+  }
+
+  if (project.user !== user.id) {
     throw new ApolloError('Unauthorized', 'COOLER_403')
   }
 
@@ -29,22 +34,55 @@ export async function createTask(task: Partial<Task>, user: User) {
   return await db.get<Task>(SQL`SELECT * FROM task WHERE id = ${lastID}`)
 }
 
-// TODO: list only tasks the user can see
-export async function listTasks(args: ConnectionQueryArgs & { name?: string }) {
-  return await queryToConnection(
-    args,
-    ['*'],
-    'task',
-    args.name ? SQL`WHERE name like ${`%${args.name}%`}` : undefined
-  )
+export async function listTasks(args: ConnectionQueryArgs & { name?: string }, user: User) {
+  const sql = SQL`
+    JOIN project ON project.id = task.project
+    JOIN client ON client.id = project.client
+    WHERE user = ${user.id}
+  `
+
+  args.name && sql.append(SQL` AND project.name LIKE ${`%${args.name}%`}`)
+  return await queryToConnection(args, ['task.*, client.user'], 'task', sql)
 }
 
-// TODO: make sure that the user can update the task
-export async function updateTask(id: number, task: Partial<Task>) {
+export async function updateTask(id: number, task: Partial<Task>, user: User) {
   const db = await getDatabase()
+  const currentTask = await db.get<{ user: number }>(SQL`
+    SELECT client.user
+    FROM task
+    JOIN project ON project.id = task.project
+    JOIN client ON client.id = project.client
+    WHERE task.id = ${id}
+  `)
+
+  if (!currentTask) {
+    return null
+  }
+
+  if (currentTask.user !== user.id) {
+    throw new ApolloError('You cannot update this task', 'COOLER_403')
+  }
+
   const { name, description, expectedWorkingHours, actualWorkingHours, project } = task
 
   if (name || description || expectedWorkingHours || actualWorkingHours || project) {
+    if (project) {
+      const newProject = await db.get<{ user: number }>(SQL`
+        SELECT client.user
+        FROM project
+        JOIN client ON client.id = project.client
+        WHERE project.id = ${project}
+      `)
+
+      if (!newProject) {
+        return null
+      }
+
+      if (newProject.user !== user.id) {
+        throw new ApolloError('You cannot assign this project to a task', 'COOLER_403')
+      }
+    }
+
     const args = Object.entries(
       { name, description, expectedWorkingHours, actualWorkingHours, project }
     ).filter(
@@ -59,16 +97,25 @@ export async function updateTask(id: number, task: Partial<Task>) {
   return await db.get<Task>(SQL`SELECT * FROM task WHERE id = ${id}`)
 }
 
-// TODO: make sure that the user can delete the task
-export async function deleteTask(id: number) {
+export async function deleteTask(id: number, user: User) {
   const db = await getDatabase()
-  const task = await db.get<Task>(SQL`SELECT * FROM task WHERE id = ${id}`)
+
+  const task = await db.get<Task & { user: number }>(SQL`
+    SELECT task.*, client.user
+    FROM task
+    JOIN project ON project.id = task.project
+    JOIN client ON client.id = project.client
+    WHERE task.id = ${id}
+  `)
 
   if (!task) {
     return null
   }
 
-  await remove('task', { id })
+  if (task.user !== user.id) {
+    throw new ApolloError('You cannot delete this task', 'COOLER_403')
+  }
 
+  await remove('task', { id })
   return task
 }

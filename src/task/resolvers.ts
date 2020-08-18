@@ -37,11 +37,11 @@ export default {
     },
     updateTask: (_parent, { id, task }, context) => {
       ensureUser(context)
-      return updateTask(id, task)
+      return updateTask(id, task, context.user!)
     },
     deleteTask: (_parent, { id }, context) => {
       ensureUser(context)
-      return deleteTask(id)
+      return deleteTask(id, context.user!)
     }
   },
   Query: {
@@ -52,7 +52,7 @@ export default {
     },
     tasks: (_parent, args, context) => {
       ensureUser(context)
-      return listTasks(args)
+      return listTasks(args, context.user!)
     }
   }
 } as TaskResolvers
