@@ -109,7 +109,7 @@ describe('initTask', () => {
   })
 
   describe('project update', () => {
-    it('should update the project where a task is created for it', async () => {
+    it('should update the project when a task is created for it', async () => {
       const projectUpdatedAtBefore = (
         await db.get<Project>(SQL`SELECT * FROM project WHERE id = ${project.id}`)
       )!.updated_at
