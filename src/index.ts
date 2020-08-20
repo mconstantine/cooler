@@ -1,10 +1,7 @@
 import { ApolloServer } from 'apollo-server'
 import { typeDefs } from './typeDefs'
 import { resolvers } from './resolvers'
-import initUser from './user/init'
-import initClient from './client/init'
-import initProject from './project/init'
-import initTask from './task/init'
+import { init } from './init'
 import dotenv from 'dotenv'
 import { Token, TokenType, User } from './user/User'
 import { verify } from 'jsonwebtoken'
@@ -13,11 +10,7 @@ import SQL from 'sql-template-strings'
 
 (async () => {
   dotenv.config()
-
-  await initUser()
-  await initClient()
-  await initProject()
-  await initTask()
+  await init()
 
   const server = new ApolloServer({
     typeDefs,
