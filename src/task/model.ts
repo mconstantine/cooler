@@ -6,7 +6,6 @@ import { ConnectionQueryArgs } from '../misc/ConnectionQueryArgs'
 import { queryToConnection } from '../misc/queryToConnection'
 import { User } from '../user/User'
 import { ApolloError } from 'apollo-server'
-import { Project } from '../project/Project'
 
 export async function createTask(task: Partial<Task>, user: User) {
   const db = await getDatabase()
