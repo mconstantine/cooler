@@ -13,6 +13,9 @@ interface SessionResolvers {
   Session: {
     task: GraphQLFieldResolver<Session, any>
   }
+  Task: {
+    sessions: GraphQLFieldResolver<Task, UserContext, ConnectionQueryArgs>
+  }
   Mutation: {
     startSession: GraphQLFieldResolver<any, UserContext, { task: number }>
     stopSession: GraphQLFieldResolver<any, UserContext, { id: number }>
@@ -29,6 +32,12 @@ export default {
     task: async session => {
       const db = await getDatabase()
       return db.get<Task>(SQL`SELECT * FROM task WHERE id = ${session.task}`)
+    }
+  },
+  Task: {
+    sessions: async (task, args, context) => {
+      const sessions = await listSessions({ ...args, task: task.id }, context.user!)
+      return sessions.all
     }
   },
   Mutation: {

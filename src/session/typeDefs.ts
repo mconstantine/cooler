@@ -36,4 +36,14 @@ export default gql`
       orderBy: String
     ): SessionConnection!
   }
+
+  extend type Task {
+    sessions(
+      first: Int,
+      last: Int,
+      before: String,
+      after: String,
+      orderBy: String
+    ): SessionConnection
+  }
 `
