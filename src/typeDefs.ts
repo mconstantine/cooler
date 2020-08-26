@@ -2,6 +2,7 @@ import userTypeDefs from './user/typeDefs'
 import clientTypeDefs from './client/typeDefs'
 import projectTypeDefs from './project/typeDefs'
 import taskTypeDefs from './task/typeDefs'
+import sessionTypeDefs from './session/typeDefs'
 import { gql } from 'apollo-server'
 
 const defaultTypeDefs = gql`
@@ -13,6 +14,10 @@ const defaultTypeDefs = gql`
   }
 
   interface Node {
+    id: Int
+  }
+
+  interface TrackedNode implements Node {
     id: Int
     created_at: String
     updated_at: String
@@ -38,4 +43,6 @@ const defaultTypeDefs = gql`
   }
 `
 
-export const typeDefs = [defaultTypeDefs, userTypeDefs, clientTypeDefs, projectTypeDefs, taskTypeDefs]
+export const typeDefs = [
+  defaultTypeDefs, userTypeDefs, clientTypeDefs, projectTypeDefs, taskTypeDefs, sessionTypeDefs
+]
