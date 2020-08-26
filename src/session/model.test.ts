@@ -15,7 +15,7 @@ import { getFakeProject } from '../test/getFakeProject'
 import { getFakeTask } from '../test/getFakeTask'
 import { getFakeSession } from '../test/getFakeSession'
 import SQL from 'sql-template-strings'
-import { createSession, listSessions, updateSession, deleteSession } from './model'
+import { createSession, listSessions, updateSession, deleteSession, getSession } from './model'
 import { ApolloError } from 'apollo-server'
 
 let user1: User
@@ -111,6 +111,18 @@ describe('createSession', () => {
   )
 })
 
+describe('getSession', () => {
+  it('should work', async () => {
+    expect(await getSession(session1.id, user1)).toMatchObject(session1)
+  })
+
+  it("should not allow users to see other users' sessions", async () => {
+    await expect(async () => {
+      await getSession(session2.id, user1)
+    }).rejects.toBeInstanceOf(ApolloError)
+  })
+})
+
 describe('listSessions', () => {
   it("should list only the user's sessions", async () => {
     const result = await listSessions({}, user1)
@@ -163,6 +175,14 @@ describe('updateSession', () => {
 })
 
 describe('deleteSession', () => {
+  let session1: Session
+  let session2: Session
+
+  beforeAll(async () => {
+    session1 = await createSession(getFakeSession({ task: task1.id }), user1) as Session
+    session2 = await createSession(getFakeSession({ task: task2.id}), user2) as Session
+  })
+
   it('should work', async () => {
     expect(await deleteSession(session1.id, user1)).toMatchObject(session1)
   })

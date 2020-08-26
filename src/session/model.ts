@@ -49,6 +49,25 @@ export async function createSession(session: Partial<Session>, user: User) {
   return db.get<Session>(SQL`SELECT * FROM session WHERE id = ${lastID}`)
 }
 
+export async function getSession(id: number, user: User) {
+  const db = await getDatabase()
+
+  const session = await db.get<Session & { user: number }>(SQL`
+    SELECT session.*, client.user
+    FROM session
+    JOIN task ON task.id = session.task
+    JOIN project ON project.id = task.project
+    JOIN client ON client.id = project.client
+    WHERE session.id = ${id}
+  `)
+
+  if (session && session.user !== user.id) {
+    throw new ApolloError('You cannot see this session', 'COOLER_403')
+  }
+
+  return session
+}
+
 export async function listSessions(args: ConnectionQueryArgs & { task?: number }, user: User) {
   const db = await getDatabase()
 
@@ -143,7 +162,7 @@ export async function deleteSession(id: number, user: User) {
     JOIN task ON task.id = session.task
     JOIN project ON project.id = task.project
     JOIN client ON client.id = project.client
-    WHERE task.id = ${id}
+    WHERE session.id = ${id}
   `)
 
   if (!session) {
