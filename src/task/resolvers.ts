@@ -3,7 +3,7 @@ import { Task } from './Task'
 import { getDatabase } from '../misc/getDatabase'
 import { Project } from '../project/Project'
 import SQL from 'sql-template-strings'
-import { createTask, listTasks, updateTask, deleteTask } from './model'
+import { createTask, listTasks, updateTask, deleteTask, getTask } from './model'
 import { ConnectionQueryArgs } from '../misc/ConnectionQueryArgs'
 import { UserContext } from '../user/User'
 import { ensureUser } from '../misc/ensureUser'
@@ -47,8 +47,7 @@ export default {
   Query: {
     task: async (_parent, { id }, context) => {
       ensureUser(context)
-      const db = await getDatabase()
-      return await db.get<Project>(SQL`SELECT * FROM task WHERE id = ${id}`)
+      return getTask(id, context.user!)
     },
     tasks: (_parent, args, context) => {
       ensureUser(context)

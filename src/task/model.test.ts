@@ -13,7 +13,7 @@ import { ApolloError } from 'apollo-server'
 import { Project } from '../project/Project'
 import { Task } from './Task'
 import { getFakeTask } from '../test/getFakeTask'
-import { createTask, listTasks, updateTask, deleteTask } from './model'
+import { createTask, listTasks, updateTask, deleteTask, getTask } from './model'
 
 let user1: User
 let user2: User
@@ -78,6 +78,18 @@ describe('createTask', () => {
   it("should not allow users to create tasks for other users' projects", async () => {
     await expect(async () => {
       await createTask(getFakeTask({ project: project2.id }), user1)
+    }).rejects.toBeInstanceOf(ApolloError)
+  })
+})
+
+describe('getTask', () => {
+  it('should work', async () => {
+    expect(await getTask(task1.id, user1)).toMatchObject(task1)
+  })
+
+  it("should not allow users to see other users' tasks", async () => {
+    await expect(async () => {
+      await getTask(task2.id, user1)
     }).rejects.toBeInstanceOf(ApolloError)
   })
 })

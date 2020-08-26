@@ -33,6 +33,24 @@ export async function createTask(task: Partial<Task>, user: User) {
   return await db.get<Task>(SQL`SELECT * FROM task WHERE id = ${lastID}`)
 }
 
+export async function getTask(id: number, user: User) {
+  const db = await getDatabase()
+
+  const task = await db.get<Task & { user: number }>(SQL`
+    SELECT task.*, client.user
+    FROM task
+    JOIN project ON project.id = task.project
+    JOIN client ON client.id = project.client
+    WHERE task.id = ${id}
+  `)
+
+  if (task && task.user !== user.id) {
+    throw new ApolloError('You cannot see this task', 'COOLER_403')
+  }
+
+  return task
+}
+
 export async function listTasks(args: ConnectionQueryArgs & { name?: string }, user: User) {
   const sql = SQL`
     JOIN project ON project.id = task.project
