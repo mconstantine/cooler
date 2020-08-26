@@ -24,6 +24,23 @@ export async function createProject(project: Partial<Project>, user: User) {
   return await db.get<Project>(SQL`SELECT * FROM project WHERE id = ${lastID}`)
 }
 
+export async function getProject(id: number, user: User) {
+  const db = await getDatabase()
+
+  const project = await db.get<Project & { user: number }>(SQL`
+    SELECT project.*, client.user
+    FROM project
+    JOIN client ON project.client = client.id
+    WHERE project.id = ${id}
+  `)
+
+  if (project && project.user !== user.id) {
+    throw new ApolloError('You cannot see this project', 'COOLER_403')
+  }
+
+  return project
+}
+
 export async function listProjects(args: ConnectionQueryArgs & { name?: string }, user: User) {
   const sql = SQL`
     JOIN client ON project.client = client.id
@@ -40,7 +57,8 @@ export async function updateProject(id: number, project: Partial<Project>, user:
 
   const currentProject = await db.get<Project & { user: number }>(SQL`
     SELECT project.client, client.user
-    FROM project JOIN client ON project.client = client.id
+    FROM project
+    JOIN client ON project.client = client.id
     WHERE project.id = ${id}`)
 
   if (!currentProject) {
@@ -81,7 +99,8 @@ export async function deleteProject(id: number, user: User) {
 
   const project = await db.get<Project & { user: number }>(SQL`
     SELECT project.*, client.user
-    FROM project JOIN client ON project.client = client.id
+    FROM project
+    JOIN client ON project.client = client.id
     WHERE project.id = ${id}
   `)
 

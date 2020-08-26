@@ -1,6 +1,6 @@
 import { GraphQLFieldResolver } from 'graphql'
 import { Project } from './Project'
-import { createProject, listProjects, updateProject, deleteProject } from './model'
+import { createProject, listProjects, updateProject, deleteProject, getProject } from './model'
 import { getDatabase } from '../misc/getDatabase'
 import { Client } from '../client/Client'
 import SQL from 'sql-template-strings'
@@ -52,8 +52,7 @@ export default {
   Query: {
     project: async (_parent, { id }, context) => {
       ensureUser(context)
-      const db = await getDatabase()
-      return await db.get<Project>(SQL`SELECT * FROM project WHERE id = ${id}`)
+      return getProject(id, context.user!)
     },
     projects: (_parent, args, context) => {
       ensureUser(context)

@@ -1,7 +1,7 @@
 import initUser from '../user/init'
 import initClient from '../client/init'
 import initProject from './init'
-import { createProject, listProjects, updateProject, deleteProject } from './model'
+import { createProject, listProjects, updateProject, deleteProject, getProject } from './model'
 import { User } from '../user/User'
 import { Client } from '../client/Client'
 import { insert } from '../misc/dbUtils'
@@ -67,6 +67,18 @@ describe('createProject', () => {
   it("should not allow users to create projects for other users' clients", async () => {
     await expect(async () => {
       await createProject(getFakeProject({ client: client2.id }), user1)
+    }).rejects.toBeInstanceOf(ApolloError)
+  })
+})
+
+describe('getProject', () => {
+  it('should work', async () => {
+    expect(await getProject(project1.id, user1)).toMatchObject(project1)
+  })
+
+  it("should not allow users to delete other users' projects", async () => {
+    await expect(async () => {
+      await getProject(project2.id, user1)
     }).rejects.toBeInstanceOf(ApolloError)
   })
 })
