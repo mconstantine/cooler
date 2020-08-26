@@ -16,7 +16,7 @@ export async function createProject(project: Partial<Project>, user: User) {
     return null
   }
 
-  if (client.id !== user.id) {
+  if (client.user !== user.id) {
     throw new ApolloError('You cannot create projects for this client', 'COOLER_403')
   }
 
