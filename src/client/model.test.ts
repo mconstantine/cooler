@@ -46,7 +46,7 @@ describe('getClient', () => {
     expect(await getClient(client1.id, user1)).toMatchObject(client1)
   })
 
-  it("should not allow users to get other users' clients", async () => {
+  it("should not allow users to see other users' clients", async () => {
     await expect(async () => {
       await getClient(client2.id, user1)
     }).rejects.toBeInstanceOf(ApolloError)

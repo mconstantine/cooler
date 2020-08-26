@@ -76,7 +76,7 @@ describe('getProject', () => {
     expect(await getProject(project1.id, user1)).toMatchObject(project1)
   })
 
-  it("should not allow users to delete other users' projects", async () => {
+  it("should not allow users to see other users' projects", async () => {
     await expect(async () => {
       await getProject(project2.id, user1)
     }).rejects.toBeInstanceOf(ApolloError)
