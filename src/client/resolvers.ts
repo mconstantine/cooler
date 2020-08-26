@@ -1,6 +1,6 @@
 import { GraphQLFieldResolver } from 'graphql'
 import { Client } from './Client'
-import { createClient, listClients, updateClient, deleteClient } from './model'
+import { createClient, listClients, updateClient, deleteClient, getClient } from './model'
 import { getDatabase } from '../misc/getDatabase'
 import SQL from 'sql-template-strings'
 import { ConnectionQueryArgs } from '../misc/ConnectionQueryArgs'
@@ -46,8 +46,7 @@ export default {
   Query: {
     client: async (_parent, { id }, context) => {
       ensureUser(context)
-      const db = await getDatabase()
-      return await db.get<Client>(SQL`SELECT * FROM client WHERE id = ${id}`)
+      return await getClient(id, context.user!)
     },
     clients: async (_parent, args, context) => {
       ensureUser(context)

@@ -6,7 +6,7 @@ import { User } from '../user/User'
 import { getDatabase } from '../misc/getDatabase'
 import SQL from 'sql-template-strings'
 import { getFakeClient } from '../test/getFakeClient'
-import { createClient, listClients, updateClient, deleteClient } from './model'
+import { createClient, listClients, updateClient, deleteClient, getClient } from './model'
 import { Client } from './Client'
 import { ApolloError } from 'apollo-server'
 
@@ -38,6 +38,18 @@ describe('createClient', () => {
 
     expect(clientData.user).toBeUndefined()
     expect(client?.user).toBe(user1.id)
+  })
+})
+
+describe('getClient', () => {
+  it('should work', async () => {
+    expect(await getClient(client1.id, user1)).toMatchObject(client1)
+  })
+
+  it("should not allow users to get other users' clients", async () => {
+    await expect(async () => {
+      await getClient(client2.id, user1)
+    }).rejects.toBeInstanceOf(ApolloError)
   })
 })
 

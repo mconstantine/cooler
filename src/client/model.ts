@@ -14,6 +14,17 @@ export async function createClient(client: Partial<Client>, user: User) {
   return await db.get<Client>(SQL`SELECT * FROM client WHERE id = ${lastID}`)
 }
 
+export async function getClient(id: number, user: User) {
+  const db = await getDatabase()
+  const client = await db.get<Client>(SQL`SELECT * FROM client WHERE id = ${id}`)
+
+  if (client && client.user !== user.id) {
+    throw new ApolloError('You cannot see this client', 'COOLER_403')
+  }
+
+  return client
+}
+
 export async function listClients(args: ConnectionQueryArgs & { name?: string }, user: User) {
   const where = SQL`WHERE user = ${user.id}`
   args.name && where.append(SQL` AND name LIKE ${`%${args.name}%`}`)
