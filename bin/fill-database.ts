@@ -16,17 +16,22 @@ import { Client } from '../src/client/Client'
 import { Project } from '../src/project/Project'
 import { createTask } from '../src/task/model'
 import { getFakeTask } from '../src/test/getFakeTask'
+import { Task } from '../src/task/Task'
+import { getFakeSession } from '../src/test/getFakeSession'
+import { fromSQLDate, toSQLDate } from '../src/misc/dbUtils'
+import { createSession } from '../src/session/model'
 
 (async () => {
   dotenv.config()
 
   const db = await getDatabase()
-  await db.exec(`DELETE FROM user`)
 
   await initUser()
   await initClient()
   await initProject()
   await initTask()
+
+  await db.exec(`DELETE FROM user`)
 
   const { accessToken } = await createUser({
     name: 'Mauro Constantinescu',
@@ -46,28 +51,49 @@ import { getFakeTask } from '../src/test/getFakeTask'
   const users = await db.all<User[]>('SELECT * FROM user')
 
   for (const user of users) {
+    const clients: Client[] = []
+
     for (let i = 0; i < 20; i++) {
-      await createClient({ ...getFakeClient(), user: user.id })
+      const client = await createClient({ ...getFakeClient() }, user)
+      clients.push(client!)
     }
-  }
 
-  const clients = await db.all<Client[]>('SELECT * FROM client')
+    for (const client of clients) {
+      const projects: Project[] = []
 
-  for (const client of clients) {
-    for (let i = 0; i < 3; i++) {
-      await createProject(getFakeProject({
-        client: client.id
-      }))
-    }
-  }
+      for (let i = 0; i < 3; i++) {
+        const project = await createProject(getFakeProject({
+          client: client.id
+        }), user)
 
-  const projects = await db.all<Project[]>('SELECT * FROM project')
+        projects.push(project!)
+      }
 
-  for (const project of projects) {
-    for (let i = 0; i < 10; i++) {
-      await createTask(getFakeTask({
-        project: project.id
-      }))
+      for (const project of projects) {
+        const tasks: Task[] = []
+
+        for (let i = 0; i < 10; i++) {
+          const task = await createTask(getFakeTask({
+            project: project.id
+          })!, user)
+
+          tasks.push(task!)
+
+          for (const task of tasks) {
+            const session = getFakeSession()
+            const startTime = fromSQLDate(session.start_time!)
+            const expectedWorkingHours = task.expectedWorkingHours
+
+            // 20% to 120%
+            const workingHours = expectedWorkingHours * 0.2 + Math.random() * expectedWorkingHours * 1
+            session.end_time = toSQLDate(new Date(startTime.getTime() + 3600000 * workingHours))
+
+            for (let i = 0; i < 10; i++) {
+              await createSession(session, user)
+            }
+          }
+        }
+      }
     }
   }
 })()
