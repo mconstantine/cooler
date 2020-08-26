@@ -6,7 +6,6 @@ export function getFakeTask(data: Partial<Task> = {}): Partial<Task> {
     name: faker.lorem.sentence(),
     description: faker.lorem.paragraph(),
     expectedWorkingHours: 1 + faker.random.number(99),
-    actualWorkingHours: 1 + faker.random.number(99),
     ...data
   }
 }

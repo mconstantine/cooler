@@ -93,3 +93,18 @@ export function toSQLDate(d: Date): string {
     withLeadingZero(d.getUTCSeconds())
   ].join(':')
 }
+
+export function fromSQLDate(sqlDate: string): Date {
+  const [, year, month, day, hours, minutes, seconds] = sqlDate.match(
+    /(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})/
+  ) as RegExpMatchArray
+
+  return new Date(Date.UTC(
+    parseInt(year),
+    parseInt(month) - 1,
+    parseInt(day),
+    parseInt(hours),
+    parseInt(minutes),
+    parseInt(seconds)
+  ))
+}

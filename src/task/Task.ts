@@ -3,7 +3,6 @@ export interface Task {
   name: string
   description?: string
   expectedWorkingHours: number
-  actualWorkingHours: number
   project: number
   created_at: string
   updated_at: string

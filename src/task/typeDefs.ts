@@ -17,7 +17,6 @@ export default gql`
     name: String!
     description: String
     expectedWorkingHours: Int!
-    actualWorkingHours: Int
     created_at: String
     updated_at: String
     project: Project!
@@ -27,7 +26,6 @@ export default gql`
     name: String!
     description: String
     expectedWorkingHours: Int!
-    actualWorkingHours: Int
     project: Int!
   }
 
@@ -35,7 +33,6 @@ export default gql`
     name: String
     description: String
     expectedWorkingHours: Int
-    actualWorkingHours: Int
     project: Int
   }
 
