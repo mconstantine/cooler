@@ -3,25 +3,29 @@ import initUser from '../src/user/init'
 import initClient from '../src/client/init'
 import initProject from '../src/project/init'
 import initTask from '../src/task/init'
+import initSession from '../src/session/init'
 import { getDatabase } from '../src/misc/getDatabase'
 import { createUser } from '../src/user/model'
 import { verify } from 'jsonwebtoken'
 import { Token, User } from '../src/user/User'
 import SQL from 'sql-template-strings'
-import { createProject } from '../src/project/model'
 import { getFakeProject } from '../src/test/getFakeProject'
-import { createClient } from '../src/client/model'
 import { getFakeClient } from '../src/test/getFakeClient'
-import { Client } from '../src/client/Client'
-import { Project } from '../src/project/Project'
-import { createTask } from '../src/task/model'
 import { getFakeTask } from '../src/test/getFakeTask'
-import { Task } from '../src/task/Task'
 import { getFakeSession } from '../src/test/getFakeSession'
-import { fromSQLDate, toSQLDate } from '../src/misc/dbUtils'
-import { createSession } from '../src/session/model'
+import { fromSQLDate, toSQLDate, insert } from '../src/misc/dbUtils'
 
 (async () => {
+  const USERS_COUNT = 2
+  const CLIENTS_PER_USER = 20
+  const PROJECTS_PER_CLIENT = 3
+  const TASKS_PER_PROJECT = 10
+  const SESSIONS_PER_TASK = 10
+
+  const totalProgress = USERS_COUNT * CLIENTS_PER_USER * PROJECTS_PER_CLIENT *
+    TASKS_PER_PROJECT * SESSIONS_PER_TASK
+
+  console.log(`Will create ${totalProgress} entities. This could take a while.`)
   dotenv.config()
 
   const db = await getDatabase()
@@ -30,6 +34,7 @@ import { createSession } from '../src/session/model'
   await initClient()
   await initProject()
   await initTask()
+  await initSession()
 
   await db.exec(`DELETE FROM user`)
 
@@ -50,47 +55,64 @@ import { createSession } from '../src/session/model'
 
   const users = await db.all<User[]>('SELECT * FROM user')
 
-  for (const user of users) {
-    const clients: Client[] = []
+  for (let u = 0; u < users.length; u++) {
+    const user = users[u]
+    const clients: number[] = []
 
-    for (let i = 0; i < 20; i++) {
-      const client = await createClient({ ...getFakeClient() }, user)
-      clients.push(client!)
+    for (let c = 0; c < CLIENTS_PER_USER; c++) {
+      const { lastID } = await insert('client', { ...getFakeClient({ user: user.id }) })
+      clients.push(lastID!)
     }
 
-    for (const client of clients) {
-      const projects: Project[] = []
+    for (let c = 0; c < clients.length; c++) {
+      const client = clients[c]
+      const projects: number[] = []
 
-      for (let i = 0; i < 3; i++) {
-        const project = await createProject(getFakeProject({
-          client: client.id
-        }), user)
-
-        projects.push(project!)
+      for (let p = 0; p < PROJECTS_PER_CLIENT; p++) {
+        const { lastID } = await insert('project', getFakeProject({ client }))
+        projects.push(lastID!)
       }
 
-      for (const project of projects) {
-        const tasks: Task[] = []
+      for (let p = 0; p < projects.length; p++) {
+        const project = projects[p]
+        const tasks: number[] = []
+        const expectedWorkingHours: number[] = []
 
-        for (let i = 0; i < 10; i++) {
-          const task = await createTask(getFakeTask({
-            project: project.id
-          })!, user)
+        for (let t = 0; t < TASKS_PER_PROJECT; t++) {
+          const taskData = getFakeTask({ project })
+          const { lastID } = await insert('task', taskData)
 
-          tasks.push(task!)
+          expectedWorkingHours.push(taskData.expectedWorkingHours!)
+          tasks.push(lastID!)
+        }
 
-          for (const task of tasks) {
-            const session = getFakeSession()
+        for (let t = 0; t < tasks.length; t++) {
+          const task = tasks[t]
+          const ewh = expectedWorkingHours[t]
+          const sessions: number[] = []
+
+          for (let s = 0; s < SESSIONS_PER_TASK; s++) {
+            const session = getFakeSession({ task })
             const startTime = fromSQLDate(session.start_time!)
-            const expectedWorkingHours = task.expectedWorkingHours
 
             // 20% to 120%
-            const workingHours = expectedWorkingHours * 0.2 + Math.random() * expectedWorkingHours * 1
+            const workingHours = ewh * 0.2 + Math.random() * ewh * 1
             session.end_time = toSQLDate(new Date(startTime.getTime() + 3600000 * workingHours))
 
-            for (let i = 0; i < 10; i++) {
-              await createSession(session, user)
-            }
+            const {lastID} = await insert('session', session)
+            sessions.push(lastID!)
+
+            const currentProgress = (
+              u * CLIENTS_PER_USER * PROJECTS_PER_CLIENT * TASKS_PER_PROJECT * SESSIONS_PER_TASK +
+              c * PROJECTS_PER_CLIENT * TASKS_PER_PROJECT * SESSIONS_PER_TASK +
+              p * TASKS_PER_PROJECT * SESSIONS_PER_TASK +
+              t * SESSIONS_PER_TASK +
+              s
+            )
+
+            process.stdout.clearLine(0)
+            process.stdout.cursorTo(0)
+            process.stdout.write(`Working...${Math.round(currentProgress / totalProgress * 100)}%`)
           }
         }
       }
