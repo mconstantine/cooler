@@ -58,7 +58,7 @@ export default {
         WHERE task = ${task.id} AND end_time IS NOT NULL
       `))!
 
-      return actualWorkingHours
+      return actualWorkingHours || 0
     }
   },
   Project: {
@@ -85,7 +85,7 @@ export default {
         WHERE task.project = ${project.id} AND session.end_time IS NOT NULL
       `))!
 
-      return actualWorkingHours
+      return actualWorkingHours || 0
     }
   },
   Mutation: {
