@@ -58,4 +58,8 @@ export default gql`
     expectedWorkingHours: Int!
     actualWorkingHours: Float!
   }
+
+  extend type User {
+    openSession: Session
+  }
 `

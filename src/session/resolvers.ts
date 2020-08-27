@@ -1,6 +1,6 @@
 import { GraphQLFieldResolver } from 'graphql'
 import { Session } from './Session'
-import { UserContext } from '../user/User'
+import { UserContext, User } from '../user/User'
 import { ConnectionQueryArgs } from '../misc/ConnectionQueryArgs'
 import { getDatabase } from '../misc/getDatabase'
 import { Task } from '../task/Task'
@@ -21,6 +21,9 @@ interface SessionResolvers {
   Project: {
     expectedWorkingHours: GraphQLFieldResolver<Project, UserContext>
     actualWorkingHours: GraphQLFieldResolver<Project, UserContext>
+  }
+  User: {
+    openSession: GraphQLFieldResolver<User, UserContext>
   }
   Mutation: {
     startSession: GraphQLFieldResolver<any, UserContext, { task: number }>
@@ -86,6 +89,22 @@ export default {
       `))!
 
       return actualWorkingHours || 0
+    }
+  },
+  User: {
+    openSession: async user => {
+      const db = await getDatabase()
+
+      const openSession = await db.get(SQL`
+        SELECT session.*
+        FROM session
+        JOIN task ON task.id = session.task
+        JOIN project ON project.id = task.project
+        JOIN client ON client.id = project.client
+        WHERE client.user = ${user.id} AND session.end_time IS NULL
+      `)
+
+      return openSession || null
     }
   },
   Mutation: {
