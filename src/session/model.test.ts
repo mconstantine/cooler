@@ -1,5 +1,4 @@
 import { User } from '../user/User'
-import { Project } from '../project/Project'
 import { Task } from '../task/Task'
 import { Session } from './Session'
 import initUser from '../user/init'
@@ -20,8 +19,6 @@ import { ApolloError } from 'apollo-server'
 
 let user1: User
 let user2: User
-let project1: Project
-let project2: Project
 let task1: Task
 let task2: Task
 let session1: Session
@@ -78,8 +75,6 @@ beforeAll(async () => {
 
   user1 = await db.get(SQL`SELECT * FROM user WHERE id = ${user1Id}`) as User
   user2 = await db.get(SQL`SELECT * FROM user WHERE id = ${user2Id}`) as User
-  project1 = await db.get(SQL`SELECT * FROM project WHERE id = ${project1Id}`) as Project
-  project2 = await db.get(SQL`SELECT * FROM project WHERE id = ${project2Id}`) as Project
   task1 = await db.get(SQL`SELECT * FROM task WHERE id = ${task1Id}`) as Task
   task2 = await db.get(SQL`SELECT * FROM task WHERE id = ${task2Id}`) as Task
   session1 = await db.get(SQL`SELECT * FROM session WHERE id = ${session1Id}`) as Session
