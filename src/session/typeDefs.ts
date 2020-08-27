@@ -53,4 +53,9 @@ export default gql`
     ): SessionConnection
     actualWorkingHours: Float!
   }
+
+  extend type Project {
+    expectedWorkingHours: Int!
+    actualWorkingHours: Float!
+  }
 `

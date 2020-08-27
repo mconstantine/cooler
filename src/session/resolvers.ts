@@ -8,6 +8,7 @@ import SQL from 'sql-template-strings'
 import { ensureUser } from '../misc/ensureUser'
 import { createSession, updateSession, deleteSession, getSession, listSessions } from './model'
 import { toSQLDate } from '../misc/dbUtils'
+import { Project } from '../project/Project'
 
 interface SessionResolvers {
   Session: {
@@ -16,6 +17,10 @@ interface SessionResolvers {
   Task: {
     sessions: GraphQLFieldResolver<Task, UserContext, ConnectionQueryArgs>
     actualWorkingHours: GraphQLFieldResolver<Task, UserContext>
+  }
+  Project: {
+    expectedWorkingHours: GraphQLFieldResolver<Project, UserContext>
+    actualWorkingHours: GraphQLFieldResolver<Project, UserContext>
   }
   Mutation: {
     startSession: GraphQLFieldResolver<any, UserContext, { task: number }>
@@ -51,6 +56,33 @@ export default {
         ) AS actualWorkingHours
         FROM session
         WHERE task = ${task.id} AND end_time IS NOT NULL
+      `))!
+
+      return actualWorkingHours
+    }
+  },
+  Project: {
+    expectedWorkingHours: async project => {
+      const db = await getDatabase()
+
+      const { expectedWorkingHours } = (await db.get<{ expectedWorkingHours: number }>(SQL`
+        SELECT SUM(task.expectedWorkingHours) AS expectedWorkingHours
+        FROM task
+        WHERE project = ${project.id}
+      `))!
+
+      return expectedWorkingHours
+    },
+    actualWorkingHours: async project => {
+      const db = await getDatabase()
+
+      const { actualWorkingHours } = (await db.get<{ actualWorkingHours: number }>(SQL`
+        SELECT SUM(
+          (strftime('%s', end_time) - strftime('%s', start_time)) / 3600.0
+        ) AS actualWorkingHours
+        FROM session
+        JOIN task ON task.id = session.task
+        WHERE task.project = ${project.id} AND session.end_time IS NOT NULL
       `))!
 
       return actualWorkingHours
