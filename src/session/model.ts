@@ -69,17 +69,6 @@ export async function getSession(id: number, user: User) {
 }
 
 export async function listSessions(args: ConnectionQueryArgs & { task?: number }, user: User) {
-  const db = await getDatabase()
-
-  const openSession = await db.get<Session>(SQL`
-    SELECT *
-    FROM session
-    JOIN task ON task.id = session.task
-    JOIN project ON project.id = task.project
-    JOIN client ON client.id = project.client
-    WHERE client.user = ${user.id} AND session.end_time IS NULL
-  `)
-
   const sql = SQL`
     JOIN task ON task.id = session.task
     JOIN project ON project.id = task.project
@@ -89,10 +78,7 @@ export async function listSessions(args: ConnectionQueryArgs & { task?: number }
 
   args.task && sql.append(SQL` AND session.task = ${args.task}`)
 
-  return {
-    open: openSession || null,
-    all: await queryToConnection(args, ['session.*'], 'session', sql)
-  }
+  return await queryToConnection(args, ['session.*'], 'session', sql)
 }
 
 export async function updateSession(id: number, session: Partial<Session>, user: User) {

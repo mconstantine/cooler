@@ -39,8 +39,7 @@ export default {
   },
   Task: {
     sessions: async (task, args, context) => {
-      const sessions = await listSessions({ ...args, task: task.id }, context.user!)
-      return sessions.all
+      return await listSessions({ ...args, task: task.id }, context.user!)
     }
   },
   Mutation: {

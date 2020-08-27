@@ -123,21 +123,16 @@ describe('listSessions', () => {
     const result = await listSessions({}, user1)
 
     expect(
-      result.all.edges.map(({ node }) => node)
+      result.edges.map(({ node }) => node)
     ).toContainEqual(
       expect.objectContaining({ id: session1.id })
     )
 
     expect(
-      result.all.edges.map(({ node }) => node)
+      result.edges.map(({ node }) => node)
     ).not.toContainEqual(
       expect.objectContaining({ id: session2.id })
     )
-  })
-
-  it('should return the open session if there is one', async () => {
-    const result = await listSessions({}, user1)
-    expect(result.open).toMatchObject(session1)
   })
 })
 
