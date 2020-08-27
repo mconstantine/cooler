@@ -43,7 +43,7 @@ export async function createSession(session: Partial<Session>, user: User) {
 
   const { lastID } = await insert('session', {
     ...session,
-    start_time: toSQLDate(new Date(session.start_time!))
+    start_time: toSQLDate(new Date(session.start_time || Date.now()))
   })
 
   return db.get<Session>(SQL`SELECT * FROM session WHERE id = ${lastID}`)
