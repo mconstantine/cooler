@@ -19,9 +19,15 @@ export default gql`
     task: Task
   }
 
+  input SessionUpdateInput {
+    start_time: String
+    end_time: String
+  }
+
   extend type Mutation {
     startSession(task: Int!): Session
     stopSession(id: Int!): Session
+    updateSession(id: Int!, session: SessionUpdateInput): Session
     deleteSession(id: Int!): Session
   }
 

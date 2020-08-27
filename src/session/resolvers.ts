@@ -20,6 +20,9 @@ interface SessionResolvers {
     startSession: GraphQLFieldResolver<any, UserContext, { task: number }>
     stopSession: GraphQLFieldResolver<any, UserContext, { id: number }>
     deleteSession: GraphQLFieldResolver<any, UserContext, { id: number }>
+    updateSession: GraphQLFieldResolver<
+      any, UserContext, { id: number, session: Pick<Session, 'start_time' | 'end_time'> }
+    >
   }
   Query: {
     session: GraphQLFieldResolver<any, UserContext, { id: number }>
@@ -48,6 +51,14 @@ export default {
     stopSession: (_parent, { id }, context) => {
       ensureUser(context)
       return updateSession(id, { end_time: toSQLDate(new Date()) }, context.user!)
+    },
+    updateSession: (_parent, { id, session: { start_time, end_time } }, context) => {
+      ensureUser(context)
+
+      return updateSession(id, {
+        ...(start_time ? { start_time: toSQLDate(new Date(start_time)) } : {}),
+        ...(end_time ? { end_time: toSQLDate(new Date(end_time)) } : {})
+      }, context.user!)
     },
     deleteSession: (_parent, { id }, context) => {
       ensureUser(context)
