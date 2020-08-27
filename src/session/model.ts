@@ -103,7 +103,7 @@ export async function updateSession(id: number, session: Partial<Session>, user:
     JOIN task ON task.id = session.task
     JOIN project ON project.id = task.project
     JOIN client ON client.id = project.client
-    WHERE task.id = ${id}
+    WHERE session.id = ${id}
   `)
 
   if (!currentSession) {
