@@ -88,7 +88,7 @@ import { fromSQLDate, toSQLDate, insert } from '../src/misc/dbUtils'
 
         for (let t = 0; t < tasks.length; t++) {
           const task = tasks[t]
-          const ewh = expectedWorkingHours[t]
+          const ewh = expectedWorkingHours[t] / SESSIONS_PER_TASK
           const sessions: number[] = []
 
           for (let s = 0; s < SESSIONS_PER_TASK; s++) {
