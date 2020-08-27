@@ -15,6 +15,7 @@ interface SessionResolvers {
   }
   Task: {
     sessions: GraphQLFieldResolver<Task, UserContext, ConnectionQueryArgs>
+    actualWorkingHours: GraphQLFieldResolver<Task, UserContext>
   }
   Mutation: {
     startSession: GraphQLFieldResolver<any, UserContext, { task: number }>
@@ -40,6 +41,19 @@ export default {
   Task: {
     sessions: async (task, args, context) => {
       return await listSessions({ ...args, task: task.id }, context.user!)
+    },
+    actualWorkingHours: async task => {
+      const db = await getDatabase()
+
+      const { actualWorkingHours } = (await db.get<{ actualWorkingHours: number }>(SQL`
+        SELECT SUM(
+          (strftime('%s', end_time) - strftime('%s', start_time)) / 3600.0
+        ) AS actualWorkingHours
+        FROM session
+        WHERE task = ${task.id} AND end_time IS NOT NULL
+      `))!
+
+      return actualWorkingHours
     }
   },
   Mutation: {

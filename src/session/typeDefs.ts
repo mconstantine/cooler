@@ -51,5 +51,6 @@ export default gql`
       after: String,
       orderBy: String
     ): SessionConnection
+    actualWorkingHours: Float!
   }
 `
