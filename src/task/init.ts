@@ -9,7 +9,7 @@ export default async function init() {
       name TEXT NOT NULL,
       description TEXT,
       expectedWorkingHours INTEGER NOT NULL,
-      hourlyCost INTEGER NOT NULL,
+      hourlyCost REAL NOT NULL,
       project INTEGER NOT NULL,
       created_at STRING NOT NULL DEFAULT CURRENT_TIMESTAMP,
       updated_at STRING NOT NULL DEFAULT CURRENT_TIMESTAMP,

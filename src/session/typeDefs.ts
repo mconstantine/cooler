@@ -52,11 +52,15 @@ export default gql`
       orderBy: String
     ): SessionConnection
     actualWorkingHours: Float!
+    budget: Float!
+    balance: Float!
   }
 
   extend type Project {
     expectedWorkingHours: Int!
     actualWorkingHours: Float!
+    budget: Float!
+    balance: Float!
   }
 
   extend type User {

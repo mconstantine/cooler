@@ -17,10 +17,14 @@ interface SessionResolvers {
   Task: {
     sessions: GraphQLFieldResolver<Task, UserContext, ConnectionQueryArgs>
     actualWorkingHours: GraphQLFieldResolver<Task, UserContext>
+    budget: GraphQLFieldResolver<Task, UserContext>
+    balance: GraphQLFieldResolver<Task, UserContext>
   }
   Project: {
     expectedWorkingHours: GraphQLFieldResolver<Project, UserContext>
     actualWorkingHours: GraphQLFieldResolver<Project, UserContext>
+    budget: GraphQLFieldResolver<Project, UserContext>
+    balance: GraphQLFieldResolver<Project, UserContext>
   }
   User: {
     openSession: GraphQLFieldResolver<User, UserContext>
@@ -62,6 +66,31 @@ export default {
       `))!
 
       return actualWorkingHours || 0
+    },
+    budget: async task => {
+      const db = await getDatabase()
+
+      const { budget } = (await db.get<{ budget: number }>(SQL`
+        SELECT expectedWorkingHours * hourlyCost AS budget
+        FROM TASK
+        WHERE id = ${task.id}
+      `))!
+
+      return budget || 0
+    },
+    balance: async task => {
+      const db = await getDatabase()
+
+      const { balance } = (await db.get<{ balance: number }>(SQL`
+        SELECT SUM(
+          (strftime('%s', end_time) - strftime('%s', start_time)) / 3600.0 * task.hourlyCost
+        ) AS balance
+        FROM session
+        JOIN task ON task.id = session.task
+        WHERE task.id = ${task.id}
+      `))!
+
+      return balance || 0
     }
   },
   Project: {
@@ -89,6 +118,31 @@ export default {
       `))!
 
       return actualWorkingHours || 0
+    },
+    budget: async project => {
+      const db = await getDatabase()
+
+      const { budget } = (await db.get<{ budget: number }>(SQL`
+        SELECT SUM(hourlyCost * expectedWorkingHours) AS budget
+        FROM task
+        WHERE project = ${project.id}
+      `))!
+
+      return budget || 0
+    },
+    balance: async project => {
+      const db = await getDatabase()
+
+      const { balance } = (await db.get<{ balance: number }>(SQL`
+        SELECT SUM(
+          (strftime('%s', end_time) - strftime('%s', start_time)) / 3600.0 * task.hourlyCost
+        ) AS balance
+        FROM session
+        JOIN task ON task.id = session.task
+        WHERE task.project = ${project.id}
+      `))!
+
+      return balance || 0
     }
   },
   User: {

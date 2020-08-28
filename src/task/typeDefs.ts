@@ -17,6 +17,7 @@ export default gql`
     name: String!
     description: String
     expectedWorkingHours: Int!
+    hourlyCost: Float!
     created_at: String
     updated_at: String
     project: Project!
@@ -26,6 +27,7 @@ export default gql`
     name: String!
     description: String
     expectedWorkingHours: Int!
+    hourlyCost: Float!
     project: Int!
   }
 
@@ -33,6 +35,7 @@ export default gql`
     name: String
     description: String
     expectedWorkingHours: Int
+    hourlyCost: Float
     project: Int
   }
 
