@@ -77,9 +77,9 @@ export async function updateTask(id: number, task: Partial<Task>, user: User) {
     throw new ApolloError('You cannot update this task', 'COOLER_403')
   }
 
-  const { name, description, expectedWorkingHours, project } = task
+  const { name, description, expectedWorkingHours, hourlyCost, project } = task
 
-  if (name || description || expectedWorkingHours || project) {
+  if (name || description || expectedWorkingHours || hourlyCost || project) {
     if (project) {
       const newProject = await db.get<{ user: number }>(SQL`
         SELECT client.user
@@ -98,7 +98,7 @@ export async function updateTask(id: number, task: Partial<Task>, user: User) {
     }
 
     const args = Object.entries(
-      { name, description, expectedWorkingHours, project }
+      { name, description, expectedWorkingHours, hourlyCost, project }
     ).filter(
       ([, value]) => value !== undefined
     ).reduce(
