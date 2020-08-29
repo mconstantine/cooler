@@ -20,6 +20,7 @@ export default gql`
   type Client implements Node {
     id: Int
     type: ClientType!
+    name: String!
     fiscal_code: String
     first_name: String
     last_name: String

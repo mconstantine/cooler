@@ -1,5 +1,5 @@
 import { GraphQLFieldResolver } from 'graphql'
-import { Client } from './Client'
+import { Client, ClientType } from './Client'
 import { createClient, listClients, updateClient, deleteClient, getClient } from './model'
 import SQL from 'sql-template-strings'
 import { ConnectionQueryArgs } from '../misc/ConnectionQueryArgs'
@@ -9,6 +9,7 @@ import { UserContext } from '../user/User'
 
 interface ClientResolvers {
   Client: {
+    name: GraphQLFieldResolver<Client, UserContext>
     projects: GraphQLFieldResolver<Client, ConnectionQueryArgs>
   }
   Mutation: {
@@ -26,6 +27,11 @@ export default {
   Client: {
     projects: (client, args, _context) => {
       return queryToConnection(args, ['*'], 'project', SQL`WHERE client = ${client.id}`)
+    },
+    name: client => {
+      return client.type === ClientType.BUSINESS
+      ? client.business_name
+      : `${client.first_name} ${client.last_name}`
     }
   },
   Mutation: {
