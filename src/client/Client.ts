@@ -4,12 +4,12 @@ import { Project } from '../project/Project'
 export interface Client {
   id: number
   type: ClientType
-  fiscal_code?: string
-  first_name?: string
-  last_name?: string
-  country_code?: string
-  vat_number?: string
-  business_name?: string
+  fiscal_code?: string | null
+  first_name?: string | null
+  last_name?: string | null
+  country_code?: string | null
+  vat_number?: string | null
+  business_name?: string | null
   address_country: string
   address_province: string
   address_city: string

@@ -1,4 +1,4 @@
-import { Client } from './Client'
+import { Client, ClientType } from './Client'
 import { getDatabase } from '../misc/getDatabase'
 import { insert, update, remove } from '../misc/dbUtils'
 import SQL from 'sql-template-strings'
@@ -50,13 +50,30 @@ export async function updateClient(id: number, client: Partial<Client>, user: Us
   if (
     type || fiscal_code || first_name || last_name || country_code || vat_number || business_name || address_country || address_province || address_city || address_zip || address_street || address_street_number || address_email
   ) {
-    const args = Object.entries({
+    const args: Partial<Client> = Object.entries({
       type, fiscal_code, first_name, last_name, country_code, vat_number, business_name, address_country, address_province, address_city, address_zip, address_street, address_street_number, address_email
     }).filter(
       ([, value]) => value !== undefined
     ).reduce(
       (res, [key, value]) => ({ ...res, [key]: value }), {}
     )
+
+    if (type) {
+      switch (type) {
+        case ClientType.PRIVATE:
+          args.country_code = null
+          args.vat_number = null
+          args.business_name = null
+          break
+        case ClientType.BUSINESS:
+          args.fiscal_code = null
+          args.first_name = null
+          args.last_name = null
+          break
+        default:
+          return null
+      }
+    }
 
     await update('client', { ...args, id })
   }

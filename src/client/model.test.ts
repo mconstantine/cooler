@@ -7,7 +7,7 @@ import { getDatabase } from '../misc/getDatabase'
 import SQL from 'sql-template-strings'
 import { getFakeClient } from '../test/getFakeClient'
 import { createClient, listClients, updateClient, deleteClient, getClient } from './model'
-import { Client } from './Client'
+import { Client, ClientType } from './Client'
 import { ApolloError } from 'apollo-server'
 
 let user1: User
@@ -84,6 +84,50 @@ describe('updateClient', () => {
     await expect(async () => {
       await updateClient(client1.id, getFakeClient(), user2)
     }).rejects.toBeInstanceOf(ApolloError)
+  })
+
+  it('should switch from a BUSINESS to a PRIVATE client correctly', async () => {
+    const client = await createClient(getFakeClient({ type: ClientType.BUSINESS }), user1)
+
+    expect(client!.fiscal_code).toBe(null)
+    expect(client!.first_name).toBe(null)
+    expect(client!.last_name).toBe(null)
+    expect(client!.country_code).not.toBe(null)
+    expect(client!.vat_number).not.toBe(null)
+    expect(client!.business_name).not.toBe(null)
+
+    const updatedClient = await updateClient(
+      client!.id, getFakeClient({ type: ClientType.PRIVATE }), user1
+    )
+
+    expect(updatedClient!.country_code).toBe(null)
+    expect(updatedClient!.vat_number).toBe(null)
+    expect(updatedClient!.business_name).toBe(null)
+    expect(updatedClient!.fiscal_code).not.toBe(null)
+    expect(updatedClient!.first_name).not.toBe(null)
+    expect(updatedClient!.last_name).not.toBe(null)
+  })
+
+  it('should switch from a PRIVATE to a BUSINESS client correctly', async () => {
+    const client = await createClient(getFakeClient({ type: ClientType.PRIVATE }), user1)
+
+    expect(client!.country_code).toBe(null)
+    expect(client!.vat_number).toBe(null)
+    expect(client!.business_name).toBe(null)
+    expect(client!.fiscal_code).not.toBe(null)
+    expect(client!.first_name).not.toBe(null)
+    expect(client!.last_name).not.toBe(null)
+
+    const updatedClient = await updateClient(
+      client!.id, getFakeClient({ type: ClientType.BUSINESS }), user1
+    )
+
+    expect(updatedClient!.fiscal_code).toBe(null)
+    expect(updatedClient!.first_name).toBe(null)
+    expect(updatedClient!.last_name).toBe(null)
+    expect(updatedClient!.country_code).not.toBe(null)
+    expect(updatedClient!.vat_number).not.toBe(null)
+    expect(updatedClient!.business_name).not.toBe(null)
   })
 })
 

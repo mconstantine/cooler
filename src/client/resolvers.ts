@@ -1,7 +1,6 @@
 import { GraphQLFieldResolver } from 'graphql'
 import { Client } from './Client'
 import { createClient, listClients, updateClient, deleteClient, getClient } from './model'
-import { getDatabase } from '../misc/getDatabase'
 import SQL from 'sql-template-strings'
 import { ConnectionQueryArgs } from '../misc/ConnectionQueryArgs'
 import { queryToConnection } from '../misc/queryToConnection'
