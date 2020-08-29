@@ -39,9 +39,9 @@ describe('initClient', () => {
 
     it('should keep track of the time of the last update', async () => {
       const client = getFakeClient({ user: user.id })
-      const updated: Partial<Client> = { name: 'Some weird name' }
+      const updated: Partial<Client> = { address_city: 'Some weird city' }
 
-      expect(client.name).not.toBe(updated.name)
+      expect(client.address_city).not.toBe(updated.address_city)
 
       const { lastID } = await insert('client', client)
 

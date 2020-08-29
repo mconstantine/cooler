@@ -43,10 +43,22 @@ export async function updateClient(id: number, client: Partial<Client>, user: Us
     throw new ApolloError('You cannot update this client', 'COOLER_403')
   }
 
-  const { name } = client
+  const {
+    type, fiscal_code, first_name, last_name, country_code, vat_number, business_name, address_country, address_province, address_city, address_zip, address_street, address_street_number, address_email
+  } = client
 
-  if (name) {
-    await update('client', { id, name })
+  if (
+    type || fiscal_code || first_name || last_name || country_code || vat_number || business_name || address_country || address_province || address_city || address_zip || address_street || address_street_number || address_email
+  ) {
+    const args = Object.entries({
+      type, fiscal_code, first_name, last_name, country_code, vat_number, business_name, address_country, address_province, address_city, address_zip, address_street, address_street_number, address_email
+    }).filter(
+      ([, value]) => value !== undefined
+    ).reduce(
+      (res, [key, value]) => ({ ...res, [key]: value }), {}
+    )
+
+    await update('client', { ...args, id })
   }
 
   return await db.get<Client>(SQL`SELECT * FROM client WHERE id = ${id}`)
