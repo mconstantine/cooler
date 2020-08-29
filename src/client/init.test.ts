@@ -4,7 +4,7 @@ import { getDatabase } from '../misc/getDatabase'
 import { Database } from 'sqlite'
 import { insert, update, remove } from '../misc/dbUtils'
 import { getFakeClient } from '../test/getFakeClient'
-import { Client } from './Client'
+import { Client, ClientType } from './Client'
 import SQL from 'sql-template-strings'
 import { User } from '../user/User'
 import { getFakeUser } from '../test/getFakeUser'
@@ -70,6 +70,44 @@ describe('initClient', () => {
       const client = await db.get<Client>(SQL`SELECT * FROM client WHERE id = ${clientId}`)
 
       expect(client).toBeUndefined()
+    })
+  })
+
+  describe('validation', () => {
+    it('should check that fiscal_code exists for PRIVATE Clients', async () => {
+      const client = getFakeClient({ type: ClientType.PRIVATE })
+      delete client.fiscal_code
+      await expect(insert('client', client)).rejects.toBeDefined()
+    })
+
+    it('should check that first_name exists for PRIVATE Clients', async () => {
+      const client = getFakeClient({ type: ClientType.PRIVATE })
+      delete client.first_name
+      await expect(insert('client', client)).rejects.toBeDefined()
+    })
+
+    it('should check that last_name exists for PRIVATE Clients', async () => {
+      const client = getFakeClient({ type: ClientType.PRIVATE })
+      delete client.last_name
+      await expect(insert('client', client)).rejects.toBeDefined()
+    })
+
+    it('should check that country_code exists for BUSINESS Clients', async () => {
+      const client = getFakeClient({ type: ClientType.BUSINESS })
+      delete client.country_code
+      await expect(insert('client', client)).rejects.toBeDefined()
+    })
+
+    it('should check that vat_number exists for BUSINESS Clients', async () => {
+      const client = getFakeClient({ type: ClientType.BUSINESS })
+      delete client.vat_number
+      await expect(insert('client', client)).rejects.toBeDefined()
+    })
+
+    it('should check that business_name exists for BUSINESS Clients', async () => {
+      const client = getFakeClient({ type: ClientType.BUSINESS })
+      delete client.business_name
+      await expect(insert('client', client)).rejects.toBeDefined()
     })
   })
 })
