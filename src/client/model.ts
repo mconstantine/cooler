@@ -27,7 +27,12 @@ export async function getClient(id: number, user: User) {
 
 export async function listClients(args: ConnectionQueryArgs & { name?: string }, user: User) {
   const where = SQL`WHERE user = ${user.id}`
-  args.name && where.append(SQL` AND name LIKE ${`%${args.name}%`}`)
+
+  args.name && where.append(SQL` AND (
+    (type = 'BUSINESS' AND business_name LIKE ${`%${args.name}%`}) OR
+    (type = 'PRIVATE' AND first_name || ' ' || last_name LIKE ${`%${args.name}%`})
+  )`)
+
   return queryToConnection(args, ['*'], 'client', where)
 }
 
