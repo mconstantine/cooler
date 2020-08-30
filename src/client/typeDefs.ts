@@ -32,7 +32,7 @@ export default gql`
     address_city: String!
     address_zip: String!
     address_street: String!
-    address_street_number: String!
+    address_street_number: String
     address_email: String!
     created_at: String
     updated_at: String
@@ -52,7 +52,7 @@ export default gql`
     address_city: String!
     address_zip: String!
     address_street: String!
-    address_street_number: String!
+    address_street_number: String
     address_email: String!
   }
 
