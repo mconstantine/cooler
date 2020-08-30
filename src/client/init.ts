@@ -18,7 +18,7 @@ export default async function init() {
       address_city TEXT NOT NULL,
       address_zip TEXT NOT NULL,
       address_street TEXT NOT NULL,
-      address_street_number TEXT NOT NULL,
+      address_street_number TEXT DEFAULT NULL,
       address_email TEXT NOT NULL,
       user INTEGER NOT NULL,
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
