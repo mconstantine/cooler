@@ -1,13 +1,15 @@
 import faker from 'faker'
-import { Client, ClientType, Province } from '../client/Client'
+import { Client, ClientType, Province, Country } from '../client/Client'
 
 export function getFakeClient(data: Partial<Client> = {}): Partial<Client> {
   const type: ClientType = data.type || faker.random.arrayElement(Object.values(ClientType))
 
-  const country_code = faker.address.countryCode()
+  const country_code = faker.address.countryCode() as keyof typeof Country
   const commonData: Partial<Client> = {
     address_country: country_code,
-    address_province: country_code !== 'IT' ? 'EE' : faker.random.arrayElement(Object.keys(Province)),
+    address_province: country_code !== 'IT'
+    ? 'EE'
+    : faker.random.arrayElement(Object.keys(Province)) as keyof typeof Province,
     address_city: faker.address.city(),
     address_zip: faker.address.zipCode(),
     address_street: faker.address.streetName(),

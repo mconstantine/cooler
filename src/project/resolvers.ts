@@ -8,6 +8,7 @@ import { ConnectionQueryArgs } from '../misc/ConnectionQueryArgs'
 import { queryToConnection } from '../misc/queryToConnection'
 import { UserContext } from '../user/User'
 import { ensureUser } from '../misc/ensureUser'
+import { toSQLDate } from '../misc/dbUtils'
 
 interface ProjectResolvers {
   Project: {
@@ -42,7 +43,10 @@ export default {
     },
     updateProject: (_parent, { id, project }, context) => {
       ensureUser(context)
-      return updateProject(id, project, context.user!)
+      return updateProject(id, {
+        ...project,
+        cashed_at: project.cashed_at ? toSQLDate(new Date(project.cashed_at)) : project.cashed_at
+      }, context.user!)
     },
     deleteProject: (_parent, { id }, context) => {
       ensureUser(context)

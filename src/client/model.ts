@@ -53,7 +53,7 @@ export async function updateClient(id: number, client: Partial<Client>, user: Us
   } = client
 
   if (
-    type || fiscal_code || first_name || last_name || country_code || vat_number || business_name || address_country || address_province || address_city || address_zip || address_street || address_street_number || address_email
+    type || fiscal_code !== undefined || first_name !== undefined || last_name !== undefined || country_code !== undefined || vat_number !== undefined || business_name !== undefined || address_country || address_province || address_city || address_zip || address_street || address_street_number || address_email
   ) {
     const args: Partial<Client> = Object.entries({
       type, fiscal_code, first_name, last_name, country_code, vat_number, business_name, address_country, address_province, address_city, address_zip, address_street, address_street_number, address_email
