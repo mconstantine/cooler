@@ -53,7 +53,7 @@ export async function listProjects(args: ConnectionQueryArgs & { name?: string }
 
 export async function updateProject(id: number, project: Partial<Project>, user: User) {
   const db = await getDatabase()
-  const { name, description, client } = project
+  const { name, description, client, cached_at } = project
 
   const currentProject = await db.get<Project & { user: number }>(SQL`
     SELECT project.client, client.user
@@ -69,7 +69,7 @@ export async function updateProject(id: number, project: Partial<Project>, user:
     throw new ApolloError('You cannot update this project', 'COOLER_403')
   }
 
-  if (name || description || client) {
+  if (name || description || client || cached_at) {
     if (client) {
       const newClient = await db.get<Client>(SQL`SELECT user FROM client WHERE id = ${client}`)
 
@@ -82,7 +82,7 @@ export async function updateProject(id: number, project: Partial<Project>, user:
       }
     }
 
-    const args = Object.entries({ name, description, client }).filter(
+    const args = Object.entries({ name, description, client, cached_at }).filter(
       ([, value]) => value !== undefined
     ).reduce(
       (res, [key, value]) => ({ ...res, [key]: value }), {}

@@ -9,6 +9,7 @@ export default async function init() {
       name TEXT NOT NULL,
       description TEXT,
       client INTEGER NOT NULL,
+      cached_at TEXT DEFAULT NULL,
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
       updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY(client) REFERENCES client(id)

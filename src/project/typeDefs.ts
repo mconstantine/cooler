@@ -18,6 +18,7 @@ export default gql`
     description: String
     created_at: String
     updated_at: String
+    cached_at: String
     client: Client!
     tasks(first: Int, last: Int, before: String, after: String, orderBy: String): TaskConnection
   }
@@ -32,6 +33,7 @@ export default gql`
     name: String
     description: String
     client: Int
+    cached_at: String
   }
 
   extend type Mutation {
