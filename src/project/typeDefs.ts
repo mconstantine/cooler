@@ -20,7 +20,6 @@ export default gql`
     updated_at: String
     cashed_at: String
     client: Client!
-    tasks(first: Int, last: Int, before: String, after: String, orderBy: String): TaskConnection
   }
 
   input ProjectCreationInput {
@@ -34,6 +33,14 @@ export default gql`
     description: String
     client: Int
     cashed_at: String
+  }
+
+  extend type User {
+    projects(first: Int, last: Int, before: String, after: String, orderBy: String): ProjectConnection
+  }
+
+  extend type Client {
+    projects(first: Int, last: Int, before: String, after: String, orderBy: String): ProjectConnection
   }
 
   extend type Mutation {

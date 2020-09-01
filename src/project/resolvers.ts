@@ -6,14 +6,19 @@ import { Client } from '../client/Client'
 import SQL from 'sql-template-strings'
 import { ConnectionQueryArgs } from '../misc/ConnectionQueryArgs'
 import { queryToConnection } from '../misc/queryToConnection'
-import { UserContext } from '../user/User'
+import { UserContext, User } from '../user/User'
 import { ensureUser } from '../misc/ensureUser'
 import { toSQLDate } from '../misc/dbUtils'
 
 interface ProjectResolvers {
   Project: {
     client: GraphQLFieldResolver<Project, any>
-    tasks: GraphQLFieldResolver<Project, ConnectionQueryArgs>
+  }
+  User: {
+    projects: GraphQLFieldResolver<User, ConnectionQueryArgs>
+  }
+  Client: {
+    projects: GraphQLFieldResolver<Client, ConnectionQueryArgs>
   }
   Mutation: {
     createProject: GraphQLFieldResolver<any, UserContext, { project: Partial<Project> }>
@@ -31,9 +36,19 @@ export default {
     client: async project => {
       const db = await getDatabase()
       return await db.get<Client>(SQL`SELECT * FROM client WHERE id = ${project.client}`)
-    },
-    tasks: (project, args) => {
-      return queryToConnection(args, ['*'], 'task', SQL`WHERE project = ${project.id}`)
+    }
+  },
+  User: {
+    projects: (user, args) => {
+      return queryToConnection(args, ['project.*'], 'client', SQL`
+        JOIN project ON project.client = client.id
+        WHERE client.user = ${user.id}
+      `)
+    }
+  },
+  Client: {
+    projects: (client, args, _context) => {
+      return queryToConnection(args, ['*'], 'project', SQL`WHERE client = ${client.id}`)
     }
   },
   Mutation: {

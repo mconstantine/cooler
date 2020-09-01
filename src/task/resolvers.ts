@@ -5,13 +5,20 @@ import { Project } from '../project/Project'
 import SQL from 'sql-template-strings'
 import { createTask, listTasks, updateTask, deleteTask, getTask } from './model'
 import { ConnectionQueryArgs } from '../misc/ConnectionQueryArgs'
-import { UserContext } from '../user/User'
+import { UserContext, User } from '../user/User'
 import { ensureUser } from '../misc/ensureUser'
+import { queryToConnection } from '../misc/queryToConnection'
 
 interface TaskResolvers {
   Task: {
     project: GraphQLFieldResolver<Task, any>
   }
+  User: {
+    tasks: GraphQLFieldResolver<User, ConnectionQueryArgs>
+  }
+  Project: {
+    tasks: GraphQLFieldResolver<Project, ConnectionQueryArgs>
+  },
   Mutation: {
     createTask: GraphQLFieldResolver<any, UserContext, { task: Partial<Task> }>
     updateTask: GraphQLFieldResolver<any, UserContext, { id: number, task: Partial<Task> }>
@@ -28,6 +35,20 @@ export default {
     project: async task => {
       const db = await getDatabase()
       return await db.get<Project>(SQL`SELECT * FROM project WHERE id = ${task.project}`)
+    }
+  },
+  User: {
+    tasks: (user, args) => {
+      return queryToConnection(args, ['task.*'], 'client', SQL`
+        JOIN project ON project.client = client.id
+        JOIN task ON task.project = project.id
+        WHERE client.user = ${user.id}
+      `)
+    }
+  },
+  Project: {
+    tasks: (project, args) => {
+      return queryToConnection(args, ['*'], 'task', SQL`WHERE project = ${project.id}`)
     }
   },
   Mutation: {

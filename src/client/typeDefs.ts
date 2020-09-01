@@ -36,7 +36,6 @@ export default gql`
     address_email: String!
     created_at: String
     updated_at: String
-    projects(first: Int, last: Int, before: String, after: String, orderBy: String): ProjectConnection
   }
 
   input ClientCreationInput {
@@ -71,6 +70,10 @@ export default gql`
     address_street: String
     address_street_number: String
     address_email: String
+  }
+
+  extend type User {
+    clients(first: Int, last: Int, before: String, after: String, orderBy: String): ClientConnection
   }
 
   extend type Mutation {

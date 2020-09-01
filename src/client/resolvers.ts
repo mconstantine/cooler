@@ -5,12 +5,14 @@ import SQL from 'sql-template-strings'
 import { ConnectionQueryArgs } from '../misc/ConnectionQueryArgs'
 import { queryToConnection } from '../misc/queryToConnection'
 import { ensureUser } from '../misc/ensureUser'
-import { UserContext } from '../user/User'
+import { UserContext, User } from '../user/User'
 
 interface ClientResolvers {
   Client: {
     name: GraphQLFieldResolver<Client, UserContext>
-    projects: GraphQLFieldResolver<Client, ConnectionQueryArgs>
+  }
+  User: {
+    clients: GraphQLFieldResolver<User, ConnectionQueryArgs>
   }
   Mutation: {
     createClient: GraphQLFieldResolver<any, UserContext, { client: Partial<Client> }>
@@ -25,13 +27,15 @@ interface ClientResolvers {
 
 export default {
   Client: {
-    projects: (client, args, _context) => {
-      return queryToConnection(args, ['*'], 'project', SQL`WHERE client = ${client.id}`)
-    },
     name: client => {
       return client.type === ClientType.BUSINESS
       ? client.business_name
       : `${client.first_name} ${client.last_name}`
+    }
+  },
+  User: {
+    clients: (user, args) => {
+      return queryToConnection(args, ['*'], 'client', SQL`WHERE user = ${user.id}`)
     }
   },
   Mutation: {

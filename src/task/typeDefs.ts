@@ -39,6 +39,14 @@ export default gql`
     project: Int
   }
 
+  extend type User {
+    tasks(first: Int, last: Int, before: String, after: String, orderBy: String): TaskConnection
+  }
+
+  extend type Project {
+    tasks(first: Int, last: Int, before: String, after: String, orderBy: String): TaskConnection
+  }
+
   extend type Mutation {
     createTask(task: TaskCreationInput): Task!
     updateTask(id: Int!, task: TaskUpdateInput): Task

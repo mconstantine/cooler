@@ -19,9 +19,8 @@ export default gql`
     password: String!
     created_at: String
     updated_at: String
-    clients(first: Int, last: Int, before: String, after: String, orderBy: String): ClientConnection
-    projects(first: Int, last: Int, before: String, after: String, orderBy: String): ProjectConnection
-    tasks(first: Int, last: Int, before: String, after: String, orderBy: String): TaskConnection
+
+    balance(since: String): Int!
   }
 
   input UserCreationInput {
