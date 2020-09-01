@@ -28,6 +28,10 @@ interface SessionResolvers {
   }
   User: {
     openSession: GraphQLFieldResolver<User, UserContext>
+    expectedWorkingHours: GraphQLFieldResolver<User, UserContext, { since?: string }>
+    actualWorkingHours: GraphQLFieldResolver<User, UserContext, { since?: string }>
+    budget: GraphQLFieldResolver<User, UserContext, { since?: string }>
+    balance: GraphQLFieldResolver<User, UserContext, { since?: string }>
   }
   Mutation: {
     startSession: GraphQLFieldResolver<any, UserContext, { task: number }>
@@ -72,7 +76,7 @@ export default {
 
       const { budget } = (await db.get<{ budget: number }>(SQL`
         SELECT expectedWorkingHours * hourlyCost AS budget
-        FROM TASK
+        FROM task
         WHERE id = ${task.id}
       `))!
 
@@ -98,7 +102,7 @@ export default {
       const db = await getDatabase()
 
       const { expectedWorkingHours } = (await db.get<{ expectedWorkingHours: number }>(SQL`
-        SELECT SUM(task.expectedWorkingHours) AS expectedWorkingHours
+        SELECT SUM(expectedWorkingHours) AS expectedWorkingHours
         FROM task
         WHERE project = ${project.id}
       `))!
@@ -159,6 +163,77 @@ export default {
       `)
 
       return openSession || null
+    },
+    expectedWorkingHours: async (user, { since }) => {
+      const db = await getDatabase()
+
+      const sql = SQL`
+        SELECT SUM(task.expectedWorkingHours) AS expectedWorkingHours
+        FROM task
+        JOIN project ON project.id = task.project
+        JOIN client ON client.id = project.client
+        WHERE client.user = ${user.id} AND project.cashed_at IS NULL
+      `
+
+      since && sql.append(SQL` AND task.start_time >= ${toSQLDate(new Date(since))}`)
+
+      const { expectedWorkingHours } = (await db.get<{ expectedWorkingHours: number }>(sql))!
+      return expectedWorkingHours || 0
+    },
+    actualWorkingHours: async (user, { since }) => {
+      const db = await getDatabase()
+
+      const sql = SQL`
+        SELECT SUM(
+          (strftime('%s', session.end_time) - strftime('%s', session.start_time)) / 3600.0
+        ) AS actualWorkingHours
+        FROM session
+        JOIN task ON task.id = session.task
+        JOIN project ON project.id = task.project
+        JOIN client ON client.id = project.client
+        WHERE client.user = ${user.id} AND project.cashed_at IS NULL
+      `
+
+      since && sql.append(SQL` AND session.start_time >= ${toSQLDate(new Date(since))}`)
+
+      const { actualWorkingHours } = (await db.get<{ actualWorkingHours: number }>(sql))!
+      return actualWorkingHours || 0
+    },
+    budget: async (user, { since }) => {
+      const db = await getDatabase()
+
+      const sql = SQL`
+        SELECT expectedWorkingHours * hourlyCost AS budget
+        FROM task
+        JOIN project ON project.id = task.project
+        JOIN client ON client.id = project.client
+        WHERE client.user = ${user.id} AND project.cashed_at IS NULL
+      `
+
+      since && sql.append(SQL` AND task.start_time >= ${toSQLDate(new Date(since))}`)
+
+      const { budget } = (await db.get<{ budget: number }>(sql))!
+      return budget || 0
+    },
+    balance: async (user, { since }) => {
+      const db = await getDatabase()
+
+      const sql = SQL`
+        SELECT SUM((
+          strftime('%s', session.end_time) - strftime('%s', session.start_time)
+        ) / 3600.0 * task.hourlyCost
+        ) AS balance
+        FROM session
+        JOIN task ON task.id = session.task
+        JOIN project ON project.id = task.project
+        JOIN client ON client.id = project.client
+        WHERE project.cashed_at IS NULL AND client.user = ${user.id}
+      `
+
+      since && sql.append(SQL` AND session.start_time >= ${toSQLDate(new Date(since))}`)
+
+      const { balance } = (await db.get<{ balance: number }>(sql))!
+      return balance || 0
     }
   },
   Mutation: {

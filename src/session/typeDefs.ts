@@ -43,6 +43,13 @@ export default gql`
     ): SessionConnection!
   }
 
+  extend type User {
+    expectedWorkingHours(since: String): Int!
+    actualWorkingHours(since: String): Float!
+    budget(since: String): Float!
+    balance(since: String): Float!
+  }
+
   extend type Task {
     sessions(
       first: Int,

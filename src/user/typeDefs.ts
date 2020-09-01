@@ -19,8 +19,6 @@ export default gql`
     password: String!
     created_at: String
     updated_at: String
-
-    balance(since: String): Int!
   }
 
   input UserCreationInput {
