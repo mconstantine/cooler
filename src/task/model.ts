@@ -1,6 +1,6 @@
 import { Task } from './Task'
 import { getDatabase } from '../misc/getDatabase'
-import { insert, update, remove } from '../misc/dbUtils'
+import { insert, update, remove, toSQLDate } from '../misc/dbUtils'
 import SQL from 'sql-template-strings'
 import { ConnectionQueryArgs } from '../misc/ConnectionQueryArgs'
 import { queryToConnection } from '../misc/queryToConnection'
@@ -25,7 +25,10 @@ export async function createTask(task: Partial<Task>, user: User) {
     throw new ApolloError('Unauthorized', 'COOLER_403')
   }
 
-  const { lastID } = await insert('task', task)
+  const { lastID } = await insert('task', {
+    ...task,
+    start_time: toSQLDate(new Date(task.start_time!))
+  })
 
   return await db.get<Task>(SQL`SELECT * FROM task WHERE id = ${lastID}`)
 }
@@ -77,9 +80,9 @@ export async function updateTask(id: number, task: Partial<Task>, user: User) {
     throw new ApolloError('You cannot update this task', 'COOLER_403')
   }
 
-  const { name, description, expectedWorkingHours, hourlyCost, project } = task
+  const { name, description, expectedWorkingHours, hourlyCost, project, start_time } = task
 
-  if (name || description || expectedWorkingHours || hourlyCost || project) {
+  if (name || description || expectedWorkingHours || hourlyCost || project || start_time) {
     if (project) {
       const newProject = await db.get<{ user: number }>(SQL`
         SELECT client.user
@@ -98,7 +101,7 @@ export async function updateTask(id: number, task: Partial<Task>, user: User) {
     }
 
     const args = Object.entries(
-      { name, description, expectedWorkingHours, hourlyCost, project }
+      { name, description, expectedWorkingHours, hourlyCost, project, start_time }
     ).filter(
       ([, value]) => value !== undefined
     ).reduce(

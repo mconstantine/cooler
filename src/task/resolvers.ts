@@ -8,6 +8,7 @@ import { ConnectionQueryArgs } from '../misc/ConnectionQueryArgs'
 import { UserContext, User } from '../user/User'
 import { ensureUser } from '../misc/ensureUser'
 import { queryToConnection } from '../misc/queryToConnection'
+import { toSQLDate } from '../misc/dbUtils'
 
 interface TaskResolvers {
   Task: {
@@ -58,7 +59,10 @@ export default {
     },
     updateTask: (_parent, { id, task }, context) => {
       ensureUser(context)
-      return updateTask(id, task, context.user!)
+      return updateTask(id, {
+        ...task,
+        ...(task.start_time ? { start_time: toSQLDate(new Date(task.start_time)) } : {}),
+      }, context.user!)
     },
     deleteTask: (_parent, { id }, context) => {
       ensureUser(context)

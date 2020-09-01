@@ -5,6 +5,7 @@ export interface Task {
   expectedWorkingHours: number
   hourlyCost: number
   project: number
+  start_time: string
   created_at: string
   updated_at: string
 }

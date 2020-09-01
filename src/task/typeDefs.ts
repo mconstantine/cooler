@@ -18,6 +18,7 @@ export default gql`
     description: String
     expectedWorkingHours: Int!
     hourlyCost: Float!
+    start_time: String!
     created_at: String
     updated_at: String
     project: Project!
@@ -29,6 +30,7 @@ export default gql`
     expectedWorkingHours: Int!
     hourlyCost: Float!
     project: Int!
+    start_time: String
   }
 
   input TaskUpdateInput {
@@ -37,6 +39,7 @@ export default gql`
     expectedWorkingHours: Int
     hourlyCost: Float
     project: Int
+    start_time: String
   }
 
   extend type User {

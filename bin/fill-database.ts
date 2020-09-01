@@ -76,6 +76,7 @@ import { fromSQLDate, toSQLDate, insert } from '../src/misc/dbUtils'
       for (let p = 0; p < projects.length; p++) {
         const project = projects[p]
         const tasks: number[] = []
+        const startTime: Date[] = []
         const expectedWorkingHours: number[] = []
 
         for (let t = 0; t < TASKS_PER_PROJECT; t++) {
@@ -83,16 +84,24 @@ import { fromSQLDate, toSQLDate, insert } from '../src/misc/dbUtils'
           const { lastID } = await insert('task', taskData)
 
           expectedWorkingHours.push(taskData.expectedWorkingHours!)
+          startTime.push(fromSQLDate(taskData.start_time!))
           tasks.push(lastID!)
         }
 
         for (let t = 0; t < tasks.length; t++) {
           const task = tasks[t]
           const ewh = expectedWorkingHours[t] / SESSIONS_PER_TASK
+          const st = startTime[t]
           const sessions: number[] = []
 
           for (let s = 0; s < SESSIONS_PER_TASK; s++) {
-            const session = getFakeSession({ task })
+            const session = getFakeSession({
+              task,
+              start_time: toSQLDate(new Date(
+                st.getTime() + 1000 + Math.round(Math.random() * 86400000)
+              ))
+            })
+
             const startTime = fromSQLDate(session.start_time!)
 
             // 20% to 120%

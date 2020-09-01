@@ -59,7 +59,7 @@ export default {
 
       const { actualWorkingHours } = (await db.get<{ actualWorkingHours: number }>(SQL`
         SELECT SUM(
-          (strftime('%s', end_time) - strftime('%s', start_time)) / 3600.0
+          (strftime('%s', session.end_time) - strftime('%s', session.start_time)) / 3600.0
         ) AS actualWorkingHours
         FROM session
         WHERE task = ${task.id} AND end_time IS NOT NULL
@@ -82,9 +82,9 @@ export default {
       const db = await getDatabase()
 
       const { balance } = (await db.get<{ balance: number }>(SQL`
-        SELECT SUM(
-          (strftime('%s', end_time) - strftime('%s', start_time)) / 3600.0 * task.hourlyCost
-        ) AS balance
+        SELECT SUM((
+          strftime('%s', session.end_time) - strftime('%s', session.start_time)
+        ) / 3600.0 * task.hourlyCost) AS balance
         FROM session
         JOIN task ON task.id = session.task
         WHERE task.id = ${task.id}
@@ -110,7 +110,7 @@ export default {
 
       const { actualWorkingHours } = (await db.get<{ actualWorkingHours: number }>(SQL`
         SELECT SUM(
-          (strftime('%s', end_time) - strftime('%s', start_time)) / 3600.0
+          (strftime('%s', session.end_time) - strftime('%s', session.start_time)) / 3600.0
         ) AS actualWorkingHours
         FROM session
         JOIN task ON task.id = session.task
@@ -134,9 +134,9 @@ export default {
       const db = await getDatabase()
 
       const { balance } = (await db.get<{ balance: number }>(SQL`
-        SELECT SUM(
-          (strftime('%s', end_time) - strftime('%s', start_time)) / 3600.0 * task.hourlyCost
-        ) AS balance
+        SELECT SUM((
+          strftime('%s', session.end_time) - strftime('%s', session.start_time)
+        ) / 3600.0 * task.hourlyCost) AS balance
         FROM session
         JOIN task ON task.id = session.task
         WHERE task.project = ${project.id}
