@@ -215,8 +215,8 @@ export default {
 
       since && sql.append(SQL` AND task.start_time >= ${toSQLDate(new Date(since))}`)
 
-      const { budget } = (await db.get<{ budget: number }>(sql))!
-      return budget || 0
+      const res = await db.get<{ budget: number }>(sql)
+      return res?.budget || 0
     },
     balance: async (user, { since }) => {
       const db = await getDatabase()
