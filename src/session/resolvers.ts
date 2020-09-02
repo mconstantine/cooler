@@ -110,7 +110,7 @@ export default {
         WHERE project = ${project.id}
       `))!
 
-      return expectedWorkingHours
+      return expectedWorkingHours || 0
     },
     actualWorkingHours: async project => {
       const db = await getDatabase()
