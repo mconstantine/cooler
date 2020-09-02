@@ -6,7 +6,7 @@ import { getDatabase } from '../misc/getDatabase'
 import { Task } from '../task/Task'
 import SQL from 'sql-template-strings'
 import { ensureUser } from '../misc/ensureUser'
-import { createSession, updateSession, deleteSession, getSession, listSessions } from './model'
+import { createSession, updateSession, deleteSession, getSession, listSessions, createTimesheet } from './model'
 import { toSQLDate } from '../misc/dbUtils'
 import { Project } from '../project/Project'
 
@@ -39,6 +39,9 @@ interface SessionResolvers {
     deleteSession: GraphQLFieldResolver<any, UserContext, { id: number }>
     updateSession: GraphQLFieldResolver<
       any, UserContext, { id: number, session: Pick<Session, 'start_time' | 'end_time'> }
+    >
+    createTimesheet: GraphQLFieldResolver<
+      any, UserContext, { since: string, to: string, project: number }
     >
   }
   Query: {
@@ -256,6 +259,10 @@ export default {
     deleteSession: (_parent, { id }, context) => {
       ensureUser(context)
       return deleteSession(id, context.user!)
+    },
+    createTimesheet: (_parent, { since, to, project }, context) => {
+      ensureUser(context)
+      return createTimesheet(since, to, project, context.user!)
     }
   },
   Query: {

@@ -5,7 +5,7 @@ import SQL from 'sql-template-strings'
 import { ConnectionQueryArgs } from '../misc/ConnectionQueryArgs'
 import { queryToConnection } from '../misc/queryToConnection'
 import { User } from '../user/User'
-import { ApolloError } from 'apollo-server'
+import { ApolloError } from 'apollo-server-express'
 
 export async function createClient(client: Partial<Client>, user: User) {
   const db = await getDatabase()

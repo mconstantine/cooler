@@ -31,7 +31,7 @@ export default {
       ensureUser(context)
       return updateUser(context.user!.id, user)
     },
-    deleteMe(_parent, _args, context) {
+    deleteMe: (_parent, _args, context) => {
       ensureUser(context)
       return deleteUser(context.user!.id)
     }

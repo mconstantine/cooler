@@ -10,7 +10,7 @@ import { getFakeClient } from '../test/getFakeClient'
 import { getDatabase } from '../misc/getDatabase'
 import SQL from 'sql-template-strings'
 import { getFakeProject } from '../test/getFakeProject'
-import { ApolloError } from 'apollo-server'
+import { ApolloError } from 'apollo-server-express'
 import { Project } from './Project'
 
 let user1: User

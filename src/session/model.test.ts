@@ -15,7 +15,7 @@ import { getFakeTask } from '../test/getFakeTask'
 import { getFakeSession } from '../test/getFakeSession'
 import SQL from 'sql-template-strings'
 import { createSession, listSessions, updateSession, deleteSession, getSession } from './model'
-import { ApolloError } from 'apollo-server'
+import { ApolloError } from 'apollo-server-express'
 
 let user1: User
 let user2: User

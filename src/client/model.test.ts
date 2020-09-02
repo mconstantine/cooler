@@ -8,7 +8,7 @@ import SQL from 'sql-template-strings'
 import { getFakeClient } from '../test/getFakeClient'
 import { createClient, listClients, updateClient, deleteClient, getClient } from './model'
 import { Client, ClientType } from './Client'
-import { ApolloError } from 'apollo-server'
+import { ApolloError } from 'apollo-server-express'
 
 let user1: User
 let user2: User

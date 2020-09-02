@@ -3,9 +3,16 @@ import { User } from '../user/User'
 import { ConnectionQueryArgs } from '../misc/ConnectionQueryArgs'
 import { getDatabase } from '../misc/getDatabase'
 import SQL from 'sql-template-strings'
-import { ApolloError } from 'apollo-server'
+import { ApolloError } from 'apollo-server-express'
 import { insert, toSQLDate, update, remove } from '../misc/dbUtils'
 import { queryToConnection } from '../misc/queryToConnection'
+import { Task } from '../task/Task'
+import path from 'path'
+import fs from 'fs'
+import crypto from 'crypto'
+import { Client, ClientType } from '../client/Client'
+
+const TIMESHEETS_PATH = '/public/timesheets'
 
 export async function createSession(session: Partial<Session>, user: User) {
   const db = await getDatabase()
@@ -161,4 +168,110 @@ export async function deleteSession(id: number, user: User) {
 
   await remove('session', { id })
   return session
+}
+
+export async function createTimesheet(since: string, to: string, project: number, user: User) {
+  const db = await getDatabase()
+
+  const p = (await db.get<{ user: number }>(SQL`
+    SELECT client.user
+    FROM project
+    JOIN client ON client.id = project.client
+    WHERE project.id = ${project}
+  `))!
+
+  if (!p) {
+    return null
+  }
+
+  if (p.user !== user.id) {
+    throw new ApolloError('You cannot create this timesheet', 'COOLER_403')
+  }
+
+  const sessions = await db.all<
+    Array<Pick<Session, 'start_time'> & Pick<Task, 'hourlyCost'> & { project: string, task: string, duration: number } & Pick<Client, 'business_name' | 'first_name' | 'last_name' | 'type'>>
+  >(SQL`
+    SELECT
+      session.start_time,
+      task.hourlyCost,
+      (strftime('%s', session.end_time) - strftime('%s', session.start_time)) / 3600.0 AS duration,
+      project.name AS project,
+      client.first_name,
+      client.last_name,
+      client.business_name,
+      client.type,
+      task.name AS task
+    FROM session
+    JOIN task ON task.id = session.task
+    JOIN project ON project.id = task.project
+    JOIN client ON client.id = project.client
+    WHERE
+      task.project = ${project} AND
+      session.start_time >= ${toSQLDate(new Date(since))} AND
+      session.end_time <= ${toSQLDate(new Date(to))}
+    ORDER BY session.start_time
+  `)
+
+  const [clientName, projectName, taskName] = (() => {
+    if (!sessions.length) {
+      return ['', '', '']
+    }
+
+    const firstSession = sessions[0]
+
+    return [
+      firstSession.type === ClientType.BUSINESS
+      ? firstSession.business_name!
+      : `${firstSession.first_name} ${firstSession.last_name}`,
+      firstSession.project,
+      firstSession.task
+    ]
+  })()
+
+  const rows = sessions.reduce((res, { start_time, duration, hourlyCost }) => {
+    const day = start_time.substring(0, 10)
+
+    res[day] = res[day] || { duration: 0, balance: 0 }
+    res[day].duration += Math.ceil(duration)
+    res[day].balance += Math.ceil(duration) * hourlyCost
+
+    return res
+  }, {} as { [date: string]: { duration: number, balance: number } })
+
+  const timesheetsDirectoryPath = path.join(process.cwd(), TIMESHEETS_PATH)
+
+  if (!fs.existsSync(timesheetsDirectoryPath)) {
+    fs.mkdirSync(timesheetsDirectoryPath)
+  }
+
+  fs.readdirSync(timesheetsDirectoryPath).filter(s => s.charAt(0) !== '.').forEach(filename => {
+    fs.unlinkSync(path.join(timesheetsDirectoryPath, filename))
+  })
+
+  const filename = `${crypto.randomBytes(12).toString('hex')}.csv`
+
+  const content = [
+    'Client;Project;Task;Date;Duration (hours);Balance (€)',
+    ...Object.entries(rows).map(
+      ([date, { duration, balance }]) => {
+        return `"${
+          clientName.replace(/"/g, '\\"')
+        }";"${
+          projectName.replace(/"/g, '\\"')
+        }";"${
+          taskName.replace(/"/g, '\\"')
+        }";${
+          new Date(date).toLocaleDateString(undefined, {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+          })
+        };${duration};${balance}`
+      }
+    )
+  ].join('\n')
+
+  fs.writeFileSync(path.join(timesheetsDirectoryPath, filename), content, 'utf8')
+
+  return path.join(TIMESHEETS_PATH, filename)
 }

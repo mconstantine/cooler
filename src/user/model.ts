@@ -1,11 +1,13 @@
 import { User, TokenType, Token, UserContext } from './User'
 import { getDatabase } from '../misc/getDatabase'
 import SQL from 'sql-template-strings'
-import { ApolloError } from 'apollo-server'
+import { ApolloError } from 'apollo-server-express'
 import { insert, update, remove, toSQLDate } from '../misc/dbUtils'
 import { hashSync, compareSync } from 'bcryptjs'
 import { sign, verify } from 'jsonwebtoken'
 import { validate as isEmail } from 'isemail'
+import { Project } from '../project/Project'
+import { Session } from '../session/Session'
 
 export async function createUser(
   { name, email, password }: Pick<User, 'name' | 'email' | 'password'>,

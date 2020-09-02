@@ -6,7 +6,7 @@ import { ConnectionQueryArgs } from '../misc/ConnectionQueryArgs'
 import { queryToConnection } from '../misc/queryToConnection'
 import { User } from '../user/User'
 import { Client } from '../client/Client'
-import { ApolloError } from 'apollo-server'
+import { ApolloError } from 'apollo-server-express'
 
 export async function createProject(project: Partial<Project>, user: User) {
   const db = await getDatabase()

@@ -3,7 +3,7 @@ import clientTypeDefs from './client/typeDefs'
 import projectTypeDefs from './project/typeDefs'
 import taskTypeDefs from './task/typeDefs'
 import sessionTypeDefs from './session/typeDefs'
-import { gql } from 'apollo-server'
+import { gql } from 'apollo-server-express'
 
 const defaultTypeDefs = gql`
   type PageInfo {

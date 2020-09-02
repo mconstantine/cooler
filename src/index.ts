@@ -1,4 +1,4 @@
-import { ApolloServer } from 'apollo-server'
+import { ApolloServer } from 'apollo-server-express'
 import { typeDefs } from './typeDefs'
 import { resolvers } from './resolvers'
 import { init } from './init'
@@ -7,6 +7,8 @@ import { Token, TokenType, User } from './user/User'
 import { verify } from 'jsonwebtoken'
 import { getDatabase } from './misc/getDatabase'
 import SQL from 'sql-template-strings'
+import express from 'express'
+import path from 'path'
 
 (async () => {
   dotenv.config()
@@ -44,7 +46,13 @@ import SQL from 'sql-template-strings'
     }
   })
 
-  server.listen().then(({ url }) => {
-    console.log(`Server ready at ${url}`)
+  const app = express()
+
+  server.applyMiddleware({ app })
+
+  app.use(
+    '/public', express.static(path.join(process.cwd(), '/public'))
+  ).listen({ port: process.env.SERVER_PORT }, () => {
+    console.log(`Server ready at http://localhost:${process.env.SERVER_PORT}`)
   })
 })()

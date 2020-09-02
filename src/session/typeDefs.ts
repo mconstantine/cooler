@@ -1,4 +1,4 @@
-import { gql } from 'apollo-server'
+import { gql } from 'apollo-server-express'
 
 export default gql`
   type SessionEdge implements Edge {
@@ -29,6 +29,7 @@ export default gql`
     stopSession(id: Int!): Session
     updateSession(id: Int!, session: SessionUpdateInput): Session
     deleteSession(id: Int!): Session
+    createTimesheet(since: String!, to: String!, project: Int!): String
   }
 
   extend type Query {
