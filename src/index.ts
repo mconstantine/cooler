@@ -54,6 +54,8 @@ import path from 'path'
     '/public', express.static(path.join(process.cwd(), '/public'))
   ).use(
     '/', express.static(path.join(process.cwd(), '../cooler/build'))
+  ).use(
+    '*', (_req, res) => res.sendFile(path.join(process.cwd(), '../cooler/build/index.html'))
   ).listen({ port: process.env.SERVER_PORT }, () => {
     console.log(`Server ready at http://localhost:${process.env.SERVER_PORT}`)
   })
