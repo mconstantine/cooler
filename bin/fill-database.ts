@@ -14,6 +14,7 @@ import { getFakeClient } from '../src/test/getFakeClient'
 import { getFakeTask } from '../src/test/getFakeTask'
 import { getFakeSession } from '../src/test/getFakeSession'
 import { fromSQLDate, toSQLDate, insert } from '../src/misc/dbUtils'
+import { getFakeTax } from '../src/test/getFakeTax'
 
 (async () => {
   const USERS_COUNT = 2
@@ -57,6 +58,11 @@ import { fromSQLDate, toSQLDate, insert } from '../src/misc/dbUtils'
 
   for (let u = 0; u < users.length; u++) {
     const user = users[u]
+
+    for (let t = 0; t < 3; t++) {
+      await insert('tax', getFakeTax({ user: user.id }))
+    }
+
     const clients: number[] = []
 
     for (let c = 0; c < CLIENTS_PER_USER; c++) {
