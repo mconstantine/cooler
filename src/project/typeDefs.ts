@@ -19,6 +19,7 @@ export default gql`
     created_at: String
     updated_at: String
     cashed_at: String
+    cashed_balance: Float
     client: Client!
   }
 
@@ -33,6 +34,7 @@ export default gql`
     description: String
     client: Int
     cashed_at: String
+    cashed_balance: Float
   }
 
   extend type User {
