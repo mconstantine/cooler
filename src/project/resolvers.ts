@@ -16,6 +16,7 @@ interface ProjectResolvers {
   }
   User: {
     projects: GraphQLFieldResolver<User, ConnectionQueryArgs>
+    cashedBalance: GraphQLFieldResolver<User, { since?: string }>
   }
   Client: {
     projects: GraphQLFieldResolver<Client, ConnectionQueryArgs>
@@ -44,6 +45,20 @@ export default {
         JOIN project ON project.client = client.id
         WHERE client.user = ${user.id}
       `)
+    },
+    cashedBalance: async (user, { since }) => {
+      const db = await getDatabase()
+      const sql = SQL`
+        SELECT IFNULL(SUM(project.cashed_balance), 0) AS balance
+        FROM project
+        JOIN client ON client.id = project.client
+        WHERE client.user = ${user.id} AND project.cashed_balance IS NOT NULL
+      `
+
+      since && sql.append(SQL` AND project.cashed_at >= ${toSQLDate(new Date(since))}`)
+
+      const { balance } = (await db.get<{ balance: number }>(sql))!
+      return balance
     }
   },
   Client: {
