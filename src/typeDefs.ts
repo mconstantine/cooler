@@ -3,6 +3,7 @@ import clientTypeDefs from './client/typeDefs'
 import projectTypeDefs from './project/typeDefs'
 import taskTypeDefs from './task/typeDefs'
 import sessionTypeDefs from './session/typeDefs'
+import taxTypeDefs from './tax/typeDefs'
 import { gql } from 'apollo-server-express'
 
 const defaultTypeDefs = gql`
@@ -44,5 +45,11 @@ const defaultTypeDefs = gql`
 `
 
 export const typeDefs = [
-  defaultTypeDefs, userTypeDefs, clientTypeDefs, projectTypeDefs, taskTypeDefs, sessionTypeDefs
+  defaultTypeDefs,
+  userTypeDefs,
+  clientTypeDefs,
+  projectTypeDefs,
+  taskTypeDefs,
+  sessionTypeDefs,
+  taxTypeDefs
 ]

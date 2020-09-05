@@ -3,6 +3,7 @@ import clientResolvers from './client/resolvers'
 import projectResolvers from './project/resolvers'
 import taskResolvers from './task/resolvers'
 import sessionResolvers from './session/resolvers'
+import taxResolvers from './tax/resolvers'
 import { merge } from './misc/merge'
 
 const defaultResolvers = {
@@ -13,7 +14,13 @@ const defaultResolvers = {
 }
 
 export const resolvers = [
-  defaultResolvers, userResolvers, clientResolvers, projectResolvers, taskResolvers, sessionResolvers
+  defaultResolvers,
+  userResolvers,
+  clientResolvers,
+  projectResolvers,
+  taskResolvers,
+  sessionResolvers,
+  taxResolvers
 ].reduce(
   (res, resolvers) => merge(res, resolvers), {}
 )
