@@ -65,39 +65,39 @@ export default {
       const db = await getDatabase()
 
       const { actualWorkingHours } = (await db.get<{ actualWorkingHours: number }>(SQL`
-        SELECT SUM(
+        SELECT IFNULL(SUM(
           (strftime('%s', session.end_time) - strftime('%s', session.start_time)) / 3600.0
-        ) AS actualWorkingHours
+        ), 0) AS actualWorkingHours
         FROM session
         WHERE task = ${task.id} AND end_time IS NOT NULL
       `))!
 
-      return actualWorkingHours || 0
+      return actualWorkingHours
     },
     budget: async task => {
       const db = await getDatabase()
 
       const { budget } = (await db.get<{ budget: number }>(SQL`
-        SELECT expectedWorkingHours * hourlyCost AS budget
+        SELECT IFNULL(expectedWorkingHours * hourlyCost, 0) AS budget
         FROM task
         WHERE id = ${task.id}
       `))!
 
-      return budget || 0
+      return budget
     },
     balance: async task => {
       const db = await getDatabase()
 
       const { balance } = (await db.get<{ balance: number }>(SQL`
-        SELECT SUM((
+        SELECT IFNULL(SUM((
           strftime('%s', session.end_time) - strftime('%s', session.start_time)
-        ) / 3600.0 * task.hourlyCost) AS balance
+        ) / 3600.0 * task.hourlyCost), 0) AS balance
         FROM session
         JOIN task ON task.id = session.task
         WHERE task.id = ${task.id}
       `))!
 
-      return balance || 0
+      return balance
     }
   },
   Project: {
@@ -105,51 +105,51 @@ export default {
       const db = await getDatabase()
 
       const { expectedWorkingHours } = (await db.get<{ expectedWorkingHours: number }>(SQL`
-        SELECT SUM(expectedWorkingHours) AS expectedWorkingHours
+        SELECT IFNULL(SUM(expectedWorkingHours), 0) AS expectedWorkingHours
         FROM task
         WHERE project = ${project.id}
       `))!
 
-      return expectedWorkingHours || 0
+      return expectedWorkingHours
     },
     actualWorkingHours: async project => {
       const db = await getDatabase()
 
       const { actualWorkingHours } = (await db.get<{ actualWorkingHours: number }>(SQL`
-        SELECT SUM(
+        SELECT IFNULL(SUM(
           (strftime('%s', session.end_time) - strftime('%s', session.start_time)) / 3600.0
-        ) AS actualWorkingHours
+        ), 0) AS actualWorkingHours
         FROM session
         JOIN task ON task.id = session.task
         WHERE task.project = ${project.id} AND session.end_time IS NOT NULL
       `))!
 
-      return actualWorkingHours || 0
+      return actualWorkingHours
     },
     budget: async project => {
       const db = await getDatabase()
 
       const { budget } = (await db.get<{ budget: number }>(SQL`
-        SELECT SUM(hourlyCost * expectedWorkingHours) AS budget
+        SELECT IFNULL(SUM(hourlyCost * expectedWorkingHours), 0) AS budget
         FROM task
         WHERE project = ${project.id}
       `))!
 
-      return budget || 0
+      return budget
     },
     balance: async project => {
       const db = await getDatabase()
 
       const { balance } = (await db.get<{ balance: number }>(SQL`
-        SELECT SUM((
+        SELECT IFNULL(SUM((
           strftime('%s', session.end_time) - strftime('%s', session.start_time)
-        ) / 3600.0 * task.hourlyCost) AS balance
+        ) / 3600.0 * task.hourlyCost), 0) AS balance
         FROM session
         JOIN task ON task.id = session.task
         WHERE task.project = ${project.id}
       `))!
 
-      return balance || 0
+      return balance
     }
   },
   User: {
@@ -171,7 +171,7 @@ export default {
       const db = await getDatabase()
 
       const sql = SQL`
-        SELECT SUM(task.expectedWorkingHours) AS expectedWorkingHours
+        SELECT IFNULL(SUM(task.expectedWorkingHours), 0) AS expectedWorkingHours
         FROM task
         JOIN project ON project.id = task.project
         JOIN client ON client.id = project.client
@@ -181,15 +181,15 @@ export default {
       since && sql.append(SQL` AND task.start_time >= ${toSQLDate(new Date(since))}`)
 
       const { expectedWorkingHours } = (await db.get<{ expectedWorkingHours: number }>(sql))!
-      return expectedWorkingHours || 0
+      return expectedWorkingHours
     },
     actualWorkingHours: async (user, { since }) => {
       const db = await getDatabase()
 
       const sql = SQL`
-        SELECT SUM(
+        SELECT IFNULL(SUM(
           (strftime('%s', session.end_time) - strftime('%s', session.start_time)) / 3600.0
-        ) AS actualWorkingHours
+        ), 0) AS actualWorkingHours
         FROM session
         JOIN task ON task.id = session.task
         JOIN project ON project.id = task.project
@@ -200,7 +200,7 @@ export default {
       since && sql.append(SQL` AND session.start_time >= ${toSQLDate(new Date(since))}`)
 
       const { actualWorkingHours } = (await db.get<{ actualWorkingHours: number }>(sql))!
-      return actualWorkingHours || 0
+      return actualWorkingHours
     },
     budget: async (user, { since }) => {
       const db = await getDatabase()
@@ -222,10 +222,9 @@ export default {
       const db = await getDatabase()
 
       const sql = SQL`
-        SELECT SUM((
+        SELECT IFNULL(SUM((
           strftime('%s', session.end_time) - strftime('%s', session.start_time)
-        ) / 3600.0 * task.hourlyCost
-        ) AS balance
+        ) / 3600.0 * task.hourlyCost), 0) AS balance
         FROM session
         JOIN task ON task.id = session.task
         JOIN project ON project.id = task.project
@@ -236,7 +235,7 @@ export default {
       since && sql.append(SQL` AND session.start_time >= ${toSQLDate(new Date(since))}`)
 
       const { balance } = (await db.get<{ balance: number }>(sql))!
-      return balance || 0
+      return balance
     }
   },
   Mutation: {
