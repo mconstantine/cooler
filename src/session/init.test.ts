@@ -1,8 +1,3 @@
-import initUser from '../user/init'
-import initClient from '../client/init'
-import initProject from '../project/init'
-import initTask from '../task/init'
-import initSession from '../session/init'
 import { getDatabase } from '../misc/getDatabase'
 import { Database } from 'sqlite'
 import { insert, remove } from '../misc/dbUtils'
@@ -14,16 +9,13 @@ import { getFakeSession } from '../test/getFakeSession'
 import SQL from 'sql-template-strings'
 import { Task } from '../task/Task'
 import { Project } from '../project/Project'
+import { init } from '../init'
 
 describe('init', () => {
   let db: Database
 
   beforeAll(async () => {
-    await initUser()
-    await initClient()
-    await initProject()
-    await initTask()
-    await initSession()
+    await init()
     db = await getDatabase()
   })
 

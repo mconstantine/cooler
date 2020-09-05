@@ -1,5 +1,4 @@
-import init from './init'
-import initUser from '../user/init'
+import { init } from '../init'
 import { getDatabase } from '../misc/getDatabase'
 import { Database } from 'sqlite'
 import { insert, update, remove } from '../misc/dbUtils'
@@ -17,7 +16,6 @@ describe('initClient', () => {
     beforeAll(async () => {
       db = await getDatabase()
 
-      await initUser()
       await init()
 
       const userData = getFakeUser()

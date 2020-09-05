@@ -1,6 +1,3 @@
-import initUser from '../user/init'
-import initClient from '../client/init'
-import initProject from './init'
 import { createProject, listProjects, updateProject, deleteProject, getProject } from './model'
 import { User } from '../user/User'
 import { Client } from '../client/Client'
@@ -12,6 +9,7 @@ import SQL from 'sql-template-strings'
 import { getFakeProject } from '../test/getFakeProject'
 import { ApolloError } from 'apollo-server-express'
 import { Project } from './Project'
+import { init } from '../init'
 
 let user1: User
 let user2: User
@@ -21,9 +19,7 @@ let project1: Project
 let project2: Project
 
 beforeAll(async () => {
-  await initUser()
-  await initClient()
-  await initProject()
+  await init()
 
   const db = await getDatabase()
 

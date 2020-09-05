@@ -1,6 +1,3 @@
-import init from './init'
-import initClient from '../client/init'
-import initUser from '../user/init'
 import { getDatabase } from '../misc/getDatabase'
 import { Database } from 'sqlite'
 import { insert, update, remove } from '../misc/dbUtils'
@@ -11,6 +8,7 @@ import { Client } from '../client/Client'
 import { getFakeClient } from '../test/getFakeClient'
 import { getFakeUser } from '../test/getFakeUser'
 import { User } from '../user/User'
+import { init } from '../init'
 
 describe('initProject', () => {
   describe('happy path', () => {
@@ -21,8 +19,6 @@ describe('initProject', () => {
     beforeAll(async () => {
       db = await getDatabase()
 
-      await initUser()
-      await initClient()
       await init()
 
       const userData = getFakeUser()

@@ -1,7 +1,4 @@
-import init from './init'
-import initProject from '../project/init'
-import initClient from '../client/init'
-import initUser from '../user/init'
+import { init } from '../init'
 import { getDatabase } from '../misc/getDatabase'
 import { Database } from 'sqlite'
 import { insert, update, remove } from '../misc/dbUtils'
@@ -19,12 +16,8 @@ describe('initTask', () => {
   let db: Database
 
   beforeAll(async () => {
-    db = await getDatabase()
-
-    await initUser()
-    await initClient()
-    await initProject()
     await init()
+    db = await getDatabase()
   })
 
   describe('happy path', () => {

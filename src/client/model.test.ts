@@ -1,5 +1,3 @@
-import initUser from '../user/init'
-import initClient from './init'
 import { getFakeUser } from '../test/getFakeUser'
 import { insert } from '../misc/dbUtils'
 import { User } from '../user/User'
@@ -9,6 +7,7 @@ import { getFakeClient } from '../test/getFakeClient'
 import { createClient, listClients, updateClient, deleteClient, getClient } from './model'
 import { Client, ClientType } from './Client'
 import { ApolloError } from 'apollo-server-express'
+import { init } from '../init'
 
 let user1: User
 let user2: User
@@ -16,8 +15,7 @@ let client1: Client
 let client2: Client
 
 beforeAll(async () => {
-  await initUser()
-  await initClient()
+  await init()
 
   const db = await getDatabase()
   const user1Data = getFakeUser()

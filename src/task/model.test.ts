@@ -1,7 +1,4 @@
-import initUser from '../user/init'
-import initClient from '../client/init'
-import initProject from '../project/init'
-import initTask from './init'
+import { init } from '../init'
 import { User } from '../user/User'
 import { insert } from '../misc/dbUtils'
 import { getFakeUser } from '../test/getFakeUser'
@@ -23,10 +20,7 @@ let task1: Task
 let task2: Task
 
 beforeAll(async () => {
-  await initUser()
-  await initClient()
-  await initProject()
-  await initTask()
+  await init()
 
   const db = await getDatabase()
 

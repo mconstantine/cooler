@@ -1,4 +1,4 @@
-import init from './init'
+import { init } from '../init'
 import { Database } from 'sqlite'
 import { getDatabase } from '../misc/getDatabase'
 import { getFakeUser } from '../test/getFakeUser'
@@ -11,8 +11,8 @@ describe('initTask', () => {
     let db: Database
 
     beforeAll(async () => {
-      db = await getDatabase()
       await init()
+      db = await getDatabase()
     })
 
     it('should create a database table', async () => {

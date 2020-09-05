@@ -1,8 +1,4 @@
-import initUser from '../user/init'
-import initClient from '../client/init'
-import initProject from '../project/init'
-import initTask from '../task/init'
-import initSession from '../session/init'
+import { init } from '../init'
 import resolvers from './resolvers'
 import { insert, toSQLDate, remove } from '../misc/dbUtils'
 import { getFakeUser } from '../test/getFakeUser'
@@ -23,12 +19,7 @@ describe('session resolvers', () => {
   let project: Project
 
   beforeAll(async () => {
-    await initUser()
-    await initClient()
-    await initProject()
-    await initTask()
-    await initSession()
-
+    await init()
     db = await getDatabase()
 
     const userId = (await insert('user', getFakeUser())).lastID!

@@ -1,11 +1,6 @@
 import { User } from '../user/User'
 import { Task } from '../task/Task'
 import { Session } from './Session'
-import initUser from '../user/init'
-import initClient from '../client/init'
-import initProject from '../project/init'
-import initTask from '../task/init'
-import initSession from './init'
 import { getDatabase } from '../misc/getDatabase'
 import { insert } from '../misc/dbUtils'
 import { getFakeUser } from '../test/getFakeUser'
@@ -16,6 +11,7 @@ import { getFakeSession } from '../test/getFakeSession'
 import SQL from 'sql-template-strings'
 import { createSession, listSessions, updateSession, deleteSession, getSession } from './model'
 import { ApolloError } from 'apollo-server-express'
+import { init } from '../init'
 
 let user1: User
 let user2: User
@@ -25,11 +21,7 @@ let session1: Session
 let session2: Session
 
 beforeAll(async () => {
-  await initUser()
-  await initClient()
-  await initProject()
-  await initTask()
-  await initSession()
+  await init()
 
   const db = await getDatabase()
 
