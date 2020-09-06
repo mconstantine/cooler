@@ -1,9 +1,5 @@
 import dotenv from 'dotenv'
-import initUser from '../src/user/init'
-import initClient from '../src/client/init'
-import initProject from '../src/project/init'
-import initTask from '../src/task/init'
-import initSession from '../src/session/init'
+import { init } from '../src/init'
 import { getDatabase } from '../src/misc/getDatabase'
 import { createUser } from '../src/user/model'
 import { verify } from 'jsonwebtoken'
@@ -31,12 +27,7 @@ import { getFakeTax } from '../src/test/getFakeTax'
 
   const db = await getDatabase()
 
-  await initUser()
-  await initClient()
-  await initProject()
-  await initTask()
-  await initSession()
-
+  await init()
   await db.exec(`DELETE FROM user`)
 
   const { accessToken } = await createUser({
