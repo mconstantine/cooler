@@ -6,10 +6,12 @@ import { ConnectionQueryArgs } from '../misc/ConnectionQueryArgs'
 import { queryToConnection } from '../misc/queryToConnection'
 import { ensureUser } from '../misc/ensureUser'
 import { UserContext, User } from '../user/User'
+import { getDatabase } from '../misc/getDatabase'
 
 interface ClientResolvers {
   Client: {
     name: GraphQLFieldResolver<Client, UserContext>
+    user: GraphQLFieldResolver<Client, UserContext>
   }
   User: {
     clients: GraphQLFieldResolver<User, ConnectionQueryArgs>
@@ -31,6 +33,10 @@ export default {
       return client.type === ClientType.BUSINESS
       ? client.business_name
       : `${client.first_name} ${client.last_name}`
+    },
+    user: async client => {
+      const db = await getDatabase()
+      return db.get<User>(SQL`SELECT * FROM user WHERE id = ${client.user}`)
     }
   },
   User: {

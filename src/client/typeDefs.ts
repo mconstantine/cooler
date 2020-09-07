@@ -36,6 +36,7 @@ export default gql`
     address_email: String!
     created_at: String
     updated_at: String
+    user: User!
   }
 
   input ClientCreationInput {
