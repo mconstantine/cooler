@@ -22,7 +22,6 @@ export default gql`
   input TaxCreationInput {
     label: String!
     value: Float!
-    user: Int!
   }
 
   input TaxUpdateInput {
