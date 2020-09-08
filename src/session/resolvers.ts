@@ -206,7 +206,7 @@ export default {
       const db = await getDatabase()
 
       const sql = SQL`
-        SELECT expectedWorkingHours * hourlyCost AS budget
+        SELECT IFNULL(SUM(expectedWorkingHours * hourlyCost), 0) AS budget
         FROM task
         JOIN project ON project.id = task.project
         JOIN client ON client.id = project.client
@@ -215,8 +215,8 @@ export default {
 
       since && sql.append(SQL` AND task.start_time >= ${toSQLDate(new Date(since))}`)
 
-      const res = await db.get<{ budget: number }>(sql)
-      return res?.budget || 0
+      const { budget } = (await db.get<{ budget: number }>(sql))!
+      return budget
     },
     balance: async (user, { since }) => {
       const db = await getDatabase()
