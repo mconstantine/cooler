@@ -40,9 +40,9 @@ export default {
   },
   User: {
     tasks: (user, args) => {
-      return queryToConnection(args, ['task.*'], 'client', SQL`
-        JOIN project ON project.client = client.id
-        JOIN task ON task.project = project.id
+      return queryToConnection(args, ['task.*'], 'task', SQL`
+        JOIN project ON project.id = task.project
+        JOIN client ON project.client = client.id
         WHERE client.user = ${user.id}
       `)
     }

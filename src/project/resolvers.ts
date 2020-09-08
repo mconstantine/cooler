@@ -41,8 +41,8 @@ export default {
   },
   User: {
     projects: (user, args) => {
-      return queryToConnection(args, ['project.*'], 'client', SQL`
-        JOIN project ON project.client = client.id
+      return queryToConnection(args, ['project.*'], 'project', SQL`
+        JOIN client ON client.id = project.client
         WHERE client.user = ${user.id}
       `)
     },

@@ -24,7 +24,7 @@ export async function queryToConnection<T extends { id: number }>(
   const orderBy = args.orderBy ? `${from}.${args.orderBy}` : `${from}.id ASC`
 
   const query = SQL``.append(`
-    WITH preset as (
+    WITH preset AS (
       SELECT ${select.join(', ')}, ROW_NUMBER() OVER(
         ORDER BY ${orderBy}
       ) AS _n

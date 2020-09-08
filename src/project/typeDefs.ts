@@ -38,7 +38,13 @@ export default gql`
   }
 
   extend type User {
-    projects(first: Int, last: Int, before: String, after: String, orderBy: String): ProjectConnection
+    projects(
+      first: Int
+      last: Int
+      before: String
+      after: String
+      orderBy: String
+    ): ProjectConnection
     cashedBalance(since: String): Float!
   }
 
