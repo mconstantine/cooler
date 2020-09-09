@@ -1,4 +1,10 @@
-import { User, TokenType, Token, UserContext } from './interface'
+import {
+  User,
+  TokenType,
+  Token,
+  UserContext,
+  AccessTokenResponse
+} from './interface'
 import { getDatabase } from '../misc/getDatabase'
 import SQL from 'sql-template-strings'
 import { ApolloError } from 'apollo-server-express'
@@ -10,7 +16,7 @@ import { validate as isEmail } from 'isemail'
 export async function createUser(
   { name, email, password }: Pick<User, 'name' | 'email' | 'password'>,
   context: UserContext
-) {
+): Promise<AccessTokenResponse> {
   const db = await getDatabase()
 
   if (!context.user) {
@@ -47,10 +53,7 @@ export async function createUser(
 export async function loginUser({
   email,
   password
-}: {
-  email: string
-  password: string
-}) {
+}: Pick<User, 'email' | 'password'>): Promise<AccessTokenResponse> {
   const db = await getDatabase()
   const user = await db.get<User>(
     SQL`SELECT * FROM user WHERE email = ${email}`
@@ -67,7 +70,11 @@ export async function loginUser({
   return generateTokens(user.id)
 }
 
-export async function refreshToken({ refreshToken }: { refreshToken: string }) {
+export async function refreshToken({
+  refreshToken
+}: {
+  refreshToken: string
+}): Promise<AccessTokenResponse> {
   const token = verify(refreshToken, process.env.SECRET!, {
     ignoreExpiration: true
   }) as Token
@@ -88,7 +95,10 @@ export async function refreshToken({ refreshToken }: { refreshToken: string }) {
   return generateTokens(user.id, refreshToken)
 }
 
-export async function updateUser(id: number, user: Partial<User>) {
+export async function updateUser(
+  id: number,
+  user: Partial<User>
+): Promise<User | null> {
   const { name, email, password } = user
   const db = await getDatabase()
 
@@ -116,10 +126,10 @@ export async function updateUser(id: number, user: Partial<User>) {
 
   await update('user', { ...args, id })
 
-  return await db.get<User>(SQL`SELECT * FROM user WHERE id = ${id}`)
+  return (await db.get<User>(SQL`SELECT * FROM user WHERE id = ${id}`)) || null
 }
 
-export async function deleteUser(id: number) {
+export async function deleteUser(id: number): Promise<User | null> {
   const db = await getDatabase()
   const user = await db.get<User>(SQL`SELECT * FROM user WHERE id = ${id}`)
 
@@ -132,7 +142,10 @@ export async function deleteUser(id: number) {
   return user
 }
 
-function generateTokens(userId: number, oldRefreshToken?: string) {
+function generateTokens(
+  userId: number,
+  oldRefreshToken?: string
+): AccessTokenResponse {
   const expiration = toSQLDate(new Date(Date.now() + 86400000))
 
   const accessToken = sign(
