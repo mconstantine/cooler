@@ -1,12 +1,19 @@
-import { SQLDateString } from '../misc/Types'
-
 export interface User {
   id: number
   name: string
   email: string
   password: string
-  created_at: SQLDateString
-  updated_at: SQLDateString
+  created_at: Date
+  updated_at: Date
+}
+
+export interface UserFromDatabase {
+  id: number
+  name: string
+  email: string
+  password: string
+  created_at: string
+  updated_at: string
 }
 
 export enum TokenType {
@@ -19,12 +26,18 @@ export interface Token {
   id: number
 }
 
+export type Context =
+  | {}
+  | {
+      user: User
+    }
+
 export interface UserContext {
-  user: User | null
+  user: User
 }
 
 export interface AccessTokenResponse {
   accessToken: string
   refreshToken: string
-  expiration: SQLDateString
+  expiration: Date
 }

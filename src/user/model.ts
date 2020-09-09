@@ -2,24 +2,26 @@ import {
   User,
   TokenType,
   Token,
-  UserContext,
-  AccessTokenResponse
+  AccessTokenResponse,
+  Context,
+  UserFromDatabase
 } from './interface'
 import { getDatabase } from '../misc/getDatabase'
 import SQL from 'sql-template-strings'
 import { ApolloError } from 'apollo-server-express'
-import { insert, update, remove, toSQLDate } from '../misc/dbUtils'
+import { insert, update, remove, fromSQLDate, toSQLDate } from '../misc/dbUtils'
 import { hashSync, compareSync } from 'bcryptjs'
 import { sign, verify } from 'jsonwebtoken'
 import { validate as isEmail } from 'isemail'
+import { isUserContext } from '../misc/ensureUser'
 
 export async function createUser(
   { name, email, password }: Pick<User, 'name' | 'email' | 'password'>,
-  context: UserContext
+  context: Context
 ): Promise<AccessTokenResponse> {
   const db = await getDatabase()
 
-  if (!context.user) {
+  if (!isUserContext(context)) {
     const { count } = (await db.get(
       SQL`SELECT COUNT(id) as count FROM user`
     )) as { count: number }
@@ -33,7 +35,7 @@ export async function createUser(
     throw new ApolloError('Invalid e-mail format', 'COOLER_400')
   }
 
-  const duplicate = await db.get<User>(
+  const duplicate = await db.get<UserFromDatabase>(
     SQL`SELECT id FROM user WHERE email = ${email}`
   )
 
@@ -55,7 +57,7 @@ export async function loginUser({
   password
 }: Pick<User, 'email' | 'password'>): Promise<AccessTokenResponse> {
   const db = await getDatabase()
-  const user = await db.get<User>(
+  const user = await db.get<UserFromDatabase>(
     SQL`SELECT * FROM user WHERE email = ${email}`
   )
 
@@ -84,7 +86,7 @@ export async function refreshToken({
   }
 
   const db = await getDatabase()
-  const user = await db.get<Pick<User, 'id'>>(
+  const user = await db.get<Pick<UserFromDatabase, 'id'>>(
     SQL`SELECT id FROM user WHERE id = ${token.id}`
   )
 
@@ -97,7 +99,7 @@ export async function refreshToken({
 
 export async function updateUser(
   id: number,
-  user: Partial<User>
+  user: Pick<User, 'name' | 'email' | 'password'>
 ): Promise<User | null> {
   const { name, email, password } = user
   const db = await getDatabase()
@@ -107,7 +109,7 @@ export async function updateUser(
       throw new ApolloError('Invalid e-mail format', 'COOLER_400')
     }
 
-    const duplicate = await db.get<User>(SQL`
+    const duplicate = await db.get<UserFromDatabase>(SQL`
       SELECT id FROM user WHERE email = ${email} AND id != ${id}
     `)
 
@@ -126,12 +128,22 @@ export async function updateUser(
 
   await update('user', { ...args, id })
 
-  return (await db.get<User>(SQL`SELECT * FROM user WHERE id = ${id}`)) || null
+  const updatedUser = await db.get<UserFromDatabase>(
+    SQL`SELECT * FROM user WHERE id = ${id}`
+  )
+
+  if (!updatedUser) {
+    return null
+  }
+
+  return fromDatabase(updatedUser)
 }
 
 export async function deleteUser(id: number): Promise<User | null> {
   const db = await getDatabase()
-  const user = await db.get<User>(SQL`SELECT * FROM user WHERE id = ${id}`)
+  const user = await db.get<UserFromDatabase>(
+    SQL`SELECT * FROM user WHERE id = ${id}`
+  )
 
   if (!user) {
     return null
@@ -139,14 +151,38 @@ export async function deleteUser(id: number): Promise<User | null> {
 
   await remove('user', { id })
 
-  return user
+  return fromDatabase(user)
+}
+
+export function getUserFromContext(context: Context): User | null {
+  if (!isUserContext(context)) {
+    return null
+  }
+
+  return context.user
+}
+
+export function toDatabase(user: User): UserFromDatabase {
+  return {
+    ...user,
+    created_at: toSQLDate(user.created_at),
+    updated_at: toSQLDate(user.updated_at)
+  }
+}
+
+export function fromDatabase(user: UserFromDatabase): User {
+  return {
+    ...user,
+    created_at: fromSQLDate(user.created_at),
+    updated_at: fromSQLDate(user.updated_at)
+  }
 }
 
 function generateTokens(
   userId: number,
   oldRefreshToken?: string
 ): AccessTokenResponse {
-  const expiration = toSQLDate(new Date(Date.now() + 86400000))
+  const expiration = new Date(Date.now() + 86400000)
 
   const accessToken = sign(
     {

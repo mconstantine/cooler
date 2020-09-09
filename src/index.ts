@@ -3,13 +3,9 @@ import { typeDefs } from './typeDefs'
 import { resolvers } from './resolvers'
 import { init } from './init'
 import dotenv from 'dotenv'
-import { Token, TokenType, User } from './user/interface'
-import { verify } from 'jsonwebtoken'
-import { getDatabase } from './misc/getDatabase'
-import SQL from 'sql-template-strings'
 import express from 'express'
 import path from 'path'
-
+import { getContext } from './getContext'
 ;(async () => {
   dotenv.config()
   await init()
@@ -17,35 +13,7 @@ import path from 'path'
   const server = new ApolloServer({
     typeDefs,
     resolvers,
-    context: async ({ req }) => {
-      if (!req.headers.authorization || req.headers.authorization.length < 7) {
-        return { user: null }
-      }
-
-      const accessToken = req.headers.authorization.substring(7)
-      let token: Token
-
-      try {
-        token = verify(accessToken, process.env.SECRET!) as Token
-      } catch (ex) {
-        return { user: null }
-      }
-
-      if (token.type !== TokenType.ACCESS || !token.id) {
-        return { user: null }
-      }
-
-      const db = await getDatabase()
-      const user = await db.get<User>(
-        SQL`SELECT * FROM user WHERE id = ${token.id}`
-      )
-
-      if (!user) {
-        return { user: null }
-      }
-
-      return { user }
-    }
+    context: getContext
   })
 
   const app = express()

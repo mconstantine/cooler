@@ -7,6 +7,8 @@ import taxTypeDefs from './tax/typeDefs'
 import { gql } from 'apollo-server-express'
 
 const defaultTypeDefs = gql`
+  scalar Date
+
   type PageInfo {
     startCursor: String!
     endCursor: String!
@@ -20,8 +22,8 @@ const defaultTypeDefs = gql`
 
   interface TrackedNode implements Node {
     id: Int
-    created_at: String
-    updated_at: String
+    created_at: Date!
+    updated_at: Date!
   }
 
   interface Edge {

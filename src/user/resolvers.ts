@@ -1,18 +1,24 @@
 import { GraphQLFieldResolver } from 'graphql'
-import { UserContext, User, AccessTokenResponse } from './interface'
+import {
+  UserFromDatabase,
+  AccessTokenResponse,
+  Context,
+  User
+} from './interface'
 import {
   createUser,
   loginUser,
   refreshToken,
   updateUser,
-  deleteUser
+  deleteUser,
+  getUserFromContext
 } from './model'
 import { ensureUser } from '../misc/ensureUser'
 
 type CreateUserMutation = GraphQLFieldResolver<
   any,
-  UserContext,
-  { user: Pick<User, 'name' | 'email' | 'password'> }
+  Context,
+  { user: Pick<UserFromDatabase, 'name' | 'email' | 'password'> }
 >
 
 const createUserMutation: CreateUserMutation = (
@@ -33,7 +39,7 @@ const createUserMutation: CreateUserMutation = (
 type LoginUserMutation = GraphQLFieldResolver<
   any,
   any,
-  { user: Pick<User, 'email' | 'password'> }
+  { user: Pick<UserFromDatabase, 'email' | 'password'> }
 >
 
 const loginUserMutation: LoginUserMutation = (
@@ -58,8 +64,8 @@ export const refreshTokenMutation: RefreshTokenMutation = (
 
 export type UpdateMeMutation = GraphQLFieldResolver<
   any,
-  UserContext,
-  { user: Partial<User> }
+  Context,
+  { user: Partial<UserFromDatabase> }
 >
 
 export const updateMeMutation: UpdateMeMutation = (
@@ -70,7 +76,7 @@ export const updateMeMutation: UpdateMeMutation = (
   return updateUser(ensureUser(context).id, user)
 }
 
-export type DeleteMeMutation = GraphQLFieldResolver<any, UserContext, {}>
+export type DeleteMeMutation = GraphQLFieldResolver<any, Context, {}>
 
 export const deleteMeMutation: DeleteMeMutation = (
   _parent,
@@ -80,14 +86,10 @@ export const deleteMeMutation: DeleteMeMutation = (
   return deleteUser(ensureUser(context).id)
 }
 
-export type MeQuery = GraphQLFieldResolver<any, UserContext, {}>
+export type MeQuery = GraphQLFieldResolver<any, Context, {}>
 
 export const meQuery: MeQuery = (_parent, _args, context): User | null => {
-  if (!context.user) {
-    return null
-  }
-
-  return context.user
+  return getUserFromContext(context)
 }
 
 interface UserResolvers {

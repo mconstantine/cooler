@@ -12,13 +12,13 @@ export default gql`
     totalCount: Int!
   }
 
-  type User implements Node {
+  type User implements TrackedNode & Node {
     id: Int
     name: String!
     email: String!
     password: String!
-    created_at: String
-    updated_at: String
+    created_at: Date!
+    updated_at: Date!
   }
 
   input UserCreationInput {
@@ -41,28 +41,18 @@ export default gql`
   type TokenResponse {
     accessToken: String!
     refreshToken: String!
-    expiration: String!
+    expiration: Date!
   }
 
   extend type Mutation {
     createUser(user: UserCreationInput): TokenResponse!
     loginUser(user: UserLoginInput): TokenResponse!
-    updateMe(user: UserUpdateInput): Task
+    updateMe(user: UserUpdateInput): User
     deleteMe: User
     refreshToken(refreshToken: String!): TokenResponse!
   }
 
   extend type Query {
     me: User
-    user(id: Int!): User
-    users(
-      name: String
-      email: String
-      first: Int
-      last: Int
-      before: String
-      after: String
-      orderBy: String
-    ): UserConnection!
   }
 `
