@@ -10,7 +10,7 @@ import SQL from 'sql-template-strings'
 import express from 'express'
 import path from 'path'
 
-(async () => {
+;(async () => {
   dotenv.config()
   await init()
 
@@ -36,7 +36,9 @@ import path from 'path'
       }
 
       const db = await getDatabase()
-      const user = await db.get<User>(SQL`SELECT * FROM user WHERE id = ${token.id}`)
+      const user = await db.get<User>(
+        SQL`SELECT * FROM user WHERE id = ${token.id}`
+      )
 
       if (!user) {
         return { user: null }
@@ -50,13 +52,13 @@ import path from 'path'
 
   server.applyMiddleware({ app })
 
-  app.use(
-    '/public', express.static(path.join(process.cwd(), '/public'))
-  ).use(
-    '/', express.static(path.join(process.cwd(), '../cooler/build'))
-  ).use(
-    '*', (_req, res) => res.sendFile(path.join(process.cwd(), '../cooler/build/index.html'))
-  ).listen({ port: process.env.SERVER_PORT }, () => {
-    console.log(`Server ready at http://localhost:${process.env.SERVER_PORT}`)
-  })
+  app
+    .use('/public', express.static(path.join(process.cwd(), '/public')))
+    .use('/', express.static(path.join(process.cwd(), '../cooler/build')))
+    .use('*', (_req, res) =>
+      res.sendFile(path.join(process.cwd(), '../cooler/build/index.html'))
+    )
+    .listen({ port: process.env.SERVER_PORT }, () => {
+      console.log(`Server ready at http://localhost:${process.env.SERVER_PORT}`)
+    })
 })()

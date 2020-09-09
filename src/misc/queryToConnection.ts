@@ -18,7 +18,9 @@ export async function queryToConnection<T extends { id: number }>(
   rest?: SQLStatement
 ): Promise<Connection<T>> {
   if ((args.first && args.before) || (args.last && args.after)) {
-    throw new Error('You must use either "first" and "after" or "last" and "before". You cannot mix and match them')
+    throw new Error(
+      'You must use either "first" and "after" or "last" and "before". You cannot mix and match them'
+    )
   }
 
   const orderBy = args.orderBy ? `${from}.${args.orderBy}` : `${from}.id ASC`
@@ -72,12 +74,16 @@ export async function queryToConnection<T extends { id: number }>(
 
   const db = await getDatabase()
 
-  const results = await db.all<Array<T & {
-    _n: number,
-    _first: number,
-    _last: number,
-    totalCount: number
-  }>>(query)
+  const results = await db.all<
+    Array<
+      T & {
+        _n: number
+        _first: number
+        _last: number
+        totalCount: number
+      }
+    >
+  >(query)
 
   if (!results.length) {
     return {
@@ -99,16 +105,14 @@ export async function queryToConnection<T extends { id: number }>(
 
   return {
     totalCount: firstResult.totalCount,
-    edges: results.map(
-      result => ({
-        node: Object.entries(result).filter(
+    edges: results.map(result => ({
+      node: Object.entries(result)
+        .filter(
           ([key]) => !['_n', '_first', '_last', 'totalCount'].includes(key)
-        ).reduce(
-          (res, [key, value]) => ({ ...res, [key]: value }), {}
-        ) as T,
-        cursor: toCursor(result.id)
-      })
-    ),
+        )
+        .reduce((res, [key, value]) => ({ ...res, [key]: value }), {}) as T,
+      cursor: toCursor(result.id)
+    })),
     pageInfo: {
       startCursor: toCursor(firstResult.id),
       endCursor: toCursor(lastResult.id),

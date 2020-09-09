@@ -16,7 +16,7 @@ describe('merge', () => {
           first: 'first',
           level441: 441,
           level442: 442,
-          level443: 443,
+          level443: 443
         }
       }
     }

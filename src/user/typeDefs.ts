@@ -56,12 +56,12 @@ export default gql`
     me: User
     user(id: Int!): User
     users(
-      name: String,
-      email: String,
-      first: Int,
-      last: Int,
-      before: String,
-      after: String,
+      name: String
+      email: String
+      first: Int
+      last: Int
+      before: String
+      after: String
       orderBy: String
     ): UserConnection!
   }

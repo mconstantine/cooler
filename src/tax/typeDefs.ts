@@ -38,20 +38,20 @@ export default gql`
   extend type Query {
     tax(id: Int!): Tax
     taxes(
-      first: Int,
-      last: Int,
-      before: String,
-      after: String,
+      first: Int
+      last: Int
+      before: String
+      after: String
       orderBy: String
     ): TaxConnection!
   }
 
   extend type User {
     taxes(
-      first: Int,
-      last: Int,
-      before: String,
-      after: String,
+      first: Int
+      last: Int
+      before: String
+      after: String
       orderBy: String
     ): TaxConnection!
   }

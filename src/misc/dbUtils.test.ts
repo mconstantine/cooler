@@ -28,45 +28,58 @@ describe('dbUtils', () => {
       expect(result).toBe(testResult)
       expect(mockDatabase.run).toHaveBeenCalledWith(
         'INSERT INTO someTable (`col1`, `col2`) VALUES (?, ?)',
-        'value1', 'value2'
+        'value1',
+        'value2'
       )
     })
 
     it('should handle multiple rows', async () => {
-      const data = [{
-        col1: 'value1',
-        col2: 'value2'
-      }, {
-        col1: 'value3',
-        col2: 'value4'
-      }]
+      const data = [
+        {
+          col1: 'value1',
+          col2: 'value2'
+        },
+        {
+          col1: 'value3',
+          col2: 'value4'
+        }
+      ]
 
       const result = await insert('someTable', data)
 
       expect(result).toBe(testResult)
       expect(mockDatabase.run).toHaveBeenCalledWith(
         'INSERT INTO someTable (`col1`, `col2`) VALUES (?, ?), (?, ?)',
-        'value1', 'value2', 'value3', 'value4'
+        'value1',
+        'value2',
+        'value3',
+        'value4'
       )
     })
 
     it('should remove keys of undefined values', async () => {
-      const data = [{
-        col1: 'value1',
-        col2: undefined,
-        col3: 'value3'
-      }, {
-        col1: 'value4',
-        col2: undefined,
-        col3: 'value6'
-      }]
+      const data = [
+        {
+          col1: 'value1',
+          col2: undefined,
+          col3: 'value3'
+        },
+        {
+          col1: 'value4',
+          col2: undefined,
+          col3: 'value6'
+        }
+      ]
 
       const result = await insert('someTable', data)
 
       expect(result).toBe(testResult)
       expect(mockDatabase.run).toHaveBeenCalledWith(
         'INSERT INTO someTable (`col1`, `col3`) VALUES (?, ?), (?, ?)',
-        'value1', 'value3', 'value4', 'value6'
+        'value1',
+        'value3',
+        'value4',
+        'value6'
       )
     })
   })
@@ -84,7 +97,9 @@ describe('dbUtils', () => {
       expect(result).toBe(testResult)
       expect(mockDatabase.run).toHaveBeenCalledWith(
         'UPDATE someTable SET `col1` = ?, `col2` = ? WHERE `primary` = ?',
-        'value1', 'value2', 42
+        'value1',
+        'value2',
+        42
       )
     })
 
@@ -101,7 +116,9 @@ describe('dbUtils', () => {
       expect(result).toBe(testResult)
       expect(mockDatabase.run).toHaveBeenCalledWith(
         'UPDATE someTable SET `col1` = ?, `col3` = ? WHERE `primary` = ?',
-        'value1', 'value3', 42
+        'value1',
+        'value3',
+        42
       )
     })
   })
@@ -136,7 +153,8 @@ describe('dbUtils', () => {
       expect(result).toBe(testResult)
       expect(mockDatabase.run).toHaveBeenCalledWith(
         'DELETE FROM someTable WHERE `col1` = ? AND `col2` = ?',
-        'value1', 'value2'
+        'value1',
+        'value2'
       )
     })
   })

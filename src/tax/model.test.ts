@@ -120,7 +120,9 @@ describe('deleteTax', () => {
     const tax = await deleteTax(lastID!, user1)
 
     expect(tax).toMatchObject(data)
-    expect(await db.get(SQL`SELECT * FROM tax WHERE id = ${lastID}`)).toBeUndefined()
+    expect(
+      await db.get(SQL`SELECT * FROM tax WHERE id = ${lastID}`)
+    ).toBeUndefined()
   })
 
   it('should not allow users to delete taxes of other users', async () => {

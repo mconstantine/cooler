@@ -21,7 +21,9 @@ describe('initTask', () => {
 
     it('should save the creation time automatically', async () => {
       const { lastID } = await insert('user', getFakeUser())
-      const user = await db.get<User>(SQL`SELECT * FROM user WHERE id = ${lastID}`)
+      const user = await db.get<User>(
+        SQL`SELECT * FROM user WHERE id = ${lastID}`
+      )
 
       expect(user!.created_at).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/)
     })
@@ -34,16 +36,16 @@ describe('initTask', () => {
 
       const { lastID } = await insert('user', user)
 
-      const updateDateBefore = (
-        await db.get<User>(SQL`SELECT * FROM user WHERE id = ${lastID}`)
-      )!.updated_at
+      const updateDateBefore = (await db.get<User>(
+        SQL`SELECT * FROM user WHERE id = ${lastID}`
+      ))!.updated_at
 
       await (() => new Promise(done => setTimeout(() => done(), 1000)))()
       await update('user', { id: lastID, ...updated })
 
-      const updateDateAfter = (
-        await db.get<User>(SQL`SELECT * FROM user WHERE id = ${lastID}`)
-      )!.updated_at
+      const updateDateAfter = (await db.get<User>(
+        SQL`SELECT * FROM user WHERE id = ${lastID}`
+      ))!.updated_at
 
       expect(updateDateBefore).not.toBe(updateDateAfter)
     })

@@ -74,7 +74,13 @@ export default gql`
   }
 
   extend type User {
-    clients(first: Int, last: Int, before: String, after: String, orderBy: String): ClientConnection
+    clients(
+      first: Int
+      last: Int
+      before: String
+      after: String
+      orderBy: String
+    ): ClientConnection
   }
 
   extend type Mutation {
@@ -86,11 +92,11 @@ export default gql`
   extend type Query {
     client(id: Int!): Client
     clients(
-      name: String,
-      first: Int,
-      last: Int,
-      before: String,
-      after: String,
+      name: String
+      first: Int
+      last: Int
+      before: String
+      after: String
       orderBy: String
     ): ClientConnection!
   }

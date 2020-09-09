@@ -7,7 +7,10 @@ let database: Database
 export async function getDatabase() {
   if (!database) {
     database = await open({
-      filename: process.env.NODE_ENV === 'test' ? ':memory:' : path.join(process.cwd(), 'data.db'),
+      filename:
+        process.env.NODE_ENV === 'test'
+          ? ':memory:'
+          : path.join(process.cwd(), 'data.db'),
       driver: cached.Database
     })
   }

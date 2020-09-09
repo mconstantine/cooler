@@ -9,7 +9,10 @@ import { queryToConnection } from '../misc/queryToConnection'
 
 export async function createTax(tax: Partial<Tax>, user: User) {
   if ((!tax.value && tax.value !== 0) || tax.value < 0 || tax.value > 1) {
-    throw new ApolloError('value should be a number between zero and one', 'COOLER_400')
+    throw new ApolloError(
+      'value should be a number between zero and one',
+      'COOLER_400'
+    )
   }
 
   const db = await getDatabase()
@@ -22,7 +25,7 @@ export async function getTax(id: number, user: User) {
   const db = await getDatabase()
   const tax = await db.get<Tax>(SQL`SELECT * FROM tax WHERE id = ${id}`)
 
-  if (!tax) {
+  if (!tax) {
     return null
   }
 
@@ -57,14 +60,15 @@ export async function updateTax(id: number, data: Partial<Tax>, user: User) {
 
   if (label || value !== undefined) {
     if ((!value && value !== 0) || value < 0 || value > 1) {
-      throw new ApolloError('value should be a number between zero and one', 'COOLER_400')
+      throw new ApolloError(
+        'value should be a number between zero and one',
+        'COOLER_400'
+      )
     }
 
-    const args = Object.entries({ label, value }).filter(
-      ([, value]) => value !== undefined
-    ).reduce(
-      (res, [key, value]) => ({ ...res, [key]: value }), {}
-    )
+    const args = Object.entries({ label, value })
+      .filter(([, value]) => value !== undefined)
+      .reduce((res, [key, value]) => ({ ...res, [key]: value }), {})
 
     await update('tax', { id, ...args })
   }

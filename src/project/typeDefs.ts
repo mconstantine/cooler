@@ -49,7 +49,13 @@ export default gql`
   }
 
   extend type Client {
-    projects(first: Int, last: Int, before: String, after: String, orderBy: String): ProjectConnection
+    projects(
+      first: Int
+      last: Int
+      before: String
+      after: String
+      orderBy: String
+    ): ProjectConnection
   }
 
   extend type Mutation {
@@ -61,11 +67,11 @@ export default gql`
   extend type Query {
     project(id: Int): Project
     projects(
-      name: String,
-      first: Int,
-      last: Int,
-      before: String,
-      after: String,
+      name: String
+      first: Int
+      last: Int
+      before: String
+      after: String
       orderBy: String
     ): ProjectConnection!
   }

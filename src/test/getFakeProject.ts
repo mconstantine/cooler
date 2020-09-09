@@ -3,7 +3,8 @@ import { Project } from '../project/interface'
 import { toSQLDate } from '../misc/dbUtils'
 
 export function getFakeProject(data: Partial<Project> = {}): Partial<Project> {
-  const isCashed = data.cashed_at !== undefined ? !!data.cashed_at : Math.random() < 0.5
+  const isCashed =
+    data.cashed_at !== undefined ? !!data.cashed_at : Math.random() < 0.5
 
   return {
     name: faker.commerce.productName(),

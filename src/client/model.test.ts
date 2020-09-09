@@ -4,7 +4,13 @@ import { User } from '../user/interface'
 import { getDatabase } from '../misc/getDatabase'
 import SQL from 'sql-template-strings'
 import { getFakeClient } from '../test/getFakeClient'
-import { createClient, listClients, updateClient, deleteClient, getClient } from './model'
+import {
+  createClient,
+  listClients,
+  updateClient,
+  deleteClient,
+  getClient
+} from './model'
 import { Client, ClientType } from './interface'
 import { ApolloError } from 'apollo-server-express'
 import { init } from '../init'
@@ -25,8 +31,8 @@ beforeAll(async () => {
 
   user1 = await db.get(SQL`SELECT * FROM user WHERE id = ${user1Id}`)!
   user2 = await db.get(SQL`SELECT * FROM user WHERE id = ${user2Id}`)!
-  client1 = await createClient(getFakeClient(), user1) as Client
-  client2 = await createClient(getFakeClient(), user2) as Client
+  client1 = (await createClient(getFakeClient(), user1)) as Client
+  client2 = (await createClient(getFakeClient(), user2)) as Client
 })
 
 describe('createClient', () => {
@@ -55,16 +61,12 @@ describe('listClients', () => {
   it("should list only the user's clients", async () => {
     const results = await listClients({}, user1)
 
-    expect(
-      results.edges.map(({ node }) => node)
-    ).toContainEqual(
+    expect(results.edges.map(({ node }) => node)).toContainEqual(
       expect.objectContaining({ id: client1.id })
     )
 
-    expect(
-      results.edges.map(({ node }) => node)
-    ).not.toContainEqual(
-      expect.objectContaining({ id: client2.id })
+    expect(results.edges.map(({ node }) => node)).not.toContainEqual(
+      expect.objectContaining({ id: client2.id })
     )
   })
 })
@@ -72,7 +74,7 @@ describe('listClients', () => {
 describe('updateClient', () => {
   it('should work', async () => {
     const data = getFakeClient()
-    const result = await updateClient(client1.id, data, user1) as Client
+    const result = (await updateClient(client1.id, data, user1)) as Client
 
     expect(result).toMatchObject(data)
     client1 = result
@@ -85,7 +87,10 @@ describe('updateClient', () => {
   })
 
   it('should switch from a BUSINESS to a PRIVATE client correctly', async () => {
-    const client = await createClient(getFakeClient({ type: ClientType.BUSINESS }), user1)
+    const client = await createClient(
+      getFakeClient({ type: ClientType.BUSINESS }),
+      user1
+    )
 
     expect(client!.fiscal_code).toBe(null)
     expect(client!.first_name).toBe(null)
@@ -95,7 +100,9 @@ describe('updateClient', () => {
     expect(client!.business_name).not.toBe(null)
 
     const updatedClient = await updateClient(
-      client!.id, getFakeClient({ type: ClientType.PRIVATE }), user1
+      client!.id,
+      getFakeClient({ type: ClientType.PRIVATE }),
+      user1
     )
 
     expect(updatedClient!.country_code).toBe(null)
@@ -107,7 +114,10 @@ describe('updateClient', () => {
   })
 
   it('should switch from a PRIVATE to a BUSINESS client correctly', async () => {
-    const client = await createClient(getFakeClient({ type: ClientType.PRIVATE }), user1)
+    const client = await createClient(
+      getFakeClient({ type: ClientType.PRIVATE }),
+      user1
+    )
 
     expect(client!.country_code).toBe(null)
     expect(client!.vat_number).toBe(null)
@@ -117,7 +127,9 @@ describe('updateClient', () => {
     expect(client!.last_name).not.toBe(null)
 
     const updatedClient = await updateClient(
-      client!.id, getFakeClient({ type: ClientType.BUSINESS }), user1
+      client!.id,
+      getFakeClient({ type: ClientType.BUSINESS }),
+      user1
     )
 
     expect(updatedClient!.fiscal_code).toBe(null)
@@ -134,8 +146,8 @@ describe('deleteClient', () => {
   let client2: Client
 
   beforeAll(async () => {
-    client1 = await createClient(getFakeClient(), user1) as Client
-    client2 = await createClient(getFakeClient(), user2) as Client
+    client1 = (await createClient(getFakeClient(), user1)) as Client
+    client2 = (await createClient(getFakeClient(), user2)) as Client
   })
 
   it('should work', async () => {

@@ -37,10 +37,17 @@ describe('initProject', () => {
     })
 
     it('should save the creation time automatically', async () => {
-      const { lastID } = await insert('project', getFakeProject({ client: client.id }))
-      const project = await db.get<Project>(SQL`SELECT * FROM project WHERE id = ${lastID}`)
+      const { lastID } = await insert(
+        'project',
+        getFakeProject({ client: client.id })
+      )
+      const project = await db.get<Project>(
+        SQL`SELECT * FROM project WHERE id = ${lastID}`
+      )
 
-      expect(project!.created_at).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/)
+      expect(project!.created_at).toMatch(
+        /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/
+      )
     })
 
     it('should keep track of the time of the last update', async () => {
@@ -51,16 +58,16 @@ describe('initProject', () => {
 
       const { lastID } = await insert('project', project)
 
-      const updateDateBefore = (
-        await db.get<Project>(SQL`SELECT * FROM project WHERE id = ${lastID}`)
-      )!.updated_at
+      const updateDateBefore = (await db.get<Project>(
+        SQL`SELECT * FROM project WHERE id = ${lastID}`
+      ))!.updated_at
 
       await (() => new Promise(done => setTimeout(() => done(), 1000)))()
       await update('project', { id: lastID, ...updated })
 
-      const updateDateAfter = (
-        await db.get<Project>(SQL`SELECT * FROM project WHERE id = ${lastID}`)
-      )!.updated_at
+      const updateDateAfter = (await db.get<Project>(
+        SQL`SELECT * FROM project WHERE id = ${lastID}`
+      ))!.updated_at
 
       expect(updateDateBefore).not.toBe(updateDateAfter)
     })
@@ -73,7 +80,9 @@ describe('initProject', () => {
 
       await remove('client', { id: clientId })
 
-      const project = await db.get<Project>(SQL`SELECT * FROM project WHERE id = ${projectId}`)
+      const project = await db.get<Project>(
+        SQL`SELECT * FROM project WHERE id = ${projectId}`
+      )
 
       expect(project).toBeUndefined()
     })
@@ -81,16 +90,25 @@ describe('initProject', () => {
     it('should set cashed_balance to null if cashed_date is set to null', async () => {
       let project: Project
 
-      const { lastID } = await insert('project', getFakeProject({ client: client.id, cashed_at: null }))
+      const { lastID } = await insert(
+        'project',
+        getFakeProject({ client: client.id, cashed_at: null })
+      )
 
       const getProject = async () =>
-        (await db.get<Project>(SQL`SELECT * FROM project WHERE id = ${lastID}`))!
+        (await db.get<Project>(
+          SQL`SELECT * FROM project WHERE id = ${lastID}`
+        ))!
 
       project = await getProject()
       expect(project.cashed_at).toBeNull()
       expect(project.cashed_balance).toBeNull()
 
-      await update('project', { id: project.id, cashed_at: toSQLDate(new Date()), cashed_balance: 42 })
+      await update('project', {
+        id: project.id,
+        cashed_at: toSQLDate(new Date()),
+        cashed_balance: 42
+      })
 
       project = await getProject()
       expect(project.cashed_at).not.toBeNull()
@@ -104,37 +122,59 @@ describe('initProject', () => {
     })
 
     it('should calculate the cashed balance from the sessions by default', async () => {
-      const { lastID: projectId } = await insert('project', getFakeProject({
-        client: client.id,
-        cashed_at: null
-      }))
+      const { lastID: projectId } = await insert(
+        'project',
+        getFakeProject({
+          client: client.id,
+          cashed_at: null
+        })
+      )
 
-      const { lastID: taskId } = await insert('task', getFakeTask({
-        project: projectId,
-        hourlyCost: 10.5
-      }))
+      const { lastID: taskId } = await insert(
+        'task',
+        getFakeTask({
+          project: projectId,
+          hourlyCost: 10.5
+        })
+      )
 
       const now = new Date()
 
-      await insert('session', getFakeSession({
-        task: taskId,
-        start_time: toSQLDate(now),
-        end_time: toSQLDate(new Date(now.getTime() + 1000 * 60 * 60 * 4))
-      }))
+      await insert(
+        'session',
+        getFakeSession({
+          task: taskId,
+          start_time: toSQLDate(now),
+          end_time: toSQLDate(new Date(now.getTime() + 1000 * 60 * 60 * 4))
+        })
+      )
 
-      await update('project', { id: projectId, cashed_at: toSQLDate(new Date()) })
-      const project = await db.get<Project>(SQL`SELECT * FROM project WHERE ${projectId}`)
+      await update('project', {
+        id: projectId,
+        cashed_at: toSQLDate(new Date())
+      })
+      const project = await db.get<Project>(
+        SQL`SELECT * FROM project WHERE ${projectId}`
+      )
       expect(project!.cashed_balance).toBe(42)
     })
 
     it('should set the cashed balance to zero if there are no sessions', async () => {
-      const { lastID: projectId } = await insert('project', getFakeProject({
-        client: client.id,
-        cashed_at: null
-      }))
+      const { lastID: projectId } = await insert(
+        'project',
+        getFakeProject({
+          client: client.id,
+          cashed_at: null
+        })
+      )
 
-      await update('project', { id: projectId, cashed_at: toSQLDate(new Date()) })
-      const project = await db.get<Project>(SQL`SELECT * FROM project WHERE ${projectId}`)
+      await update('project', {
+        id: projectId,
+        cashed_at: toSQLDate(new Date())
+      })
+      const project = await db.get<Project>(
+        SQL`SELECT * FROM project WHERE ${projectId}`
+      )
       expect(project!.cashed_balance).toBe(0)
     })
   })

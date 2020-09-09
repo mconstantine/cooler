@@ -10,14 +10,19 @@ import { ApolloError } from 'apollo-server-express'
 
 export async function createProject(project: Partial<Project>, user: User) {
   const db = await getDatabase()
-  const client = await db.get<Client>(SQL`SELECT * FROM client WHERE id = ${project.client}`)
+  const client = await db.get<Client>(
+    SQL`SELECT * FROM client WHERE id = ${project.client}`
+  )
 
   if (!client) {
     return null
   }
 
   if (client.user !== user.id) {
-    throw new ApolloError('You cannot create projects for this client', 'COOLER_403')
+    throw new ApolloError(
+      'You cannot create projects for this client',
+      'COOLER_403'
+    )
   }
 
   const { lastID } = await insert('project', project)
@@ -41,7 +46,10 @@ export async function getProject(id: number, user: User) {
   return project
 }
 
-export async function listProjects(args: ConnectionQueryArgs & { name?: string }, user: User) {
+export async function listProjects(
+  args: ConnectionQueryArgs & { name?: string },
+  user: User
+) {
   const sql = SQL`
     JOIN client ON project.client = client.id
     WHERE client.user = ${user.id}
@@ -51,7 +59,11 @@ export async function listProjects(args: ConnectionQueryArgs & { name?: string }
   return await queryToConnection(args, ['project.*'], 'project', sql)
 }
 
-export async function updateProject(id: number, project: Partial<Project>, user: User) {
+export async function updateProject(
+  id: number,
+  project: Partial<Project>,
+  user: User
+) {
   const db = await getDatabase()
   const { name, description, client, cashed_at, cashed_balance } = project
 
@@ -69,24 +81,39 @@ export async function updateProject(id: number, project: Partial<Project>, user:
     throw new ApolloError('You cannot update this project', 'COOLER_403')
   }
 
-  if (name || description || client || cashed_at !== undefined || cashed_balance !== undefined) {
+  if (
+    name ||
+    description ||
+    client ||
+    cashed_at !== undefined ||
+    cashed_balance !== undefined
+  ) {
     if (client) {
-      const newClient = await db.get<Client>(SQL`SELECT user FROM client WHERE id = ${client}`)
+      const newClient = await db.get<Client>(
+        SQL`SELECT user FROM client WHERE id = ${client}`
+      )
 
       if (!newClient) {
         return null
       }
 
       if (newClient.user !== user.id) {
-        throw new ApolloError('You cannot assign this client to a project', 'COOLER_403')
+        throw new ApolloError(
+          'You cannot assign this client to a project',
+          'COOLER_403'
+        )
       }
     }
 
-    const args = Object.entries({ name, description, client, cashed_at, cashed_balance }).filter(
-      ([, value]) => value !== undefined
-    ).reduce(
-      (res, [key, value]) => ({ ...res, [key]: value }), {}
-    )
+    const args = Object.entries({
+      name,
+      description,
+      client,
+      cashed_at,
+      cashed_balance
+    })
+      .filter(([, value]) => value !== undefined)
+      .reduce((res, [key, value]) => ({ ...res, [key]: value }), {})
 
     await update('project', { ...args, id })
   }

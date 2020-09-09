@@ -24,6 +24,8 @@ describe('init taxes', () => {
 
     await remove('user', { id: user })
 
-    expect(await db.get(SQL`SELECT * FROM tax WHERE id = ${tax}`)).toBeUndefined()
+    expect(
+      await db.get(SQL`SELECT * FROM tax WHERE id = ${tax}`)
+    ).toBeUndefined()
   })
 })

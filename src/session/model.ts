@@ -44,7 +44,10 @@ export async function createSession(session: Partial<Session>, user: User) {
     `)
 
     if (count) {
-      throw new ApolloError('You cannot have more than one open session', 'COOLER_409')
+      throw new ApolloError(
+        'You cannot have more than one open session',
+        'COOLER_409'
+      )
     }
   }
 
@@ -75,7 +78,10 @@ export async function getSession(id: number, user: User) {
   return session
 }
 
-export async function listSessions(args: ConnectionQueryArgs & { task?: number }, user: User) {
+export async function listSessions(
+  args: ConnectionQueryArgs & { task?: number },
+  user: User
+) {
   const sql = SQL`
     JOIN task ON task.id = session.task
     JOIN project ON project.id = task.project
@@ -88,9 +94,16 @@ export async function listSessions(args: ConnectionQueryArgs & { task?: number }
   return await queryToConnection(args, ['session.*'], 'session', sql)
 }
 
-export async function updateSession(id: number, session: Partial<Session>, user: User) {
+export async function updateSession(
+  id: number,
+  session: Partial<Session>,
+  user: User
+) {
   const db = await getDatabase()
-  const currentSession = await db.get<{ end_time: string | null, user: number }>(SQL`
+  const currentSession = await db.get<{
+    end_time: string | null
+    user: number
+  }>(SQL`
     SELECT client.user, session.end_time
     FROM session
     JOIN task ON task.id = session.task
@@ -128,17 +141,16 @@ export async function updateSession(id: number, session: Partial<Session>, user:
       }
 
       if (newTask.user !== user.id) {
-        throw new ApolloError('You cannot assign this task to a session', 'COOLER_403')
+        throw new ApolloError(
+          'You cannot assign this task to a session',
+          'COOLER_403'
+        )
       }
     }
 
-    const args = Object.entries(
-      { start_time, end_time, task }
-    ).filter(
-      ([, value]) => value !== undefined
-    ).reduce(
-      (res, [key, value]) => ({ ...res, [key]: value }), {}
-    )
+    const args = Object.entries({ start_time, end_time, task })
+      .filter(([, value]) => value !== undefined)
+      .reduce((res, [key, value]) => ({ ...res, [key]: value }), {})
 
     await update('session', { ...args, id })
   }
@@ -170,7 +182,12 @@ export async function deleteSession(id: number, user: User) {
   return session
 }
 
-export async function createTimesheet(since: string, to: string, project: number, user: User) {
+export async function createTimesheet(
+  since: string,
+  to: string,
+  project: number,
+  user: User
+) {
   const db = await getDatabase()
 
   const p = (await db.get<{ user: number }>(SQL`
@@ -189,7 +206,14 @@ export async function createTimesheet(since: string, to: string, project: number
   }
 
   const sessions = await db.all<
-    Array<Pick<Session, 'start_time'> & Pick<Task, 'hourlyCost'> & { project: string, task: string, duration: number } & Pick<Client, 'business_name' | 'first_name' | 'last_name' | 'type'>>
+    Array<
+      Pick<Session, 'start_time'> &
+        Pick<Task, 'hourlyCost'> & {
+          project: string
+          task: string
+          duration: number
+        } & Pick<Client, 'business_name' | 'first_name' | 'last_name' | 'type'>
+    >
   >(SQL`
     SELECT
       session.start_time,
@@ -221,8 +245,8 @@ export async function createTimesheet(since: string, to: string, project: number
 
     return [
       firstSession.type === ClientType.BUSINESS
-      ? firstSession.business_name!
-      : `${firstSession.first_name} ${firstSession.last_name}`,
+        ? firstSession.business_name!
+        : `${firstSession.first_name} ${firstSession.last_name}`,
       firstSession.project,
       firstSession.task
     ]
@@ -236,7 +260,7 @@ export async function createTimesheet(since: string, to: string, project: number
     res[day].balance += Math.ceil(duration) * hourlyCost
 
     return res
-  }, {} as { [date: string]: { duration: number, balance: number } })
+  }, {} as { [date: string]: { duration: number; balance: number } })
 
   const timesheetsDirectoryPath = path.join(process.cwd(), TIMESHEETS_PATH)
 
@@ -244,34 +268,35 @@ export async function createTimesheet(since: string, to: string, project: number
     fs.mkdirSync(timesheetsDirectoryPath)
   }
 
-  fs.readdirSync(timesheetsDirectoryPath).filter(s => s.charAt(0) !== '.').forEach(filename => {
-    fs.unlinkSync(path.join(timesheetsDirectoryPath, filename))
-  })
+  fs.readdirSync(timesheetsDirectoryPath)
+    .filter(s => s.charAt(0) !== '.')
+    .forEach(filename => {
+      fs.unlinkSync(path.join(timesheetsDirectoryPath, filename))
+    })
 
   const filename = `${crypto.randomBytes(12).toString('hex')}.csv`
 
   const content = [
     'Client;Project;Task;Date;Duration (hours);Balance (€)',
-    ...Object.entries(rows).map(
-      ([date, { duration, balance }]) => {
-        return `"${
-          clientName.replace(/"/g, '\\"')
-        }";"${
-          projectName.replace(/"/g, '\\"')
-        }";"${
-          taskName.replace(/"/g, '\\"')
-        }";${
-          new Date(date).toLocaleDateString(undefined, {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric'
-          })
-        };${duration};${balance}`
-      }
-    )
+    ...Object.entries(rows).map(([date, { duration, balance }]) => {
+      return `"${clientName.replace(/"/g, '\\"')}";"${projectName.replace(
+        /"/g,
+        '\\"'
+      )}";"${taskName.replace(/"/g, '\\"')}";${new Date(
+        date
+      ).toLocaleDateString(undefined, {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      })};${duration};${balance}`
+    })
   ].join('\n')
 
-  fs.writeFileSync(path.join(timesheetsDirectoryPath, filename), content, 'utf8')
+  fs.writeFileSync(
+    path.join(timesheetsDirectoryPath, filename),
+    content,
+    'utf8'
+  )
 
   return path.join(TIMESHEETS_PATH, filename)
 }

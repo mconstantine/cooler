@@ -1,6 +1,12 @@
 import { GraphQLFieldResolver } from 'graphql'
 import { Project } from './interface'
-import { createProject, listProjects, updateProject, deleteProject, getProject } from './model'
+import {
+  createProject,
+  listProjects,
+  updateProject,
+  deleteProject,
+  getProject
+} from './model'
 import { getDatabase } from '../misc/getDatabase'
 import { Client } from '../client/interface'
 import SQL from 'sql-template-strings'
@@ -22,13 +28,25 @@ interface ProjectResolvers {
     projects: GraphQLFieldResolver<Client, ConnectionQueryArgs>
   }
   Mutation: {
-    createProject: GraphQLFieldResolver<any, UserContext, { project: Partial<Project> }>
-    updateProject: GraphQLFieldResolver<any, UserContext, { id: number, project: Partial<Project> }>
+    createProject: GraphQLFieldResolver<
+      any,
+      UserContext,
+      { project: Partial<Project> }
+    >
+    updateProject: GraphQLFieldResolver<
+      any,
+      UserContext,
+      { id: number; project: Partial<Project> }
+    >
     deleteProject: GraphQLFieldResolver<any, UserContext, { id: number }>
   }
   Query: {
     project: GraphQLFieldResolver<any, UserContext, { id: number }>
-    projects: GraphQLFieldResolver<any, UserContext, ConnectionQueryArgs & { name?: string }>
+    projects: GraphQLFieldResolver<
+      any,
+      UserContext,
+      ConnectionQueryArgs & { name?: string }
+    >
   }
 }
 
@@ -36,15 +54,22 @@ export default {
   Project: {
     client: async project => {
       const db = await getDatabase()
-      return await db.get<Client>(SQL`SELECT * FROM client WHERE id = ${project.client}`)
+      return await db.get<Client>(
+        SQL`SELECT * FROM client WHERE id = ${project.client}`
+      )
     }
   },
   User: {
     projects: (user, args) => {
-      return queryToConnection(args, ['project.*'], 'project', SQL`
+      return queryToConnection(
+        args,
+        ['project.*'],
+        'project',
+        SQL`
         JOIN client ON client.id = project.client
         WHERE client.user = ${user.id}
-      `)
+      `
+      )
     },
     cashedBalance: async (user, { since }) => {
       const db = await getDatabase()
@@ -55,7 +80,8 @@ export default {
         WHERE client.user = ${user.id} AND project.cashed_balance IS NOT NULL
       `
 
-      since && sql.append(SQL` AND project.cashed_at >= ${toSQLDate(new Date(since))}`)
+      since &&
+        sql.append(SQL` AND project.cashed_at >= ${toSQLDate(new Date(since))}`)
 
       const { balance } = (await db.get<{ balance: number }>(sql))!
       return balance
@@ -63,7 +89,12 @@ export default {
   },
   Client: {
     projects: (client, args, _context) => {
-      return queryToConnection(args, ['*'], 'project', SQL`WHERE client = ${client.id}`)
+      return queryToConnection(
+        args,
+        ['*'],
+        'project',
+        SQL`WHERE client = ${client.id}`
+      )
     }
   },
   Mutation: {
@@ -73,10 +104,16 @@ export default {
     },
     updateProject: (_parent, { id, project }, context) => {
       ensureUser(context)
-      return updateProject(id, {
-        ...project,
-        cashed_at: project.cashed_at ? toSQLDate(new Date(project.cashed_at)) : project.cashed_at
-      }, context.user!)
+      return updateProject(
+        id,
+        {
+          ...project,
+          cashed_at: project.cashed_at
+            ? toSQLDate(new Date(project.cashed_at))
+            : project.cashed_at
+        },
+        context.user!
+      )
     },
     deleteProject: (_parent, { id }, context) => {
       ensureUser(context)

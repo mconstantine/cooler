@@ -8,11 +8,12 @@ export interface User {
 }
 
 export enum TokenType {
-  ACCESS, REFRESH
+  ACCESS,
+  REFRESH
 }
 
 export interface Token {
-  type: TokenType,
+  type: TokenType
   id: number
 }
 

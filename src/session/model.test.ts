@@ -9,7 +9,13 @@ import { getFakeProject } from '../test/getFakeProject'
 import { getFakeTask } from '../test/getFakeTask'
 import { getFakeSession } from '../test/getFakeSession'
 import SQL from 'sql-template-strings'
-import { createSession, listSessions, updateSession, deleteSession, getSession } from './model'
+import {
+  createSession,
+  listSessions,
+  updateSession,
+  deleteSession,
+  getSession
+} from './model'
 import { ApolloError } from 'apollo-server-express'
 import { init } from '../init'
 
@@ -25,21 +31,15 @@ beforeAll(async () => {
 
   const db = await getDatabase()
 
-  const user1Id = (
-    await insert('user', getFakeUser())
-  ).lastID!
+  const user1Id = (await insert('user', getFakeUser())).lastID!
 
-  const user2Id = (
-    await insert('user', getFakeUser())
-  ).lastID!
+  const user2Id = (await insert('user', getFakeUser())).lastID!
 
-  const client1Id = (
-    await insert('client', getFakeClient({ user: user1Id }))
-  ).lastID!
+  const client1Id = (await insert('client', getFakeClient({ user: user1Id })))
+    .lastID!
 
-  const client2Id = (
-    await insert('client', getFakeClient({ user: user2Id }))
-  ).lastID!
+  const client2Id = (await insert('client', getFakeClient({ user: user2Id })))
+    .lastID!
 
   const project1Id = (
     await insert('project', getFakeProject({ client: client1Id }))
@@ -49,13 +49,11 @@ beforeAll(async () => {
     await insert('project', getFakeProject({ client: client2Id }))
   ).lastID!
 
-  const task1Id = (
-    await insert('task', getFakeTask({ project: project1Id }))
-  ).lastID!
+  const task1Id = (await insert('task', getFakeTask({ project: project1Id })))
+    .lastID!
 
-  const task2Id = (
-    await insert('task', getFakeTask({ project: project2Id }))
-  ).lastID!
+  const task2Id = (await insert('task', getFakeTask({ project: project2Id })))
+    .lastID!
 
   const session1Id = (
     await insert('session', getFakeSession({ task: task1Id, end_time: null }))
@@ -65,12 +63,16 @@ beforeAll(async () => {
     await insert('session', getFakeSession({ task: task2Id }))
   ).lastID!
 
-  user1 = await db.get(SQL`SELECT * FROM user WHERE id = ${user1Id}`) as User
-  user2 = await db.get(SQL`SELECT * FROM user WHERE id = ${user2Id}`) as User
-  task1 = await db.get(SQL`SELECT * FROM task WHERE id = ${task1Id}`) as Task
-  task2 = await db.get(SQL`SELECT * FROM task WHERE id = ${task2Id}`) as Task
-  session1 = await db.get(SQL`SELECT * FROM session WHERE id = ${session1Id}`) as Session
-  session2 = await db.get(SQL`SELECT * FROM session WHERE id = ${session2Id}`) as Session
+  user1 = (await db.get(SQL`SELECT * FROM user WHERE id = ${user1Id}`)) as User
+  user2 = (await db.get(SQL`SELECT * FROM user WHERE id = ${user2Id}`)) as User
+  task1 = (await db.get(SQL`SELECT * FROM task WHERE id = ${task1Id}`)) as Task
+  task2 = (await db.get(SQL`SELECT * FROM task WHERE id = ${task2Id}`)) as Task
+  session1 = (await db.get(
+    SQL`SELECT * FROM session WHERE id = ${session1Id}`
+  )) as Session
+  session2 = (await db.get(
+    SQL`SELECT * FROM session WHERE id = ${session2Id}`
+  )) as Session
 })
 
 describe('createSession', () => {
@@ -86,16 +88,19 @@ describe('createSession', () => {
 
   it('should not allow the creation of an open session if there is one already', async () => {
     await expect(async () => {
-      await createSession(getFakeSession({ task: task1.id, end_time: null }), user1)
+      await createSession(
+        getFakeSession({ task: task1.id, end_time: null }),
+        user1
+      )
     }).rejects.toBeInstanceOf(ApolloError)
   })
 
-  it(
-    'should allow the creation of an open session if there is one owned by another user',
-    async () => {
-      await createSession(getFakeSession({ task: task2.id, end_time: null }), user2)
-    }
-  )
+  it('should allow the creation of an open session if there is one owned by another user', async () => {
+    await createSession(
+      getFakeSession({ task: task2.id, end_time: null }),
+      user2
+    )
+  })
 })
 
 describe('getSession', () => {
@@ -114,15 +119,11 @@ describe('listSessions', () => {
   it("should list only the user's sessions", async () => {
     const result = await listSessions({}, user1)
 
-    expect(
-      result.edges.map(({ node }) => node)
-    ).toContainEqual(
+    expect(result.edges.map(({ node }) => node)).toContainEqual(
       expect.objectContaining({ id: session1.id })
     )
 
-    expect(
-      result.edges.map(({ node }) => node)
-    ).not.toContainEqual(
+    expect(result.edges.map(({ node }) => node)).not.toContainEqual(
       expect.objectContaining({ id: session2.id })
     )
   })
@@ -145,7 +146,11 @@ describe('updateSession', () => {
 
   it("should not allow users to assign to their sessions other users' tasks", async () => {
     await expect(async () => {
-      await updateSession(session1.id, getFakeSession({ task: task2.id }), user1)
+      await updateSession(
+        session1.id,
+        getFakeSession({ task: task2.id }),
+        user1
+      )
     }).rejects.toBeInstanceOf(ApolloError)
   })
 
@@ -161,8 +166,14 @@ describe('deleteSession', () => {
   let session2: Session
 
   beforeAll(async () => {
-    session1 = await createSession(getFakeSession({ task: task1.id }), user1) as Session
-    session2 = await createSession(getFakeSession({ task: task2.id}), user2) as Session
+    session1 = (await createSession(
+      getFakeSession({ task: task1.id }),
+      user1
+    )) as Session
+    session2 = (await createSession(
+      getFakeSession({ task: task2.id }),
+      user2
+    )) as Session
   })
 
   it('should work', async () => {

@@ -35,11 +35,11 @@ export default gql`
   extend type Query {
     session(id: Int!): Session
     sessions(
-      task: Int,
-      first: Int,
-      last: Int,
-      before: String,
-      after: String,
+      task: Int
+      first: Int
+      last: Int
+      before: String
+      after: String
       orderBy: String
     ): SessionConnection!
   }
@@ -53,10 +53,10 @@ export default gql`
 
   extend type Task {
     sessions(
-      first: Int,
-      last: Int,
-      before: String,
-      after: String,
+      first: Int
+      last: Int
+      before: String
+      after: String
       orderBy: String
     ): SessionConnection
     actualWorkingHours: Float!

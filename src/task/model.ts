@@ -51,7 +51,10 @@ export async function getTask(id: number, user: User) {
   return task
 }
 
-export async function listTasks(args: ConnectionQueryArgs & { name?: string }, user: User) {
+export async function listTasks(
+  args: ConnectionQueryArgs & { name?: string },
+  user: User
+) {
   const sql = SQL`
     JOIN project ON project.id = task.project
     JOIN client ON client.id = project.client
@@ -80,9 +83,23 @@ export async function updateTask(id: number, task: Partial<Task>, user: User) {
     throw new ApolloError('You cannot update this task', 'COOLER_403')
   }
 
-  const { name, description, expectedWorkingHours, hourlyCost, project, start_time } = task
+  const {
+    name,
+    description,
+    expectedWorkingHours,
+    hourlyCost,
+    project,
+    start_time
+  } = task
 
-  if (name || description || expectedWorkingHours || hourlyCost || project || start_time) {
+  if (
+    name ||
+    description ||
+    expectedWorkingHours ||
+    hourlyCost ||
+    project ||
+    start_time
+  ) {
     if (project) {
       const newProject = await db.get<{ user: number }>(SQL`
         SELECT client.user
@@ -96,17 +113,23 @@ export async function updateTask(id: number, task: Partial<Task>, user: User) {
       }
 
       if (newProject.user !== user.id) {
-        throw new ApolloError('You cannot assign this project to a task', 'COOLER_403')
+        throw new ApolloError(
+          'You cannot assign this project to a task',
+          'COOLER_403'
+        )
       }
     }
 
-    const args = Object.entries(
-      { name, description, expectedWorkingHours, hourlyCost, project, start_time }
-    ).filter(
-      ([, value]) => value !== undefined
-    ).reduce(
-      (res, [key, value]) => ({ ...res, [key]: value }), {}
-    )
+    const args = Object.entries({
+      name,
+      description,
+      expectedWorkingHours,
+      hourlyCost,
+      project,
+      start_time
+    })
+      .filter(([, value]) => value !== undefined)
+      .reduce((res, [key, value]) => ({ ...res, [key]: value }), {})
 
     await update('task', { ...args, id })
   }

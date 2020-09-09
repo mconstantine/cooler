@@ -29,10 +29,17 @@ describe('initClient', () => {
     })
 
     it('should save the creation time automatically', async () => {
-      const { lastID } = await insert('client', getFakeClient({ user: user.id }))
-      const client = await db.get<Client>(SQL`SELECT * FROM client WHERE id = ${lastID}`)
+      const { lastID } = await insert(
+        'client',
+        getFakeClient({ user: user.id })
+      )
+      const client = await db.get<Client>(
+        SQL`SELECT * FROM client WHERE id = ${lastID}`
+      )
 
-      expect(client!.created_at).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/)
+      expect(client!.created_at).toMatch(
+        /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/
+      )
     })
 
     it('should keep track of the time of the last update', async () => {
@@ -43,16 +50,16 @@ describe('initClient', () => {
 
       const { lastID } = await insert('client', client)
 
-      const updateDateBefore = (
-        await db.get<Client>(SQL`SELECT * FROM client WHERE id = ${lastID}`)
-      )!.updated_at
+      const updateDateBefore = (await db.get<Client>(
+        SQL`SELECT * FROM client WHERE id = ${lastID}`
+      ))!.updated_at
 
       await (() => new Promise(done => setTimeout(() => done(), 1000)))()
       await update('client', { id: lastID, ...updated })
 
-      const updateDateAfter = (
-        await db.get<Client>(SQL`SELECT * FROM client WHERE id = ${lastID}`)
-      )!.updated_at
+      const updateDateAfter = (await db.get<Client>(
+        SQL`SELECT * FROM client WHERE id = ${lastID}`
+      ))!.updated_at
 
       expect(updateDateBefore).not.toBe(updateDateAfter)
     })
@@ -65,7 +72,9 @@ describe('initClient', () => {
 
       await remove('user', { id: userId })
 
-      const client = await db.get<Client>(SQL`SELECT * FROM client WHERE id = ${clientId}`)
+      const client = await db.get<Client>(
+        SQL`SELECT * FROM client WHERE id = ${clientId}`
+      )
 
       expect(client).toBeUndefined()
     })

@@ -43,11 +43,23 @@ export default gql`
   }
 
   extend type User {
-    tasks(first: Int, last: Int, before: String, after: String, orderBy: String): TaskConnection
+    tasks(
+      first: Int
+      last: Int
+      before: String
+      after: String
+      orderBy: String
+    ): TaskConnection
   }
 
   extend type Project {
-    tasks(first: Int, last: Int, before: String, after: String, orderBy: String): TaskConnection
+    tasks(
+      first: Int
+      last: Int
+      before: String
+      after: String
+      orderBy: String
+    ): TaskConnection
   }
 
   extend type Mutation {
@@ -59,11 +71,11 @@ export default gql`
   extend type Query {
     task(id: Int!): Task
     tasks(
-      description: String,
-      first: Int,
-      last: Int,
-      before: String,
-      after: String,
+      description: String
+      first: Int
+      last: Int
+      before: String
+      after: String
       orderBy: String
     ): TaskConnection!
   }

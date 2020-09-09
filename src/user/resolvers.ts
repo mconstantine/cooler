@@ -1,6 +1,12 @@
 import { GraphQLFieldResolver } from 'graphql'
 import { User, UserContext } from './interface'
-import { createUser, loginUser, refreshToken, updateUser, deleteUser } from './model'
+import {
+  createUser,
+  loginUser,
+  refreshToken,
+  updateUser,
+  deleteUser
+} from './model'
 import { ensureUser } from '../misc/ensureUser'
 
 interface UserResolvers {
@@ -19,7 +25,10 @@ interface UserResolvers {
 export default {
   Mutation: {
     createUser: (_parent, { user: { name, email, password } }, context) => {
-      return createUser({ name: name!, email: email!, password: password! }, context)
+      return createUser(
+        { name: name!, email: email!, password: password! },
+        context
+      )
     },
     loginUser: (_parent, { user: { email, password } }) => {
       return loginUser({ email, password })

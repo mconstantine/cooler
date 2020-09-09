@@ -1,6 +1,12 @@
 import { GraphQLFieldResolver } from 'graphql'
 import { Client, ClientType } from './interface'
-import { createClient, listClients, updateClient, deleteClient, getClient } from './model'
+import {
+  createClient,
+  listClients,
+  updateClient,
+  deleteClient,
+  getClient
+} from './model'
 import SQL from 'sql-template-strings'
 import { ConnectionQueryArgs } from '../misc/ConnectionQueryArgs'
 import { queryToConnection } from '../misc/queryToConnection'
@@ -17,13 +23,25 @@ interface ClientResolvers {
     clients: GraphQLFieldResolver<User, ConnectionQueryArgs>
   }
   Mutation: {
-    createClient: GraphQLFieldResolver<any, UserContext, { client: Partial<Client> }>
-    updateClient: GraphQLFieldResolver<any, UserContext, { id: number, client: Partial<Client> }>
+    createClient: GraphQLFieldResolver<
+      any,
+      UserContext,
+      { client: Partial<Client> }
+    >
+    updateClient: GraphQLFieldResolver<
+      any,
+      UserContext,
+      { id: number; client: Partial<Client> }
+    >
     deleteClient: GraphQLFieldResolver<any, UserContext, { id: number }>
   }
   Query: {
     client: GraphQLFieldResolver<any, UserContext, { id: number }>
-    clients: GraphQLFieldResolver<any, UserContext, ConnectionQueryArgs & { name?: string }>
+    clients: GraphQLFieldResolver<
+      any,
+      UserContext,
+      ConnectionQueryArgs & { name?: string }
+    >
   }
 }
 
@@ -31,8 +49,8 @@ export default {
   Client: {
     name: client => {
       return client.type === ClientType.BUSINESS
-      ? client.business_name
-      : `${client.first_name} ${client.last_name}`
+        ? client.business_name
+        : `${client.first_name} ${client.last_name}`
     },
     user: async client => {
       const db = await getDatabase()
@@ -41,7 +59,12 @@ export default {
   },
   User: {
     clients: (user, args) => {
-      return queryToConnection(args, ['*'], 'client', SQL`WHERE user = ${user.id}`)
+      return queryToConnection(
+        args,
+        ['*'],
+        'client',
+        SQL`WHERE user = ${user.id}`
+      )
     }
   },
   Mutation: {

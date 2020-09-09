@@ -40,8 +40,13 @@ describe('initTask', () => {
     })
 
     it('should save the creation time automatically', async () => {
-      const { lastID } = await insert('task', getFakeTask({ project: project.id }))
-      const task = await db.get<Task>(SQL`SELECT * FROM task WHERE id = ${lastID}`)
+      const { lastID } = await insert(
+        'task',
+        getFakeTask({ project: project.id })
+      )
+      const task = await db.get<Task>(
+        SQL`SELECT * FROM task WHERE id = ${lastID}`
+      )
 
       expect(task!.created_at).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/)
     })
@@ -54,16 +59,16 @@ describe('initTask', () => {
 
       const { lastID } = await insert('task', task)
 
-      const updateDateBefore = (
-        await db.get<Task>(SQL`SELECT * FROM task WHERE id = ${lastID}`)
-      )!.updated_at
+      const updateDateBefore = (await db.get<Task>(
+        SQL`SELECT * FROM task WHERE id = ${lastID}`
+      ))!.updated_at
 
       await (() => new Promise(done => setTimeout(() => done(), 1000)))()
       await update('task', { id: lastID, ...updated })
 
-      const updateDateAfter = (
-        await db.get<Task>(SQL`SELECT * FROM task WHERE id = ${lastID}`)
-      )!.updated_at
+      const updateDateAfter = (await db.get<Task>(
+        SQL`SELECT * FROM task WHERE id = ${lastID}`
+      ))!.updated_at
 
       expect(updateDateBefore).not.toBe(updateDateAfter)
     })
@@ -76,7 +81,9 @@ describe('initTask', () => {
 
       await remove('project', { id: projectId })
 
-      const task = await db.get<Task>(SQL`SELECT * FROM task WHERE id = ${taskId1}`)
+      const task = await db.get<Task>(
+        SQL`SELECT * FROM task WHERE id = ${taskId1}`
+      )
 
       expect(task).toBeUndefined()
     })
@@ -95,7 +102,9 @@ describe('initTask', () => {
 
       await remove('user', { id: userId })
 
-      const task = await db.get<Task>(SQL`SELECT * FROM task WHERE id = ${taskId}`)
+      const task = await db.get<Task>(
+        SQL`SELECT * FROM task WHERE id = ${taskId}`
+      )
 
       expect(task).toBeUndefined()
     })
@@ -103,16 +112,16 @@ describe('initTask', () => {
 
   describe('project update', () => {
     it('should update the project when a task is created for it', async () => {
-      const projectUpdatedAtBefore = (
-        await db.get<Project>(SQL`SELECT * FROM project WHERE id = ${project.id}`)
-      )!.updated_at
+      const projectUpdatedAtBefore = (await db.get<Project>(
+        SQL`SELECT * FROM project WHERE id = ${project.id}`
+      ))!.updated_at
 
       await (() => new Promise(done => setTimeout(() => done(), 1000)))()
       await insert('task', getFakeTask({ project: project.id }))
 
-      const projectUpdatedAtAfter = (
-        await db.get<Project>(SQL`SELECT * FROM project WHERE id = ${project.id}`)
-      )!.updated_at
+      const projectUpdatedAtAfter = (await db.get<Project>(
+        SQL`SELECT * FROM project WHERE id = ${project.id}`
+      ))!.updated_at
 
       expect(projectUpdatedAtBefore).not.toBe(projectUpdatedAtAfter)
     })

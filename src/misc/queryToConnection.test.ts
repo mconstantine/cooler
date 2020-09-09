@@ -20,19 +20,24 @@ describe('queryToConnection', () => {
       )
     `)
 
-    const dataInput = [{
-      char: 'A',
-      number: 4
-    }, {
-      char: 'C',
-      number: 3
-    }, {
-      char: 'B',
-      number: 2
-    }, {
-      char: 'D',
-      number: 1
-    }]
+    const dataInput = [
+      {
+        char: 'A',
+        number: 4
+      },
+      {
+        char: 'C',
+        number: 3
+      },
+      {
+        char: 'B',
+        number: 2
+      },
+      {
+        char: 'D',
+        number: 1
+      }
+    ]
 
     for (let i = 0; i < dataInput.length; i++) {
       const input = dataInput[i]
@@ -74,9 +79,15 @@ describe('queryToConnection', () => {
       { id: 1, char: 'A', number: 4 }
     ]
     */
-    const result = await queryToConnection({
-      first: 2, after: toCursor(3), orderBy: 'number ASC'
-    }, ['id', 'char', 'number'], 'test')
+    const result = await queryToConnection(
+      {
+        first: 2,
+        after: toCursor(3),
+        orderBy: 'number ASC'
+      },
+      ['id', 'char', 'number'],
+      'test'
+    )
 
     expect(result.totalCount).toBe(4)
     expect(result.edges.length).toBe(2)
@@ -94,9 +105,15 @@ describe('queryToConnection', () => {
       { id: 2, char: 'C', number: 3 }
     ]
     */
-    const result = await queryToConnection({
-      first: 1, after: toCursor(3), orderBy: 'number ASC'
-    }, ['id', 'char', 'number'], 'test')
+    const result = await queryToConnection(
+      {
+        first: 1,
+        after: toCursor(3),
+        orderBy: 'number ASC'
+      },
+      ['id', 'char', 'number'],
+      'test'
+    )
 
     expect(result.totalCount).toBe(4)
     expect(result.edges.length).toBe(1)
@@ -114,9 +131,16 @@ describe('queryToConnection', () => {
       { id: 3, char: 'B', number: 2 }
     ]
     */
-    const result = await queryToConnection({
-      last: 1, before: toCursor(2), orderBy: 'char ASC'
-    }, ['id', 'char', 'number'], 'test', SQL`WHERE char != ${'D'}`)
+    const result = await queryToConnection(
+      {
+        last: 1,
+        before: toCursor(2),
+        orderBy: 'char ASC'
+      },
+      ['id', 'char', 'number'],
+      'test',
+      SQL`WHERE char != ${'D'}`
+    )
 
     expect(result.totalCount).toBe(3)
     expect(result.edges.length).toBe(1)
@@ -135,9 +159,16 @@ describe('queryToConnection', () => {
       { id: 3, char: 'B', number: 2 }
     ]
     */
-    const result = await queryToConnection({
-      last: 2, before: toCursor(2), orderBy: 'char ASC'
-    }, ['id', 'char', 'number'], 'test', SQL`WHERE char != ${'D'}`)
+    const result = await queryToConnection(
+      {
+        last: 2,
+        before: toCursor(2),
+        orderBy: 'char ASC'
+      },
+      ['id', 'char', 'number'],
+      'test',
+      SQL`WHERE char != ${'D'}`
+    )
 
     expect(result.totalCount).toBe(3)
     expect(result.edges.length).toBe(2)

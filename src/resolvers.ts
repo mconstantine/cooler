@@ -21,6 +21,4 @@ export const resolvers = [
   taskResolvers,
   sessionResolvers,
   taxResolvers
-].reduce(
-  (res, resolvers) => merge(res, resolvers), {}
-)
+].reduce((res, resolvers) => merge(res, resolvers), {})

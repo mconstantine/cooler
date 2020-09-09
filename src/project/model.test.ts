@@ -1,4 +1,10 @@
-import { createProject, listProjects, updateProject, deleteProject, getProject } from './model'
+import {
+  createProject,
+  listProjects,
+  updateProject,
+  deleteProject,
+  getProject
+} from './model'
 import { User } from '../user/interface'
 import { Client } from '../client/interface'
 import { insert } from '../misc/dbUtils'
@@ -23,21 +29,15 @@ beforeAll(async () => {
 
   const db = await getDatabase()
 
-  const user1Id = (
-    await insert('user', getFakeUser())
-  ).lastID!
+  const user1Id = (await insert('user', getFakeUser())).lastID!
 
-  const user2Id = (
-    await insert('user', getFakeUser())
-  ).lastID!
+  const user2Id = (await insert('user', getFakeUser())).lastID!
 
-  const client1Id = (
-    await insert('client', getFakeClient({ user: user1Id }))
-  ).lastID!
+  const client1Id = (await insert('client', getFakeClient({ user: user1Id })))
+    .lastID!
 
-  const client2Id = (
-    await insert('client', getFakeClient({ user: user2Id }))
-  ).lastID!
+  const client2Id = (await insert('client', getFakeClient({ user: user2Id })))
+    .lastID!
 
   const project1Id = (
     await insert('project', getFakeProject({ client: client1Id }))
@@ -47,12 +47,20 @@ beforeAll(async () => {
     await insert('project', getFakeProject({ client: client2Id }))
   ).lastID!
 
-  user1 = await db.get(SQL`SELECT * FROM user WHERE id = ${user1Id}`) as User
-  user2 = await db.get(SQL`SELECT * FROM user WHERE id = ${user2Id}`) as User
-  client1 = await db.get(SQL`SELECT * FROM client WHERE id = ${client1Id}`) as Client
-  client2 = await db.get(SQL`SELECT * FROM client WHERE id = ${client2Id}`) as Client
-  project1 = await db.get(SQL`SELECT * FROM project WHERE id = ${project1Id}`) as Project
-  project2 = await db.get(SQL`SELECT * FROM project WHERE id = ${project2Id}`) as Project
+  user1 = (await db.get(SQL`SELECT * FROM user WHERE id = ${user1Id}`)) as User
+  user2 = (await db.get(SQL`SELECT * FROM user WHERE id = ${user2Id}`)) as User
+  client1 = (await db.get(
+    SQL`SELECT * FROM client WHERE id = ${client1Id}`
+  )) as Client
+  client2 = (await db.get(
+    SQL`SELECT * FROM client WHERE id = ${client2Id}`
+  )) as Client
+  project1 = (await db.get(
+    SQL`SELECT * FROM project WHERE id = ${project1Id}`
+  )) as Project
+  project2 = (await db.get(
+    SQL`SELECT * FROM project WHERE id = ${project2Id}`
+  )) as Project
 })
 
 describe('createProject', () => {
@@ -83,15 +91,11 @@ describe('listProjects', () => {
   it("should list only the user's projects", async () => {
     const results = await listProjects({}, user1)
 
-    expect(
-      results.edges.map(({ node }) => node)
-    ).toContainEqual(
+    expect(results.edges.map(({ node }) => node)).toContainEqual(
       expect.objectContaining({ id: project1.id })
     )
 
-    expect(
-      results.edges.map(({ node }) => node)
-    ).not.toContainEqual(
+    expect(results.edges.map(({ node }) => node)).not.toContainEqual(
       expect.objectContaining({ id: project2.id })
     )
   })
@@ -114,7 +118,11 @@ describe('updateProject', () => {
 
   it("should not allow users to assign to their projects other users' clients", async () => {
     await expect(async () => {
-      await updateProject(project1.id, getFakeProject({ client: client2.id }), user1)
+      await updateProject(
+        project1.id,
+        getFakeProject({ client: client2.id }),
+        user1
+      )
     }).rejects.toBeInstanceOf(ApolloError)
   })
 })
@@ -124,8 +132,14 @@ describe('deleteProject', () => {
   let project2: Project
 
   beforeAll(async () => {
-    project1 = await createProject(getFakeProject({ client: client1.id }), user1) as Project
-    project2 = await createProject(getFakeProject({ client: client2.id}), user2) as Project
+    project1 = (await createProject(
+      getFakeProject({ client: client1.id }),
+      user1
+    )) as Project
+    project2 = (await createProject(
+      getFakeProject({ client: client2.id }),
+      user2
+    )) as Project
   })
 
   it('should work', async () => {

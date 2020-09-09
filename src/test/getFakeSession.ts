@@ -3,7 +3,9 @@ import { Session } from '../session/interface'
 import { toSQLDate, fromSQLDate } from '../misc/dbUtils'
 
 export function getFakeSession(data?: Partial<Session>): Partial<Session> {
-  const startTime = data?.start_time ? fromSQLDate(data.start_time) : faker.date.recent(10)
+  const startTime = data?.start_time
+    ? fromSQLDate(data.start_time)
+    : faker.date.recent(10)
   const endTime = new Date(
     startTime.getTime() + 900000 + Math.round(Math.random() * 28800000 - 900000)
   )

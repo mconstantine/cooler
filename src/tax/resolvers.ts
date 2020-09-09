@@ -16,8 +16,12 @@ interface TaxResolvers {
     taxes: GraphQLFieldResolver<User, UserContext, ConnectionQueryArgs>
   }
   Mutation: {
-    createTax: GraphQLFieldResolver<any, UserContext, { tax: Partial<Tax> }>
-    updateTax: GraphQLFieldResolver<any, UserContext, { id: number, tax: Partial<Tax> }>
+    createTax: GraphQLFieldResolver<any, UserContext, { tax: Partial<Tax> }>
+    updateTax: GraphQLFieldResolver<
+      any,
+      UserContext,
+      { id: number; tax: Partial<Tax> }
+    >
     deleteTax: GraphQLFieldResolver<any, UserContext, { id: number }>
   }
   Query: {
@@ -35,7 +39,12 @@ export default {
   },
   User: {
     taxes: (user, args) => {
-      return queryToConnection(args, ['tax.*'], 'tax', SQL`WHERE tax.user = ${user.id}`)
+      return queryToConnection(
+        args,
+        ['tax.*'],
+        'tax',
+        SQL`WHERE tax.user = ${user.id}`
+      )
     }
   },
   Mutation: {

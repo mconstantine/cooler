@@ -1,5 +1,5 @@
-import { getDatabase } from "../misc/getDatabase";
-import SQL from "sql-template-strings";
+import { getDatabase } from '../misc/getDatabase'
+import SQL from 'sql-template-strings'
 
 export default async function init() {
   const db = await getDatabase()
