@@ -3,9 +3,9 @@ import { getDatabase } from '../misc/getDatabase'
 import { Database } from 'sqlite'
 import { insert, update, remove } from '../misc/dbUtils'
 import { getFakeClient } from '../test/getFakeClient'
-import { Client, ClientType } from './Client'
+import { Client, ClientType } from './interface'
 import SQL from 'sql-template-strings'
-import { User } from '../user/User'
+import { User } from '../user/interface'
 import { getFakeUser } from '../test/getFakeUser'
 
 describe('initClient', () => {

@@ -1,5 +1,5 @@
 import faker from 'faker'
-import { Tax } from '../tax/Tax'
+import { Tax } from '../tax/interface'
 
 export function getFakeTax(data: Partial<Tax> = {}): Partial<Tax> {
   return {

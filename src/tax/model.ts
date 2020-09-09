@@ -1,5 +1,5 @@
-import { Tax } from './Tax'
-import { User } from '../user/User'
+import { Tax } from './interface'
+import { User } from '../user/interface'
 import { ConnectionQueryArgs } from '../misc/ConnectionQueryArgs'
 import { insert, update, remove } from '../misc/dbUtils'
 import { getDatabase } from '../misc/getDatabase'

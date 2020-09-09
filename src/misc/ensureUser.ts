@@ -1,4 +1,4 @@
-import { UserContext } from '../user/User'
+import { UserContext } from '../user/interface'
 import { ApolloError } from 'apollo-server-express'
 
 export function ensureUser(context: UserContext) {

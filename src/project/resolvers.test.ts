@@ -5,7 +5,7 @@ import { getFakeClient } from '../test/getFakeClient'
 import { getFakeProject } from '../test/getFakeProject'
 import resolvers from './resolvers'
 import { getDatabase } from '../misc/getDatabase'
-import { User } from '../user/User'
+import { User } from '../user/interface'
 import SQL from 'sql-template-strings'
 
 describe('project resolvers', () => {

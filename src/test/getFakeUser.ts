@@ -1,4 +1,4 @@
-import { User } from '../user/User'
+import { User } from '../user/interface'
 import faker from 'faker'
 
 export function getFakeUser(data: Partial<User> = {}): Partial<User> {

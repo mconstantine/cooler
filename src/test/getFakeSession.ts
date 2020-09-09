@@ -1,5 +1,5 @@
 import faker from 'faker'
-import { Session } from '../session/Session'
+import { Session } from '../session/interface'
 import { toSQLDate, fromSQLDate } from '../misc/dbUtils'
 
 export function getFakeSession(data?: Partial<Session>): Partial<Session> {

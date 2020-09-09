@@ -1,5 +1,5 @@
 import { init } from '../init'
-import { User } from '../user/User'
+import { User } from '../user/interface'
 import { insert } from '../misc/dbUtils'
 import { getFakeUser } from '../test/getFakeUser'
 import { getDatabase } from '../misc/getDatabase'
@@ -7,7 +7,7 @@ import SQL from 'sql-template-strings'
 import { getFakeTax } from '../test/getFakeTax'
 import { createTax, getTax, listTaxes, updateTax, deleteTax } from './model'
 import { ApolloError } from 'apollo-server-express'
-import { Tax } from './Tax'
+import { Tax } from './interface'
 
 let user1: User
 let user2: User

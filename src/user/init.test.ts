@@ -3,7 +3,7 @@ import { Database } from 'sqlite'
 import { getDatabase } from '../misc/getDatabase'
 import { getFakeUser } from '../test/getFakeUser'
 import { insert, update } from '../misc/dbUtils'
-import { User } from './User'
+import { User } from './interface'
 import SQL from 'sql-template-strings'
 
 describe('initTask', () => {

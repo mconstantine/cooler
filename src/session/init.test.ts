@@ -7,8 +7,8 @@ import { getFakeProject } from '../test/getFakeProject'
 import { getFakeTask } from '../test/getFakeTask'
 import { getFakeSession } from '../test/getFakeSession'
 import SQL from 'sql-template-strings'
-import { Task } from '../task/Task'
-import { Project } from '../project/Project'
+import { Task } from '../task/interface'
+import { Project } from '../project/interface'
 import { init } from '../init'
 
 describe('init', () => {

@@ -1,6 +1,6 @@
 import { GraphQLFieldResolver } from 'graphql'
-import { Tax } from './Tax'
-import { User, UserContext } from '../user/User'
+import { Tax } from './interface'
+import { User, UserContext } from '../user/interface'
 import { ConnectionQueryArgs } from '../misc/ConnectionQueryArgs'
 import { getDatabase } from '../misc/getDatabase'
 import SQL from 'sql-template-strings'

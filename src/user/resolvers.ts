@@ -1,5 +1,5 @@
 import { GraphQLFieldResolver } from 'graphql'
-import { User, UserContext } from './User'
+import { User, UserContext } from './interface'
 import { createUser, loginUser, refreshToken, updateUser, deleteUser } from './model'
 import { ensureUser } from '../misc/ensureUser'
 

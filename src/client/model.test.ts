@@ -1,11 +1,11 @@
 import { getFakeUser } from '../test/getFakeUser'
 import { insert } from '../misc/dbUtils'
-import { User } from '../user/User'
+import { User } from '../user/interface'
 import { getDatabase } from '../misc/getDatabase'
 import SQL from 'sql-template-strings'
 import { getFakeClient } from '../test/getFakeClient'
 import { createClient, listClients, updateClient, deleteClient, getClient } from './model'
-import { Client, ClientType } from './Client'
+import { Client, ClientType } from './interface'
 import { ApolloError } from 'apollo-server-express'
 import { init } from '../init'
 

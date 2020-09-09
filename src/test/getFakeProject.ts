@@ -1,5 +1,5 @@
 import faker from 'faker'
-import { Project } from '../project/Project'
+import { Project } from '../project/interface'
 import { toSQLDate } from '../misc/dbUtils'
 
 export function getFakeProject(data: Partial<Project> = {}): Partial<Project> {

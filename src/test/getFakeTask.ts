@@ -1,5 +1,5 @@
 import faker from 'faker'
-import { Task } from '../task/Task'
+import { Task } from '../task/interface'
 import { toSQLDate } from '../misc/dbUtils'
 
 export function getFakeTask(data: Partial<Task> = {}): Partial<Task> {

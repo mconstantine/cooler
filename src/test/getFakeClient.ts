@@ -1,5 +1,5 @@
 import faker from 'faker'
-import { Client, ClientType, Province, Country } from '../client/Client'
+import { Client, ClientType, Province, Country } from '../client/interface'
 
 export function getFakeClient(data: Partial<Client> = {}): Partial<Client> {
   const type: ClientType = data.type || faker.random.arrayElement(Object.values(ClientType))

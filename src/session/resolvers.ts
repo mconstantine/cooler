@@ -1,14 +1,14 @@
 import { GraphQLFieldResolver } from 'graphql'
-import { Session } from './Session'
-import { UserContext, User } from '../user/User'
+import { Session } from './interface'
+import { UserContext, User } from '../user/interface'
 import { ConnectionQueryArgs } from '../misc/ConnectionQueryArgs'
 import { getDatabase } from '../misc/getDatabase'
-import { Task } from '../task/Task'
+import { Task } from '../task/interface'
 import SQL from 'sql-template-strings'
 import { ensureUser } from '../misc/ensureUser'
 import { createSession, updateSession, deleteSession, getSession, listSessions, createTimesheet } from './model'
 import { toSQLDate } from '../misc/dbUtils'
-import { Project } from '../project/Project'
+import { Project } from '../project/interface'
 
 interface SessionResolvers {
   Session: {

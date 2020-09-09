@@ -1,5 +1,5 @@
 import { Connection } from '../misc/Connection'
-import { Project } from '../project/Project'
+import { Project } from '../project/interface'
 
 export enum ClientType {
   PRIVATE = 'PRIVATE',

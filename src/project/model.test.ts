@@ -1,6 +1,6 @@
 import { createProject, listProjects, updateProject, deleteProject, getProject } from './model'
-import { User } from '../user/User'
-import { Client } from '../client/Client'
+import { User } from '../user/interface'
+import { Client } from '../client/interface'
 import { insert } from '../misc/dbUtils'
 import { getFakeUser } from '../test/getFakeUser'
 import { getFakeClient } from '../test/getFakeClient'
@@ -8,7 +8,7 @@ import { getDatabase } from '../misc/getDatabase'
 import SQL from 'sql-template-strings'
 import { getFakeProject } from '../test/getFakeProject'
 import { ApolloError } from 'apollo-server-express'
-import { Project } from './Project'
+import { Project } from './interface'
 import { init } from '../init'
 
 let user1: User

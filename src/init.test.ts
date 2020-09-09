@@ -4,7 +4,7 @@ import { getFakeUser } from "./test/getFakeUser"
 import { getFakeClient } from "./test/getFakeClient"
 import { getFakeProject } from "./test/getFakeProject"
 import { getDatabase } from "./misc/getDatabase"
-import { Project } from "./project/Project"
+import { Project } from "./project/interface"
 import SQL from "sql-template-strings"
 
 describe('init', () => {

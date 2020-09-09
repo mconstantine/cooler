@@ -1,11 +1,11 @@
 import { GraphQLFieldResolver } from 'graphql'
-import { Client, ClientType } from './Client'
+import { Client, ClientType } from './interface'
 import { createClient, listClients, updateClient, deleteClient, getClient } from './model'
 import SQL from 'sql-template-strings'
 import { ConnectionQueryArgs } from '../misc/ConnectionQueryArgs'
 import { queryToConnection } from '../misc/queryToConnection'
 import { ensureUser } from '../misc/ensureUser'
-import { UserContext, User } from '../user/User'
+import { UserContext, User } from '../user/interface'
 import { getDatabase } from '../misc/getDatabase'
 
 interface ClientResolvers {

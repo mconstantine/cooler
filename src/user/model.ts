@@ -1,4 +1,4 @@
-import { User, TokenType, Token, UserContext } from './User'
+import { User, TokenType, Token, UserContext } from './interface'
 import { getDatabase } from '../misc/getDatabase'
 import SQL from 'sql-template-strings'
 import { ApolloError } from 'apollo-server-express'
