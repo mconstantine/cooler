@@ -1,3 +1,5 @@
+import { SQLDate } from '../misc/Types'
+
 export interface User {
   id: number
   name: string
@@ -12,8 +14,8 @@ export interface UserFromDatabase {
   name: string
   email: string
   password: string
-  created_at: string
-  updated_at: string
+  created_at: SQLDate
+  updated_at: SQLDate
 }
 
 export enum TokenType {

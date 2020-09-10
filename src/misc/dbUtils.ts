@@ -1,4 +1,5 @@
 import { getDatabase } from './getDatabase'
+import { SQLDate } from './Types'
 
 /**
  * Inserts one or more rows into the database. Every key in `_rows` that has a value of
@@ -88,7 +89,7 @@ export async function remove<T extends { [key: string]: any }>(
   return await db.run(query, ...args)
 }
 
-export function toSQLDate(d: Date): string {
+export function toSQLDate(d: Date): SQLDate {
   const withLeadingZero = (n: number) => (n < 10 ? '0' : '') + n
 
   return (
@@ -106,7 +107,7 @@ export function toSQLDate(d: Date): string {
   )
 }
 
-export function fromSQLDate(sqlDate: string): Date {
+export function fromSQLDate(sqlDate: SQLDate): Date {
   const [, year, month, day, hours, minutes, seconds] = sqlDate.match(
     /(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})/
   ) as RegExpMatchArray
