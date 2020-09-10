@@ -1,7 +1,7 @@
-import { SQLDate } from '../misc/Types'
+import { SQLDate, ID } from '../misc/Types'
 
 export interface User {
-  id: number
+  id: ID
   name: string
   email: string
   password: string
@@ -10,7 +10,7 @@ export interface User {
 }
 
 export interface UserFromDatabase {
-  id: number
+  id: ID
   name: string
   email: string
   password: string
