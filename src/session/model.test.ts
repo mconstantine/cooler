@@ -30,16 +30,10 @@ beforeAll(async () => {
   await init()
 
   const db = await getDatabase()
-
   const user1Id = (await insert('user', getFakeUser())).lastID!
-
   const user2Id = (await insert('user', getFakeUser())).lastID!
-
-  const client1Id = (await insert('client', getFakeClient({ user: user1Id })))
-    .lastID!
-
-  const client2Id = (await insert('client', getFakeClient({ user: user2Id })))
-    .lastID!
+  const client1Id = (await insert('client', getFakeClient(user1Id))).lastID!
+  const client2Id = (await insert('client', getFakeClient(user2Id))).lastID!
 
   const project1Id = (
     await insert('project', getFakeProject({ client: client1Id }))

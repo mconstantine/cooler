@@ -25,7 +25,7 @@ describe('initProject', () => {
 
       const userData = getFakeUser()
       const { lastID: userId } = await insert('user', userData)
-      const clientData = getFakeClient({ user: userId })
+      const clientData = getFakeClient(userId!)
       const { lastID: clientId } = await insert('client', clientData)
 
       user = { ...userData, id: userId! } as User
@@ -73,7 +73,7 @@ describe('initProject', () => {
     })
 
     it("should delete all client's projects when the client is deleted", async () => {
-      const clientData = getFakeClient({ user: user.id })
+      const clientData = getFakeClient(user.id)
       const { lastID: clientId } = await insert('client', clientData)
       const projectData = getFakeProject({ client: clientId })
       const { lastID: projectId } = await insert('project', projectData)

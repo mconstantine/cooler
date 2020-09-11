@@ -26,8 +26,7 @@ describe('init', () => {
 
     it("should delete all task's sessions when a task is deleted", async () => {
       const user = (await insert('user', getFakeUser())).lastID!
-
-      const client = (await insert('client', getFakeClient({ user }))).lastID!
+      const client = (await insert('client', getFakeClient(user))).lastID!
 
       const project = (await insert('project', getFakeProject({ client })))
         .lastID!
@@ -48,8 +47,7 @@ describe('init', () => {
   describe('deletion chain', () => {
     it('should make user deletion bubble down to sessions', async () => {
       const user = (await insert('user', getFakeUser())).lastID!
-
-      const client = (await insert('client', getFakeClient({ user }))).lastID!
+      const client = (await insert('client', getFakeClient(user))).lastID!
 
       const project = (await insert('project', getFakeProject({ client })))
         .lastID!
@@ -70,8 +68,7 @@ describe('init', () => {
   describe('update chain', () => {
     it('should update the task and project when a session is created for them', async () => {
       const user = (await insert('user', getFakeUser())).lastID!
-
-      const client = (await insert('client', getFakeClient({ user }))).lastID!
+      const client = (await insert('client', getFakeClient(user))).lastID!
 
       const project = (await insert('project', getFakeProject({ client })))
         .lastID!

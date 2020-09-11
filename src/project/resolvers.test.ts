@@ -19,7 +19,7 @@ describe('project resolvers', () => {
         const { lastID: userId } = await insert('user', getFakeUser())
         const { lastID: clientId } = await insert(
           'client',
-          getFakeClient({ user: userId })
+          getFakeClient(userId!)
         )
 
         await insert(

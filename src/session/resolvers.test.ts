@@ -23,8 +23,8 @@ describe('session resolvers', () => {
     db = await getDatabase()
 
     const userId = (await insert('user', getFakeUser())).lastID!
-    const clientId = (await insert('client', getFakeClient({ user: userId })))
-      .lastID!
+    const clientId = (await insert('client', getFakeClient(userId))).lastID!
+
     const projectId = (
       await insert('project', getFakeProject({ client: clientId }))
     ).lastID!
@@ -419,12 +419,10 @@ describe('session resolvers', () => {
 
     describe('with data', () => {
       beforeAll(async () => {
-        const client1Id = (
-          await insert('client', getFakeClient({ user: user.id }))
-        ).lastID!
-        const client2Id = (
-          await insert('client', getFakeClient({ user: user.id }))
-        ).lastID!
+        const client1Id = (await insert('client', getFakeClient(user.id)))
+          .lastID!
+        const client2Id = (await insert('client', getFakeClient(user.id)))
+          .lastID!
 
         const project1Id = (
           await insert(
