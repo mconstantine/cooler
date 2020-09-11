@@ -1,12 +1,23 @@
 import faker from 'faker'
 import { Client, ClientType, Province, Country } from '../client/interface'
+import { foldClientType } from '../client/model'
+import { ID } from '../misc/Types'
 
-export function getFakeClient(data: Partial<Client> = {}): Partial<Client> {
-  const type: ClientType =
-    data.type || faker.random.arrayElement(Object.values(ClientType))
+type AllowedClient<
+  T extends { id: ID; created_at: Date; updated_at: Date }
+> = Omit<T, 'id' | 'created_at' | 'updated_at'>
+
+export function getFakeClient(
+  user: ID,
+  { type, ...data }: Partial<AllowedClient<Client>> = {}
+): AllowedClient<Client> {
+  type = type || faker.random.arrayElement(Object.values(ClientType))
 
   const country_code = faker.address.countryCode() as keyof typeof Country
-  const commonData: Partial<Client> = {
+
+  const commonData = {
+    type,
+    user,
     address_country: country_code,
     address_province:
       country_code !== 'IT'
@@ -21,27 +32,28 @@ export function getFakeClient(data: Partial<Client> = {}): Partial<Client> {
     address_email: faker.internet.email()
   }
 
-  const typeData: Partial<Client> =
-    type === ClientType.BUSINESS
-      ? {
-          country_code: country_code,
-          vat_number: faker.finance.mask(11),
-          business_name: faker.company.companyName()
-        }
-      : {
-          fiscal_code: generateFiscalCode(),
-          first_name: faker.name.firstName(),
-          last_name: faker.name.lastName()
-        }
-
-  const res = {
-    ...typeData,
-    ...commonData,
-    ...data,
-    type
-  }
-
-  return res
+  return foldClientType(commonData, {
+    whenPrivate: client => ({
+      ...client,
+      ...data,
+      fiscal_code: generateFiscalCode(),
+      first_name: faker.name.firstName(),
+      last_name: faker.name.lastName(),
+      country_code: null,
+      vat_number: null,
+      business_name: null
+    }),
+    whenBusiness: client => ({
+      ...client,
+      ...data,
+      fiscal_code: null,
+      first_name: null,
+      last_name: null,
+      country_code: country_code,
+      vat_number: faker.finance.mask(11),
+      business_name: faker.company.companyName()
+    })
+  })
 }
 
 function generateFiscalCode(): string {

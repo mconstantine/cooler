@@ -1,5 +1,4 @@
-import { Connection } from '../misc/Connection'
-import { Project } from '../project/interface'
+import { ID } from '../misc/Types'
 
 export enum ClientType {
   PRIVATE = 'PRIVATE',
@@ -371,15 +370,8 @@ export enum Country {
   ZW = 'Zimbabwe'
 }
 
-export interface Client {
-  id: number
-  type: ClientType
-  fiscal_code?: string | null
-  first_name?: string | null
-  last_name?: string | null
-  country_code?: keyof typeof Country | null
-  vat_number?: string | null
-  business_name?: string | null
+interface ClientCommonCommonData {
+  id: ID
   address_country: keyof typeof Country
   address_province: keyof typeof Province
   address_city: string
@@ -387,8 +379,46 @@ export interface Client {
   address_street: string
   address_street_number?: string | null
   address_email: string
-  user: number
+  user: ID
+}
+
+interface ClientCommonData extends ClientCommonCommonData {
+  created_at: Date
+  updated_at: Date
+}
+
+interface ClientFromDatabaseCommonData extends ClientCommonCommonData {
   created_at: string
   updated_at: string
-  projects?: Connection<Project>
 }
+
+interface PrivateClientCommonData {
+  type: ClientType.PRIVATE
+  fiscal_code: string
+  first_name: string
+  last_name: string
+  country_code: null
+  vat_number: null
+  business_name: null
+}
+
+interface BusinessClientCommonData {
+  type: ClientType.BUSINESS
+  fiscal_code: null
+  first_name: null
+  last_name: null
+  country_code: keyof typeof Country
+  vat_number: string
+  business_name: string
+}
+
+export type PrivateClient = ClientCommonData & PrivateClientCommonData
+export type BusinessClient = ClientCommonData & BusinessClientCommonData
+export type PrivateClientFromDatabase = ClientFromDatabaseCommonData &
+  PrivateClientCommonData
+export type BusinessClientFromDatabase = ClientFromDatabaseCommonData &
+  BusinessClientCommonData
+export type Client = PrivateClient | BusinessClient
+export type ClientFromDatabase =
+  | PrivateClientFromDatabase
+  | BusinessClientFromDatabase

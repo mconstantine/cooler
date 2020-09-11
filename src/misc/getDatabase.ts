@@ -4,7 +4,7 @@ import path from 'path'
 
 let database: Database
 
-export async function getDatabase() {
+export async function getDatabase(): Promise<Database> {
   if (!database) {
     database = await open({
       filename:

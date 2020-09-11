@@ -29,10 +29,7 @@ describe('initClient', () => {
     })
 
     it('should save the creation time automatically', async () => {
-      const { lastID } = await insert(
-        'client',
-        getFakeClient({ user: user.id })
-      )
+      const { lastID } = await insert('client', getFakeClient(user.id))
       const client = await db.get<Client>(
         SQL`SELECT * FROM client WHERE id = ${lastID}`
       )
@@ -43,7 +40,7 @@ describe('initClient', () => {
     })
 
     it('should keep track of the time of the last update', async () => {
-      const client = getFakeClient({ user: user.id })
+      const client = getFakeClient(user.id)
       const updated: Partial<Client> = { address_city: 'Some weird city' }
 
       expect(client.address_city).not.toBe(updated.address_city)
@@ -67,7 +64,7 @@ describe('initClient', () => {
     it("should delete all user's clients when the user is deleted", async () => {
       const userData = getFakeUser()
       const { lastID: userId } = await insert('user', userData)
-      const clientData = getFakeClient({ user: userId })
+      const clientData = getFakeClient(userId!)
       const { lastID: clientId } = await insert('client', clientData)
 
       await remove('user', { id: userId })
@@ -82,37 +79,37 @@ describe('initClient', () => {
 
   describe('validation', () => {
     it('should check that fiscal_code exists for PRIVATE Clients', async () => {
-      const client = getFakeClient({ type: ClientType.PRIVATE })
+      const client = getFakeClient(0, { type: ClientType.PRIVATE })
       delete client.fiscal_code
       await expect(insert('client', client)).rejects.toBeDefined()
     })
 
     it('should check that first_name exists for PRIVATE Clients', async () => {
-      const client = getFakeClient({ type: ClientType.PRIVATE })
+      const client = getFakeClient(0, { type: ClientType.PRIVATE })
       delete client.first_name
       await expect(insert('client', client)).rejects.toBeDefined()
     })
 
     it('should check that last_name exists for PRIVATE Clients', async () => {
-      const client = getFakeClient({ type: ClientType.PRIVATE })
+      const client = getFakeClient(0, { type: ClientType.PRIVATE })
       delete client.last_name
       await expect(insert('client', client)).rejects.toBeDefined()
     })
 
     it('should check that country_code exists for BUSINESS Clients', async () => {
-      const client = getFakeClient({ type: ClientType.BUSINESS })
+      const client = getFakeClient(0, { type: ClientType.BUSINESS })
       delete client.country_code
       await expect(insert('client', client)).rejects.toBeDefined()
     })
 
     it('should check that vat_number exists for BUSINESS Clients', async () => {
-      const client = getFakeClient({ type: ClientType.BUSINESS })
+      const client = getFakeClient(0, { type: ClientType.BUSINESS })
       delete client.vat_number
       await expect(insert('client', client)).rejects.toBeDefined()
     })
 
     it('should check that business_name exists for BUSINESS Clients', async () => {
-      const client = getFakeClient({ type: ClientType.BUSINESS })
+      const client = getFakeClient(0, { type: ClientType.BUSINESS })
       delete client.business_name
       await expect(insert('client', client)).rejects.toBeDefined()
     })

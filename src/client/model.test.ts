@@ -31,13 +31,14 @@ beforeAll(async () => {
 
   user1 = await db.get(SQL`SELECT * FROM user WHERE id = ${user1Id}`)!
   user2 = await db.get(SQL`SELECT * FROM user WHERE id = ${user2Id}`)!
-  client1 = (await createClient(getFakeClient(), user1)) as Client
-  client2 = (await createClient(getFakeClient(), user2)) as Client
+  client1 = (await createClient(getFakeClient(user1.id), user1)) as Client
+  client2 = (await createClient(getFakeClient(user2.id), user2)) as Client
 })
 
 describe('createClient', () => {
   it('should set the user automatically', async () => {
-    const clientData = getFakeClient()
+    const clientData = getFakeClient(user1.id)
+    delete clientData.user
     const client = await createClient(clientData, user1)
 
     expect(clientData.user).toBeUndefined()
@@ -73,7 +74,7 @@ describe('listClients', () => {
 
 describe('updateClient', () => {
   it('should work', async () => {
-    const data = getFakeClient()
+    const data = getFakeClient(user1.id)
     const result = (await updateClient(client1.id, data, user1)) as Client
 
     expect(result).toMatchObject(data)
@@ -82,62 +83,62 @@ describe('updateClient', () => {
 
   it("should not allow users to update other users' clients", async () => {
     await expect(async () => {
-      await updateClient(client1.id, getFakeClient(), user2)
+      await updateClient(client1.id, getFakeClient(user2.id), user2)
     }).rejects.toBeInstanceOf(ApolloError)
   })
 
   it('should switch from a BUSINESS to a PRIVATE client correctly', async () => {
-    const client = await createClient(
-      getFakeClient({ type: ClientType.BUSINESS }),
+    const client = (await createClient(
+      getFakeClient(user1.id, { type: ClientType.BUSINESS }),
       user1
-    )
+    ))!
 
-    expect(client!.fiscal_code).toBe(null)
-    expect(client!.first_name).toBe(null)
-    expect(client!.last_name).toBe(null)
-    expect(client!.country_code).not.toBe(null)
-    expect(client!.vat_number).not.toBe(null)
-    expect(client!.business_name).not.toBe(null)
+    expect(client.fiscal_code).toBe(null)
+    expect(client.first_name).toBe(null)
+    expect(client.last_name).toBe(null)
+    expect(client.country_code).not.toBe(null)
+    expect(client.vat_number).not.toBe(null)
+    expect(client.business_name).not.toBe(null)
 
-    const updatedClient = await updateClient(
-      client!.id,
-      getFakeClient({ type: ClientType.PRIVATE }),
+    const updatedClient = (await updateClient(
+      client.id,
+      getFakeClient(user1.id, { type: ClientType.PRIVATE }),
       user1
-    )
+    ))!
 
-    expect(updatedClient!.country_code).toBe(null)
-    expect(updatedClient!.vat_number).toBe(null)
-    expect(updatedClient!.business_name).toBe(null)
-    expect(updatedClient!.fiscal_code).not.toBe(null)
-    expect(updatedClient!.first_name).not.toBe(null)
-    expect(updatedClient!.last_name).not.toBe(null)
+    expect(updatedClient.country_code).toBe(null)
+    expect(updatedClient.vat_number).toBe(null)
+    expect(updatedClient.business_name).toBe(null)
+    expect(updatedClient.fiscal_code).not.toBe(null)
+    expect(updatedClient.first_name).not.toBe(null)
+    expect(updatedClient.last_name).not.toBe(null)
   })
 
   it('should switch from a PRIVATE to a BUSINESS client correctly', async () => {
-    const client = await createClient(
-      getFakeClient({ type: ClientType.PRIVATE }),
+    const client = (await createClient(
+      getFakeClient(user1.id, { type: ClientType.PRIVATE }),
       user1
-    )
+    ))!
 
-    expect(client!.country_code).toBe(null)
-    expect(client!.vat_number).toBe(null)
-    expect(client!.business_name).toBe(null)
-    expect(client!.fiscal_code).not.toBe(null)
-    expect(client!.first_name).not.toBe(null)
-    expect(client!.last_name).not.toBe(null)
+    expect(client.country_code).toBe(null)
+    expect(client.vat_number).toBe(null)
+    expect(client.business_name).toBe(null)
+    expect(client.fiscal_code).not.toBe(null)
+    expect(client.first_name).not.toBe(null)
+    expect(client.last_name).not.toBe(null)
 
-    const updatedClient = await updateClient(
-      client!.id,
-      getFakeClient({ type: ClientType.BUSINESS }),
+    const updatedClient = (await updateClient(
+      client.id,
+      getFakeClient(user1.id, { type: ClientType.BUSINESS }),
       user1
-    )
+    ))!
 
-    expect(updatedClient!.fiscal_code).toBe(null)
-    expect(updatedClient!.first_name).toBe(null)
-    expect(updatedClient!.last_name).toBe(null)
-    expect(updatedClient!.country_code).not.toBe(null)
-    expect(updatedClient!.vat_number).not.toBe(null)
-    expect(updatedClient!.business_name).not.toBe(null)
+    expect(updatedClient.fiscal_code).toBe(null)
+    expect(updatedClient.first_name).toBe(null)
+    expect(updatedClient.last_name).toBe(null)
+    expect(updatedClient.country_code).not.toBe(null)
+    expect(updatedClient.vat_number).not.toBe(null)
+    expect(updatedClient.business_name).not.toBe(null)
   })
 })
 
@@ -146,8 +147,8 @@ describe('deleteClient', () => {
   let client2: Client
 
   beforeAll(async () => {
-    client1 = (await createClient(getFakeClient(), user1)) as Client
-    client2 = (await createClient(getFakeClient(), user2)) as Client
+    client1 = (await createClient(getFakeClient(user1.id), user1)) as Client
+    client2 = (await createClient(getFakeClient(user2.id), user2)) as Client
   })
 
   it('should work', async () => {

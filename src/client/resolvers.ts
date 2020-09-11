@@ -1,94 +1,153 @@
 import { GraphQLFieldResolver } from 'graphql'
-import { Client, ClientType } from './interface'
+import { Client } from './interface'
 import {
   createClient,
   listClients,
   updateClient,
   deleteClient,
-  getClient
+  getClient,
+  getClientName,
+  getClientUser,
+  getUserClients
 } from './model'
-import SQL from 'sql-template-strings'
 import { ConnectionQueryArgs } from '../misc/ConnectionQueryArgs'
-import { queryToConnection } from '../misc/queryToConnection'
 import { ensureUser } from '../misc/ensureUser'
 import { UserContext, User } from '../user/interface'
-import { getDatabase } from '../misc/getDatabase'
+import { Connection } from '../misc/Connection'
+
+type ClientNameResolver = GraphQLFieldResolver<Client, UserContext>
+
+const clientNameResolver: ClientNameResolver = (client): string => {
+  return getClientName(client)
+}
+
+type ClientUserResolver = GraphQLFieldResolver<Client, UserContext>
+
+const clientUserResolver: ClientUserResolver = async (
+  client
+): Promise<User> => {
+  return getClientUser(client)
+}
+
+type UserClientsResolver = GraphQLFieldResolver<User, ConnectionQueryArgs>
+
+const userClientsResolver: UserClientsResolver = (
+  user,
+  args
+): Promise<Connection<Client>> => {
+  return getUserClients(user, args)
+}
+
+type CreateClientMutation = GraphQLFieldResolver<
+  any,
+  UserContext,
+  { client: Omit<Client, 'id' | 'created_at' | 'updated_at'> }
+>
+
+const createClientMutation: CreateClientMutation = (
+  _parent,
+  { client },
+  context
+): Promise<Client | null> => {
+  ensureUser(context)
+  return createClient({ ...client }, context.user!)
+}
+
+type UpdateClientMutation = GraphQLFieldResolver<
+  any,
+  UserContext,
+  {
+    id: number
+    client: Partial<Omit<Client, 'id' | 'created_at' | 'updated_at'>>
+  }
+>
+
+const updateClientMutation: UpdateClientMutation = (
+  _parent,
+  { id, client },
+  context
+): Promise<Client | null> => {
+  ensureUser(context)
+  return updateClient(id, client, context.user!)
+}
+
+type DeleteClientMutation = GraphQLFieldResolver<
+  any,
+  UserContext,
+  { id: number }
+>
+
+const deleteClientMutation: DeleteClientMutation = (
+  _parent,
+  { id },
+  context
+): Promise<Client | null> => {
+  ensureUser(context)
+  return deleteClient(id, context.user!)
+}
+
+type ClientQuery = GraphQLFieldResolver<any, UserContext, { id: number }>
+
+const clientQuery: ClientQuery = async (
+  _parent,
+  { id },
+  context
+): Promise<Client | null> => {
+  ensureUser(context)
+  return await getClient(id, context.user!)
+}
+
+type ClientsQuery = GraphQLFieldResolver<
+  any,
+  UserContext,
+  ConnectionQueryArgs & { name?: string }
+>
+
+const clientsQuery: ClientsQuery = async (
+  _parent,
+  args,
+  context
+): Promise<Connection<Client>> => {
+  ensureUser(context)
+  return listClients(args, context.user!)
+}
 
 interface ClientResolvers {
   Client: {
-    name: GraphQLFieldResolver<Client, UserContext>
-    user: GraphQLFieldResolver<Client, UserContext>
+    name: ClientNameResolver
+    user: ClientUserResolver
   }
   User: {
-    clients: GraphQLFieldResolver<User, ConnectionQueryArgs>
+    clients: UserClientsResolver
   }
   Mutation: {
-    createClient: GraphQLFieldResolver<
-      any,
-      UserContext,
-      { client: Partial<Client> }
-    >
-    updateClient: GraphQLFieldResolver<
-      any,
-      UserContext,
-      { id: number; client: Partial<Client> }
-    >
-    deleteClient: GraphQLFieldResolver<any, UserContext, { id: number }>
+    createClient: CreateClientMutation
+    updateClient: UpdateClientMutation
+    deleteClient: DeleteClientMutation
   }
   Query: {
-    client: GraphQLFieldResolver<any, UserContext, { id: number }>
-    clients: GraphQLFieldResolver<
-      any,
-      UserContext,
-      ConnectionQueryArgs & { name?: string }
-    >
+    client: ClientQuery
+    clients: ClientsQuery
   }
 }
 
-export default {
+const resolvers: ClientResolvers = {
   Client: {
-    name: client => {
-      return client.type === ClientType.BUSINESS
-        ? client.business_name
-        : `${client.first_name} ${client.last_name}`
-    },
-    user: async client => {
-      const db = await getDatabase()
-      return db.get<User>(SQL`SELECT * FROM user WHERE id = ${client.user}`)
-    }
+    name: clientNameResolver,
+    user: clientUserResolver
   },
   User: {
-    clients: (user, args) => {
-      return queryToConnection(
-        args,
-        ['*'],
-        'client',
-        SQL`WHERE user = ${user.id}`
-      )
-    }
+    clients: userClientsResolver
   },
   Mutation: {
-    createClient: (_parent, { client }, context) => {
-      ensureUser(context)
-      return createClient({ ...client }, context.user!)
-    },
-    updateClient: (_parent, { id, client }, context) => {
-      ensureUser(context)
-      return updateClient(id, client, context.user!)
-    },
-    deleteClient: (_parent, { id }, context) => {
-      ensureUser(context)
-      return deleteClient(id, context.user!)
-    }
+    createClient: createClientMutation,
+    updateClient: updateClientMutation,
+    deleteClient: deleteClientMutation
   },
   Query: {
-    client: async (_parent, { id }, context) => {
-      ensureUser(context)
-      return await getClient(id, context.user!)
-    },
-    clients: async (_parent, args, context) => {
-      ensureUser(context)
-      return listClients(args, context.user!)
-    }
+    client: clientQuery,
+    clients: clientsQuery
   }
-} as ClientResolvers
+}
+
+export default resolvers

@@ -84,7 +84,7 @@ export default gql`
   }
 
   extend type Mutation {
-    createClient(client: ClientCreationInput!): Client!
+    createClient(client: ClientCreationInput!): Client
     updateClient(id: Int!, client: ClientUpdateInput!): Client
     deleteClient(id: Int!): Client
   }

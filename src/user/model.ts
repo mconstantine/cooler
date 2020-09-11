@@ -99,7 +99,7 @@ export async function refreshToken({
 
 export async function updateUser(
   id: number,
-  user: Pick<User, 'name' | 'email' | 'password'>
+  user: Partial<Pick<User, 'name' | 'email' | 'password'>>
 ): Promise<User | null> {
   const { name, email, password } = user
   const db = await getDatabase()
@@ -154,7 +154,7 @@ export async function deleteUser(id: number): Promise<User | null> {
   return fromDatabase(user)
 }
 
-export function getUserFromContext(context: Context): User | null {
+export function getUserFromContext<C extends Context>(context: C): User | null {
   if (!isUserContext(context)) {
     return null
   }

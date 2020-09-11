@@ -122,6 +122,19 @@ export async function queryToConnection<T extends { id: number }>(
   }
 }
 
+export function mapConnection<I, O>(
+  connection: Connection<I>,
+  map: (i: I) => O
+): Connection<O> {
+  return {
+    ...connection,
+    edges: connection.edges.map(({ node, ...edge }) => ({
+      ...edge,
+      node: map(node)
+    }))
+  }
+}
+
 export function toCursor(value: number): string {
   return Buffer.from(value.toString(10)).toString('base64')
 }

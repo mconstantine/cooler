@@ -65,7 +65,7 @@ export const refreshTokenMutation: RefreshTokenMutation = (
 export type UpdateMeMutation = GraphQLFieldResolver<
   any,
   Context,
-  { user: Partial<UserFromDatabase> }
+  { user: Partial<Pick<User, 'name' | 'email' | 'password'>> }
 >
 
 export const updateMeMutation: UpdateMeMutation = (
