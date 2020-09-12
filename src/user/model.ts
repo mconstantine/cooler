@@ -8,12 +8,13 @@ import {
   UserCreationInput,
   UserLoginInput,
   RefreshTokenInput,
-  UserUpdateInput
+  UserUpdateInput,
+  UserContext
 } from './interface'
 import { getDatabase } from '../misc/getDatabase'
 import SQL from 'sql-template-strings'
 import { ApolloError } from 'apollo-server-express'
-import { insert, update, remove, fromSQLDate, toSQLDate } from '../misc/dbUtils'
+import { insert, update, remove, fromSQLDate } from '../misc/dbUtils'
 import { hashSync, compareSync } from 'bcryptjs'
 import { sign, verify } from 'jsonwebtoken'
 import { validate as isEmail } from 'isemail'
@@ -156,6 +157,7 @@ export async function deleteUser(id: number): Promise<User | null> {
   return fromDatabase(user)
 }
 
+export function getUserFromContext<C extends UserContext>(context: C): User
 export function getUserFromContext<C extends Context>(context: C): User | null {
   if (!isUserContext(context)) {
     return null

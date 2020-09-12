@@ -17,16 +17,16 @@ import {
 } from './model'
 import { ConnectionQueryArgs } from '../misc/ConnectionQueryArgs'
 import { ensureUser } from '../misc/ensureUser'
-import { UserContext, User, UserFromDatabase } from '../user/interface'
+import { Context, User, UserFromDatabase } from '../user/interface'
 import { Connection } from '../misc/Connection'
 
-type ClientNameResolver = GraphQLFieldResolver<ClientFromDatabase, UserContext>
+type ClientNameResolver = GraphQLFieldResolver<ClientFromDatabase, Context>
 
 const clientNameResolver: ClientNameResolver = (client): string => {
   return getClientName(client)
 }
 
-type ClientUserResolver = GraphQLFieldResolver<ClientFromDatabase, UserContext>
+type ClientUserResolver = GraphQLFieldResolver<ClientFromDatabase, Context>
 
 const clientUserResolver: ClientUserResolver = async (
   client
@@ -48,7 +48,7 @@ const userClientsResolver: UserClientsResolver = (
 
 type CreateClientMutation = GraphQLFieldResolver<
   any,
-  UserContext,
+  Context,
   { client: ClientCreationInput }
 >
 
@@ -62,7 +62,7 @@ const createClientMutation: CreateClientMutation = (
 
 type UpdateClientMutation = GraphQLFieldResolver<
   any,
-  UserContext,
+  Context,
   {
     id: number
     client: ClientUpdateInput
@@ -77,11 +77,7 @@ const updateClientMutation: UpdateClientMutation = (
   return updateClient(id, client, ensureUser(context))
 }
 
-type DeleteClientMutation = GraphQLFieldResolver<
-  any,
-  UserContext,
-  { id: number }
->
+type DeleteClientMutation = GraphQLFieldResolver<any, Context, { id: number }>
 
 const deleteClientMutation: DeleteClientMutation = (
   _parent,
@@ -91,7 +87,7 @@ const deleteClientMutation: DeleteClientMutation = (
   return deleteClient(id, ensureUser(context))
 }
 
-type ClientQuery = GraphQLFieldResolver<any, UserContext, { id: number }>
+type ClientQuery = GraphQLFieldResolver<any, Context, { id: number }>
 
 const clientQuery: ClientQuery = async (
   _parent,
@@ -103,7 +99,7 @@ const clientQuery: ClientQuery = async (
 
 type ClientsQuery = GraphQLFieldResolver<
   any,
-  UserContext,
+  Context,
   ConnectionQueryArgs & { name?: string }
 >
 

@@ -1,5 +1,6 @@
 import { GraphQLFieldResolver } from 'graphql'
 import {
+  Project,
   ProjectCreationInput,
   ProjectFromDatabase,
   ProjectUpdateInput
@@ -15,15 +16,18 @@ import {
   getUserCashedBalance,
   getClientProjects
 } from './model'
-import { ClientFromDatabase } from '../client/interface'
+import { Client, ClientFromDatabase } from '../client/interface'
 import { ConnectionQueryArgs } from '../misc/ConnectionQueryArgs'
-import { UserContext, UserFromDatabase } from '../user/interface'
+import { Context, UserFromDatabase } from '../user/interface'
 import { ensureUser } from '../misc/ensureUser'
 import { DateString } from '../misc/Types'
+import { Connection } from '../misc/Connection'
 
 type ProjectClientResolver = GraphQLFieldResolver<ProjectFromDatabase, any>
 
-const projectClientResolver: ProjectClientResolver = project => {
+const projectClientResolver: ProjectClientResolver = (
+  project
+): Promise<Client | null> => {
   return getProjectClient(project)
 }
 
@@ -37,7 +41,7 @@ const clientProjectsResolver: ClientProjectsResolver = (
   client,
   args,
   _context
-) => {
+): Promise<Connection<Project>> => {
   return getClientProjects(client, args)
 }
 
@@ -47,7 +51,10 @@ type UserProjectsResolver = GraphQLFieldResolver<
   ConnectionQueryArgs
 >
 
-const userProjectsResolver: UserProjectsResolver = (user, args) => {
+const userProjectsResolver: UserProjectsResolver = (
+  user,
+  args
+): Promise<Connection<Project>> => {
   return getUserProjects(user, args)
 }
 
@@ -60,13 +67,13 @@ type UserCashedBalanceResolver = GraphQLFieldResolver<
 const userCashedBalanceResolver: UserCashedBalanceResolver = async (
   user,
   { since }
-) => {
+): Promise<number> => {
   return getUserCashedBalance(user, since)
 }
 
 type CreateProjectMutation = GraphQLFieldResolver<
   any,
-  UserContext,
+  Context,
   { project: ProjectCreationInput }
 >
 
@@ -74,13 +81,13 @@ const createProjectMutation: CreateProjectMutation = (
   _parent,
   { project },
   context
-) => {
+): Promise<Project | null> => {
   return createProject(project, ensureUser(context))
 }
 
 type UpdateProjectMutation = GraphQLFieldResolver<
   any,
-  UserContext,
+  Context,
   { id: number; project: ProjectUpdateInput }
 >
 
@@ -88,37 +95,41 @@ const updateProjectMutation: UpdateProjectMutation = (
   _parent,
   { id, project },
   context
-) => {
+): Promise<Project | null> => {
   return updateProject(id, project, ensureUser(context))
 }
 
-type DeleteProjectMutation = GraphQLFieldResolver<
-  any,
-  UserContext,
-  { id: number }
->
+type DeleteProjectMutation = GraphQLFieldResolver<any, Context, { id: number }>
 
 const deleteProjectMutation: DeleteProjectMutation = (
   _parent,
   { id },
   context
-) => {
+): Promise<Project | null> => {
   return deleteProject(id, ensureUser(context))
 }
 
-type ProjectQuery = GraphQLFieldResolver<any, UserContext, { id: number }>
+type ProjectQuery = GraphQLFieldResolver<any, Context, { id: number }>
 
-const projectQuery: ProjectQuery = async (_parent, { id }, context) => {
+const projectQuery: ProjectQuery = async (
+  _parent,
+  { id },
+  context
+): Promise<Project | null> => {
   return getProject(id, ensureUser(context))
 }
 
 type ProjectsQuery = GraphQLFieldResolver<
   any,
-  UserContext,
+  Context,
   ConnectionQueryArgs & { name?: string }
 >
 
-const projectsQuery: ProjectsQuery = (_parent, args, context) => {
+const projectsQuery: ProjectsQuery = (
+  _parent,
+  args,
+  context
+): Promise<Connection<Project>> => {
   return listProjects(args, ensureUser(context))
 }
 

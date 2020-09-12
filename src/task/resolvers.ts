@@ -17,7 +17,7 @@ import {
   getProjectTasks
 } from './model'
 import { ConnectionQueryArgs } from '../misc/ConnectionQueryArgs'
-import { UserContext, UserFromDatabase } from '../user/interface'
+import { Context, UserFromDatabase } from '../user/interface'
 import { ensureUser } from '../misc/ensureUser'
 import { Connection } from '../misc/Connection'
 
@@ -55,7 +55,7 @@ const projectTasksResolver: ProjectTasksResolver = (
 
 type CreateTaskMutation = GraphQLFieldResolver<
   any,
-  UserContext,
+  Context,
   { task: TaskCreationInput }
 >
 
@@ -69,7 +69,7 @@ const createTaskMutation: CreateTaskMutation = (
 
 type UpdateTaskMutation = GraphQLFieldResolver<
   any,
-  UserContext,
+  Context,
   { id: number; task: TaskUpdateInput }
 >
 
@@ -81,7 +81,7 @@ const updateTaskMutation: UpdateTaskMutation = (
   return updateTask(id, task, ensureUser(context))
 }
 
-type DeleteTaskMutation = GraphQLFieldResolver<any, UserContext, { id: number }>
+type DeleteTaskMutation = GraphQLFieldResolver<any, Context, { id: number }>
 
 const deleteTaskMutation: DeleteTaskMutation = (
   _parent,
@@ -91,7 +91,7 @@ const deleteTaskMutation: DeleteTaskMutation = (
   return deleteTask(id, ensureUser(context))
 }
 
-type TaskQuery = GraphQLFieldResolver<any, UserContext, { id: number }>
+type TaskQuery = GraphQLFieldResolver<any, Context, { id: number }>
 
 const taskQuery: TaskQuery = (
   _parent,
@@ -103,7 +103,7 @@ const taskQuery: TaskQuery = (
 
 type TasksQuery = GraphQLFieldResolver<
   any,
-  UserContext,
+  Context,
   ConnectionQueryArgs & { name?: string }
 >
 

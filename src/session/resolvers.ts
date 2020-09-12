@@ -1,333 +1,338 @@
 import { GraphQLFieldResolver } from 'graphql'
-import { Session } from './interface'
-import { UserContext, User } from '../user/interface'
+import {
+  Session,
+  SessionFromDatabase,
+  SessionUpdateInput,
+  TimesheetCreationInput
+} from './interface'
+import { Context, UserFromDatabase } from '../user/interface'
 import { ConnectionQueryArgs } from '../misc/ConnectionQueryArgs'
-import { getDatabase } from '../misc/getDatabase'
-import { Task } from '../task/interface'
-import SQL from 'sql-template-strings'
+import { Task, TaskFromDatabase } from '../task/interface'
 import { ensureUser } from '../misc/ensureUser'
 import {
-  createSession,
+  startSession,
   updateSession,
   deleteSession,
   getSession,
   listSessions,
-  createTimesheet
+  createTimesheet,
+  getSessionTask,
+  getTaskSessions,
+  getTaskActualWorkingHours,
+  getTaskBudget,
+  getTaskBalance,
+  getProjectExpectedWorkingHours,
+  getProjectActualWorkingHours,
+  getProjectBudget,
+  getProjectBalance,
+  getUserOpenSession,
+  getUserExpectedWorkingHours,
+  getUserActualWorkingHours,
+  getUserBudget,
+  getUserBalance,
+  stopSession
 } from './model'
-import { toSQLDate } from '../misc/dbUtils'
-import { Project } from '../project/interface'
+import { ProjectFromDatabase } from '../project/interface'
+import { SQLDate } from '../misc/Types'
+import { Connection } from '../misc/Connection'
+
+export interface SinceArg {
+  since?: SQLDate
+}
+
+type SessionTaskResolver = GraphQLFieldResolver<SessionFromDatabase, any>
+
+const sessionTaskResolver: SessionTaskResolver = (
+  session
+): Promise<Task | null> => {
+  return getSessionTask(session)
+}
+
+type TaskSessionsResolver = GraphQLFieldResolver<
+  TaskFromDatabase,
+  Context,
+  ConnectionQueryArgs
+>
+
+const taskSessionsResolver: TaskSessionsResolver = (
+  task,
+  args,
+  context
+): Promise<Connection<Session>> => {
+  return getTaskSessions(task, args, ensureUser(context))
+}
+
+type TaskActualWorkingHoursResolver = GraphQLFieldResolver<
+  TaskFromDatabase,
+  Context
+>
+
+const taskActualWorkingHoursResolver: TaskActualWorkingHoursResolver = (
+  task
+): Promise<number> => {
+  return getTaskActualWorkingHours(task)
+}
+
+type TaskBudgetResolver = GraphQLFieldResolver<TaskFromDatabase, Context>
+
+const taskBudgetResolver: TaskBudgetResolver = (task): Promise<number> => {
+  return getTaskBudget(task)
+}
+
+type TaskBalanceResolver = GraphQLFieldResolver<TaskFromDatabase, Context>
+
+const taskBalanceResolver: TaskBalanceResolver = (task): Promise<number> => {
+  return getTaskBalance(task)
+}
+
+type ProjectExpectedWorkingHoursResolver = GraphQLFieldResolver<
+  ProjectFromDatabase,
+  Context
+>
+
+const projectExpectedWorkingHoursResolver: ProjectExpectedWorkingHoursResolver = (
+  project
+): Promise<number> => {
+  return getProjectExpectedWorkingHours(project)
+}
+
+type ProjectActualWorkingHoursResolver = GraphQLFieldResolver<
+  ProjectFromDatabase,
+  Context
+>
+
+const projectActualWorkingHoursResolver: ProjectActualWorkingHoursResolver = (
+  project
+): Promise<number> => {
+  return getProjectActualWorkingHours(project)
+}
+
+type ProjectBudgetResolver = GraphQLFieldResolver<ProjectFromDatabase, Context>
+
+const projectBudgetResolver: ProjectBudgetResolver = project => {
+  return getProjectBudget(project)
+}
+
+type ProjectBalanceResolver = GraphQLFieldResolver<ProjectFromDatabase, Context>
+
+const projectBalanceResolver: ProjectBalanceResolver = (
+  project
+): Promise<number> => {
+  return getProjectBalance(project)
+}
+
+type UserOpenSessionResolver = GraphQLFieldResolver<UserFromDatabase, Context>
+
+const userOpenSessionResolver: UserOpenSessionResolver = (
+  user
+): Promise<Session | null> => {
+  return getUserOpenSession(user)
+}
+
+type UserExpectedWorkingHoursResolver = GraphQLFieldResolver<
+  UserFromDatabase,
+  Context,
+  SinceArg
+>
+
+const userExpectedWorkingHoursResolver: UserExpectedWorkingHoursResolver = (
+  user,
+  args
+): Promise<number> => {
+  return getUserExpectedWorkingHours(user, args)
+}
+
+type UserActualWorkingHoursResolver = GraphQLFieldResolver<
+  UserFromDatabase,
+  Context,
+  SinceArg
+>
+
+const userActualWorkingHoursResolver: UserActualWorkingHoursResolver = (
+  user,
+  args
+): Promise<number> => {
+  return getUserActualWorkingHours(user, args)
+}
+
+type UserBudgetResolver = GraphQLFieldResolver<
+  UserFromDatabase,
+  Context,
+  SinceArg
+>
+
+const userBudgetResolver: UserBudgetResolver = (
+  user,
+  args
+): Promise<number> => {
+  return getUserBudget(user, args)
+}
+
+type UserBalanceResolver = GraphQLFieldResolver<
+  UserFromDatabase,
+  Context,
+  SinceArg
+>
+
+const userBalanceResolver: UserBalanceResolver = (
+  user,
+  args
+): Promise<number> => {
+  return getUserBalance(user, args)
+}
+
+type StartSessionMutation = GraphQLFieldResolver<any, Context, { task: number }>
+
+const startSessionMutation: StartSessionMutation = (
+  _parent,
+  { task },
+  context
+): Promise<Session | null> => {
+  return startSession(task, ensureUser(context))
+}
+
+type StopSessionMutation = GraphQLFieldResolver<any, Context, { id: number }>
+
+const stopSessionMutation: StopSessionMutation = (
+  _parent,
+  { id },
+  context
+): Promise<Session | null> => {
+  return stopSession(id, ensureUser(context))
+}
+
+type UpdateSessionMutation = GraphQLFieldResolver<
+  any,
+  Context,
+  { id: number; session: SessionUpdateInput }
+>
+
+const updateSessionMutation: UpdateSessionMutation = (
+  _parent,
+  { id, session },
+  context
+): Promise<Session | null> => {
+  return updateSession(id, session, ensureUser(context))
+}
+
+type DeleteSessionMutation = GraphQLFieldResolver<any, Context, { id: number }>
+
+const deleteSessionMutation: DeleteSessionMutation = (
+  _parent,
+  { id },
+  context
+): Promise<Session | null> => {
+  return deleteSession(id, ensureUser(context))
+}
+
+type CreateTimesheetMutation = GraphQLFieldResolver<
+  any,
+  Context,
+  TimesheetCreationInput
+>
+
+const createTimesheetMutation: CreateTimesheetMutation = (
+  _parent,
+  args,
+  context
+): Promise<string | null> => {
+  return createTimesheet(args, ensureUser(context))
+}
+
+type SessionQuery = GraphQLFieldResolver<any, Context, { id: number }>
+
+const sessionQuery: SessionQuery = (
+  _parent,
+  { id },
+  context
+): Promise<Session | null> => {
+  return getSession(id, ensureUser(context))
+}
+
+type SessionsQuery = GraphQLFieldResolver<
+  any,
+  Context,
+  ConnectionQueryArgs & { task?: number }
+>
+
+const sessionsQuery: SessionsQuery = (
+  _parent,
+  args,
+  context
+): Promise<Connection<Session>> => {
+  return listSessions(args, ensureUser(context))
+}
 
 interface SessionResolvers {
   Session: {
-    task: GraphQLFieldResolver<Session, any>
+    task: SessionTaskResolver
   }
   Task: {
-    sessions: GraphQLFieldResolver<Task, UserContext, ConnectionQueryArgs>
-    actualWorkingHours: GraphQLFieldResolver<Task, UserContext>
-    budget: GraphQLFieldResolver<Task, UserContext>
-    balance: GraphQLFieldResolver<Task, UserContext>
+    sessions: TaskSessionsResolver
+    actualWorkingHours: TaskActualWorkingHoursResolver
+    budget: TaskBudgetResolver
+    balance: TaskBalanceResolver
   }
   Project: {
-    expectedWorkingHours: GraphQLFieldResolver<Project, UserContext>
-    actualWorkingHours: GraphQLFieldResolver<Project, UserContext>
-    budget: GraphQLFieldResolver<Project, UserContext>
-    balance: GraphQLFieldResolver<Project, UserContext>
+    expectedWorkingHours: ProjectExpectedWorkingHoursResolver
+    actualWorkingHours: ProjectActualWorkingHoursResolver
+    budget: ProjectBudgetResolver
+    balance: ProjectBalanceResolver
   }
   User: {
-    openSession: GraphQLFieldResolver<User, UserContext>
-    expectedWorkingHours: GraphQLFieldResolver<
-      User,
-      UserContext,
-      { since?: string }
-    >
-    actualWorkingHours: GraphQLFieldResolver<
-      User,
-      UserContext,
-      { since?: string }
-    >
-    budget: GraphQLFieldResolver<User, UserContext, { since?: string }>
-    balance: GraphQLFieldResolver<User, UserContext, { since?: string }>
+    openSession: UserOpenSessionResolver
+    expectedWorkingHours: UserExpectedWorkingHoursResolver
+    actualWorkingHours: UserActualWorkingHoursResolver
+    budget: UserBudgetResolver
+    balance: UserBalanceResolver
   }
   Mutation: {
-    startSession: GraphQLFieldResolver<any, UserContext, { task: number }>
-    stopSession: GraphQLFieldResolver<any, UserContext, { id: number }>
-    deleteSession: GraphQLFieldResolver<any, UserContext, { id: number }>
-    updateSession: GraphQLFieldResolver<
-      any,
-      UserContext,
-      { id: number; session: Pick<Session, 'start_time' | 'end_time'> }
-    >
-    createTimesheet: GraphQLFieldResolver<
-      any,
-      UserContext,
-      { since: string; to: string; project: number }
-    >
+    startSession: StartSessionMutation
+    stopSession: StopSessionMutation
+    deleteSession: DeleteSessionMutation
+    updateSession: UpdateSessionMutation
+    createTimesheet: CreateTimesheetMutation
   }
   Query: {
-    session: GraphQLFieldResolver<any, UserContext, { id: number }>
-    sessions: GraphQLFieldResolver<
-      any,
-      UserContext,
-      ConnectionQueryArgs & { task?: number }
-    >
+    session: SessionQuery
+    sessions: SessionsQuery
   }
 }
 
-export default {
+const resolvers: SessionResolvers = {
   Session: {
-    task: async session => {
-      const db = await getDatabase()
-      return db.get<Task>(SQL`SELECT * FROM task WHERE id = ${session.task}`)
-    }
+    task: sessionTaskResolver
   },
   Task: {
-    sessions: async (task, args, context) => {
-      return await listSessions({ ...args, task: task.id }, context.user!)
-    },
-    actualWorkingHours: async task => {
-      const db = await getDatabase()
-
-      const { actualWorkingHours } = (await db.get<{
-        actualWorkingHours: number
-      }>(SQL`
-        SELECT IFNULL(SUM(
-          (strftime('%s', session.end_time) - strftime('%s', session.start_time)) / 3600.0
-        ), 0) AS actualWorkingHours
-        FROM session
-        WHERE task = ${task.id} AND end_time IS NOT NULL
-      `))!
-
-      return actualWorkingHours
-    },
-    budget: async task => {
-      const db = await getDatabase()
-
-      const { budget } = (await db.get<{ budget: number }>(SQL`
-        SELECT IFNULL(expectedWorkingHours * hourlyCost, 0) AS budget
-        FROM task
-        WHERE id = ${task.id}
-      `))!
-
-      return budget
-    },
-    balance: async task => {
-      const db = await getDatabase()
-
-      const { balance } = (await db.get<{ balance: number }>(SQL`
-        SELECT IFNULL(SUM((
-          strftime('%s', session.end_time) - strftime('%s', session.start_time)
-        ) / 3600.0 * task.hourlyCost), 0) AS balance
-        FROM session
-        JOIN task ON task.id = session.task
-        WHERE task.id = ${task.id}
-      `))!
-
-      return balance
-    }
+    sessions: taskSessionsResolver,
+    actualWorkingHours: taskActualWorkingHoursResolver,
+    budget: taskBudgetResolver,
+    balance: taskBalanceResolver
   },
   Project: {
-    expectedWorkingHours: async project => {
-      const db = await getDatabase()
-
-      const { expectedWorkingHours } = (await db.get<{
-        expectedWorkingHours: number
-      }>(SQL`
-        SELECT IFNULL(SUM(expectedWorkingHours), 0) AS expectedWorkingHours
-        FROM task
-        WHERE project = ${project.id}
-      `))!
-
-      return expectedWorkingHours
-    },
-    actualWorkingHours: async project => {
-      const db = await getDatabase()
-
-      const { actualWorkingHours } = (await db.get<{
-        actualWorkingHours: number
-      }>(SQL`
-        SELECT IFNULL(SUM(
-          (strftime('%s', session.end_time) - strftime('%s', session.start_time)) / 3600.0
-        ), 0) AS actualWorkingHours
-        FROM session
-        JOIN task ON task.id = session.task
-        WHERE task.project = ${project.id} AND session.end_time IS NOT NULL
-      `))!
-
-      return actualWorkingHours
-    },
-    budget: async project => {
-      const db = await getDatabase()
-
-      const { budget } = (await db.get<{ budget: number }>(SQL`
-        SELECT IFNULL(SUM(hourlyCost * expectedWorkingHours), 0) AS budget
-        FROM task
-        WHERE project = ${project.id}
-      `))!
-
-      return budget
-    },
-    balance: async project => {
-      const db = await getDatabase()
-
-      const { balance } = (await db.get<{ balance: number }>(SQL`
-        SELECT IFNULL(SUM((
-          strftime('%s', session.end_time) - strftime('%s', session.start_time)
-        ) / 3600.0 * task.hourlyCost), 0) AS balance
-        FROM session
-        JOIN task ON task.id = session.task
-        WHERE task.project = ${project.id}
-      `))!
-
-      return balance
-    }
+    expectedWorkingHours: projectExpectedWorkingHoursResolver,
+    actualWorkingHours: projectActualWorkingHoursResolver,
+    budget: projectBudgetResolver,
+    balance: projectBalanceResolver
   },
   User: {
-    openSession: async user => {
-      const db = await getDatabase()
-
-      const openSession = await db.get(SQL`
-        SELECT session.*
-        FROM session
-        JOIN task ON task.id = session.task
-        JOIN project ON project.id = task.project
-        JOIN client ON client.id = project.client
-        WHERE client.user = ${user.id} AND session.end_time IS NULL
-      `)
-
-      return openSession || null
-    },
-    expectedWorkingHours: async (user, { since }) => {
-      const db = await getDatabase()
-
-      const sql = SQL`
-        SELECT IFNULL(SUM(task.expectedWorkingHours), 0) AS expectedWorkingHours
-        FROM task
-        JOIN project ON project.id = task.project
-        JOIN client ON client.id = project.client
-        WHERE client.user = ${user.id} AND project.cashed_at IS NULL
-      `
-
-      since &&
-        sql.append(SQL` AND task.start_time >= ${toSQLDate(new Date(since))}`)
-
-      const { expectedWorkingHours } = (await db.get<{
-        expectedWorkingHours: number
-      }>(sql))!
-
-      return expectedWorkingHours
-    },
-    actualWorkingHours: async (user, { since }) => {
-      const db = await getDatabase()
-
-      const sql = SQL`
-        SELECT IFNULL(SUM(
-          (strftime('%s', session.end_time) - strftime('%s', session.start_time)) / 3600.0
-        ), 0) AS actualWorkingHours
-        FROM session
-        JOIN task ON task.id = session.task
-        JOIN project ON project.id = task.project
-        JOIN client ON client.id = project.client
-        WHERE client.user = ${user.id} AND project.cashed_at IS NULL
-      `
-
-      since &&
-        sql.append(
-          SQL` AND session.start_time >= ${toSQLDate(new Date(since))}`
-        )
-
-      const { actualWorkingHours } = (await db.get<{
-        actualWorkingHours: number
-      }>(sql))!
-      return actualWorkingHours
-    },
-    budget: async (user, { since }) => {
-      const db = await getDatabase()
-
-      const sql = SQL`
-        SELECT IFNULL(SUM(expectedWorkingHours * hourlyCost), 0) AS budget
-        FROM task
-        JOIN project ON project.id = task.project
-        JOIN client ON client.id = project.client
-        WHERE client.user = ${user.id} AND project.cashed_at IS NULL
-      `
-
-      since &&
-        sql.append(SQL` AND task.start_time >= ${toSQLDate(new Date(since))}`)
-
-      const { budget } = (await db.get<{ budget: number }>(sql))!
-      return budget
-    },
-    balance: async (user, { since }) => {
-      const db = await getDatabase()
-
-      const sql = SQL`
-        SELECT IFNULL(SUM((
-          strftime('%s', session.end_time) - strftime('%s', session.start_time)
-        ) / 3600.0 * task.hourlyCost), 0) AS balance
-        FROM session
-        JOIN task ON task.id = session.task
-        JOIN project ON project.id = task.project
-        JOIN client ON client.id = project.client
-        WHERE project.cashed_at IS NULL AND client.user = ${user.id}
-      `
-
-      since &&
-        sql.append(
-          SQL` AND session.start_time >= ${toSQLDate(new Date(since))}`
-        )
-
-      const { balance } = (await db.get<{ balance: number }>(sql))!
-      return balance
-    }
+    openSession: userOpenSessionResolver,
+    expectedWorkingHours: userExpectedWorkingHoursResolver,
+    actualWorkingHours: userActualWorkingHoursResolver,
+    budget: userBudgetResolver,
+    balance: userBalanceResolver
   },
   Mutation: {
-    startSession: (_parent, { task }, context) => {
-      ensureUser(context)
-      return createSession({ task }, context.user!)
-    },
-    stopSession: (_parent, { id }, context) => {
-      ensureUser(context)
-      return updateSession(
-        id,
-        { end_time: toSQLDate(new Date()) },
-        context.user!
-      )
-    },
-    updateSession: (
-      _parent,
-      { id, session: { start_time, end_time } },
-      context
-    ) => {
-      ensureUser(context)
-
-      return updateSession(
-        id,
-        {
-          ...(start_time
-            ? { start_time: toSQLDate(new Date(start_time)) }
-            : {}),
-          ...(end_time ? { end_time: toSQLDate(new Date(end_time)) } : {})
-        },
-        context.user!
-      )
-    },
-    deleteSession: (_parent, { id }, context) => {
-      ensureUser(context)
-      return deleteSession(id, context.user!)
-    },
-    createTimesheet: (_parent, { since, to, project }, context) => {
-      ensureUser(context)
-      return createTimesheet(since, to, project, context.user!)
-    }
+    startSession: startSessionMutation,
+    stopSession: stopSessionMutation,
+    updateSession: updateSessionMutation,
+    deleteSession: deleteSessionMutation,
+    createTimesheet: createTimesheetMutation
   },
   Query: {
-    session: (_parent, { id }, context) => {
-      ensureUser(context)
-      return getSession(id, context.user!)
-    },
-    sessions: (_parent, args, context) => {
-      ensureUser(context)
-      return listSessions(args, context.user!)
-    }
+    session: sessionQuery,
+    sessions: sessionsQuery
   }
-} as SessionResolvers
+}
+
+export default resolvers

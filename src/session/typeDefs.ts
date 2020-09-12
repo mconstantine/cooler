@@ -14,14 +14,20 @@ export default gql`
 
   type Session implements Node {
     id: Int
-    start_time: String!
-    end_time: String
+    start_time: Date!
+    end_time: Date
     task: Task
   }
 
   input SessionUpdateInput {
-    start_time: String
-    end_time: String
+    start_time: Date
+    end_time: Date
+  }
+
+  input CreateTimesheetInput {
+    since: Date!
+    to: Date!
+    project: Int!
   }
 
   extend type Mutation {
@@ -29,7 +35,7 @@ export default gql`
     stopSession(id: Int!): Session
     updateSession(id: Int!, session: SessionUpdateInput): Session
     deleteSession(id: Int!): Session
-    createTimesheet(since: String!, to: String!, project: Int!): String
+    createTimesheet(for: CreateTimesheetInput!): String
   }
 
   extend type Query {
@@ -45,10 +51,10 @@ export default gql`
   }
 
   extend type User {
-    expectedWorkingHours(since: String): Int!
-    actualWorkingHours(since: String): Float!
-    budget(since: String): Float!
-    balance(since: String): Float!
+    expectedWorkingHours(since: Date): Int!
+    actualWorkingHours(since: Date): Float!
+    budget(since: Date): Float!
+    balance(since: Date): Float!
   }
 
   extend type Task {
