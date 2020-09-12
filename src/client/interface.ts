@@ -371,25 +371,25 @@ export enum Country {
 }
 
 interface ClientCommonCommonData {
-  id: ID
+  readonly id: ID
   address_country: keyof typeof Country
   address_province: keyof typeof Province
   address_city: string
   address_zip: string
   address_street: string
-  address_street_number?: string | null
+  address_street_number: string | null
   address_email: string
   user: ID
 }
 
 interface ClientCommonData extends ClientCommonCommonData {
-  created_at: Date
-  updated_at: Date
+  readonly created_at: Date
+  readonly updated_at: Date
 }
 
 interface ClientFromDatabaseCommonData extends ClientCommonCommonData {
-  created_at: string
-  updated_at: string
+  readonly created_at: string
+  readonly updated_at: string
 }
 
 interface PrivateClientCommonData {
@@ -414,11 +414,24 @@ interface BusinessClientCommonData {
 
 export type PrivateClient = ClientCommonData & PrivateClientCommonData
 export type BusinessClient = ClientCommonData & BusinessClientCommonData
+
 export type PrivateClientFromDatabase = ClientFromDatabaseCommonData &
   PrivateClientCommonData
+
 export type BusinessClientFromDatabase = ClientFromDatabaseCommonData &
   BusinessClientCommonData
+
 export type Client = PrivateClient | BusinessClient
+
 export type ClientFromDatabase =
   | PrivateClientFromDatabase
   | BusinessClientFromDatabase
+
+export type ClientCreationInput = Omit<
+  Client,
+  'id' | 'created_at' | 'updated_at' | 'user'
+>
+
+export type ClientUpdateInput = Partial<
+  Omit<Client, 'id' | 'created_at' | 'updated_at'>
+>

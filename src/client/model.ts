@@ -3,7 +3,9 @@ import {
   ClientType,
   ClientFromDatabase,
   PrivateClient,
-  BusinessClient
+  BusinessClient,
+  ClientCreationInput,
+  ClientUpdateInput
 } from './interface'
 import { getDatabase } from '../misc/getDatabase'
 import { insert, update, remove, fromSQLDate } from '../misc/dbUtils'
@@ -14,17 +16,38 @@ import { User, UserFromDatabase } from '../user/interface'
 import { ApolloError } from 'apollo-server-express'
 import { Connection } from '../misc/Connection'
 import { fromDatabase as userFromDatabase } from '../user/model'
+import { ID } from '../misc/Types'
 
 type TypedClient = {
   type: ClientType
 }
 
 export async function createClient(
-  client: Omit<Client, 'id' | 'created_at' | 'updated_at' | 'user'>,
+  client: ClientCreationInput,
   user: User
 ): Promise<Client | null> {
   const db = await getDatabase()
-  const { lastID } = await insert('client', { ...client, user: user.id })
+
+  const { lastID } = await insert<ClientCreationInput & { user: ID }>(
+    'client',
+    {
+      address_city: client.address_city,
+      address_country: client.address_country,
+      address_email: client.address_email,
+      address_province: client.address_province,
+      address_street: client.address_street,
+      address_street_number: client.address_street_number,
+      address_zip: client.address_zip,
+      business_name: client.business_name,
+      country_code: client.country_code,
+      first_name: client.first_name,
+      fiscal_code: client.fiscal_code,
+      last_name: client.last_name,
+      type: client.type,
+      vat_number: client.vat_number,
+      user: user.id
+    }
+  )
 
   if (!lastID) {
     return null
@@ -80,12 +103,12 @@ export async function listClients(
     where
   )
 
-  return mapConnection(connection, client => fromDatabase(client))
+  return mapConnection(connection, fromDatabase)
 }
 
 export async function updateClient(
   id: number,
-  client: Partial<Omit<Client, 'id' | 'created_at' | 'updated_at'>>,
+  client: ClientUpdateInput,
   user: User
 ): Promise<Client | null> {
   const db = await getDatabase()
@@ -207,14 +230,18 @@ export async function deleteClient(
   return fromDatabase(client)
 }
 
-export function getClientName(client: Client): string {
+export function getClientName(
+  client:
+    | Pick<PrivateClient, 'type' | 'first_name' | 'last_name'>
+    | Pick<BusinessClient, 'type' | 'business_name'>
+): string {
   return foldClientType(client, {
     whenPrivate: client => `${client.first_name} ${client.last_name}`,
     whenBusiness: client => client.business_name
   })
 }
 
-export async function getClientUser(client: Client): Promise<User> {
+export async function getClientUser(client: ClientFromDatabase): Promise<User> {
   const db = await getDatabase()
   const user = (await db.get<UserFromDatabase>(
     SQL`SELECT * FROM user WHERE id = ${client.user}`
@@ -243,7 +270,7 @@ export function foldClientType<
 }
 
 export async function getUserClients(
-  user: User,
+  user: UserFromDatabase,
   args: ConnectionQueryArgs
 ): Promise<Connection<Client>> {
   const connection = await queryToConnection<ClientFromDatabase>(
@@ -253,10 +280,10 @@ export async function getUserClients(
     SQL`WHERE user = ${user.id}`
   )
 
-  return mapConnection(connection, client => fromDatabase(client))
+  return mapConnection(connection, fromDatabase)
 }
 
-function fromDatabase(client: ClientFromDatabase): Client {
+export function fromDatabase(client: ClientFromDatabase): Client {
   return {
     ...client,
     created_at: fromSQLDate(client.created_at),

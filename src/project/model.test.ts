@@ -5,8 +5,8 @@ import {
   deleteProject,
   getProject
 } from './model'
-import { User } from '../user/interface'
-import { Client } from '../client/interface'
+import { User, UserFromDatabase } from '../user/interface'
+import { Client, ClientFromDatabase } from '../client/interface'
 import { insert } from '../misc/dbUtils'
 import { getFakeUser } from '../test/getFakeUser'
 import { getFakeClient } from '../test/getFakeClient'
@@ -14,8 +14,11 @@ import { getDatabase } from '../misc/getDatabase'
 import SQL from 'sql-template-strings'
 import { getFakeProject } from '../test/getFakeProject'
 import { ApolloError } from 'apollo-server-express'
-import { Project } from './interface'
+import { Project, ProjectFromDatabase } from './interface'
 import { init } from '../init'
+import { fromDatabase as userFromDatabase } from '../user/model'
+import { fromDatabase as clientFromDatabase } from '../client/model'
+import { fromDatabase } from './model'
 
 let user1: User
 let user2: User
@@ -33,38 +36,57 @@ beforeAll(async () => {
   const client1Id = (await insert('client', getFakeClient(user1Id))).lastID!
   const client2Id = (await insert('client', getFakeClient(user2Id))).lastID!
 
-  const project1Id = (
-    await insert('project', getFakeProject({ client: client1Id }))
-  ).lastID!
+  const project1Id = (await insert('project', getFakeProject(client1Id)))
+    .lastID!
 
-  const project2Id = (
-    await insert('project', getFakeProject({ client: client2Id }))
-  ).lastID!
+  const project2Id = (await insert('project', getFakeProject(client2Id)))
+    .lastID!
 
-  user1 = (await db.get(SQL`SELECT * FROM user WHERE id = ${user1Id}`)) as User
-  user2 = (await db.get(SQL`SELECT * FROM user WHERE id = ${user2Id}`)) as User
-  client1 = (await db.get(
-    SQL`SELECT * FROM client WHERE id = ${client1Id}`
-  )) as Client
-  client2 = (await db.get(
-    SQL`SELECT * FROM client WHERE id = ${client2Id}`
-  )) as Client
-  project1 = (await db.get(
-    SQL`SELECT * FROM project WHERE id = ${project1Id}`
-  )) as Project
-  project2 = (await db.get(
-    SQL`SELECT * FROM project WHERE id = ${project2Id}`
-  )) as Project
+  user1 = userFromDatabase(
+    (await db.get<UserFromDatabase>(
+      SQL`SELECT * FROM user WHERE id = ${user1Id}`
+    ))!
+  )
+
+  user2 = userFromDatabase(
+    (await db.get<UserFromDatabase>(
+      SQL`SELECT * FROM user WHERE id = ${user2Id}`
+    ))!
+  )
+
+  client1 = clientFromDatabase(
+    (await db.get<ClientFromDatabase>(
+      SQL`SELECT * FROM client WHERE id = ${client1Id}`
+    ))!
+  )
+
+  client2 = clientFromDatabase(
+    (await db.get<ClientFromDatabase>(
+      SQL`SELECT * FROM client WHERE id = ${client2Id}`
+    ))!
+  )
+
+  project1 = fromDatabase(
+    (await db.get<ProjectFromDatabase>(
+      SQL`SELECT * FROM project WHERE id = ${project1Id}`
+    ))!
+  )
+
+  project2 = fromDatabase(
+    (await db.get<ProjectFromDatabase>(
+      SQL`SELECT * FROM project WHERE id = ${project2Id}`
+    ))!
+  )
 })
 
 describe('createProject', () => {
   it('should work', async () => {
-    await createProject(getFakeProject({ client: client1.id }), user1)
+    await createProject(getFakeProject(client1.id), user1)
   })
 
   it("should not allow users to create projects for other users' clients", async () => {
     await expect(async () => {
-      await createProject(getFakeProject({ client: client2.id }), user1)
+      await createProject(getFakeProject(client2.id), user1)
     }).rejects.toBeInstanceOf(ApolloError)
   })
 })
@@ -97,7 +119,7 @@ describe('listProjects', () => {
 
 describe('updateProject', () => {
   it('should work', async () => {
-    const data = getFakeProject()
+    const data = getFakeProject(client1.id)
     const result = await updateProject(project1.id, data, user1)
 
     expect(result).toMatchObject(data)
@@ -106,17 +128,13 @@ describe('updateProject', () => {
 
   it("should not allow users to update other users' projects", async () => {
     await expect(async () => {
-      await updateProject(project1.id, getFakeProject(), user2)
+      await updateProject(project1.id, getFakeProject(client1.id), user2)
     }).rejects.toBeInstanceOf(ApolloError)
   })
 
   it("should not allow users to assign to their projects other users' clients", async () => {
     await expect(async () => {
-      await updateProject(
-        project1.id,
-        getFakeProject({ client: client2.id }),
-        user1
-      )
+      await updateProject(project1.id, getFakeProject(client2.id), user1)
     }).rejects.toBeInstanceOf(ApolloError)
   })
 })
@@ -126,14 +144,8 @@ describe('deleteProject', () => {
   let project2: Project
 
   beforeAll(async () => {
-    project1 = (await createProject(
-      getFakeProject({ client: client1.id }),
-      user1
-    )) as Project
-    project2 = (await createProject(
-      getFakeProject({ client: client2.id }),
-      user2
-    )) as Project
+    project1 = (await createProject(getFakeProject(client1.id), user1))!
+    project2 = (await createProject(getFakeProject(client2.id), user2))!
   })
 
   it('should work', async () => {

@@ -1,8 +1,14 @@
 import faker from 'faker'
 import { Project } from '../project/interface'
 import { toSQLDate } from '../misc/dbUtils'
+import { ID } from '../misc/Types'
 
-export function getFakeProject(data: Partial<Project> = {}): Partial<Project> {
+type AllowedProject = Omit<Project, 'id' | 'created_at' | 'updated_at'>
+
+export function getFakeProject(
+  client: ID,
+  data: Partial<AllowedProject> = {}
+): AllowedProject {
   const isCashed =
     data.cashed_at !== undefined ? !!data.cashed_at : Math.random() < 0.5
 
@@ -11,6 +17,7 @@ export function getFakeProject(data: Partial<Project> = {}): Partial<Project> {
     description: faker.lorem.sentence(),
     cashed_at: isCashed ? toSQLDate(faker.date.past(1)) : null,
     cashed_balance: isCashed ? 1 : null,
+    client,
     ...data
   }
 }

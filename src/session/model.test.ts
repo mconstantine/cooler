@@ -35,13 +35,11 @@ beforeAll(async () => {
   const client1Id = (await insert('client', getFakeClient(user1Id))).lastID!
   const client2Id = (await insert('client', getFakeClient(user2Id))).lastID!
 
-  const project1Id = (
-    await insert('project', getFakeProject({ client: client1Id }))
-  ).lastID!
+  const project1Id = (await insert('project', getFakeProject(client1Id)))
+    .lastID!
 
-  const project2Id = (
-    await insert('project', getFakeProject({ client: client2Id }))
-  ).lastID!
+  const project2Id = (await insert('project', getFakeProject(client2Id)))
+    .lastID!
 
   const task1Id = (await insert('task', getFakeTask({ project: project1Id })))
     .lastID!
@@ -61,9 +59,11 @@ beforeAll(async () => {
   user2 = (await db.get(SQL`SELECT * FROM user WHERE id = ${user2Id}`)) as User
   task1 = (await db.get(SQL`SELECT * FROM task WHERE id = ${task1Id}`)) as Task
   task2 = (await db.get(SQL`SELECT * FROM task WHERE id = ${task2Id}`)) as Task
+
   session1 = (await db.get(
     SQL`SELECT * FROM session WHERE id = ${session1Id}`
   )) as Session
+
   session2 = (await db.get(
     SQL`SELECT * FROM session WHERE id = ${session2Id}`
   )) as Session

@@ -28,8 +28,7 @@ describe('init', () => {
       const user = (await insert('user', getFakeUser())).lastID!
       const client = (await insert('client', getFakeClient(user))).lastID!
 
-      const project = (await insert('project', getFakeProject({ client })))
-        .lastID!
+      const project = (await insert('project', getFakeProject(client))).lastID!
 
       const task = (await insert('task', getFakeTask({ project }))).lastID!
 
@@ -48,19 +47,18 @@ describe('init', () => {
     it('should make user deletion bubble down to sessions', async () => {
       const user = (await insert('user', getFakeUser())).lastID!
       const client = (await insert('client', getFakeClient(user))).lastID!
-
-      const project = (await insert('project', getFakeProject({ client })))
-        .lastID!
-
+      const project = (await insert('project', getFakeProject(client))).lastID!
       const task = (await insert('task', getFakeTask({ project }))).lastID!
 
       const sessionId = (await insert('session', getFakeSession({ task })))
         .lastID!
 
       await remove('user', { id: user })
+
       const session = await db.get(
         SQL`SELECT * FROM session WHERE id = ${sessionId}`
       )
+
       expect(session).toBeUndefined()
     })
   })
@@ -69,10 +67,7 @@ describe('init', () => {
     it('should update the task and project when a session is created for them', async () => {
       const user = (await insert('user', getFakeUser())).lastID!
       const client = (await insert('client', getFakeClient(user))).lastID!
-
-      const project = (await insert('project', getFakeProject({ client })))
-        .lastID!
-
+      const project = (await insert('project', getFakeProject(client))).lastID!
       const task = (await insert('task', getFakeTask({ project }))).lastID!
 
       const projectUpdatedAtBefore = (await db.get<Project>(

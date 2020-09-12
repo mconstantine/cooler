@@ -80,37 +80,37 @@ describe('initClient', () => {
   describe('validation', () => {
     it('should check that fiscal_code exists for PRIVATE Clients', async () => {
       const client = getFakeClient(0, { type: ClientType.PRIVATE })
-      delete client.fiscal_code
+      client.fiscal_code = null
       await expect(insert('client', client)).rejects.toBeDefined()
     })
 
     it('should check that first_name exists for PRIVATE Clients', async () => {
       const client = getFakeClient(0, { type: ClientType.PRIVATE })
-      delete client.first_name
+      client.first_name = null
       await expect(insert('client', client)).rejects.toBeDefined()
     })
 
     it('should check that last_name exists for PRIVATE Clients', async () => {
       const client = getFakeClient(0, { type: ClientType.PRIVATE })
-      delete client.last_name
+      client.last_name = null
       await expect(insert('client', client)).rejects.toBeDefined()
     })
 
     it('should check that country_code exists for BUSINESS Clients', async () => {
       const client = getFakeClient(0, { type: ClientType.BUSINESS })
-      delete client.country_code
+      client.country_code = null
       await expect(insert('client', client)).rejects.toBeDefined()
     })
 
     it('should check that vat_number exists for BUSINESS Clients', async () => {
       const client = getFakeClient(0, { type: ClientType.BUSINESS })
-      delete client.vat_number
+      client.vat_number = null
       await expect(insert('client', client)).rejects.toBeDefined()
     })
 
     it('should check that business_name exists for BUSINESS Clients', async () => {
       const client = getFakeClient(0, { type: ClientType.BUSINESS })
-      delete client.business_name
+      client.business_name = null
       await expect(insert('client', client)).rejects.toBeDefined()
     })
   })

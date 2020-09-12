@@ -28,7 +28,7 @@ describe('initTask', () => {
       const { lastID: userId } = await insert('user', userData)
       const clientData = getFakeClient(userId!)
       const { lastID: clientId } = await insert('client', clientData)
-      const projectData = getFakeProject({ client: clientId }) as Project
+      const projectData = getFakeProject(clientId!) as Project
       const { lastID: projectId } = await insert('project', projectData)
 
       project = { ...projectData, id: projectId! }
@@ -74,7 +74,7 @@ describe('initTask', () => {
     })
 
     it("should delete all project's tasks when a project is deleted", async () => {
-      const projectData = getFakeProject({ client: client.id })
+      const projectData = getFakeProject(client.id)
       const { lastID: projectId } = await insert('project', projectData)
       const taskData = getFakeTask({ project: projectId })
       const { lastID: taskId1 } = await insert('task', taskData)
@@ -95,7 +95,7 @@ describe('initTask', () => {
       const { lastID: userId } = await insert('user', userData)
       const clientData = getFakeClient(userId!)
       const { lastID: clientId } = await insert('client', clientData)
-      const projectData = getFakeProject({ client: clientId })
+      const projectData = getFakeProject(clientId!)
       const { lastID: projectId } = await insert('project', projectData)
       const taskData = getFakeTask({ project: projectId })
       const { lastID: taskId } = await insert('task', taskData)

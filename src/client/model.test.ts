@@ -38,7 +38,10 @@ beforeAll(async () => {
 describe('createClient', () => {
   it('should set the user automatically', async () => {
     const clientData = getFakeClient(user1.id)
+
+    // @ts-ignore
     delete clientData.user
+
     const client = await createClient(clientData, user1)
 
     expect(clientData.user).toBeUndefined()

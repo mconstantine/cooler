@@ -28,13 +28,11 @@ beforeAll(async () => {
   const client1Id = (await insert('client', getFakeClient(user1Id))).lastID!
   const client2Id = (await insert('client', getFakeClient(user2Id))).lastID!
 
-  const project1Id = (
-    await insert('project', getFakeProject({ client: client1Id }))
-  ).lastID!
+  const project1Id = (await insert('project', getFakeProject(client1Id)))
+    .lastID!
 
-  const project2Id = (
-    await insert('project', getFakeProject({ client: client2Id }))
-  ).lastID!
+  const project2Id = (await insert('project', getFakeProject(client2Id)))
+    .lastID!
 
   const task1Id = (await insert('task', getFakeTask({ project: project1Id })))
     .lastID!

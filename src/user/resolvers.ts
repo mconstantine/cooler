@@ -1,9 +1,12 @@
 import { GraphQLFieldResolver } from 'graphql'
 import {
-  UserFromDatabase,
   AccessTokenResponse,
   Context,
-  User
+  User,
+  UserCreationInput,
+  UserLoginInput,
+  RefreshTokenInput,
+  UserUpdateInput
 } from './interface'
 import {
   createUser,
@@ -18,7 +21,7 @@ import { ensureUser } from '../misc/ensureUser'
 type CreateUserMutation = GraphQLFieldResolver<
   any,
   Context,
-  { user: Pick<UserFromDatabase, 'name' | 'email' | 'password'> }
+  { user: UserCreationInput }
 >
 
 const createUserMutation: CreateUserMutation = (
@@ -39,33 +42,33 @@ const createUserMutation: CreateUserMutation = (
 type LoginUserMutation = GraphQLFieldResolver<
   any,
   any,
-  { user: Pick<UserFromDatabase, 'email' | 'password'> }
+  { user: UserLoginInput }
 >
 
 const loginUserMutation: LoginUserMutation = (
   _parent,
-  { user: { email, password } }
+  { user }
 ): Promise<AccessTokenResponse> => {
-  return loginUser({ email, password })
+  return loginUser(user)
 }
 
 export type RefreshTokenMutation = GraphQLFieldResolver<
   any,
   any,
-  { refreshToken: string }
+  RefreshTokenInput
 >
 
 export const refreshTokenMutation: RefreshTokenMutation = (
   _parent,
-  { refreshToken: token }
+  args
 ): Promise<AccessTokenResponse> => {
-  return refreshToken({ refreshToken: token })
+  return refreshToken(args)
 }
 
 export type UpdateMeMutation = GraphQLFieldResolver<
   any,
   Context,
-  { user: Partial<Pick<User, 'name' | 'email' | 'password'>> }
+  { user: UserUpdateInput }
 >
 
 export const updateMeMutation: UpdateMeMutation = (

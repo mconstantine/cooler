@@ -25,9 +25,8 @@ describe('session resolvers', () => {
     const userId = (await insert('user', getFakeUser())).lastID!
     const clientId = (await insert('client', getFakeClient(userId))).lastID!
 
-    const projectId = (
-      await insert('project', getFakeProject({ client: clientId }))
-    ).lastID!
+    const projectId = (await insert('project', getFakeProject(clientId)))
+      .lastID!
 
     user = (await db.get<User>(SQL`SELECT * FROM user WHERE id = ${userId}`))!
     project = (await db.get<Project>(
@@ -427,8 +426,7 @@ describe('session resolvers', () => {
         const project1Id = (
           await insert(
             'project',
-            getFakeProject({
-              client: client1Id,
+            getFakeProject(client1Id, {
               cashed_at: null
             })
           )
@@ -437,8 +435,7 @@ describe('session resolvers', () => {
         const project2Id = (
           await insert(
             'project',
-            getFakeProject({
-              client: client2Id,
+            getFakeProject(client2Id, {
               cashed_at: toSQLDate(new Date())
             })
           )

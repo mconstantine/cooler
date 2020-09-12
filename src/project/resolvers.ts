@@ -1,133 +1,169 @@
 import { GraphQLFieldResolver } from 'graphql'
-import { Project } from './interface'
+import {
+  ProjectCreationInput,
+  ProjectFromDatabase,
+  ProjectUpdateInput
+} from './interface'
 import {
   createProject,
   listProjects,
   updateProject,
   deleteProject,
-  getProject
+  getProject,
+  getProjectClient,
+  getUserProjects,
+  getUserCashedBalance,
+  getClientProjects
 } from './model'
-import { getDatabase } from '../misc/getDatabase'
-import { Client } from '../client/interface'
-import SQL from 'sql-template-strings'
+import { ClientFromDatabase } from '../client/interface'
 import { ConnectionQueryArgs } from '../misc/ConnectionQueryArgs'
-import { queryToConnection } from '../misc/queryToConnection'
-import { UserContext, User } from '../user/interface'
+import { UserContext, UserFromDatabase } from '../user/interface'
 import { ensureUser } from '../misc/ensureUser'
-import { toSQLDate } from '../misc/dbUtils'
+import { DateString } from '../misc/Types'
+
+type ProjectClientResolver = GraphQLFieldResolver<ProjectFromDatabase, any>
+
+const projectClientResolver: ProjectClientResolver = project => {
+  return getProjectClient(project)
+}
+
+type ClientProjectsResolver = GraphQLFieldResolver<
+  ClientFromDatabase,
+  any,
+  ConnectionQueryArgs
+>
+
+const clientProjectsResolver: ClientProjectsResolver = (
+  client,
+  args,
+  _context
+) => {
+  return getClientProjects(client, args)
+}
+
+type UserProjectsResolver = GraphQLFieldResolver<
+  UserFromDatabase,
+  any,
+  ConnectionQueryArgs
+>
+
+const userProjectsResolver: UserProjectsResolver = (user, args) => {
+  return getUserProjects(user, args)
+}
+
+type UserCashedBalanceResolver = GraphQLFieldResolver<
+  UserFromDatabase,
+  any,
+  { since?: DateString }
+>
+
+const userCashedBalanceResolver: UserCashedBalanceResolver = async (
+  user,
+  { since }
+) => {
+  return getUserCashedBalance(user, since)
+}
+
+type CreateProjectMutation = GraphQLFieldResolver<
+  any,
+  UserContext,
+  { project: ProjectCreationInput }
+>
+
+const createProjectMutation: CreateProjectMutation = (
+  _parent,
+  { project },
+  context
+) => {
+  return createProject(project, ensureUser(context))
+}
+
+type UpdateProjectMutation = GraphQLFieldResolver<
+  any,
+  UserContext,
+  { id: number; project: ProjectUpdateInput }
+>
+
+const updateProjectMutation: UpdateProjectMutation = (
+  _parent,
+  { id, project },
+  context
+) => {
+  return updateProject(id, project, ensureUser(context))
+}
+
+type DeleteProjectMutation = GraphQLFieldResolver<
+  any,
+  UserContext,
+  { id: number }
+>
+
+const deleteProjectMutation: DeleteProjectMutation = (
+  _parent,
+  { id },
+  context
+) => {
+  return deleteProject(id, ensureUser(context))
+}
+
+type ProjectQuery = GraphQLFieldResolver<any, UserContext, { id: number }>
+
+const projectQuery: ProjectQuery = async (_parent, { id }, context) => {
+  return getProject(id, ensureUser(context))
+}
+
+type ProjectsQuery = GraphQLFieldResolver<
+  any,
+  UserContext,
+  ConnectionQueryArgs & { name?: string }
+>
+
+const projectsQuery: ProjectsQuery = (_parent, args, context) => {
+  return listProjects(args, ensureUser(context))
+}
 
 interface ProjectResolvers {
   Project: {
-    client: GraphQLFieldResolver<Project, any>
+    client: ProjectClientResolver
   }
   User: {
-    projects: GraphQLFieldResolver<User, ConnectionQueryArgs>
-    cashedBalance: GraphQLFieldResolver<User, { since?: string }>
+    projects: UserProjectsResolver
+    cashedBalance: UserCashedBalanceResolver
   }
   Client: {
-    projects: GraphQLFieldResolver<Client, ConnectionQueryArgs>
+    projects: ClientProjectsResolver
   }
   Mutation: {
-    createProject: GraphQLFieldResolver<
-      any,
-      UserContext,
-      { project: Partial<Project> }
-    >
-    updateProject: GraphQLFieldResolver<
-      any,
-      UserContext,
-      { id: number; project: Partial<Project> }
-    >
-    deleteProject: GraphQLFieldResolver<any, UserContext, { id: number }>
+    createProject: CreateProjectMutation
+    updateProject: UpdateProjectMutation
+    deleteProject: DeleteProjectMutation
   }
   Query: {
-    project: GraphQLFieldResolver<any, UserContext, { id: number }>
-    projects: GraphQLFieldResolver<
-      any,
-      UserContext,
-      ConnectionQueryArgs & { name?: string }
-    >
+    project: ProjectQuery
+    projects: ProjectsQuery
   }
 }
 
-export default {
+const resolvers: ProjectResolvers = {
   Project: {
-    client: async project => {
-      const db = await getDatabase()
-      return await db.get<Client>(
-        SQL`SELECT * FROM client WHERE id = ${project.client}`
-      )
-    }
+    client: projectClientResolver
   },
   User: {
-    projects: (user, args) => {
-      return queryToConnection(
-        args,
-        ['project.*'],
-        'project',
-        SQL`
-        JOIN client ON client.id = project.client
-        WHERE client.user = ${user.id}
-      `
-      )
-    },
-    cashedBalance: async (user, { since }) => {
-      const db = await getDatabase()
-      const sql = SQL`
-        SELECT IFNULL(SUM(project.cashed_balance), 0) AS balance
-        FROM project
-        JOIN client ON client.id = project.client
-        WHERE client.user = ${user.id} AND project.cashed_balance IS NOT NULL
-      `
-
-      since &&
-        sql.append(SQL` AND project.cashed_at >= ${toSQLDate(new Date(since))}`)
-
-      const { balance } = (await db.get<{ balance: number }>(sql))!
-      return balance
-    }
+    projects: userProjectsResolver,
+    cashedBalance: userCashedBalanceResolver
   },
   Client: {
-    projects: (client, args, _context) => {
-      return queryToConnection(
-        args,
-        ['*'],
-        'project',
-        SQL`WHERE client = ${client.id}`
-      )
-    }
+    projects: clientProjectsResolver
   },
   Mutation: {
-    createProject: (_parent, { project }, context) => {
-      ensureUser(context)
-      return createProject(project, context.user!)
-    },
-    updateProject: (_parent, { id, project }, context) => {
-      ensureUser(context)
-      return updateProject(
-        id,
-        {
-          ...project,
-          cashed_at: project.cashed_at
-            ? toSQLDate(new Date(project.cashed_at))
-            : project.cashed_at
-        },
-        context.user!
-      )
-    },
-    deleteProject: (_parent, { id }, context) => {
-      ensureUser(context)
-      return deleteProject(id, context.user!)
-    }
+    createProject: createProjectMutation,
+    updateProject: updateProjectMutation,
+    deleteProject: deleteProjectMutation
   },
   Query: {
-    project: async (_parent, { id }, context) => {
-      ensureUser(context)
-      return getProject(id, context.user!)
-    },
-    projects: (_parent, args, context) => {
-      ensureUser(context)
-      return listProjects(args, context.user!)
-    }
+    project: projectQuery,
+    projects: projectsQuery
   }
-} as ProjectResolvers
+}
+
+export default resolvers

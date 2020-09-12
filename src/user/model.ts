@@ -4,7 +4,11 @@ import {
   Token,
   AccessTokenResponse,
   Context,
-  UserFromDatabase
+  UserFromDatabase,
+  UserCreationInput,
+  UserLoginInput,
+  RefreshTokenInput,
+  UserUpdateInput
 } from './interface'
 import { getDatabase } from '../misc/getDatabase'
 import SQL from 'sql-template-strings'
@@ -16,7 +20,7 @@ import { validate as isEmail } from 'isemail'
 import { isUserContext } from '../misc/ensureUser'
 
 export async function createUser(
-  { name, email, password }: Pick<User, 'name' | 'email' | 'password'>,
+  { name, email, password }: UserCreationInput,
   context: Context
 ): Promise<AccessTokenResponse> {
   const db = await getDatabase()
@@ -43,7 +47,7 @@ export async function createUser(
     throw new ApolloError('Duplicate user', 'COOLER_409')
   }
 
-  const { lastID } = await insert('user', {
+  const { lastID } = await insert<UserCreationInput>('user', {
     name,
     email,
     password: hashSync(password, 10)
@@ -55,7 +59,7 @@ export async function createUser(
 export async function loginUser({
   email,
   password
-}: Pick<User, 'email' | 'password'>): Promise<AccessTokenResponse> {
+}: UserLoginInput): Promise<AccessTokenResponse> {
   const db = await getDatabase()
   const user = await db.get<UserFromDatabase>(
     SQL`SELECT * FROM user WHERE email = ${email}`
@@ -74,9 +78,7 @@ export async function loginUser({
 
 export async function refreshToken({
   refreshToken
-}: {
-  refreshToken: string
-}): Promise<AccessTokenResponse> {
+}: RefreshTokenInput): Promise<AccessTokenResponse> {
   const token = verify(refreshToken, process.env.SECRET!, {
     ignoreExpiration: true
   }) as Token
@@ -99,7 +101,7 @@ export async function refreshToken({
 
 export async function updateUser(
   id: number,
-  user: Partial<Pick<User, 'name' | 'email' | 'password'>>
+  user: UserUpdateInput
 ): Promise<User | null> {
   const { name, email, password } = user
   const db = await getDatabase()

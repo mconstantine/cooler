@@ -5,7 +5,7 @@ import { getFakeClient } from '../test/getFakeClient'
 import { getFakeProject } from '../test/getFakeProject'
 import resolvers from './resolvers'
 import { getDatabase } from '../misc/getDatabase'
-import { User } from '../user/interface'
+import { UserFromDatabase } from '../user/interface'
 import SQL from 'sql-template-strings'
 
 describe('project resolvers', () => {
@@ -17,6 +17,7 @@ describe('project resolvers', () => {
     describe('cashedBalance', () => {
       it('should work', async () => {
         const { lastID: userId } = await insert('user', getFakeUser())
+
         const { lastID: clientId } = await insert(
           'client',
           getFakeClient(userId!)
@@ -24,8 +25,7 @@ describe('project resolvers', () => {
 
         await insert(
           'project',
-          getFakeProject({
-            client: clientId,
+          getFakeProject(clientId!, {
             cashed_at: toSQLDate(new Date()),
             cashed_balance: 15
           })
@@ -33,20 +33,21 @@ describe('project resolvers', () => {
 
         await insert(
           'project',
-          getFakeProject({
-            client: clientId,
+          getFakeProject(clientId!, {
             cashed_at: toSQLDate(new Date()),
             cashed_balance: 25
           })
         )
 
         const db = await getDatabase()
-        const user = (await db.get<User>(
+
+        const userFromDatabase = (await db.get<UserFromDatabase>(
           SQL`SELECT * FROM user WHERE id = ${userId}`
         ))!
+
         const cashedBalance = await resolvers.User.cashedBalance(
-          user,
-          { user },
+          userFromDatabase,
+          {},
           {},
           null as any
         )

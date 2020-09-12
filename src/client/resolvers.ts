@@ -1,5 +1,10 @@
 import { GraphQLFieldResolver } from 'graphql'
-import { Client } from './interface'
+import {
+  Client,
+  ClientCreationInput,
+  ClientFromDatabase,
+  ClientUpdateInput
+} from './interface'
 import {
   createClient,
   listClients,
@@ -12,16 +17,16 @@ import {
 } from './model'
 import { ConnectionQueryArgs } from '../misc/ConnectionQueryArgs'
 import { ensureUser } from '../misc/ensureUser'
-import { UserContext, User } from '../user/interface'
+import { UserContext, User, UserFromDatabase } from '../user/interface'
 import { Connection } from '../misc/Connection'
 
-type ClientNameResolver = GraphQLFieldResolver<Client, UserContext>
+type ClientNameResolver = GraphQLFieldResolver<ClientFromDatabase, UserContext>
 
 const clientNameResolver: ClientNameResolver = (client): string => {
   return getClientName(client)
 }
 
-type ClientUserResolver = GraphQLFieldResolver<Client, UserContext>
+type ClientUserResolver = GraphQLFieldResolver<ClientFromDatabase, UserContext>
 
 const clientUserResolver: ClientUserResolver = async (
   client
@@ -29,7 +34,10 @@ const clientUserResolver: ClientUserResolver = async (
   return getClientUser(client)
 }
 
-type UserClientsResolver = GraphQLFieldResolver<User, ConnectionQueryArgs>
+type UserClientsResolver = GraphQLFieldResolver<
+  UserFromDatabase,
+  ConnectionQueryArgs
+>
 
 const userClientsResolver: UserClientsResolver = (
   user,
@@ -41,7 +49,7 @@ const userClientsResolver: UserClientsResolver = (
 type CreateClientMutation = GraphQLFieldResolver<
   any,
   UserContext,
-  { client: Omit<Client, 'id' | 'created_at' | 'updated_at'> }
+  { client: ClientCreationInput }
 >
 
 const createClientMutation: CreateClientMutation = (
@@ -49,8 +57,7 @@ const createClientMutation: CreateClientMutation = (
   { client },
   context
 ): Promise<Client | null> => {
-  ensureUser(context)
-  return createClient({ ...client }, context.user!)
+  return createClient({ ...client }, ensureUser(context))
 }
 
 type UpdateClientMutation = GraphQLFieldResolver<
@@ -58,7 +65,7 @@ type UpdateClientMutation = GraphQLFieldResolver<
   UserContext,
   {
     id: number
-    client: Partial<Omit<Client, 'id' | 'created_at' | 'updated_at'>>
+    client: ClientUpdateInput
   }
 >
 
@@ -67,8 +74,7 @@ const updateClientMutation: UpdateClientMutation = (
   { id, client },
   context
 ): Promise<Client | null> => {
-  ensureUser(context)
-  return updateClient(id, client, context.user!)
+  return updateClient(id, client, ensureUser(context))
 }
 
 type DeleteClientMutation = GraphQLFieldResolver<
@@ -82,8 +88,7 @@ const deleteClientMutation: DeleteClientMutation = (
   { id },
   context
 ): Promise<Client | null> => {
-  ensureUser(context)
-  return deleteClient(id, context.user!)
+  return deleteClient(id, ensureUser(context))
 }
 
 type ClientQuery = GraphQLFieldResolver<any, UserContext, { id: number }>
@@ -93,8 +98,7 @@ const clientQuery: ClientQuery = async (
   { id },
   context
 ): Promise<Client | null> => {
-  ensureUser(context)
-  return await getClient(id, context.user!)
+  return await getClient(id, ensureUser(context))
 }
 
 type ClientsQuery = GraphQLFieldResolver<
@@ -108,8 +112,7 @@ const clientsQuery: ClientsQuery = async (
   args,
   context
 ): Promise<Connection<Client>> => {
-  ensureUser(context)
-  return listClients(args, context.user!)
+  return listClients(args, ensureUser(context))
 }
 
 interface ClientResolvers {
