@@ -1,11 +1,44 @@
-export interface Task {
-  id: number
+import { ID, SQLDate } from '../misc/Types'
+
+interface TaskCommonData {
+  readonly id: ID
   name: string
-  description?: string
+  description: string | null
   expectedWorkingHours: number
   hourlyCost: number
-  project: number
-  start_time: string
-  created_at: string
-  updated_at: string
+  project: ID
 }
+
+export interface Task extends TaskCommonData {
+  start_time: Date
+  readonly created_at: Date
+  readonly updated_at: Date
+}
+
+export interface TaskFromDatabase extends TaskCommonData {
+  start_time: SQLDate
+  readonly created_at: SQLDate
+  readonly updated_at: SQLDate
+}
+
+export type TaskCreationInput = Pick<
+  Task,
+  | 'name'
+  | 'description'
+  | 'expectedWorkingHours'
+  | 'hourlyCost'
+  | 'project'
+  | 'start_time'
+>
+
+export type TaskUpdateInput = Partial<
+  Pick<
+    Task,
+    | 'name'
+    | 'description'
+    | 'expectedWorkingHours'
+    | 'hourlyCost'
+    | 'project'
+    | 'start_time'
+  >
+>

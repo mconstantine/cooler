@@ -41,8 +41,7 @@ describe('session resolvers', () => {
       const taskId = (
         await insert(
           'task',
-          getFakeTask({
-            project: project.id,
+          getFakeTask(project.id, {
             expectedWorkingHours: 10,
             hourlyCost: 50
           })
@@ -198,8 +197,7 @@ describe('session resolvers', () => {
         const task1Id = (
           await insert(
             'task',
-            getFakeTask({
-              project: project.id,
+            getFakeTask(project.id, {
               expectedWorkingHours: 10,
               hourlyCost: 25
             })
@@ -209,8 +207,7 @@ describe('session resolvers', () => {
         const task2Id = (
           await insert(
             'task',
-            getFakeTask({
-              project: project.id,
+            getFakeTask(project.id, {
               expectedWorkingHours: 5,
               hourlyCost: 30
             })
@@ -220,8 +217,7 @@ describe('session resolvers', () => {
         const task3Id = (
           await insert(
             'task',
-            getFakeTask({
-              project: project.id,
+            getFakeTask(project.id, {
               expectedWorkingHours: 20,
               hourlyCost: 10
             })
@@ -444,11 +440,10 @@ describe('session resolvers', () => {
         const task1Id = (
           await insert(
             'task',
-            getFakeTask({
-              project: project1Id,
+            getFakeTask(project1Id, {
               expectedWorkingHours: 10,
               hourlyCost: 25,
-              start_time: toSQLDate(new Date('1990-01-01T00:00:00.000Z'))
+              start_time: new Date('1990-01-01T00:00:00.000Z')
             })
           )!
         ).lastID
@@ -456,11 +451,10 @@ describe('session resolvers', () => {
         const task2Id = (
           await insert(
             'task',
-            getFakeTask({
-              project: project1Id,
+            getFakeTask(project1Id, {
               expectedWorkingHours: 5,
               hourlyCost: 30,
-              start_time: toSQLDate(new Date('1990-01-01T06:30:00.000Z'))
+              start_time: new Date('1990-01-01T06:30:00.000Z')
             })
           )!
         ).lastID
@@ -468,11 +462,10 @@ describe('session resolvers', () => {
         const task3Id = (
           await insert(
             'task',
-            getFakeTask({
-              project: project2Id,
+            getFakeTask(project2Id, {
               expectedWorkingHours: 20,
               hourlyCost: 10,
-              start_time: toSQLDate(new Date('1990-01-01T18:45:00.000Z'))
+              start_time: new Date('1990-01-01T18:45:00.000Z')
             })
           )!
         ).lastID

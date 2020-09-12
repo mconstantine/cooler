@@ -1,7 +1,9 @@
 import { User } from '../user/interface'
 import faker from 'faker'
 
-export function getFakeUser(data: Partial<User> = {}): Partial<User> {
+type AllowedUser = Omit<User, 'id' | 'created_at' | 'updated_at'>
+
+export function getFakeUser(data: Partial<AllowedUser> = {}): AllowedUser {
   const firstName = faker.name.firstName()
   const lastName = faker.name.lastName()
 

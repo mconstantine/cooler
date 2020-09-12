@@ -4,8 +4,8 @@ import { Database } from 'sqlite'
 import { insert, update, remove } from '../misc/dbUtils'
 import { getFakeTask } from '../test/getFakeTask'
 import SQL from 'sql-template-strings'
-import { Task } from './interface'
-import { Project } from '../project/interface'
+import { Task, TaskFromDatabase } from './interface'
+import { Project, ProjectFromDatabase } from '../project/interface'
 import { getFakeProject } from '../test/getFakeProject'
 import { getFakeClient } from '../test/getFakeClient'
 import { Client } from '../client/interface'
@@ -40,11 +40,9 @@ describe('initTask', () => {
     })
 
     it('should save the creation time automatically', async () => {
-      const { lastID } = await insert(
-        'task',
-        getFakeTask({ project: project.id })
-      )
-      const task = await db.get<Task>(
+      const { lastID } = await insert('task', getFakeTask(project.id))
+
+      const task = await db.get<TaskFromDatabase>(
         SQL`SELECT * FROM task WHERE id = ${lastID}`
       )
 
@@ -52,21 +50,21 @@ describe('initTask', () => {
     })
 
     it('should keep track of the time of the last update', async () => {
-      const task = getFakeTask({ project: project.id })
+      const task = getFakeTask(project.id)
       const updated: Partial<Task> = { name: 'Some weird name' }
 
       expect(task.name).not.toBe(updated.name)
 
       const { lastID } = await insert('task', task)
 
-      const updateDateBefore = (await db.get<Task>(
+      const updateDateBefore = (await db.get<TaskFromDatabase>(
         SQL`SELECT * FROM task WHERE id = ${lastID}`
       ))!.updated_at
 
       await (() => new Promise(done => setTimeout(() => done(), 1000)))()
       await update('task', { id: lastID, ...updated })
 
-      const updateDateAfter = (await db.get<Task>(
+      const updateDateAfter = (await db.get<TaskFromDatabase>(
         SQL`SELECT * FROM task WHERE id = ${lastID}`
       ))!.updated_at
 
@@ -76,12 +74,12 @@ describe('initTask', () => {
     it("should delete all project's tasks when a project is deleted", async () => {
       const projectData = getFakeProject(client.id)
       const { lastID: projectId } = await insert('project', projectData)
-      const taskData = getFakeTask({ project: projectId })
+      const taskData = getFakeTask(projectId!)
       const { lastID: taskId1 } = await insert('task', taskData)
 
       await remove('project', { id: projectId })
 
-      const task = await db.get<Task>(
+      const task = await db.get<TaskFromDatabase>(
         SQL`SELECT * FROM task WHERE id = ${taskId1}`
       )
 
@@ -97,12 +95,12 @@ describe('initTask', () => {
       const { lastID: clientId } = await insert('client', clientData)
       const projectData = getFakeProject(clientId!)
       const { lastID: projectId } = await insert('project', projectData)
-      const taskData = getFakeTask({ project: projectId })
+      const taskData = getFakeTask(projectId!)
       const { lastID: taskId } = await insert('task', taskData)
 
       await remove('user', { id: userId })
 
-      const task = await db.get<Task>(
+      const task = await db.get<TaskFromDatabase>(
         SQL`SELECT * FROM task WHERE id = ${taskId}`
       )
 
@@ -112,14 +110,14 @@ describe('initTask', () => {
 
   describe('project update', () => {
     it('should update the project when a task is created for it', async () => {
-      const projectUpdatedAtBefore = (await db.get<Project>(
+      const projectUpdatedAtBefore = (await db.get<ProjectFromDatabase>(
         SQL`SELECT * FROM project WHERE id = ${project.id}`
       ))!.updated_at
 
       await (() => new Promise(done => setTimeout(() => done(), 1000)))()
-      await insert('task', getFakeTask({ project: project.id }))
+      await insert('task', getFakeTask(project.id))
 
-      const projectUpdatedAtAfter = (await db.get<Project>(
+      const projectUpdatedAtAfter = (await db.get<ProjectFromDatabase>(
         SQL`SELECT * FROM project WHERE id = ${project.id}`
       ))!.updated_at
 

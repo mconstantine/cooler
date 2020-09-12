@@ -1,108 +1,160 @@
 import { GraphQLFieldResolver } from 'graphql'
-import { Task } from './interface'
-import { getDatabase } from '../misc/getDatabase'
-import { Project } from '../project/interface'
-import SQL from 'sql-template-strings'
-import { createTask, listTasks, updateTask, deleteTask, getTask } from './model'
+import {
+  Task,
+  TaskCreationInput,
+  TaskFromDatabase,
+  TaskUpdateInput
+} from './interface'
+import { Project, ProjectFromDatabase } from '../project/interface'
+import {
+  createTask,
+  listTasks,
+  updateTask,
+  deleteTask,
+  getTask,
+  getTaskProject,
+  getUserTasks,
+  getProjectTasks
+} from './model'
 import { ConnectionQueryArgs } from '../misc/ConnectionQueryArgs'
-import { UserContext, User } from '../user/interface'
+import { UserContext, UserFromDatabase } from '../user/interface'
 import { ensureUser } from '../misc/ensureUser'
-import { queryToConnection } from '../misc/queryToConnection'
-import { toSQLDate } from '../misc/dbUtils'
+import { Connection } from '../misc/Connection'
+
+type TaskProjectResolver = GraphQLFieldResolver<TaskFromDatabase, any>
+
+const taskProjectResolver: TaskProjectResolver = async (
+  task
+): Promise<Project | null> => {
+  return getTaskProject(task)
+}
+
+type UserTasksResolver = GraphQLFieldResolver<
+  UserFromDatabase,
+  ConnectionQueryArgs
+>
+
+const userTasksResolver: UserTasksResolver = (
+  user,
+  args
+): Promise<Connection<Task>> => {
+  return getUserTasks(user, args)
+}
+
+type ProjectTasksResolver = GraphQLFieldResolver<
+  ProjectFromDatabase,
+  ConnectionQueryArgs
+>
+
+const projectTasksResolver: ProjectTasksResolver = (
+  project,
+  args
+): Promise<Connection<Task>> => {
+  return getProjectTasks(project, args)
+}
+
+type CreateTaskMutation = GraphQLFieldResolver<
+  any,
+  UserContext,
+  { task: TaskCreationInput }
+>
+
+const createTaskMutation: CreateTaskMutation = (
+  _parent,
+  { task },
+  context
+): Promise<Task | null> => {
+  return createTask(task, ensureUser(context))
+}
+
+type UpdateTaskMutation = GraphQLFieldResolver<
+  any,
+  UserContext,
+  { id: number; task: TaskUpdateInput }
+>
+
+const updateTaskMutation: UpdateTaskMutation = (
+  _parent,
+  { id, task },
+  context
+): Promise<Task | null> => {
+  return updateTask(id, task, ensureUser(context))
+}
+
+type DeleteTaskMutation = GraphQLFieldResolver<any, UserContext, { id: number }>
+
+const deleteTaskMutation: DeleteTaskMutation = (
+  _parent,
+  { id },
+  context
+): Promise<Task | null> => {
+  return deleteTask(id, ensureUser(context))
+}
+
+type TaskQuery = GraphQLFieldResolver<any, UserContext, { id: number }>
+
+const taskQuery: TaskQuery = (
+  _parent,
+  { id },
+  context
+): Promise<Task | null> => {
+  return getTask(id, ensureUser(context))
+}
+
+type TasksQuery = GraphQLFieldResolver<
+  any,
+  UserContext,
+  ConnectionQueryArgs & { name?: string }
+>
+
+const tasksQuery: TasksQuery = (
+  _parent,
+  args,
+  context
+): Promise<Connection<Task>> => {
+  return listTasks(args, ensureUser(context))
+}
 
 interface TaskResolvers {
   Task: {
-    project: GraphQLFieldResolver<Task, any>
+    project: TaskProjectResolver
   }
   User: {
-    tasks: GraphQLFieldResolver<User, ConnectionQueryArgs>
+    tasks: UserTasksResolver
   }
   Project: {
-    tasks: GraphQLFieldResolver<Project, ConnectionQueryArgs>
+    tasks: ProjectTasksResolver
   }
   Mutation: {
-    createTask: GraphQLFieldResolver<any, UserContext, { task: Partial<Task> }>
-    updateTask: GraphQLFieldResolver<
-      any,
-      UserContext,
-      { id: number; task: Partial<Task> }
-    >
-    deleteTask: GraphQLFieldResolver<any, UserContext, { id: number }>
+    createTask: CreateTaskMutation
+    updateTask: UpdateTaskMutation
+    deleteTask: DeleteTaskMutation
   }
   Query: {
-    task: GraphQLFieldResolver<any, UserContext, { id: number }>
-    tasks: GraphQLFieldResolver<
-      any,
-      UserContext,
-      ConnectionQueryArgs & { name?: string }
-    >
+    task: TaskQuery
+    tasks: TasksQuery
   }
 }
 
-export default {
+const resolvers: TaskResolvers = {
   Task: {
-    project: async task => {
-      const db = await getDatabase()
-      return await db.get<Project>(
-        SQL`SELECT * FROM project WHERE id = ${task.project}`
-      )
-    }
+    project: taskProjectResolver
   },
   User: {
-    tasks: (user, args) => {
-      return queryToConnection(
-        args,
-        ['task.*'],
-        'task',
-        SQL`
-        JOIN project ON project.id = task.project
-        JOIN client ON project.client = client.id
-        WHERE client.user = ${user.id}
-      `
-      )
-    }
+    tasks: userTasksResolver
   },
   Project: {
-    tasks: (project, args) => {
-      return queryToConnection(
-        args,
-        ['*'],
-        'task',
-        SQL`WHERE project = ${project.id}`
-      )
-    }
+    tasks: projectTasksResolver
   },
   Mutation: {
-    createTask: (_parent, { task }, context) => {
-      ensureUser(context)
-      return createTask(task, context.user!)
-    },
-    updateTask: (_parent, { id, task }, context) => {
-      ensureUser(context)
-      return updateTask(
-        id,
-        {
-          ...task,
-          ...(task.start_time
-            ? { start_time: toSQLDate(new Date(task.start_time)) }
-            : {})
-        },
-        context.user!
-      )
-    },
-    deleteTask: (_parent, { id }, context) => {
-      ensureUser(context)
-      return deleteTask(id, context.user!)
-    }
+    createTask: createTaskMutation,
+    updateTask: updateTaskMutation,
+    deleteTask: deleteTaskMutation
   },
   Query: {
-    task: async (_parent, { id }, context) => {
-      ensureUser(context)
-      return getTask(id, context.user!)
-    },
-    tasks: (_parent, args, context) => {
-      ensureUser(context)
-      return listTasks(args, context.user!)
-    }
+    task: taskQuery,
+    tasks: tasksQuery
   }
-} as TaskResolvers
+}
+
+export default resolvers

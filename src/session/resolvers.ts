@@ -213,6 +213,7 @@ export default {
       const { expectedWorkingHours } = (await db.get<{
         expectedWorkingHours: number
       }>(sql))!
+
       return expectedWorkingHours
     },
     actualWorkingHours: async (user, { since }) => {

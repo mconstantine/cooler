@@ -23,7 +23,22 @@ type TypedClient = {
 }
 
 export async function createClient(
-  client: ClientCreationInput,
+  {
+    address_city,
+    address_country,
+    address_email,
+    address_province,
+    address_street,
+    address_street_number,
+    address_zip,
+    business_name,
+    country_code,
+    first_name,
+    fiscal_code,
+    last_name,
+    type,
+    vat_number
+  }: ClientCreationInput,
   user: User
 ): Promise<Client | null> {
   const db = await getDatabase()
@@ -31,20 +46,20 @@ export async function createClient(
   const { lastID } = await insert<ClientCreationInput & { user: ID }>(
     'client',
     {
-      address_city: client.address_city,
-      address_country: client.address_country,
-      address_email: client.address_email,
-      address_province: client.address_province,
-      address_street: client.address_street,
-      address_street_number: client.address_street_number,
-      address_zip: client.address_zip,
-      business_name: client.business_name,
-      country_code: client.country_code,
-      first_name: client.first_name,
-      fiscal_code: client.fiscal_code,
-      last_name: client.last_name,
-      type: client.type,
-      vat_number: client.vat_number,
+      address_city,
+      address_country,
+      address_email,
+      address_province,
+      address_street,
+      address_street_number,
+      address_zip,
+      business_name,
+      country_code,
+      first_name,
+      fiscal_code,
+      last_name,
+      type,
+      vat_number,
       user: user.id
     }
   )

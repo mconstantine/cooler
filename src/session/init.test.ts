@@ -30,7 +30,7 @@ describe('init', () => {
 
       const project = (await insert('project', getFakeProject(client))).lastID!
 
-      const task = (await insert('task', getFakeTask({ project }))).lastID!
+      const task = (await insert('task', getFakeTask(project))).lastID!
 
       const sessionId = (await insert('session', getFakeSession({ task })))
         .lastID!
@@ -48,7 +48,7 @@ describe('init', () => {
       const user = (await insert('user', getFakeUser())).lastID!
       const client = (await insert('client', getFakeClient(user))).lastID!
       const project = (await insert('project', getFakeProject(client))).lastID!
-      const task = (await insert('task', getFakeTask({ project }))).lastID!
+      const task = (await insert('task', getFakeTask(project))).lastID!
 
       const sessionId = (await insert('session', getFakeSession({ task })))
         .lastID!
@@ -68,7 +68,7 @@ describe('init', () => {
       const user = (await insert('user', getFakeUser())).lastID!
       const client = (await insert('client', getFakeClient(user))).lastID!
       const project = (await insert('project', getFakeProject(client))).lastID!
-      const task = (await insert('task', getFakeTask({ project }))).lastID!
+      const task = (await insert('task', getFakeTask(project))).lastID!
 
       const projectUpdatedAtBefore = (await db.get<Project>(
         SQL`SELECT updated_at FROM project WHERE id = ${project}`

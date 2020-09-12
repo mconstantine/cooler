@@ -132,8 +132,7 @@ describe('initProject', () => {
 
       const { lastID: taskId } = await insert(
         'task',
-        getFakeTask({
-          project: projectId,
+        getFakeTask(projectId!, {
           hourlyCost: 10.5
         })
       )

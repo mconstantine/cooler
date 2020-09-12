@@ -164,14 +164,6 @@ export function getUserFromContext<C extends Context>(context: C): User | null {
   return context.user
 }
 
-export function toDatabase(user: User): UserFromDatabase {
-  return {
-    ...user,
-    created_at: toSQLDate(user.created_at),
-    updated_at: toSQLDate(user.updated_at)
-  }
-}
-
 export function fromDatabase(user: UserFromDatabase): User {
   return {
     ...user,

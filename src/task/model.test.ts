@@ -1,5 +1,5 @@
 import { init } from '../init'
-import { User } from '../user/interface'
+import { User, UserFromDatabase } from '../user/interface'
 import { insert } from '../misc/dbUtils'
 import { getFakeUser } from '../test/getFakeUser'
 import { getFakeClient } from '../test/getFakeClient'
@@ -7,15 +7,24 @@ import { getDatabase } from '../misc/getDatabase'
 import SQL from 'sql-template-strings'
 import { getFakeProject } from '../test/getFakeProject'
 import { ApolloError } from 'apollo-server-express'
-import { Project } from '../project/interface'
-import { Task } from './interface'
+import { ProjectFromDatabase } from '../project/interface'
+import { Task, TaskFromDatabase } from './interface'
 import { getFakeTask } from '../test/getFakeTask'
-import { createTask, listTasks, updateTask, deleteTask, getTask } from './model'
+import {
+  createTask,
+  listTasks,
+  updateTask,
+  deleteTask,
+  getTask,
+  fromDatabase,
+  toDatabase
+} from './model'
+import { fromDatabase as userFromDatabase } from '../user/model'
 
 let user1: User
 let user2: User
-let project1: Project
-let project2: Project
+let project1: ProjectFromDatabase
+let project2: ProjectFromDatabase
 let task1: Task
 let task2: Task
 
@@ -34,32 +43,53 @@ beforeAll(async () => {
   const project2Id = (await insert('project', getFakeProject(client2Id)))
     .lastID!
 
-  const task1Id = (await insert('task', getFakeTask({ project: project1Id })))
+  const task1Id = (await insert('task', toDatabase(getFakeTask(project1Id))))
     .lastID!
 
-  const task2Id = (await insert('task', getFakeTask({ project: project2Id })))
+  const task2Id = (await insert('task', toDatabase(getFakeTask(project2Id))))
     .lastID!
 
-  user1 = (await db.get(SQL`SELECT * FROM user WHERE id = ${user1Id}`)) as User
-  user2 = (await db.get(SQL`SELECT * FROM user WHERE id = ${user2Id}`)) as User
-  project1 = (await db.get(
+  user1 = userFromDatabase(
+    (await db.get<UserFromDatabase>(
+      SQL`SELECT * FROM user WHERE id = ${user1Id}`
+    ))!
+  )
+
+  user2 = userFromDatabase(
+    (await db.get<UserFromDatabase>(
+      SQL`SELECT * FROM user WHERE id = ${user2Id}`
+    ))!
+  )
+
+  project1 = (await db.get<ProjectFromDatabase>(
     SQL`SELECT * FROM project WHERE id = ${project1Id}`
-  )) as Project
-  project2 = (await db.get(
+  ))!
+
+  project2 = (await db.get<ProjectFromDatabase>(
     SQL`SELECT * FROM project WHERE id = ${project2Id}`
-  )) as Project
-  task1 = (await db.get(SQL`SELECT * FROM task WHERE id = ${task1Id}`)) as Task
-  task2 = (await db.get(SQL`SELECT * FROM task WHERE id = ${task2Id}`)) as Task
+  ))!
+
+  task1 = fromDatabase(
+    (await db.get<TaskFromDatabase>(
+      SQL`SELECT * FROM task WHERE id = ${task1Id}`
+    ))!
+  )
+
+  task2 = fromDatabase(
+    (await db.get<TaskFromDatabase>(
+      SQL`SELECT * FROM task WHERE id = ${task2Id}`
+    ))!
+  )
 })
 
 describe('createTask', () => {
   it('should work', async () => {
-    await createTask(getFakeTask({ project: project1.id }), user1)
+    await createTask(getFakeTask(project1.id), user1)
   })
 
   it("should not allow users to create tasks for other users' projects", async () => {
     await expect(async () => {
-      await createTask(getFakeTask({ project: project2.id }), user1)
+      await createTask(getFakeTask(project2.id), user1)
     }).rejects.toBeInstanceOf(ApolloError)
   })
 })
@@ -92,7 +122,12 @@ describe('listTasks', () => {
 
 describe('updateTask', () => {
   it('should work', async () => {
-    const data = getFakeTask()
+    const data = getFakeTask(project1.id)
+
+    // This time gets converted to an SQL date and then back to a JavaScript date, so it loses
+    // precision
+    data.start_time.setMilliseconds(0)
+
     const result = await updateTask(task1.id, data, user1)
 
     expect(result).toMatchObject(data)
@@ -101,13 +136,13 @@ describe('updateTask', () => {
 
   it("should not allow users to update other users' tasks", async () => {
     await expect(async () => {
-      await updateTask(task1.id, getFakeTask(), user2)
+      await updateTask(task1.id, getFakeTask(project1.id), user2)
     }).rejects.toBeInstanceOf(ApolloError)
   })
 
   it("should not allow users to assign to their tasks other users' projects", async () => {
     await expect(async () => {
-      await updateTask(task1.id, getFakeTask({ project: project2.id }), user1)
+      await updateTask(task1.id, getFakeTask(project2.id), user1)
     }).rejects.toBeInstanceOf(ApolloError)
   })
 })
@@ -117,14 +152,8 @@ describe('deleteTask', () => {
   let task2: Task
 
   beforeAll(async () => {
-    task1 = (await createTask(
-      getFakeTask({ project: project1.id }),
-      user1
-    )) as Task
-    task2 = (await createTask(
-      getFakeTask({ project: project2.id }),
-      user2
-    )) as Task
+    task1 = (await createTask(getFakeTask(project1.id), user1))!
+    task2 = (await createTask(getFakeTask(project2.id), user2))!
   })
 
   it('should work', async () => {

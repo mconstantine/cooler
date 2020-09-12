@@ -12,15 +12,15 @@ export default gql`
     totalCount: Int!
   }
 
-  type Task implements Node {
+  type Task implements TrackedNode & Node {
     id: Int
     name: String!
     description: String
     expectedWorkingHours: Int!
     hourlyCost: Float!
-    start_time: String!
-    created_at: String
-    updated_at: String
+    start_time: Date!
+    created_at: Date!
+    updated_at: Date!
     project: Project!
   }
 
@@ -30,7 +30,7 @@ export default gql`
     expectedWorkingHours: Int!
     hourlyCost: Float!
     project: Int!
-    start_time: String
+    start_time: Date!
   }
 
   input TaskUpdateInput {
@@ -39,7 +39,7 @@ export default gql`
     expectedWorkingHours: Int
     hourlyCost: Float
     project: Int
-    start_time: String
+    start_time: Date!
   }
 
   extend type User {
@@ -63,7 +63,7 @@ export default gql`
   }
 
   extend type Mutation {
-    createTask(task: TaskCreationInput): Task!
+    createTask(task: TaskCreationInput): Task
     updateTask(id: Int!, task: TaskUpdateInput): Task
     deleteTask(id: Int!): Task
   }

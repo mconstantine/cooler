@@ -1,42 +1,76 @@
-import { Task } from './interface'
+import {
+  Task,
+  TaskCreationInput,
+  TaskFromDatabase,
+  TaskUpdateInput
+} from './interface'
 import { getDatabase } from '../misc/getDatabase'
-import { insert, update, remove, toSQLDate } from '../misc/dbUtils'
+import { insert, update, remove, fromSQLDate, toSQLDate } from '../misc/dbUtils'
 import SQL from 'sql-template-strings'
 import { ConnectionQueryArgs } from '../misc/ConnectionQueryArgs'
-import { queryToConnection } from '../misc/queryToConnection'
-import { User } from '../user/interface'
+import { mapConnection, queryToConnection } from '../misc/queryToConnection'
+import { User, UserFromDatabase } from '../user/interface'
 import { ApolloError } from 'apollo-server-express'
+import { Connection } from '../misc/Connection'
+import { Project, ProjectFromDatabase } from '../project/interface'
+import { fromDatabase as projectFromDatabase } from '../project/model'
+import { SQLDate } from '../misc/Types'
 
-export async function createTask(task: Partial<Task>, user: User) {
+export async function createTask(
+  {
+    name,
+    description,
+    project,
+    expectedWorkingHours,
+    hourlyCost,
+    start_time
+  }: TaskCreationInput,
+  user: User
+): Promise<Task | null> {
   const db = await getDatabase()
 
-  const project = await db.get<{ user: number }>(SQL`
+  const projectUser = await db.get<{ user: number }>(SQL`
     SELECT client.user
     FROM project
     JOIN client on project.client = client.id
-    WHERE project.id = ${task.project}
+    WHERE project.id = ${project}
   `)
 
-  if (!project) {
+  if (!projectUser) {
     return null
   }
 
-  if (project.user !== user.id) {
+  if (projectUser.user !== user.id) {
     throw new ApolloError('Unauthorized', 'COOLER_403')
   }
 
-  const { lastID } = await insert('task', {
-    ...task,
-    start_time: toSQLDate(new Date(task.start_time!))
-  })
+  const { lastID } = await insert(
+    'task',
+    toDatabase({
+      name,
+      description,
+      project,
+      expectedWorkingHours,
+      hourlyCost,
+      start_time: new Date(start_time)
+    })
+  )
 
-  return await db.get<Task>(SQL`SELECT * FROM task WHERE id = ${lastID}`)
+  const newTask = await db.get<TaskFromDatabase>(
+    SQL`SELECT * FROM task WHERE id = ${lastID}`
+  )
+
+  if (!newTask) {
+    return null
+  }
+
+  return fromDatabase(newTask)
 }
 
-export async function getTask(id: number, user: User) {
+export async function getTask(id: number, user: User): Promise<Task | null> {
   const db = await getDatabase()
 
-  const task = await db.get<Task & { user: number }>(SQL`
+  const task = await db.get<TaskFromDatabase & { user: number }>(SQL`
     SELECT task.*, client.user
     FROM task
     JOIN project ON project.id = task.project
@@ -44,17 +78,21 @@ export async function getTask(id: number, user: User) {
     WHERE task.id = ${id}
   `)
 
-  if (task && task.user !== user.id) {
+  if (!task) {
+    return null
+  }
+
+  if (task.user !== user.id) {
     throw new ApolloError('You cannot see this task', 'COOLER_403')
   }
 
-  return task
+  return fromDatabase(task)
 }
 
 export async function listTasks(
   args: ConnectionQueryArgs & { name?: string },
   user: User
-) {
+): Promise<Connection<Task>> {
   const sql = SQL`
     JOIN project ON project.id = task.project
     JOIN client ON client.id = project.client
@@ -62,10 +100,22 @@ export async function listTasks(
   `
 
   args.name && sql.append(SQL` AND project.name LIKE ${`%${args.name}%`}`)
-  return await queryToConnection(args, ['task.*, client.user'], 'task', sql)
+
+  const connection = await queryToConnection<TaskFromDatabase>(
+    args,
+    ['task.*, client.user'],
+    'task',
+    sql
+  )
+
+  return mapConnection(connection, fromDatabase)
 }
 
-export async function updateTask(id: number, task: Partial<Task>, user: User) {
+export async function updateTask(
+  id: number,
+  task: TaskUpdateInput,
+  user: User
+): Promise<Task | null> {
   const db = await getDatabase()
   const currentTask = await db.get<{ user: number }>(SQL`
     SELECT client.user
@@ -131,16 +181,24 @@ export async function updateTask(id: number, task: Partial<Task>, user: User) {
       .filter(([, value]) => value !== undefined)
       .reduce((res, [key, value]) => ({ ...res, [key]: value }), {})
 
-    await update('task', { ...args, id })
+    await update('task', { ...toDatabase(args), id })
   }
 
-  return await db.get<Task>(SQL`SELECT * FROM task WHERE id = ${id}`)
+  const updatedTask = await db.get<TaskFromDatabase>(
+    SQL`SELECT * FROM task WHERE id = ${id}`
+  )
+
+  if (!updatedTask) {
+    return null
+  }
+
+  return fromDatabase(updatedTask)
 }
 
-export async function deleteTask(id: number, user: User) {
+export async function deleteTask(id: number, user: User): Promise<Task | null> {
   const db = await getDatabase()
 
-  const task = await db.get<Task & { user: number }>(SQL`
+  const task = await db.get<TaskFromDatabase & { user: number }>(SQL`
     SELECT task.*, client.user
     FROM task
     JOIN project ON project.id = task.project
@@ -157,5 +215,76 @@ export async function deleteTask(id: number, user: User) {
   }
 
   await remove('task', { id })
-  return task
+
+  return fromDatabase(task)
+}
+
+export async function getTaskProject(
+  task: TaskFromDatabase
+): Promise<Project | null> {
+  const db = await getDatabase()
+
+  const project = await db.get<ProjectFromDatabase>(
+    SQL`SELECT * FROM project WHERE id = ${task.project}`
+  )
+
+  if (!project) {
+    return null
+  }
+
+  return projectFromDatabase(project)
+}
+
+export async function getUserTasks(
+  user: UserFromDatabase,
+  args: ConnectionQueryArgs
+): Promise<Connection<Task>> {
+  const connection = await queryToConnection<TaskFromDatabase>(
+    args,
+    ['task.*'],
+    'task',
+    SQL`
+      JOIN project ON project.id = task.project
+      JOIN client ON project.client = client.id
+      WHERE client.user = ${user.id}
+    `
+  )
+
+  return mapConnection(connection, fromDatabase)
+}
+
+export async function getProjectTasks(
+  project: ProjectFromDatabase,
+  args: ConnectionQueryArgs
+): Promise<Connection<Task>> {
+  const connection = await queryToConnection<TaskFromDatabase>(
+    args,
+    ['*'],
+    'task',
+    SQL`WHERE project = ${project.id}`
+  )
+
+  return mapConnection(connection, fromDatabase)
+}
+
+export function fromDatabase(task: TaskFromDatabase): Task {
+  return {
+    ...task,
+    created_at: fromSQLDate(task.created_at),
+    updated_at: fromSQLDate(task.updated_at),
+    start_time: fromSQLDate(task.start_time)
+  }
+}
+
+export function toDatabase<T extends Partial<TaskCreationInput>>(
+  task: T
+): Partial<Omit<T, 'start_time'> & { start_time?: SQLDate }> {
+  return {
+    ...task,
+    ...(task.start_time
+      ? {
+          start_time: toSQLDate(task.start_time)
+        }
+      : {})
+  }
 }
