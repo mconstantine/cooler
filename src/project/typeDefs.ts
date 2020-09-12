@@ -12,13 +12,13 @@ export default gql`
     totalCount: Int!
   }
 
-  type Project implements Node {
+  type Project implements TrackedNode & Node {
     id: Int
     name: String!
     description: String
-    created_at: String
-    updated_at: String
-    cashed_at: String
+    created_at: Date!
+    updated_at: Date!
+    cashed_at: Date
     cashed_balance: Float
     client: Client!
   }
@@ -33,7 +33,7 @@ export default gql`
     name: String
     description: String
     client: Int
-    cashed_at: String
+    cashed_at: Date
     cashed_balance: Float
   }
 

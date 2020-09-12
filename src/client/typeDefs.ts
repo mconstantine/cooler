@@ -17,7 +17,7 @@ export default gql`
     BUSINESS
   }
 
-  type Client implements Node {
+  type Client implements TrackedNode & Node {
     id: Int
     type: ClientType!
     name: String!
@@ -34,8 +34,8 @@ export default gql`
     address_street: String!
     address_street_number: String
     address_email: String!
-    created_at: String
-    updated_at: String
+    created_at: Date!
+    updated_at: Date!
     user: User!
   }
 
