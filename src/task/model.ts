@@ -28,7 +28,6 @@ export async function createTask(
   user: User
 ): Promise<Task | null> {
   const db = await getDatabase()
-
   const projectUser = await db.get<{ user: number }>(SQL`
     SELECT client.user
     FROM project
@@ -44,17 +43,14 @@ export async function createTask(
     throw new ApolloError('Unauthorized', 'COOLER_403')
   }
 
-  const { lastID } = await insert(
-    'task',
-    toDatabase({
-      name,
-      description,
-      project,
-      expectedWorkingHours,
-      hourlyCost,
-      start_time: new Date(start_time)
-    })
-  )
+  const { lastID } = await insert('task', {
+    name,
+    description,
+    project,
+    expectedWorkingHours,
+    hourlyCost,
+    start_time
+  })
 
   const newTask = await db.get<TaskFromDatabase>(
     SQL`SELECT * FROM task WHERE id = ${lastID}`
@@ -181,7 +177,7 @@ export async function updateTask(
       .filter(([, value]) => value !== undefined)
       .reduce((res, [key, value]) => ({ ...res, [key]: value }), {})
 
-    await update('task', { ...toDatabase(args), id })
+    await update('task', { ...args, id })
   }
 
   const updatedTask = await db.get<TaskFromDatabase>(
@@ -276,9 +272,17 @@ export function fromDatabase(task: TaskFromDatabase): Task {
   }
 }
 
-export function toDatabase<T extends Partial<TaskCreationInput>>(
-  task: T
-): Partial<Omit<T, 'start_time'> & { start_time?: SQLDate }> {
+export function toDatabase<
+  T extends Partial<Omit<Task, 'start_time'>> & { start_time: undefined }
+>(task: T): T
+export function toDatabase<
+  T extends Partial<Omit<Task, 'start_time'>> & { start_time: Date }
+>(task: T): Omit<T, 'start_time'> & { start_time: SQLDate }
+export function toDatabase<
+  T extends Partial<Omit<Task, 'start_time'>> & {
+    start_time: Date | undefined
+  }
+>(task: T): Omit<T, 'start_time'> & { start_time: SQLDate | undefined } {
   return {
     ...task,
     ...(task.start_time

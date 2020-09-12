@@ -428,10 +428,10 @@ export type ClientFromDatabase =
   | BusinessClientFromDatabase
 
 export type ClientCreationInput = Omit<
-  Client,
+  ClientFromDatabase,
   'id' | 'created_at' | 'updated_at' | 'user'
 >
 
 export type ClientUpdateInput = Partial<
-  Omit<Client, 'id' | 'created_at' | 'updated_at'>
+  Omit<ClientFromDatabase, 'id' | 'created_at' | 'updated_at'>
 >

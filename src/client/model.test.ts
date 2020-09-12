@@ -31,8 +31,8 @@ beforeAll(async () => {
 
   user1 = await db.get(SQL`SELECT * FROM user WHERE id = ${user1Id}`)!
   user2 = await db.get(SQL`SELECT * FROM user WHERE id = ${user2Id}`)!
-  client1 = (await createClient(getFakeClient(user1.id), user1)) as Client
-  client2 = (await createClient(getFakeClient(user2.id), user2)) as Client
+  client1 = (await createClient(getFakeClient(user1.id), user1))!
+  client2 = (await createClient(getFakeClient(user2.id), user2))!
 })
 
 describe('createClient', () => {

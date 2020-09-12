@@ -1,7 +1,7 @@
-import { User } from '../user/interface'
+import { UserFromDatabase } from '../user/interface'
 import faker from 'faker'
 
-type AllowedUser = Omit<User, 'id' | 'created_at' | 'updated_at'>
+type AllowedUser = Omit<UserFromDatabase, 'id' | 'created_at' | 'updated_at'>
 
 export function getFakeUser(data: Partial<AllowedUser> = {}): AllowedUser {
   const firstName = faker.name.firstName()

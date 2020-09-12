@@ -1,9 +1,12 @@
 import faker from 'faker'
-import { Project } from '../project/interface'
+import { ProjectFromDatabase } from '../project/interface'
 import { toSQLDate } from '../misc/dbUtils'
 import { ID } from '../misc/Types'
 
-type AllowedProject = Omit<Project, 'id' | 'created_at' | 'updated_at'>
+type AllowedProject = Omit<
+  ProjectFromDatabase,
+  'id' | 'created_at' | 'updated_at'
+>
 
 export function getFakeProject(
   client: ID,

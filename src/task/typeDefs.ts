@@ -39,7 +39,7 @@ export default gql`
     expectedWorkingHours: Int
     hourlyCost: Float
     project: Int
-    start_time: Date!
+    start_time: Date
   }
 
   extend type User {

@@ -1,9 +1,17 @@
 import faker from 'faker'
-import { ClientType, Province, Country, Client } from '../client/interface'
+import {
+  ClientType,
+  Province,
+  Country,
+  ClientFromDatabase
+} from '../client/interface'
 import { foldClientType } from '../client/model'
 import { ID } from '../misc/Types'
 
-type AllowedClient = Omit<Client, 'id' | 'created_at' | 'updated_at'>
+type AllowedClient = Omit<
+  ClientFromDatabase,
+  'id' | 'created_at' | 'updated_at'
+>
 
 export function getFakeClient(
   user: ID,

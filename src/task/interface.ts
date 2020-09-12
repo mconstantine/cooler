@@ -22,7 +22,7 @@ export interface TaskFromDatabase extends TaskCommonData {
 }
 
 export type TaskCreationInput = Pick<
-  Task,
+  TaskFromDatabase,
   | 'name'
   | 'description'
   | 'expectedWorkingHours'
@@ -33,7 +33,7 @@ export type TaskCreationInput = Pick<
 
 export type TaskUpdateInput = Partial<
   Pick<
-    Task,
+    TaskFromDatabase,
     | 'name'
     | 'description'
     | 'expectedWorkingHours'

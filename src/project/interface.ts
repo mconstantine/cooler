@@ -20,10 +20,10 @@ export interface ProjectFromDatabase extends ProjectCommonData {
 }
 
 export type ProjectCreationInput = Pick<
-  Project,
+  ProjectFromDatabase,
   'name' | 'description' | 'client'
 >
 
 export type ProjectUpdateInput = Partial<
-  Omit<Project, 'id' | 'created_at' | 'updated_at'>
+  Omit<ProjectFromDatabase, 'id' | 'created_at' | 'updated_at'>
 >

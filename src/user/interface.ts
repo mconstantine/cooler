@@ -44,11 +44,17 @@ export interface AccessTokenResponse {
   expiration: Date
 }
 
-export type UserCreationInput = Pick<User, 'name' | 'email' | 'password'>
-export type UserLoginInput = Pick<User, 'email' | 'password'>
+export type UserCreationInput = Pick<
+  UserFromDatabase,
+  'name' | 'email' | 'password'
+>
+
+export type UserLoginInput = Pick<UserFromDatabase, 'email' | 'password'>
 
 export type RefreshTokenInput = {
   refreshToken: string
 }
 
-export type UserUpdateInput = Partial<Pick<User, 'name' | 'email' | 'password'>>
+export type UserUpdateInput = Partial<
+  Pick<UserFromDatabase, 'name' | 'email' | 'password'>
+>
