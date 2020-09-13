@@ -17,11 +17,11 @@ const defaultTypeDefs = gql`
   }
 
   interface Node {
-    id: Int
+    id: Int!
   }
 
   interface TrackedNode implements Node {
-    id: Int
+    id: Int!
     created_at: Date!
     updated_at: Date!
   }

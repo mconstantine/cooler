@@ -13,7 +13,7 @@ export default gql`
   }
 
   type Project implements TrackedNode & Node {
-    id: Int
+    id: Int!
     name: String!
     description: String
     created_at: Date!

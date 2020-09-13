@@ -13,7 +13,7 @@ export default gql`
   }
 
   type Tax implements Node {
-    id: Int
+    id: Int!
     label: String!
     value: Float!
     user: User!

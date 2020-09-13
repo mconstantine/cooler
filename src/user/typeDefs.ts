@@ -13,7 +13,7 @@ export default gql`
   }
 
   type User implements TrackedNode & Node {
-    id: Int
+    id: Int!
     name: String!
     email: String!
     password: String!

@@ -13,7 +13,7 @@ export default gql`
   }
 
   type Session implements Node {
-    id: Int
+    id: Int!
     start_time: Date!
     end_time: Date
     task: Task

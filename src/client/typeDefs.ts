@@ -18,7 +18,7 @@ export default gql`
   }
 
   type Client implements TrackedNode & Node {
-    id: Int
+    id: Int!
     type: ClientType!
     name: String!
     fiscal_code: String

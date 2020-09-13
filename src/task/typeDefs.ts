@@ -13,7 +13,7 @@ export default gql`
   }
 
   type Task implements TrackedNode & Node {
-    id: Int
+    id: Int!
     name: String!
     description: String
     expectedWorkingHours: Int!
