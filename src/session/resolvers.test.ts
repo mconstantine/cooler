@@ -4,19 +4,23 @@ import { insert, toSQLDate, remove } from '../misc/dbUtils'
 import { getFakeUser } from '../test/getFakeUser'
 import { getFakeClient } from '../test/getFakeClient'
 import { getFakeProject } from '../test/getFakeProject'
-import { getFakeTask } from '../test/getFakeTask'
-import { getFakeSession } from '../test/getFakeSession'
-import { Task } from '../task/interface'
+import { getFakeTask, getFakeTaskFromDatabase } from '../test/getFakeTask'
+import { getFakeSessionFromDatabase } from '../test/getFakeSession'
+import { TaskFromDatabase } from '../task/interface'
 import { getDatabase } from '../misc/getDatabase'
 import SQL from 'sql-template-strings'
-import { User } from '../user/interface'
-import { Project } from '../project/interface'
+import { User, UserFromDatabase } from '../user/interface'
+import { ProjectFromDatabase } from '../project/interface'
 import { Database } from 'sqlite'
+import {
+  fromDatabase as userFromDatabase,
+  toDatabase as userToDatabase
+} from '../user/model'
 
 describe('session resolvers', () => {
   let db: Database
   let user: User
-  let project: Project
+  let project: ProjectFromDatabase
 
   beforeAll(async () => {
     await init()
@@ -29,26 +33,29 @@ describe('session resolvers', () => {
       .lastID!
 
     user = (await db.get<User>(SQL`SELECT * FROM user WHERE id = ${userId}`))!
-    project = (await db.get<Project>(
+
+    project = (await db.get<ProjectFromDatabase>(
       SQL`SELECT * FROM project WHERE id = ${projectId}`
     ))!
   })
 
   describe('Task', () => {
-    let task: Task
+    let task: TaskFromDatabase
 
     beforeAll(async () => {
       const taskId = (
         await insert(
           'task',
-          getFakeTask(project.id, {
+          getFakeTaskFromDatabase(project.id, {
             expectedWorkingHours: 10,
             hourlyCost: 50
           })
         )
       ).lastID!
 
-      task = (await db.get<Task>(SQL`SELECT * FROM task WHERE id = ${taskId}`))!
+      task = (await db.get<TaskFromDatabase>(
+        SQL`SELECT * FROM task WHERE id = ${taskId}`
+      ))!
     })
 
     describe('empty state', () => {
@@ -84,8 +91,7 @@ describe('session resolvers', () => {
         // 1 hour
         await insert(
           'session',
-          getFakeSession({
-            task: task.id,
+          getFakeSessionFromDatabase(task.id, {
             start_time: toSQLDate(new Date('1990-01-01T00:00:00.000Z')),
             end_time: toSQLDate(new Date('1990-01-01T01:00:00.000Z'))
           })
@@ -94,8 +100,7 @@ describe('session resolvers', () => {
         // 2 hours
         await insert(
           'session',
-          getFakeSession({
-            task: task.id,
+          getFakeSessionFromDatabase(task.id, {
             start_time: toSQLDate(new Date('1990-01-01T01:00:00.000Z')),
             end_time: toSQLDate(new Date('1990-01-01T03:00:00.000Z'))
           })
@@ -104,8 +109,7 @@ describe('session resolvers', () => {
         // 1.5 hours
         await insert(
           'session',
-          getFakeSession({
-            task: task.id,
+          getFakeSessionFromDatabase(task.id, {
             start_time: toSQLDate(new Date('1990-01-01T04:00:00.000Z')),
             end_time: toSQLDate(new Date('1990-01-01T05:30:00.000Z'))
           })
@@ -227,90 +231,81 @@ describe('session resolvers', () => {
         // 3 hours
         await insert(
           'session',
-          getFakeSession({
-            task: task1Id,
-            start_time: toSQLDate(new Date('1990-01-01T00:00:00.000Z')),
-            end_time: toSQLDate(new Date('1990-01-01T03:00:00.000Z'))
+          getFakeSessionFromDatabase(task1Id, {
+            start_time: '1990-01-01 00:00:00',
+            end_time: '1990-01-01 03:00:00'
           })
         )
 
         // 1.5 hours
         await insert(
           'session',
-          getFakeSession({
-            task: task1Id,
-            start_time: toSQLDate(new Date('1990-01-01T03:00:00.000Z')),
-            end_time: toSQLDate(new Date('1990-01-01T04:30:00.000Z'))
+          getFakeSessionFromDatabase(task1Id, {
+            start_time: '1990-01-01 03:00:00',
+            end_time: '1990-01-01 04:30:00'
           })
         )
 
         // 2 hours
         await insert(
           'session',
-          getFakeSession({
-            task: task1Id,
-            start_time: toSQLDate(new Date('1990-01-01T04:30:00.000Z')),
-            end_time: toSQLDate(new Date('1990-01-01T06:30:00.000Z'))
+          getFakeSessionFromDatabase(task1Id, {
+            start_time: '1990-01-01 04:30:00',
+            end_time: '1990-01-01 06:30:00'
           })
         )
 
         // 6 hours
         await insert(
           'session',
-          getFakeSession({
-            task: task2Id,
-            start_time: toSQLDate(new Date('1990-01-01T06:30:00.000Z')),
-            end_time: toSQLDate(new Date('1990-01-01T12:30:00.000Z'))
+          getFakeSessionFromDatabase(task2Id, {
+            start_time: '1990-01-01 06:30:00',
+            end_time: '1990-01-01 12:30:00'
           })
         )
 
         // 5 hours
         await insert(
           'session',
-          getFakeSession({
-            task: task2Id,
-            start_time: toSQLDate(new Date('1990-01-01T12:30:00.000Z')),
-            end_time: toSQLDate(new Date('1990-01-01T17:30:00.000Z'))
+          getFakeSessionFromDatabase(task2Id, {
+            start_time: '1990-01-01 12:30:00',
+            end_time: '1990-01-01 17:30:00'
           })
         )
 
         // 1.25 hours
         await insert(
           'session',
-          getFakeSession({
-            task: task2Id,
-            start_time: toSQLDate(new Date('1990-01-01T17:30:00.000Z')),
-            end_time: toSQLDate(new Date('1990-01-01T18:45:00.000Z'))
+          getFakeSessionFromDatabase(task2Id, {
+            start_time: '1990-01-01 17:30:00',
+            end_time: '1990-01-01 18:45:00'
           })
         )
 
         // 2 hours
         await insert(
           'session',
-          getFakeSession({
-            task: task3Id,
-            start_time: toSQLDate(new Date('1990-01-01T18:45:00.000Z')),
-            end_time: toSQLDate(new Date('1990-01-01T20:45:00.000Z'))
+          getFakeSessionFromDatabase(task3Id, {
+            start_time: '1990-01-01 18:45:00',
+            end_time: '1990-01-01 20:45:00'
           })
         )
 
         // 3 hours
         await insert(
           'session',
-          getFakeSession({
-            task: task3Id,
-            start_time: toSQLDate(new Date('1990-01-01T20:45:00.000Z')),
-            end_time: toSQLDate(new Date('1990-01-01T23:45:00.000Z'))
+          getFakeSessionFromDatabase(task3Id, {
+            start_time: '1990-01-01 20:45:00',
+            end_time: '1990-01-01 23:45:00'
           })
         )
 
         // 0.25 hours
         await insert(
           'session',
-          getFakeSession({
-            task: task3Id,
-            start_time: toSQLDate(new Date('1990-01-01T23:45:00.000Z')),
-            end_time: toSQLDate(new Date('1990-01-02T00:00:00.000Z'))
+          getFakeSessionFromDatabase(task3Id, {
+            start_time: '1990-01-01 23:45:00',
+            end_time: '1990-01-02 00:00:00'
           })
         )
       })
@@ -369,37 +364,42 @@ describe('session resolvers', () => {
 
   describe('User', () => {
     let user: User
-    const since = toSQLDate(new Date('1990-01-01T04:30:00.000Z'))
+    const since = '1990-01-01 04:30:00'
 
     beforeAll(async () => {
       const { lastID } = (await insert('user', getFakeUser()))!
-      user = (await db.get<User>(SQL`SELECT * FROM user WHERE id = ${lastID}`))!
+
+      user = userFromDatabase(
+        (await db.get<UserFromDatabase>(
+          SQL`SELECT * FROM user WHERE id = ${lastID}`
+        ))!
+      )
     })
 
     describe('empty state', () => {
       it('should work', async () => {
         const expectedWorkingHours = await resolvers.User.expectedWorkingHours(
-          user,
+          userToDatabase(user),
           { since },
           { user },
           null as any
         )
 
         const actualWorkingHours = await resolvers.User.actualWorkingHours(
-          user,
+          userToDatabase(user),
           { since },
           { user },
           null as any
         )
 
         const budget = await resolvers.User.budget(
-          user,
+          userToDatabase(user),
           { since },
           { user },
           null as any
         )
         const balance = await resolvers.User.balance(
-          user,
+          userToDatabase(user),
           { since },
           { user },
           null as any
@@ -440,123 +440,114 @@ describe('session resolvers', () => {
         const task1Id = (
           await insert(
             'task',
-            getFakeTask(project1Id, {
+            getFakeTaskFromDatabase(project1Id, {
               expectedWorkingHours: 10,
               hourlyCost: 25,
-              start_time: new Date('1990-01-01T00:00:00.000Z')
+              start_time: '1990-01-01 00:00:00'
             })
           )!
-        ).lastID
+        ).lastID!
 
         const task2Id = (
           await insert(
             'task',
-            getFakeTask(project1Id, {
+            getFakeTaskFromDatabase(project1Id, {
               expectedWorkingHours: 5,
               hourlyCost: 30,
-              start_time: new Date('1990-01-01T06:30:00.000Z')
+              start_time: '1990-01-01 06:30:00'
             })
           )!
-        ).lastID
+        ).lastID!
 
         const task3Id = (
           await insert(
             'task',
-            getFakeTask(project2Id, {
+            getFakeTaskFromDatabase(project2Id, {
               expectedWorkingHours: 20,
               hourlyCost: 10,
-              start_time: new Date('1990-01-01T18:45:00.000Z')
+              start_time: '1990-01-01 18:45:00'
             })
           )!
-        ).lastID
+        ).lastID!
 
         // 3 hours - not taken into consideration as "since" is before this
         await insert(
           'session',
-          getFakeSession({
-            task: task1Id,
-            start_time: toSQLDate(new Date('1990-01-01T00:00:00.000Z')),
-            end_time: toSQLDate(new Date('1990-01-01T03:00:00.000Z'))
+          getFakeSessionFromDatabase(task1Id, {
+            start_time: '1990-01-01 00:00:00',
+            end_time: '1990-01-01 03:00:00'
           })
         )
 
         // 1.5 hours - not taken into consideration as "since" is before this
         await insert(
           'session',
-          getFakeSession({
-            task: task1Id,
-            start_time: toSQLDate(new Date('1990-01-01T03:00:00.000Z')),
-            end_time: toSQLDate(new Date('1990-01-01T04:30:00.000Z'))
+          getFakeSessionFromDatabase(task1Id, {
+            start_time: '1990-01-01 03:00:00',
+            end_time: '1990-01-01 04:30:00'
           })
         )
 
         // 2 hours
         await insert(
           'session',
-          getFakeSession({
-            task: task1Id,
-            start_time: toSQLDate(new Date('1990-01-01T04:30:00.000Z')),
-            end_time: toSQLDate(new Date('1990-01-01T06:30:00.000Z'))
+          getFakeSessionFromDatabase(task1Id, {
+            start_time: '1990-01-01 04:30:00',
+            end_time: '1990-01-01 06:30:00'
           })
         )
 
         // 6 hours
         await insert(
           'session',
-          getFakeSession({
-            task: task2Id,
-            start_time: toSQLDate(new Date('1990-01-01T06:30:00.000Z')),
-            end_time: toSQLDate(new Date('1990-01-01T12:30:00.000Z'))
+          getFakeSessionFromDatabase(task2Id, {
+            start_time: '1990-01-01 06:30:00',
+            end_time: '1990-01-01 12:30:00'
           })
         )
 
         // 5 hours
         await insert(
           'session',
-          getFakeSession({
-            task: task2Id,
-            start_time: toSQLDate(new Date('1990-01-01T12:30:00.000Z')),
-            end_time: toSQLDate(new Date('1990-01-01T17:30:00.000Z'))
+          getFakeSessionFromDatabase(task2Id, {
+            start_time: '1990-01-01 12:30:00',
+            end_time: '1990-01-01 17:30:00'
           })
         )
 
         // 1.25 hours
         await insert(
           'session',
-          getFakeSession({
-            task: task2Id,
-            start_time: toSQLDate(new Date('1990-01-01T17:30:00.000Z')),
-            end_time: toSQLDate(new Date('1990-01-01T18:45:00.000Z'))
+          getFakeSessionFromDatabase(task2Id, {
+            start_time: '1990-01-01 17:30:00',
+            end_time: '1990-01-01 18:45:00'
           })
         )
 
         // 2 hours - not taken into consideration as project 2 is cashed
         await insert(
           'session',
-          getFakeSession({
-            task: task3Id,
-            start_time: toSQLDate(new Date('1990-01-01T18:45:00.000Z')),
-            end_time: toSQLDate(new Date('1990-01-01T20:45:00.000Z'))
+          getFakeSessionFromDatabase(task3Id, {
+            start_time: '1990-01-01 18:45:00',
+            end_time: '1990-01-01 20:45:00'
           })
         )
 
         // 3 hours - not taken into consideration as project 2 is cashed
         await insert(
           'session',
-          getFakeSession({
-            task: task3Id,
-            start_time: toSQLDate(new Date('1990-01-01T20:45:00.000Z')),
-            end_time: toSQLDate(new Date('1990-01-01T23:45:00.000Z'))
+          getFakeSessionFromDatabase(task3Id, {
+            start_time: '1990-01-01 20:45:00',
+            end_time: '1990-01-01 23:45:00'
           })
         )
 
         // 0.25 hours - not taken into consideration as project 2 is cashed
         await insert(
           'session',
-          getFakeSession({
-            task: task3Id,
-            start_time: toSQLDate(new Date('1990-01-01T23:45:00.000Z')),
-            end_time: toSQLDate(new Date('1990-01-02T00:00:00.000Z'))
+          getFakeSessionFromDatabase(task3Id, {
+            start_time: '1990-01-01 23:45:00',
+            end_time: '1990-01-02 00:00:00'
           })
         )
       })
@@ -564,7 +555,7 @@ describe('session resolvers', () => {
       describe('expectedWorkingHours', () => {
         it('should work', async () => {
           const expectedWorkingHours = await resolvers.User.expectedWorkingHours(
-            user,
+            userToDatabase(user),
             { since },
             { user },
             null as any
@@ -577,7 +568,7 @@ describe('session resolvers', () => {
       describe('actualWorkingHours', () => {
         it('should work', async () => {
           const actualWorkingHours = await resolvers.User.actualWorkingHours(
-            user,
+            userToDatabase(user),
             { since },
             { user },
             null as any
@@ -590,7 +581,7 @@ describe('session resolvers', () => {
       describe('budget', () => {
         it('should work', async () => {
           const budget = await resolvers.User.budget(
-            user,
+            userToDatabase(user),
             { since },
             { user },
             null as any
@@ -602,7 +593,7 @@ describe('session resolvers', () => {
       describe('balance', () => {
         it('should work', async () => {
           const balance = await resolvers.User.balance(
-            user,
+            userToDatabase(user),
             { since },
             { user },
             null as any

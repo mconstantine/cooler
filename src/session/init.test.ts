@@ -4,8 +4,8 @@ import { insert, remove } from '../misc/dbUtils'
 import { getFakeUser } from '../test/getFakeUser'
 import { getFakeClient } from '../test/getFakeClient'
 import { getFakeProject } from '../test/getFakeProject'
-import { getFakeTask } from '../test/getFakeTask'
-import { getFakeSession } from '../test/getFakeSession'
+import { getFakeTaskFromDatabase } from '../test/getFakeTask'
+import { getFakeSessionFromDatabase } from '../test/getFakeSession'
 import SQL from 'sql-template-strings'
 import { Task } from '../task/interface'
 import { Project } from '../project/interface'
@@ -27,15 +27,17 @@ describe('init', () => {
     it("should delete all task's sessions when a task is deleted", async () => {
       const user = (await insert('user', getFakeUser())).lastID!
       const client = (await insert('client', getFakeClient(user))).lastID!
-
       const project = (await insert('project', getFakeProject(client))).lastID!
 
-      const task = (await insert('task', getFakeTask(project))).lastID!
-
-      const sessionId = (await insert('session', getFakeSession({ task })))
+      const task = (await insert('task', getFakeTaskFromDatabase(project)))
         .lastID!
 
+      const sessionId = (
+        await insert('session', getFakeSessionFromDatabase(task))
+      ).lastID!
+
       await remove('task', { id: task })
+
       const session = await db.get(
         SQL`SELECT * FROM session WHERE id = ${sessionId}`
       )
@@ -48,10 +50,13 @@ describe('init', () => {
       const user = (await insert('user', getFakeUser())).lastID!
       const client = (await insert('client', getFakeClient(user))).lastID!
       const project = (await insert('project', getFakeProject(client))).lastID!
-      const task = (await insert('task', getFakeTask(project))).lastID!
 
-      const sessionId = (await insert('session', getFakeSession({ task })))
+      const task = (await insert('task', getFakeTaskFromDatabase(project)))
         .lastID!
+
+      const sessionId = (
+        await insert('session', getFakeSessionFromDatabase(task))
+      ).lastID!
 
       await remove('user', { id: user })
 
@@ -68,7 +73,9 @@ describe('init', () => {
       const user = (await insert('user', getFakeUser())).lastID!
       const client = (await insert('client', getFakeClient(user))).lastID!
       const project = (await insert('project', getFakeProject(client))).lastID!
-      const task = (await insert('task', getFakeTask(project))).lastID!
+
+      const task = (await insert('task', getFakeTaskFromDatabase(project)))
+        .lastID!
 
       const projectUpdatedAtBefore = (await db.get<Project>(
         SQL`SELECT updated_at FROM project WHERE id = ${project}`
@@ -79,7 +86,7 @@ describe('init', () => {
       ))!.updated_at
 
       await (() => new Promise(done => setTimeout(() => done(), 1000)))()
-      await insert('session', getFakeSession({ task }))
+      await insert('session', getFakeSessionFromDatabase(task))
 
       const projectUpdatedAtAfter = (await db.get<Project>(
         SQL`SELECT updated_at FROM project WHERE id = ${project}`

@@ -14,7 +14,7 @@ import {
 import { getDatabase } from '../misc/getDatabase'
 import SQL from 'sql-template-strings'
 import { ApolloError } from 'apollo-server-express'
-import { insert, update, remove, fromSQLDate } from '../misc/dbUtils'
+import { insert, update, remove, fromSQLDate, toSQLDate } from '../misc/dbUtils'
 import { hashSync, compareSync } from 'bcryptjs'
 import { sign, verify } from 'jsonwebtoken'
 import { validate as isEmail } from 'isemail'
@@ -171,6 +171,14 @@ export function fromDatabase(user: UserFromDatabase): User {
     ...user,
     created_at: fromSQLDate(user.created_at),
     updated_at: fromSQLDate(user.updated_at)
+  }
+}
+
+export function toDatabase(user: User): UserFromDatabase {
+  return {
+    ...user,
+    created_at: toSQLDate(user.created_at),
+    updated_at: toSQLDate(user.updated_at)
   }
 }
 

@@ -281,8 +281,8 @@ export async function createTimesheet(
     JOIN client ON client.id = project.client
     WHERE
       task.project = ${project} AND
-      session.start_time >= ${toSQLDate(new Date(since))} AND
-      session.end_time <= ${toSQLDate(new Date(to))}
+      session.start_time >= ${since} AND
+      session.end_time <= ${to}
     ORDER BY session.start_time
   `)
 
@@ -522,8 +522,7 @@ export async function getUserExpectedWorkingHours(
     WHERE client.user = ${user.id} AND project.cashed_at IS NULL
   `
 
-  since &&
-    sql.append(SQL` AND task.start_time >= ${toSQLDate(new Date(since))}`)
+  since && sql.append(SQL` AND task.start_time >= ${since}`)
 
   const { expectedWorkingHours } = (await db.get<{
     expectedWorkingHours: number
@@ -549,8 +548,7 @@ export async function getUserActualWorkingHours(
     WHERE client.user = ${user.id} AND project.cashed_at IS NULL
   `
 
-  since &&
-    sql.append(SQL` AND session.start_time >= ${toSQLDate(new Date(since))}`)
+  since && sql.append(SQL` AND session.start_time >= ${since}`)
 
   const { actualWorkingHours } = (await db.get<{
     actualWorkingHours: number
@@ -573,8 +571,7 @@ export async function getUserBudget(
     WHERE client.user = ${user.id} AND project.cashed_at IS NULL
   `
 
-  since &&
-    sql.append(SQL` AND task.start_time >= ${toSQLDate(new Date(since))}`)
+  since && sql.append(SQL` AND task.start_time >= ${since}`)
 
   const { budget } = (await db.get<{ budget: number }>(sql))!
 
@@ -598,8 +595,7 @@ export async function getUserBalance(
     WHERE project.cashed_at IS NULL AND client.user = ${user.id}
   `
 
-  since &&
-    sql.append(SQL` AND session.start_time >= ${toSQLDate(new Date(since))}`)
+  since && sql.append(SQL` AND session.start_time >= ${since}`)
 
   const { balance } = (await db.get<{ balance: number }>(sql))!
 

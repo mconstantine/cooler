@@ -10,7 +10,10 @@ import { getFakeUser } from '../test/getFakeUser'
 import { User } from '../user/interface'
 import { init } from '../init'
 import { getFakeTask } from '../test/getFakeTask'
-import { getFakeSession } from '../test/getFakeSession'
+import {
+  getFakeSession,
+  getFakeSessionFromDatabase
+} from '../test/getFakeSession'
 import { fromDatabase } from './model'
 
 describe('initProject', () => {
@@ -141,8 +144,7 @@ describe('initProject', () => {
 
       await insert(
         'session',
-        getFakeSession({
-          task: taskId,
+        getFakeSessionFromDatabase(taskId!, {
           start_time: toSQLDate(now),
           end_time: toSQLDate(new Date(now.getTime() + 1000 * 60 * 60 * 4))
         })
