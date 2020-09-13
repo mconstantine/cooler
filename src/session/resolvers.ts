@@ -42,9 +42,7 @@ export interface SinceArg {
 
 type SessionTaskResolver = GraphQLFieldResolver<SessionFromDatabase, any>
 
-const sessionTaskResolver: SessionTaskResolver = (
-  session
-): Promise<Task | null> => {
+const sessionTaskResolver: SessionTaskResolver = (session): Promise<Task> => {
   return getSessionTask(session)
 }
 

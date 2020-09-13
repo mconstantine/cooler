@@ -25,7 +25,7 @@ type TaskProjectResolver = GraphQLFieldResolver<TaskFromDatabase, any>
 
 const taskProjectResolver: TaskProjectResolver = async (
   task
-): Promise<Project | null> => {
+): Promise<Project> => {
   return getTaskProject(task)
 }
 

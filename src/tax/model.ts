@@ -8,6 +8,7 @@ import { ApolloError } from 'apollo-server-express'
 import { queryToConnection } from '../misc/queryToConnection'
 import { Connection } from '../misc/Connection'
 import { fromDatabase as userFromDatabase } from '../user/model'
+import { definitely } from '../misc/definitely'
 
 export async function createTax(
   { label, value }: TaxCreationInput,
@@ -111,15 +112,13 @@ export async function deleteTax(id: number, user: User): Promise<Tax | null> {
   return tax
 }
 
-export async function getTaxUser(tax: Tax): Promise<User | null> {
+export async function getTaxUser(tax: Tax): Promise<User> {
   const db = await getDatabase()
-  const user = await db.get<UserFromDatabase>(
-    SQL`SELECT * FROM user WHERE id = ${tax.user}`
+  const user = definitely(
+    await db.get<UserFromDatabase>(
+      SQL`SELECT * FROM user WHERE id = ${tax.user}`
+    )
   )
-
-  if (!user) {
-    return null
-  }
 
   return userFromDatabase(user)
 }

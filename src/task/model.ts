@@ -15,6 +15,7 @@ import { Connection } from '../misc/Connection'
 import { Project, ProjectFromDatabase } from '../project/interface'
 import { fromDatabase as projectFromDatabase } from '../project/model'
 import { SQLDate } from '../misc/Types'
+import { definitely } from '../misc/definitely'
 
 export async function createTask(
   {
@@ -215,18 +216,14 @@ export async function deleteTask(id: number, user: User): Promise<Task | null> {
   return fromDatabase(task)
 }
 
-export async function getTaskProject(
-  task: TaskFromDatabase
-): Promise<Project | null> {
+export async function getTaskProject(task: TaskFromDatabase): Promise<Project> {
   const db = await getDatabase()
 
-  const project = await db.get<ProjectFromDatabase>(
-    SQL`SELECT * FROM project WHERE id = ${task.project}`
+  const project = definitely(
+    await db.get<ProjectFromDatabase>(
+      SQL`SELECT * FROM project WHERE id = ${task.project}`
+    )
   )
-
-  if (!project) {
-    return null
-  }
 
   return projectFromDatabase(project)
 }

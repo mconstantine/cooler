@@ -6,7 +6,8 @@ import {
   UserCreationInput,
   UserLoginInput,
   RefreshTokenInput,
-  UserUpdateInput
+  UserUpdateInput,
+  UserContext
 } from './interface'
 import {
   createUser,
@@ -92,7 +93,7 @@ export const deleteMeMutation: DeleteMeMutation = (
 export type MeQuery = GraphQLFieldResolver<any, Context, {}>
 
 export const meQuery: MeQuery = (_parent, _args, context): User | null => {
-  return getUserFromContext(context)
+  return getUserFromContext(context as UserContext)
 }
 
 interface UserResolvers {

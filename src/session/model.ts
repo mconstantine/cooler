@@ -21,6 +21,7 @@ import { Connection } from '../misc/Connection'
 import { fromDatabase as taskFromDatabase } from '../task/model'
 import { ProjectFromDatabase } from '../project/interface'
 import { SinceArg } from './resolvers'
+import { definitely } from '../misc/definitely'
 
 const TIMESHEETS_PATH = '/public/timesheets'
 
@@ -359,15 +360,14 @@ export async function createTimesheet(
 
 export async function getSessionTask(
   session: SessionFromDatabase
-): Promise<Task | null> {
+): Promise<Task> {
   const db = await getDatabase()
-  const task = await db.get<TaskFromDatabase>(
-    SQL`SELECT * FROM task WHERE id = ${session.task}`
-  )
 
-  if (!task) {
-    return null
-  }
+  const task = definitely(
+    await db.get<TaskFromDatabase>(
+      SQL`SELECT * FROM task WHERE id = ${session.task}`
+    )
+  )
 
   return taskFromDatabase(task)
 }

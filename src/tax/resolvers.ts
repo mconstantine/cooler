@@ -1,6 +1,6 @@
 import { GraphQLFieldResolver } from 'graphql'
 import { Tax, TaxCreationInput, TaxUpdateInput } from './interface'
-import { Context, UserFromDatabase } from '../user/interface'
+import { Context, User, UserFromDatabase } from '../user/interface'
 import { ConnectionQueryArgs } from '../misc/ConnectionQueryArgs'
 import {
   createTax,
@@ -15,7 +15,7 @@ import { ensureUser } from '../misc/ensureUser'
 
 type TaxUserResolver = GraphQLFieldResolver<Tax, any>
 
-const taxUserResolver: TaxUserResolver = tax => {
+const taxUserResolver: TaxUserResolver = (tax): Promise<User> => {
   return getTaxUser(tax)
 }
 
