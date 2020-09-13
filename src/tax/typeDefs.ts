@@ -16,7 +16,7 @@ export default gql`
     id: Int
     label: String!
     value: Float!
-    user: User
+    user: User!
   }
 
   input TaxCreationInput {
@@ -30,7 +30,7 @@ export default gql`
   }
 
   extend type Mutation {
-    createTax(tax: TaxCreationInput!): Tax!
+    createTax(tax: TaxCreationInput!): Tax
     updateTax(id: Int!, tax: TaxUpdateInput): Tax
     deleteTax(id: Int!): Tax
   }

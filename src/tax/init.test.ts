@@ -18,7 +18,7 @@ describe('init taxes', () => {
   it('should delete taxes if a user is deleted', async () => {
     const db = await getDatabase()
     const { lastID: user } = await insert('user', getFakeUser())
-    const { lastID: tax } = await insert('tax', getFakeTax({ user }))
+    const { lastID: tax } = await insert('tax', getFakeTax(user!))
 
     expect(await db.get(SQL`SELECT * FROM tax WHERE id = ${tax}`)).toBeDefined()
 

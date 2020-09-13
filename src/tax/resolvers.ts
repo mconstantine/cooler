@@ -1,74 +1,110 @@
 import { GraphQLFieldResolver } from 'graphql'
-import { Tax } from './interface'
-import { User, UserContext } from '../user/interface'
+import { Tax, TaxCreationInput, TaxUpdateInput } from './interface'
+import { Context, UserFromDatabase } from '../user/interface'
 import { ConnectionQueryArgs } from '../misc/ConnectionQueryArgs'
-import { getDatabase } from '../misc/getDatabase'
-import SQL from 'sql-template-strings'
-import { queryToConnection } from '../misc/queryToConnection'
-import { createTax, updateTax, deleteTax, getTax, listTaxes } from './model'
+import {
+  createTax,
+  updateTax,
+  deleteTax,
+  getTax,
+  listTaxes,
+  getTaxUser,
+  getUserTaxes
+} from './model'
 import { ensureUser } from '../misc/ensureUser'
+
+type TaxUserResolver = GraphQLFieldResolver<Tax, any>
+
+const taxUserResolver: TaxUserResolver = tax => {
+  return getTaxUser(tax)
+}
+
+type UserTaxesResolver = GraphQLFieldResolver<
+  UserFromDatabase,
+  Context,
+  ConnectionQueryArgs
+>
+
+const userTaxesResolver: UserTaxesResolver = (user, args) => {
+  return getUserTaxes(user, args)
+}
+
+type CreateTaxMutation = GraphQLFieldResolver<
+  any,
+  Context,
+  { tax: TaxCreationInput }
+>
+
+const createTaxMutation: CreateTaxMutation = (_parent, { tax }, context) => {
+  return createTax(tax, ensureUser(context))
+}
+
+type UpdateTaxMutation = GraphQLFieldResolver<
+  any,
+  Context,
+  { id: number; tax: TaxUpdateInput }
+>
+
+const updateTaxMutation: UpdateTaxMutation = (
+  _parent,
+  { id, tax },
+  context
+) => {
+  return updateTax(id, tax, ensureUser(context))
+}
+
+type DeleteTaxMutation = GraphQLFieldResolver<any, Context, { id: number }>
+
+const deleteTaxMutation: DeleteTaxMutation = (_parent, { id }, context) => {
+  return deleteTax(id, ensureUser(context))
+}
+
+type TaxQuery = GraphQLFieldResolver<any, Context, { id: number }>
+
+const taxQuery: TaxQuery = (_parent, { id }, context) => {
+  return getTax(id, ensureUser(context))
+}
+
+type TaxesQuery = GraphQLFieldResolver<any, Context, ConnectionQueryArgs>
+
+const taxesQuery: TaxesQuery = (_parent, args, context) => {
+  return listTaxes(args, ensureUser(context))
+}
 
 interface TaxResolvers {
   Tax: {
-    user: GraphQLFieldResolver<Tax, any>
+    user: TaxUserResolver
   }
   User: {
-    taxes: GraphQLFieldResolver<User, UserContext, ConnectionQueryArgs>
+    taxes: UserTaxesResolver
   }
   Mutation: {
-    createTax: GraphQLFieldResolver<any, UserContext, { tax: Partial<Tax> }>
-    updateTax: GraphQLFieldResolver<
-      any,
-      UserContext,
-      { id: number; tax: Partial<Tax> }
-    >
-    deleteTax: GraphQLFieldResolver<any, UserContext, { id: number }>
+    createTax: CreateTaxMutation
+    updateTax: UpdateTaxMutation
+    deleteTax: DeleteTaxMutation
   }
   Query: {
-    tax: GraphQLFieldResolver<any, UserContext, { id: number }>
-    taxes: GraphQLFieldResolver<any, UserContext, ConnectionQueryArgs>
+    tax: TaxQuery
+    taxes: TaxesQuery
   }
 }
 
-export default {
+const resolvers: TaxResolvers = {
   Tax: {
-    user: async tax => {
-      const db = await getDatabase()
-      return db.get<User>(SQL`SELECT * FROM user WHERE id = ${tax.user}`)
-    }
+    user: taxUserResolver
   },
   User: {
-    taxes: (user, args) => {
-      return queryToConnection(
-        args,
-        ['tax.*'],
-        'tax',
-        SQL`WHERE tax.user = ${user.id}`
-      )
-    }
+    taxes: userTaxesResolver
   },
   Mutation: {
-    createTax: (_parent, { tax }, context) => {
-      ensureUser(context)
-      return createTax(tax, context.user!)
-    },
-    updateTax: (_parent, { id, tax }, context) => {
-      ensureUser(context)
-      return updateTax(id, tax, context.user!)
-    },
-    deleteTax: (_parent, { id }, context) => {
-      ensureUser(context)
-      return deleteTax(id, context.user!)
-    }
+    createTax: createTaxMutation,
+    updateTax: updateTaxMutation,
+    deleteTax: deleteTaxMutation
   },
   Query: {
-    tax: (_parent, { id }, context) => {
-      ensureUser(context)
-      return getTax(id, context.user!)
-    },
-    taxes: (_parent, args, context) => {
-      ensureUser(context)
-      return listTaxes(args, context.user!)
-    }
+    tax: taxQuery,
+    taxes: taxesQuery
   }
-} as TaxResolvers
+}
+
+export default resolvers

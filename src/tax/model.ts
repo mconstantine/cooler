@@ -1,14 +1,19 @@
-import { Tax } from './interface'
-import { User } from '../user/interface'
+import { Tax, TaxCreationInput, TaxUpdateInput } from './interface'
+import { User, UserFromDatabase } from '../user/interface'
 import { ConnectionQueryArgs } from '../misc/ConnectionQueryArgs'
 import { insert, update, remove } from '../misc/dbUtils'
 import { getDatabase } from '../misc/getDatabase'
 import SQL from 'sql-template-strings'
 import { ApolloError } from 'apollo-server-express'
 import { queryToConnection } from '../misc/queryToConnection'
+import { Connection } from '../misc/Connection'
+import { fromDatabase as userFromDatabase } from '../user/model'
 
-export async function createTax(tax: Partial<Tax>, user: User) {
-  if ((!tax.value && tax.value !== 0) || tax.value < 0 || tax.value > 1) {
+export async function createTax(
+  { label, value }: TaxCreationInput,
+  user: User
+): Promise<Tax | null> {
+  if (value < 0 || value > 1) {
     throw new ApolloError(
       'value should be a number between zero and one',
       'COOLER_400'
@@ -16,12 +21,17 @@ export async function createTax(tax: Partial<Tax>, user: User) {
   }
 
   const db = await getDatabase()
-  const { lastID } = await insert('tax', { ...tax, user: user.id })
+  const { lastID } = await insert('tax', { label, value, user: user.id })
+  const newTax = await db.get<Tax>(SQL`SELECT * FROM tax WHERE id = ${lastID}`)
 
-  return await db.get<Tax>(SQL`SELECT * FROM tax WHERE id = ${lastID}`)
+  if (!newTax) {
+    return null
+  }
+
+  return newTax
 }
 
-export async function getTax(id: number, user: User) {
+export async function getTax(id: number, user: User): Promise<Tax | null> {
   const db = await getDatabase()
   const tax = await db.get<Tax>(SQL`SELECT * FROM tax WHERE id = ${id}`)
 
@@ -36,11 +46,18 @@ export async function getTax(id: number, user: User) {
   return tax
 }
 
-export function listTaxes(args: ConnectionQueryArgs, user: User) {
+export function listTaxes(
+  args: ConnectionQueryArgs,
+  user: User
+): Promise<Connection<Tax>> {
   return queryToConnection(args, ['tax.*'], 'tax', SQL`WHERE user = ${user.id}`)
 }
 
-export async function updateTax(id: number, data: Partial<Tax>, user: User) {
+export async function updateTax(
+  id: number,
+  data: TaxUpdateInput,
+  user: User
+): Promise<Tax | null> {
   const db = await getDatabase()
   const tax = await db.get<Tax>(SQL`SELECT * FROM tax WHERE id = ${id}`)
 
@@ -50,10 +67,6 @@ export async function updateTax(id: number, data: Partial<Tax>, user: User) {
 
   if (tax.user !== user.id) {
     throw new ApolloError('You cannot update this tax', 'COOLER_403')
-  }
-
-  if (data.user !== undefined && data.user !== tax.user) {
-    throw new ApolloError('You cannot update users of taxes', 'COOLER_403')
   }
 
   const { label, value } = data
@@ -73,10 +86,16 @@ export async function updateTax(id: number, data: Partial<Tax>, user: User) {
     await update('tax', { id, ...args })
   }
 
-  return await db.get<Tax>(SQL`SELECT * FROM tax WHERE id = ${id}`)
+  const updatedTax = await db.get<Tax>(SQL`SELECT * FROM tax WHERE id = ${id}`)
+
+  if (!updatedTax) {
+    return null
+  }
+
+  return updatedTax
 }
 
-export async function deleteTax(id: number, user: User) {
+export async function deleteTax(id: number, user: User): Promise<Tax | null> {
   const db = await getDatabase()
   const tax = await db.get<Tax>(SQL`SELECT * FROM tax WHERE id = ${id}`)
 
@@ -90,4 +109,29 @@ export async function deleteTax(id: number, user: User) {
 
   await remove('tax', { id })
   return tax
+}
+
+export async function getTaxUser(tax: Tax): Promise<User | null> {
+  const db = await getDatabase()
+  const user = await db.get<UserFromDatabase>(
+    SQL`SELECT * FROM user WHERE id = ${tax.user}`
+  )
+
+  if (!user) {
+    return null
+  }
+
+  return userFromDatabase(user)
+}
+
+export function getUserTaxes(
+  user: UserFromDatabase,
+  args: ConnectionQueryArgs
+): Promise<Connection<Tax>> {
+  return queryToConnection<Tax>(
+    args,
+    ['tax.*'],
+    'tax',
+    SQL`WHERE tax.user = ${user.id}`
+  )
 }

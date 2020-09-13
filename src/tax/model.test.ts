@@ -1,5 +1,5 @@
 import { init } from '../init'
-import { User } from '../user/interface'
+import { User, UserFromDatabase } from '../user/interface'
 import { insert } from '../misc/dbUtils'
 import { getFakeUser } from '../test/getFakeUser'
 import { getDatabase } from '../misc/getDatabase'
@@ -8,6 +8,7 @@ import { getFakeTax } from '../test/getFakeTax'
 import { createTax, getTax, listTaxes, updateTax, deleteTax } from './model'
 import { ApolloError } from 'apollo-server-express'
 import { Tax } from './interface'
+import { fromDatabase as userFromDatabase } from '../user/model'
 
 let user1: User
 let user2: User
@@ -20,37 +21,47 @@ beforeAll(async () => {
   const db = await getDatabase()
   const { lastID: user1Id } = await insert('user', getFakeUser())
   const { lastID: user2Id } = await insert('user', getFakeUser())
-  const { lastID: tax1Id } = await insert('tax', getFakeTax({ user: user1Id }))
-  const { lastID: tax2Id } = await insert('tax', getFakeTax({ user: user2Id }))
+  const { lastID: tax1Id } = await insert('tax', getFakeTax(user1Id!))
+  const { lastID: tax2Id } = await insert('tax', getFakeTax(user2Id!))
 
-  user1 = (await db.get<User>(SQL`SELECT * FROM user WHERE id = ${user1Id}`))!
-  user2 = (await db.get<User>(SQL`SELECT * FROM user WHERE id = ${user2Id}`))!
+  user1 = userFromDatabase(
+    (await db.get<UserFromDatabase>(
+      SQL`SELECT * FROM user WHERE id = ${user1Id}`
+    ))!
+  )
+
+  user2 = userFromDatabase(
+    (await db.get<UserFromDatabase>(
+      SQL`SELECT * FROM user WHERE id = ${user2Id}`
+    ))!
+  )
+
   tax1 = (await db.get<Tax>(SQL`SELECT * FROM tax WHERE id = ${tax1Id}`))!
   tax2 = (await db.get<Tax>(SQL`SELECT * FROM tax WHERE id = ${tax2Id}`))!
 })
 
 describe('createTax', () => {
   it('should work', async () => {
-    const taxData = getFakeTax({ user: user1.id })
+    const taxData = getFakeTax(user1.id)
     const res = await createTax(taxData, user1)
 
     expect(res).toMatchObject(taxData)
   })
 
   it('should use the user from the request by default', async () => {
-    const res = await createTax(getFakeTax({ user: user2.id }), user1)
+    const res = await createTax(getFakeTax(user2.id), user1)
     expect(res?.user).toBe(user1.id)
   })
 
   it('should not allow values below zero', async () => {
     await expect(async () => {
-      await createTax(getFakeTax({ value: -1 }), user1)
+      await createTax(getFakeTax(user1.id, { value: -1 }), user1)
     }).rejects.toBeInstanceOf(ApolloError)
   })
 
   it('should not allow values above one', async () => {
     await expect(async () => {
-      await createTax(getFakeTax({ value: 1.1 }), user1)
+      await createTax(getFakeTax(user1.id, { value: 1.1 }), user1)
     }).rejects.toBeInstanceOf(ApolloError)
   })
 })
@@ -78,7 +89,7 @@ describe('listTaxes', () => {
 
 describe('updateTax', () => {
   it('should work', async () => {
-    const data = getFakeTax()
+    const data = getFakeTax(user2.id)
     const tax = await updateTax(tax2.id, data, user2)
 
     expect(tax?.label).toEqual(data.label)
@@ -88,25 +99,19 @@ describe('updateTax', () => {
 
   it('should not allow users to update taxes of other users', async () => {
     await expect(async () => {
-      await updateTax(tax1.id, getFakeTax(), user2)
-    }).rejects.toBeInstanceOf(ApolloError)
-  })
-
-  it('should not allow users to update users of taxes', async () => {
-    await expect(async () => {
-      await updateTax(tax1.id, getFakeTax({ user: user2.id }), user1)
+      await updateTax(tax1.id, getFakeTax(user2.id), user2)
     }).rejects.toBeInstanceOf(ApolloError)
   })
 
   it('should not allow values below zero', async () => {
     await expect(async () => {
-      await updateTax(tax1.id, getFakeTax({ value: -1 }), user1)
+      await updateTax(tax1.id, getFakeTax(user1.id, { value: -1 }), user1)
     }).rejects.toBeInstanceOf(ApolloError)
   })
 
   it('should not allow values above one', async () => {
     await expect(async () => {
-      await updateTax(tax1.id, getFakeTax({ value: 1.1 }), user1)
+      await updateTax(tax1.id, getFakeTax(user1.id, { value: 1.1 }), user1)
     }).rejects.toBeInstanceOf(ApolloError)
   })
 })
@@ -114,7 +119,7 @@ describe('updateTax', () => {
 describe('deleteTax', () => {
   it('should work', async () => {
     const db = await getDatabase()
-    const data = getFakeTax({ user: user1.id })
+    const data = getFakeTax(user1.id)
     const { lastID } = await insert('tax', data)
 
     const tax = await deleteTax(lastID!, user1)
@@ -126,7 +131,7 @@ describe('deleteTax', () => {
   })
 
   it('should not allow users to delete taxes of other users', async () => {
-    const { lastID } = await insert('tax', getFakeTax({ user: user1.id }))
+    const { lastID } = await insert('tax', getFakeTax(user1.id))
 
     await expect(async () => {
       await deleteTax(lastID!, user2)
