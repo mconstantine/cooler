@@ -3,17 +3,17 @@ import { toSQLDate } from '../misc/dbUtils'
 import { ID } from '../misc/Types'
 import { Task, TaskFromDatabase } from '../task/interface'
 
-type AllowedTask = Omit<Task, 'id' | 'created_at' | 'updated_at'>
+type TaskInput = Omit<Task, 'id' | 'created_at' | 'updated_at'>
 
-type AllowedTaskFromDatabase = Omit<
+type TaskFromDatabaseInput = Omit<
   TaskFromDatabase,
   'id' | 'created_at' | 'updated_at'
 >
 
 export function getFakeTask(
   project: ID,
-  data: Partial<AllowedTask> = {}
-): AllowedTask {
+  data: Partial<TaskInput> = {}
+): TaskInput {
   return {
     name: faker.lorem.sentence(),
     description: faker.lorem.paragraph(),
@@ -28,8 +28,8 @@ export function getFakeTask(
 
 export function getFakeTaskFromDatabase(
   project: ID,
-  data: Partial<AllowedTaskFromDatabase> = {}
-): AllowedTaskFromDatabase {
+  data: Partial<TaskFromDatabaseInput> = {}
+): TaskFromDatabaseInput {
   return {
     name: faker.lorem.sentence(),
     description: faker.lorem.paragraph(),

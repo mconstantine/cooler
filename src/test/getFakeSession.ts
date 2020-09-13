@@ -3,13 +3,13 @@ import { Session, SessionFromDatabase } from '../session/interface'
 import { toSQLDate, fromSQLDate } from '../misc/dbUtils'
 import { ID } from '../misc/Types'
 
-type AllowedSession = Omit<Session, 'id'>
-type AllowedSessionFromdatabase = Omit<SessionFromDatabase, 'id'>
+type SessionInput = Omit<Session, 'id'>
+type SessionFromDatabaseInput = Omit<SessionFromDatabase, 'id'>
 
 export function getFakeSession(
   task: ID,
-  data?: Partial<AllowedSession>
-): AllowedSession {
+  data?: Partial<SessionInput>
+): SessionInput {
   const startTime = data?.start_time ?? faker.date.recent(10)
 
   const endTime = new Date(
@@ -26,8 +26,8 @@ export function getFakeSession(
 
 export function getFakeSessionFromDatabase(
   task: ID,
-  data?: Partial<AllowedSessionFromdatabase>
-): AllowedSessionFromdatabase {
+  data?: Partial<SessionFromDatabaseInput>
+): SessionFromDatabaseInput {
   const startTime = data?.start_time
     ? fromSQLDate(data.start_time)
     : faker.date.recent(10)

@@ -8,15 +8,12 @@ import {
 import { foldClientType } from '../client/model'
 import { ID } from '../misc/Types'
 
-type AllowedClient = Omit<
-  ClientFromDatabase,
-  'id' | 'created_at' | 'updated_at'
->
+type ClientInput = Omit<ClientFromDatabase, 'id' | 'created_at' | 'updated_at'>
 
 export function getFakeClient(
   user: ID,
-  { type, ...data }: Partial<AllowedClient> = {}
-): AllowedClient {
+  { type, ...data }: Partial<ClientInput> = {}
+): ClientInput {
   type = type || faker.random.arrayElement(Object.values(ClientType))
 
   const country_code = faker.address.countryCode() as keyof typeof Country

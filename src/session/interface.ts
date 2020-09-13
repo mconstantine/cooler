@@ -1,7 +1,7 @@
 import { ID, SQLDate } from '../misc/Types'
 
 interface SessionCommonData {
-  id: ID
+  readonly id: ID
   task: ID
 }
 

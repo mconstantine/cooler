@@ -1,12 +1,12 @@
 import { SQLDate, ID } from '../misc/Types'
 
 export interface User {
-  id: ID
+  readonly id: ID
   name: string
   email: string
   password: string
-  created_at: Date
-  updated_at: Date
+  readonly created_at: Date
+  readonly updated_at: Date
 }
 
 export interface UserFromDatabase {
@@ -14,8 +14,8 @@ export interface UserFromDatabase {
   name: string
   email: string
   password: string
-  created_at: SQLDate
-  updated_at: SQLDate
+  readonly created_at: SQLDate
+  readonly updated_at: SQLDate
 }
 
 export enum TokenType {
@@ -25,7 +25,7 @@ export enum TokenType {
 
 export interface Token {
   type: TokenType
-  id: number
+  id: ID
 }
 
 export type Context =

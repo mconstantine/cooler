@@ -1,7 +1,7 @@
 import { ID } from '../misc/Types'
 
 export interface Tax {
-  id: ID
+  readonly id: ID
   label: string
   value: number
   user: ID
