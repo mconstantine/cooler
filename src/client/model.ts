@@ -17,6 +17,8 @@ import { ApolloError } from 'apollo-server-express'
 import { Connection } from '../misc/Connection'
 import { fromDatabase as userFromDatabase } from '../user/model'
 import { ID } from '../misc/Types'
+import { removeUndefined } from '../misc/removeUndefined'
+import { definitely } from '../misc/definitely'
 
 type TypedClient = {
   type: ClientType
@@ -84,6 +86,7 @@ export async function getClient(
   user: User
 ): Promise<Client | null> {
   const db = await getDatabase()
+
   const client = await db.get<ClientFromDatabase>(
     SQL`SELECT * FROM client WHERE id = ${id}`
   )
@@ -92,7 +95,7 @@ export async function getClient(
     return null
   }
 
-  if (client && client.user !== user.id) {
+  if (client.user !== user.id) {
     throw new ApolloError('You cannot see this client', 'COOLER_403')
   }
 
@@ -173,7 +176,7 @@ export async function updateClient(
     address_street_number ||
     address_email
   ) {
-    let args: Partial<Client> = Object.entries({
+    let args = removeUndefined({
       type,
       fiscal_code,
       first_name,
@@ -188,9 +191,7 @@ export async function updateClient(
       address_street,
       address_street_number,
       address_email
-    })
-      .filter(([, value]) => value !== undefined)
-      .reduce((res, [key, value]) => ({ ...res, [key]: value }), {})
+    }) as Partial<Client>
 
     if (args.type) {
       args = {
@@ -229,6 +230,7 @@ export async function deleteClient(
   user: User
 ): Promise<Client | null> {
   const db = await getDatabase()
+
   const client = await db.get<ClientFromDatabase>(
     SQL`SELECT * FROM client WHERE id = ${id}`
   )
@@ -258,9 +260,12 @@ export function getClientName(
 
 export async function getClientUser(client: ClientFromDatabase): Promise<User> {
   const db = await getDatabase()
-  const user = (await db.get<UserFromDatabase>(
-    SQL`SELECT * FROM user WHERE id = ${client.user}`
-  ))!
+
+  const user = definitely(
+    await db.get<UserFromDatabase>(
+      SQL`SELECT * FROM user WHERE id = ${client.user}`
+    )
+  )
 
   return userFromDatabase(user)
 }

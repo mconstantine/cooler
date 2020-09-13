@@ -3,15 +3,17 @@ import { getDatabase } from '../misc/getDatabase'
 import { Database } from 'sqlite'
 import { insert, update, remove } from '../misc/dbUtils'
 import { getFakeClient } from '../test/getFakeClient'
-import { Client, ClientType } from './interface'
+import { Client, ClientFromDatabase, ClientType } from './interface'
 import SQL from 'sql-template-strings'
-import { User } from '../user/interface'
+import { User, UserCreationInput } from '../user/interface'
 import { getFakeUser } from '../test/getFakeUser'
+import { definitely } from '../misc/definitely'
+import { sleep } from '../test/sleep'
 
 describe('initClient', () => {
   describe('happy path', () => {
     let db: Database
-    let user: User
+    let user: UserCreationInput & Pick<User, 'id'>
 
     beforeAll(async () => {
       db = await getDatabase()
@@ -19,9 +21,9 @@ describe('initClient', () => {
       await init()
 
       const userData = getFakeUser()
-      const { lastID } = await insert('user', userData)
+      const { lastID } = await insert<UserCreationInput>('user', userData)
 
-      user = { ...userData, id: lastID! } as User
+      user = { ...userData, id: lastID! }
     })
 
     it('should create a database table', async () => {
@@ -30,33 +32,34 @@ describe('initClient', () => {
 
     it('should save the creation time automatically', async () => {
       const { lastID } = await insert('client', getFakeClient(user.id))
-      const client = await db.get<Client>(
-        SQL`SELECT * FROM client WHERE id = ${lastID}`
+
+      const client = definitely(
+        await db.get<ClientFromDatabase>(
+          SQL`SELECT * FROM client WHERE id = ${lastID}`
+        )
       )
 
-      expect(client!.created_at).toMatch(
-        /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/
-      )
+      expect(client.created_at).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/)
     })
 
     it('should keep track of the time of the last update', async () => {
       const client = getFakeClient(user.id)
-      const updated: Partial<Client> = { address_city: 'Some weird city' }
+      const updated = { address_city: 'Some weird city' }
 
       expect(client.address_city).not.toBe(updated.address_city)
 
       const { lastID } = await insert('client', client)
 
-      const updateDateBefore = (await db.get<Client>(
-        SQL`SELECT * FROM client WHERE id = ${lastID}`
-      ))!.updated_at
+      const updateDateBefore = definitely(
+        await db.get<Client>(SQL`SELECT * FROM client WHERE id = ${lastID}`)
+      ).updated_at
 
-      await (() => new Promise(done => setTimeout(() => done(), 1000)))()
+      await sleep(1000)
       await update('client', { id: lastID, ...updated })
 
-      const updateDateAfter = (await db.get<Client>(
-        SQL`SELECT * FROM client WHERE id = ${lastID}`
-      ))!.updated_at
+      const updateDateAfter = definitely(
+        await db.get<Client>(SQL`SELECT * FROM client WHERE id = ${lastID}`)
+      ).updated_at
 
       expect(updateDateBefore).not.toBe(updateDateAfter)
     })

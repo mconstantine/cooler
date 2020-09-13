@@ -14,6 +14,8 @@ import {
 import { Client, ClientType } from './interface'
 import { ApolloError } from 'apollo-server-express'
 import { init } from '../init'
+import { definitely } from '../misc/definitely'
+import { getConnectionNodes } from '../test/getConnectionNodes'
 
 let user1: User
 let user2: User
@@ -26,26 +28,27 @@ beforeAll(async () => {
   const db = await getDatabase()
   const user1Data = getFakeUser()
   const user2Data = getFakeUser()
-  const user1Id = (await insert('user', user1Data)).lastID!
-  const user2Id = (await insert('user', user2Data)).lastID!
+  const user1Id = definitely((await insert('user', user1Data)).lastID)
+  const user2Id = definitely((await insert('user', user2Data)).lastID)
 
-  user1 = await db.get(SQL`SELECT * FROM user WHERE id = ${user1Id}`)!
-  user2 = await db.get(SQL`SELECT * FROM user WHERE id = ${user2Id}`)!
-  client1 = (await createClient(getFakeClient(user1.id), user1))!
-  client2 = (await createClient(getFakeClient(user2.id), user2))!
+  user1 = definitely(
+    await db.get(SQL`SELECT * FROM user WHERE id = ${user1Id}`)
+  )
+  user2 = definitely(
+    await db.get(SQL`SELECT * FROM user WHERE id = ${user2Id}`)
+  )
+
+  client1 = definitely(await createClient(getFakeClient(user1.id), user1))
+  client2 = definitely(await createClient(getFakeClient(user2.id), user2))
 })
 
 describe('createClient', () => {
   it('should set the user automatically', async () => {
-    const clientData = getFakeClient(user1.id)
+    const clientData = getFakeClient(0)
+    const client = definitely(await createClient(clientData, user1))
 
-    // @ts-ignore
-    delete clientData.user
-
-    const client = await createClient(clientData, user1)
-
-    expect(clientData.user).toBeUndefined()
-    expect(client?.user).toBe(user1.id)
+    expect(clientData.user).toBe(0)
+    expect(client.user).toBe(user1.id)
   })
 })
 
@@ -65,11 +68,11 @@ describe('listClients', () => {
   it("should list only the user's clients", async () => {
     const results = await listClients({}, user1)
 
-    expect(results.edges.map(({ node }) => node)).toContainEqual(
+    expect(getConnectionNodes(results)).toContainEqual(
       expect.objectContaining({ id: client1.id })
     )
 
-    expect(results.edges.map(({ node }) => node)).not.toContainEqual(
+    expect(getConnectionNodes(results)).not.toContainEqual(
       expect.objectContaining({ id: client2.id })
     )
   })
@@ -78,7 +81,7 @@ describe('listClients', () => {
 describe('updateClient', () => {
   it('should work', async () => {
     const data = getFakeClient(user1.id)
-    const result = (await updateClient(client1.id, data, user1)) as Client
+    const result = definitely(await updateClient(client1.id, data, user1))
 
     expect(result).toMatchObject(data)
     client1 = result
@@ -91,10 +94,12 @@ describe('updateClient', () => {
   })
 
   it('should switch from a BUSINESS to a PRIVATE client correctly', async () => {
-    const client = (await createClient(
-      getFakeClient(user1.id, { type: ClientType.BUSINESS }),
-      user1
-    ))!
+    const client = definitely(
+      await createClient(
+        getFakeClient(user1.id, { type: ClientType.BUSINESS }),
+        user1
+      )
+    )
 
     expect(client.fiscal_code).toBe(null)
     expect(client.first_name).toBe(null)
@@ -103,11 +108,13 @@ describe('updateClient', () => {
     expect(client.vat_number).not.toBe(null)
     expect(client.business_name).not.toBe(null)
 
-    const updatedClient = (await updateClient(
-      client.id,
-      getFakeClient(user1.id, { type: ClientType.PRIVATE }),
-      user1
-    ))!
+    const updatedClient = definitely(
+      await updateClient(
+        client.id,
+        getFakeClient(user1.id, { type: ClientType.PRIVATE }),
+        user1
+      )
+    )
 
     expect(updatedClient.country_code).toBe(null)
     expect(updatedClient.vat_number).toBe(null)
@@ -118,10 +125,12 @@ describe('updateClient', () => {
   })
 
   it('should switch from a PRIVATE to a BUSINESS client correctly', async () => {
-    const client = (await createClient(
-      getFakeClient(user1.id, { type: ClientType.PRIVATE }),
-      user1
-    ))!
+    const client = definitely(
+      await createClient(
+        getFakeClient(user1.id, { type: ClientType.PRIVATE }),
+        user1
+      )
+    )
 
     expect(client.country_code).toBe(null)
     expect(client.vat_number).toBe(null)
@@ -130,11 +139,13 @@ describe('updateClient', () => {
     expect(client.first_name).not.toBe(null)
     expect(client.last_name).not.toBe(null)
 
-    const updatedClient = (await updateClient(
-      client.id,
-      getFakeClient(user1.id, { type: ClientType.BUSINESS }),
-      user1
-    ))!
+    const updatedClient = definitely(
+      await updateClient(
+        client.id,
+        getFakeClient(user1.id, { type: ClientType.BUSINESS }),
+        user1
+      )
+    )
 
     expect(updatedClient.fiscal_code).toBe(null)
     expect(updatedClient.first_name).toBe(null)
@@ -150,8 +161,8 @@ describe('deleteClient', () => {
   let client2: Client
 
   beforeAll(async () => {
-    client1 = (await createClient(getFakeClient(user1.id), user1)) as Client
-    client2 = (await createClient(getFakeClient(user2.id), user2)) as Client
+    client1 = definitely(await createClient(getFakeClient(user1.id), user1))
+    client2 = definitely(await createClient(getFakeClient(user2.id), user2))
   })
 
   it('should work', async () => {
