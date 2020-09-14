@@ -45,7 +45,7 @@ export default gql`
       after: String
       orderBy: String
     ): ProjectConnection
-    cashedBalance(since: String): Float!
+    cashedBalance(since: Date): Float!
   }
 
   extend type Client {

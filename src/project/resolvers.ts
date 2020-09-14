@@ -20,7 +20,7 @@ import { Client, ClientFromDatabase } from '../client/interface'
 import { ConnectionQueryArgs } from '../misc/ConnectionQueryArgs'
 import { Context, UserFromDatabase } from '../user/interface'
 import { ensureUser } from '../misc/ensureUser'
-import { DateString } from '../misc/Types'
+import { SQLDate } from '../misc/Types'
 import { Connection } from '../misc/Connection'
 
 type ProjectClientResolver = GraphQLFieldResolver<ProjectFromDatabase, any>
@@ -61,7 +61,7 @@ const userProjectsResolver: UserProjectsResolver = (
 type UserCashedBalanceResolver = GraphQLFieldResolver<
   UserFromDatabase,
   any,
-  { since?: DateString }
+  { since?: SQLDate }
 >
 
 const userCashedBalanceResolver: UserCashedBalanceResolver = async (

@@ -5,7 +5,7 @@ import {
   ProjectUpdateInput
 } from './interface'
 import { getDatabase } from '../misc/getDatabase'
-import { insert, update, remove, fromSQLDate, toSQLDate } from '../misc/dbUtils'
+import { insert, update, remove, fromSQLDate } from '../misc/dbUtils'
 import SQL from 'sql-template-strings'
 import { ConnectionQueryArgs } from '../misc/ConnectionQueryArgs'
 import { queryToConnection, mapConnection } from '../misc/queryToConnection'
@@ -13,14 +13,16 @@ import { User, UserFromDatabase } from '../user/interface'
 import { ClientFromDatabase, Client } from '../client/interface'
 import { ApolloError } from 'apollo-server-express'
 import { Connection } from '../misc/Connection'
-import { ID, DateString } from '../misc/Types'
+import { ID, SQLDate } from '../misc/Types'
 import { fromDatabase as clientFromDatabase } from '../client/model'
+import { removeUndefined } from '../misc/removeUndefined'
 
 export async function createProject(
   { name, description, client: clientId }: ProjectCreationInput,
   user: User
 ): Promise<Project | null> {
   const db = await getDatabase()
+
   const client = await db.get<ClientFromDatabase>(
     SQL`SELECT * FROM client WHERE id = ${clientId}`
   )
@@ -148,15 +150,13 @@ export async function updateProject(
       }
     }
 
-    const args = Object.entries({
+    const args = removeUndefined({
       name,
       description,
       client,
       cashed_at,
       cashed_balance
     })
-      .filter(([, value]) => value !== undefined)
-      .reduce((res, [key, value]) => ({ ...res, [key]: value }), {})
 
     await update('project', { ...args, id })
   }
@@ -219,9 +219,9 @@ export async function getUserProjects(
     ['project.*'],
     'project',
     SQL`
-    JOIN client ON client.id = project.client
-    WHERE client.user = ${user.id}
-  `
+      JOIN client ON client.id = project.client
+      WHERE client.user = ${user.id}
+    `
   )
 
   return mapConnection(connection, fromDatabase)
@@ -229,7 +229,7 @@ export async function getUserProjects(
 
 export async function getUserCashedBalance(
   user: UserFromDatabase,
-  since?: DateString
+  since?: SQLDate
 ) {
   const db = await getDatabase()
   const sql = SQL`
@@ -239,8 +239,7 @@ export async function getUserCashedBalance(
     WHERE client.user = ${user.id} AND project.cashed_balance IS NOT NULL
   `
 
-  since &&
-    sql.append(SQL` AND project.cashed_at >= ${toSQLDate(new Date(since))}`)
+  since && sql.append(SQL` AND project.cashed_at >= ${since}`)
 
   const { balance } = (await db.get<{ balance: number }>(sql))!
 

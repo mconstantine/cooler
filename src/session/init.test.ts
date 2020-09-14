@@ -1,18 +1,22 @@
 import { getDatabase } from '../misc/getDatabase'
 import { Database } from 'sqlite'
-import { insert, remove } from '../misc/dbUtils'
+import { insert, remove, toSQLDate, update } from '../misc/dbUtils'
 import { getFakeUser } from '../test/getFakeUser'
 import { getFakeClient } from '../test/getFakeClient'
 import { getFakeProject } from '../test/getFakeProject'
-import { getFakeTaskFromDatabase } from '../test/getFakeTask'
+import { getFakeTask, getFakeTaskFromDatabase } from '../test/getFakeTask'
 import { getFakeSessionFromDatabase } from '../test/getFakeSession'
 import SQL from 'sql-template-strings'
 import { Task } from '../task/interface'
-import { Project } from '../project/interface'
+import { Project, ProjectFromDatabase } from '../project/interface'
 import { init } from '../init'
+import { ID } from '../misc/Types'
+import { definitely } from '../misc/definitely'
 
 describe('init', () => {
   let db: Database
+  let user: ID
+  let client: ID
 
   beforeAll(async () => {
     await init()
@@ -25,8 +29,9 @@ describe('init', () => {
     })
 
     it("should delete all task's sessions when a task is deleted", async () => {
-      const user = (await insert('user', getFakeUser())).lastID!
-      const client = (await insert('client', getFakeClient(user))).lastID!
+      user = definitely((await insert('user', getFakeUser())).lastID)
+      client = definitely((await insert('client', getFakeClient(user))).lastID)
+
       const project = (await insert('project', getFakeProject(client))).lastID!
 
       const task = (await insert('task', getFakeTaskFromDatabase(project)))
@@ -42,6 +47,45 @@ describe('init', () => {
         SQL`SELECT * FROM session WHERE id = ${sessionId}`
       )
       expect(session).toBeUndefined()
+    })
+  })
+
+  describe('project cashed balance default', () => {
+    it('should calculate the cashed balance from the sessions by default', async () => {
+      const { lastID: projectId } = await insert(
+        'project',
+        getFakeProject(client, {
+          cashed_at: null
+        })
+      )
+
+      const { lastID: taskId } = await insert(
+        'task',
+        getFakeTask(projectId!, {
+          hourlyCost: 10.5
+        })
+      )
+
+      const now = new Date()
+
+      await insert(
+        'session',
+        getFakeSessionFromDatabase(taskId!, {
+          start_time: toSQLDate(now),
+          end_time: toSQLDate(new Date(now.getTime() + 1000 * 60 * 60 * 4))
+        })
+      )
+
+      await update('project', {
+        id: projectId,
+        cashed_at: toSQLDate(new Date())
+      })
+
+      const project = await db.get<ProjectFromDatabase>(
+        SQL`SELECT * FROM project WHERE ${projectId}`
+      )
+
+      expect(project!.cashed_balance).toBe(42)
     })
   })
 
