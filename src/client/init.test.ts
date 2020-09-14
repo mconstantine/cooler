@@ -21,9 +21,12 @@ describe('initClient', () => {
       await init()
 
       const userData = getFakeUser()
-      const { lastID } = await insert<UserCreationInput>('user', userData)
 
-      user = { ...userData, id: lastID! }
+      const lastID = definitely(
+        (await insert<UserCreationInput>('user', userData)).lastID
+      )
+
+      user = { ...userData, id: lastID }
     })
 
     it('should create a database table', async () => {
@@ -66,8 +69,8 @@ describe('initClient', () => {
 
     it("should delete all user's clients when the user is deleted", async () => {
       const userData = getFakeUser()
-      const { lastID: userId } = await insert('user', userData)
-      const clientData = getFakeClient(userId!)
+      const userId = definitely((await insert('user', userData)).lastID)
+      const clientData = getFakeClient(userId)
       const { lastID: clientId } = await insert('client', clientData)
 
       await remove('user', { id: userId })
