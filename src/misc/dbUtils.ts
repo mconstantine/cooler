@@ -1,4 +1,5 @@
 import { getDatabase } from './getDatabase'
+import { removeUndefined } from './removeUndefined'
 import { SQLDate } from './Types'
 
 /**
@@ -13,11 +14,6 @@ export async function insert<T extends { [key: string]: any }>(
 ) {
   const db = await getDatabase()
 
-  const removeUndefined = (rows: T) =>
-    Object.entries(rows)
-      .filter(([, value]) => value !== undefined)
-      .reduce((res, [key, value]) => ({ ...res, [key]: value }), {})
-
   const rows = (Array.isArray(_rows)
     ? _rows.map(row => removeUndefined(row))
     : removeUndefined(_rows)) as T | T[]
@@ -25,6 +21,7 @@ export async function insert<T extends { [key: string]: any }>(
   const columns = `\`${Object.keys(Array.isArray(rows) ? rows[0] : rows).join(
     '`, `'
   )}\``
+
   const values = `${(Array.isArray(rows) ? rows : [rows])
     .map(row => new Array(Object.keys(row).length).fill('?').join(', '))
     .join('), (')}`
@@ -46,11 +43,7 @@ export async function update<T extends { [key: string]: any }>(
   const db = await getDatabase()
 
   // Magic reduce from { key: value } to [['key = ?'], [value]]
-  const [query, args] = Object.entries(
-    Object.entries(row)
-      .filter(([, value]) => value !== undefined)
-      .reduce((res, [key, value]) => ({ ...res, [key]: value }), {})
-  )
+  const [query, args] = Object.entries(removeUndefined(row))
     .filter(([key]) => key !== primaryKey)
     .reduce(
       ([query, args], [key, value]) => {
