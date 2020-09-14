@@ -22,6 +22,8 @@ import { fromDatabase as taskFromDatabase } from '../task/model'
 import { ProjectFromDatabase } from '../project/interface'
 import { SinceArg } from './resolvers'
 import { definitely } from '../misc/definitely'
+import { removeUndefined } from '../misc/removeUndefined'
+import { getClientName } from '../client/model'
 
 const TIMESHEETS_PATH = '/public/timesheets'
 
@@ -183,9 +185,7 @@ export async function updateSession(
       }
     }
 
-    const args = Object.entries({ start_time, end_time, task })
-      .filter(([, value]) => value !== undefined)
-      .reduce((res, [key, value]) => ({ ...res, [key]: value }), {})
+    const args = removeUndefined({ start_time, end_time, task })
 
     await update('session', { ...args, id })
   }
@@ -238,12 +238,12 @@ export async function createTimesheet(
 ): Promise<string | null> {
   const db = await getDatabase()
 
-  const p = (await db.get<{ user: number }>(SQL`
+  const p = await db.get<{ user: number }>(SQL`
     SELECT client.user
     FROM project
     JOIN client ON client.id = project.client
     WHERE project.id = ${project}
-  `))!
+  `)
 
   if (!p) {
     return null
@@ -295,9 +295,7 @@ export async function createTimesheet(
     const firstSession = sessions[0]
 
     return [
-      firstSession.type === ClientType.BUSINESS
-        ? firstSession.business_name!
-        : `${firstSession.first_name} ${firstSession.last_name}`,
+      getClientName(firstSession),
       firstSession.project,
       firstSession.task
     ]
@@ -385,15 +383,17 @@ export async function getTaskActualWorkingHours(
 ): Promise<number> {
   const db = await getDatabase()
 
-  const { actualWorkingHours } = (await db.get<{
-    actualWorkingHours: number
-  }>(SQL`
+  const { actualWorkingHours } = definitely(
+    await db.get<{
+      actualWorkingHours: number
+    }>(SQL`
     SELECT IFNULL(SUM(
       (strftime('%s', session.end_time) - strftime('%s', session.start_time)) / 3600.0
     ), 0) AS actualWorkingHours
     FROM session
     WHERE task = ${task.id} AND end_time IS NOT NULL
-  `))!
+  `)
+  )
 
   return actualWorkingHours
 }
@@ -401,11 +401,13 @@ export async function getTaskActualWorkingHours(
 export async function getTaskBudget(task: TaskFromDatabase): Promise<number> {
   const db = await getDatabase()
 
-  const { budget } = (await db.get<{ budget: number }>(SQL`
+  const { budget } = definitely(
+    await db.get<{ budget: number }>(SQL`
     SELECT IFNULL(expectedWorkingHours * hourlyCost, 0) AS budget
     FROM task
     WHERE id = ${task.id}
-  `))!
+  `)
+  )
 
   return budget
 }
@@ -413,14 +415,16 @@ export async function getTaskBudget(task: TaskFromDatabase): Promise<number> {
 export async function getTaskBalance(task: TaskFromDatabase): Promise<number> {
   const db = await getDatabase()
 
-  const { balance } = (await db.get<{ balance: number }>(SQL`
+  const { balance } = definitely(
+    await db.get<{ balance: number }>(SQL`
     SELECT IFNULL(SUM((
       strftime('%s', session.end_time) - strftime('%s', session.start_time)
     ) / 3600.0 * task.hourlyCost), 0) AS balance
     FROM session
     JOIN task ON task.id = session.task
     WHERE task.id = ${task.id}
-  `))!
+  `)
+  )
 
   return balance
 }
@@ -430,13 +434,15 @@ export async function getProjectExpectedWorkingHours(
 ): Promise<number> {
   const db = await getDatabase()
 
-  const { expectedWorkingHours } = (await db.get<{
-    expectedWorkingHours: number
-  }>(SQL`
+  const { expectedWorkingHours } = definitely(
+    await db.get<{
+      expectedWorkingHours: number
+    }>(SQL`
     SELECT IFNULL(SUM(expectedWorkingHours), 0) AS expectedWorkingHours
     FROM task
     WHERE project = ${project.id}
-  `))!
+  `)
+  )
 
   return expectedWorkingHours
 }
@@ -446,16 +452,18 @@ export async function getProjectActualWorkingHours(
 ): Promise<number> {
   const db = await getDatabase()
 
-  const { actualWorkingHours } = (await db.get<{
-    actualWorkingHours: number
-  }>(SQL`
+  const { actualWorkingHours } = definitely(
+    await db.get<{
+      actualWorkingHours: number
+    }>(SQL`
     SELECT IFNULL(SUM(
       (strftime('%s', session.end_time) - strftime('%s', session.start_time)) / 3600.0
     ), 0) AS actualWorkingHours
     FROM session
     JOIN task ON task.id = session.task
     WHERE task.project = ${project.id} AND session.end_time IS NOT NULL
-  `))!
+  `)
+  )
 
   return actualWorkingHours
 }
@@ -465,11 +473,13 @@ export async function getProjectBudget(
 ): Promise<number> {
   const db = await getDatabase()
 
-  const { budget } = (await db.get<{ budget: number }>(SQL`
+  const { budget } = definitely(
+    await db.get<{ budget: number }>(SQL`
     SELECT IFNULL(SUM(hourlyCost * expectedWorkingHours), 0) AS budget
     FROM task
     WHERE project = ${project.id}
-  `))!
+  `)
+  )
 
   return budget
 }
@@ -479,14 +489,16 @@ export async function getProjectBalance(
 ): Promise<number> {
   const db = await getDatabase()
 
-  const { balance } = (await db.get<{ balance: number }>(SQL`
+  const { balance } = definitely(
+    await db.get<{ balance: number }>(SQL`
     SELECT IFNULL(SUM((
       strftime('%s', session.end_time) - strftime('%s', session.start_time)
     ) / 3600.0 * task.hourlyCost), 0) AS balance
     FROM session
     JOIN task ON task.id = session.task
     WHERE task.project = ${project.id}
-  `))!
+  `)
+  )
 
   return balance
 }
@@ -505,7 +517,11 @@ export async function getUserOpenSession(
     WHERE client.user = ${user.id} AND session.end_time IS NULL
   `)
 
-  return openSession ? fromDatabase(openSession) : null
+  if (!openSession) {
+    return null
+  }
+
+  return fromDatabase(openSession)
 }
 
 export async function getUserExpectedWorkingHours(
@@ -524,9 +540,11 @@ export async function getUserExpectedWorkingHours(
 
   since && sql.append(SQL` AND task.start_time >= ${since}`)
 
-  const { expectedWorkingHours } = (await db.get<{
-    expectedWorkingHours: number
-  }>(sql))!
+  const { expectedWorkingHours } = definitely(
+    await db.get<{
+      expectedWorkingHours: number
+    }>(sql)
+  )
 
   return expectedWorkingHours
 }
@@ -550,9 +568,11 @@ export async function getUserActualWorkingHours(
 
   since && sql.append(SQL` AND session.start_time >= ${since}`)
 
-  const { actualWorkingHours } = (await db.get<{
-    actualWorkingHours: number
-  }>(sql))!
+  const { actualWorkingHours } = definitely(
+    await db.get<{
+      actualWorkingHours: number
+    }>(sql)
+  )
 
   return actualWorkingHours
 }
@@ -573,7 +593,7 @@ export async function getUserBudget(
 
   since && sql.append(SQL` AND task.start_time >= ${since}`)
 
-  const { budget } = (await db.get<{ budget: number }>(sql))!
+  const { budget } = definitely(await db.get<{ budget: number }>(sql))
 
   return budget
 }
@@ -597,7 +617,7 @@ export async function getUserBalance(
 
   since && sql.append(SQL` AND session.start_time >= ${since}`)
 
-  const { balance } = (await db.get<{ balance: number }>(sql))!
+  const { balance } = definitely(await db.get<{ balance: number }>(sql))
 
   return balance
 }

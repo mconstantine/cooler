@@ -1,4 +1,4 @@
-import { User } from '../user/interface'
+import { User, UserFromDatabase } from '../user/interface'
 import { TaskFromDatabase } from '../task/interface'
 import { Session, SessionFromDatabase } from './interface'
 import { getDatabase } from '../misc/getDatabase'
@@ -21,6 +21,9 @@ import {
 } from './model'
 import { ApolloError } from 'apollo-server-express'
 import { init } from '../init'
+import { definitely } from '../misc/definitely'
+import { fromDatabase as userFromDatabase } from '../user/model'
+import { getConnectionNodes } from '../test/getConnectionNodes'
 
 let user1: User
 let user2: User
@@ -33,58 +36,88 @@ beforeAll(async () => {
   await init()
 
   const db = await getDatabase()
-  const user1Id = (await insert('user', getFakeUser())).lastID!
-  const user2Id = (await insert('user', getFakeUser())).lastID!
-  const client1Id = (await insert('client', getFakeClient(user1Id))).lastID!
-  const client2Id = (await insert('client', getFakeClient(user2Id))).lastID!
+  const user1Id = definitely((await insert('user', getFakeUser())).lastID)
+  const user2Id = definitely((await insert('user', getFakeUser())).lastID)
 
-  const project1Id = (await insert('project', getFakeProject(client1Id)))
-    .lastID!
+  const client1Id = definitely(
+    (await insert('client', getFakeClient(user1Id))).lastID
+  )
+  const client2Id = definitely(
+    (await insert('client', getFakeClient(user2Id))).lastID
+  )
 
-  const project2Id = (await insert('project', getFakeProject(client2Id)))
-    .lastID!
+  const project1Id = definitely(
+    (await insert('project', getFakeProject(client1Id))).lastID
+  )
 
-  const task1Id = (await insert('task', getFakeTaskFromDatabase(project1Id)))
-    .lastID!
+  const project2Id = definitely(
+    (await insert('project', getFakeProject(client2Id))).lastID
+  )
 
-  const task2Id = (await insert('task', getFakeTaskFromDatabase(project2Id)))
-    .lastID!
+  const task1Id = definitely(
+    (await insert('task', getFakeTaskFromDatabase(project1Id))).lastID
+  )
 
-  const session1Id = (
-    await insert('session', getFakeSessionFromDatabase(task1Id))
-  ).lastID!
+  const task2Id = definitely(
+    (await insert('task', getFakeTaskFromDatabase(project2Id))).lastID
+  )
 
-  const session2Id = (
-    await insert('session', getFakeSessionFromDatabase(task2Id))
-  ).lastID!
+  const session1Id = definitely(
+    (await insert('session', getFakeSessionFromDatabase(task1Id))).lastID
+  )
 
-  user1 = (await db.get(SQL`SELECT * FROM user WHERE id = ${user1Id}`)) as User
-  user2 = (await db.get(SQL`SELECT * FROM user WHERE id = ${user2Id}`)) as User
+  const session2Id = definitely(
+    (await insert('session', getFakeSessionFromDatabase(task2Id))).lastID
+  )
 
-  task1 = (await db.get(
-    SQL`SELECT * FROM task WHERE id = ${task1Id}`
-  )) as TaskFromDatabase
+  user1 = userFromDatabase(
+    definitely(
+      await db.get<UserFromDatabase>(
+        SQL`SELECT * FROM user WHERE id = ${user1Id}`
+      )
+    )
+  )
 
-  task2 = (await db.get(
-    SQL`SELECT * FROM task WHERE id = ${task2Id}`
-  )) as TaskFromDatabase
+  user2 = userFromDatabase(
+    definitely(
+      await db.get<UserFromDatabase>(
+        SQL`SELECT * FROM user WHERE id = ${user2Id}`
+      )
+    )
+  )
+
+  task1 = definitely(
+    await db.get<TaskFromDatabase>(
+      SQL`SELECT * FROM task WHERE id = ${task1Id}`
+    )
+  )
+
+  task2 = definitely(
+    await db.get<TaskFromDatabase>(
+      SQL`SELECT * FROM task WHERE id = ${task2Id}`
+    )
+  )
 
   session1 = fromDatabase(
-    (await db.get<SessionFromDatabase>(
-      SQL`SELECT * FROM session WHERE id = ${session1Id}`
-    ))!
+    definitely(
+      await db.get<SessionFromDatabase>(
+        SQL`SELECT * FROM session WHERE id = ${session1Id}`
+      )
+    )
   )
 
   session2 = fromDatabase(
-    (await db.get<SessionFromDatabase>(
-      SQL`SELECT * FROM session WHERE id = ${session2Id}`
-    ))!
+    definitely(
+      await db.get<SessionFromDatabase>(
+        SQL`SELECT * FROM session WHERE id = ${session2Id}`
+      )
+    )
   )
 })
 
 describe('startSession', () => {
   it('should work', async () => {
-    const session = (await startSession(task1.id, user1))!
+    const session = definitely(await startSession(task1.id, user1))
     await remove('session', { id: session.id })
   })
 
@@ -106,21 +139,21 @@ describe('startSession', () => {
 
     await update('session', {
       id: session1.id,
-      end_time: toSQLDate(session1.end_time!)
+      end_time: toSQLDate(definitely(session1.end_time))
     })
   })
 
   it('should allow the creation of an open session if there is one owned by another user', async () => {
-    const session = (await startSession(task2.id, user2))!
+    const session = definitely(await startSession(task2.id, user2))
     await stopSession(session.id, user2)
   })
 })
 
 describe('stopSession', () => {
   it('should work', async () => {
-    let session = (await startSession(task1.id, user1))!
+    let session = definitely(await startSession(task1.id, user1))
     expect(session.end_time).toBeNull()
-    session = (await stopSession(session.id, user1))!
+    session = definitely(await stopSession(session.id, user1))
     expect(session.end_time).not.toBeNull()
   })
 })
@@ -141,11 +174,11 @@ describe('listSessions', () => {
   it("should list only the user's sessions", async () => {
     const result = await listSessions({}, user1)
 
-    expect(result.edges.map(({ node }) => node)).toContainEqual(
+    expect(getConnectionNodes(result)).toContainEqual(
       expect.objectContaining({ id: session1.id })
     )
 
-    expect(result.edges.map(({ node }) => node)).not.toContainEqual(
+    expect(getConnectionNodes(result)).not.toContainEqual(
       expect.objectContaining({ id: session2.id })
     )
   })
@@ -154,7 +187,7 @@ describe('listSessions', () => {
 describe('updateSession', () => {
   it('should work', async () => {
     const data = getFakeSessionFromDatabase(task2.id)
-    const result = (await updateSession(session2.id, data, user2))!
+    const result = definitely(await updateSession(session2.id, data, user2))
 
     expect(toDatabase(result)).toMatchObject(data)
     session2 = result
@@ -192,8 +225,8 @@ describe('deleteSession', () => {
   let session2: Session
 
   beforeAll(async () => {
-    session1 = (await startSession(task1.id, user1))!
-    session2 = (await startSession(task2.id, user2))!
+    session1 = definitely(await startSession(task1.id, user1))
+    session2 = definitely(await startSession(task2.id, user2))
   })
 
   afterAll(async () => {

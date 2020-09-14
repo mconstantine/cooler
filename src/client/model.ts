@@ -248,13 +248,11 @@ export async function deleteClient(
 }
 
 export function getClientName(
-  client:
-    | Pick<PrivateClient, 'type' | 'first_name' | 'last_name'>
-    | Pick<BusinessClient, 'type' | 'business_name'>
+  client: Pick<Client, 'type' | 'first_name' | 'last_name' | 'business_name'>
 ): string {
   return foldClientType(client, {
     whenPrivate: client => `${client.first_name} ${client.last_name}`,
-    whenBusiness: client => client.business_name
+    whenBusiness: client => definitely(client.business_name)
   })
 }
 
@@ -270,11 +268,7 @@ export async function getClientUser(client: ClientFromDatabase): Promise<User> {
   return userFromDatabase(user)
 }
 
-export function foldClientType<
-  I extends Partial<Client> & { type: ClientType },
-  PO = I,
-  BO = PO
->(
+export function foldClientType<I extends { type: ClientType }, PO = I, BO = PO>(
   client: I,
   match: {
     whenPrivate: (client: I & { type: ClientType.PRIVATE }) => PO

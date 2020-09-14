@@ -12,6 +12,7 @@ import { Project, ProjectFromDatabase } from '../project/interface'
 import { init } from '../init'
 import { ID } from '../misc/Types'
 import { definitely } from '../misc/definitely'
+import { sleep } from '../test/sleep'
 
 describe('init', () => {
   let db: Database
@@ -32,45 +33,57 @@ describe('init', () => {
       user = definitely((await insert('user', getFakeUser())).lastID)
       client = definitely((await insert('client', getFakeClient(user))).lastID)
 
-      const project = (await insert('project', getFakeProject(client))).lastID!
+      const project = definitely(
+        (await insert('project', getFakeProject(client))).lastID
+      )
 
-      const task = (await insert('task', getFakeTaskFromDatabase(project)))
-        .lastID!
+      const task = definitely(
+        (await insert('task', getFakeTaskFromDatabase(project))).lastID
+      )
 
-      const sessionId = (
-        await insert('session', getFakeSessionFromDatabase(task))
-      ).lastID!
+      const sessionId = definitely(
+        (await insert('session', getFakeSessionFromDatabase(task))).lastID
+      )
 
       await remove('task', { id: task })
 
       const session = await db.get(
         SQL`SELECT * FROM session WHERE id = ${sessionId}`
       )
+
       expect(session).toBeUndefined()
     })
   })
 
   describe('project cashed balance default', () => {
     it('should calculate the cashed balance from the sessions by default', async () => {
-      const { lastID: projectId } = await insert(
-        'project',
-        getFakeProject(client, {
-          cashed_at: null
-        })
+      const projectId = definitely(
+        (
+          await insert(
+            'project',
+            getFakeProject(client, {
+              cashed_at: null
+            })
+          )
+        ).lastID
       )
 
-      const { lastID: taskId } = await insert(
-        'task',
-        getFakeTask(projectId!, {
-          hourlyCost: 10.5
-        })
+      const taskId = definitely(
+        (
+          await insert(
+            'task',
+            getFakeTask(projectId, {
+              hourlyCost: 10.5
+            })
+          )
+        ).lastID
       )
 
       const now = new Date()
 
       await insert(
         'session',
-        getFakeSessionFromDatabase(taskId!, {
+        getFakeSessionFromDatabase(taskId, {
           start_time: toSQLDate(now),
           end_time: toSQLDate(new Date(now.getTime() + 1000 * 60 * 60 * 4))
         })
@@ -81,26 +94,34 @@ describe('init', () => {
         cashed_at: toSQLDate(new Date())
       })
 
-      const project = await db.get<ProjectFromDatabase>(
-        SQL`SELECT * FROM project WHERE ${projectId}`
+      const project = definitely(
+        await db.get<ProjectFromDatabase>(
+          SQL`SELECT * FROM project WHERE ${projectId}`
+        )
       )
 
-      expect(project!.cashed_balance).toBe(42)
+      expect(project.cashed_balance).toBe(42)
     })
   })
 
   describe('deletion chain', () => {
     it('should make user deletion bubble down to sessions', async () => {
-      const user = (await insert('user', getFakeUser())).lastID!
-      const client = (await insert('client', getFakeClient(user))).lastID!
-      const project = (await insert('project', getFakeProject(client))).lastID!
+      const user = definitely((await insert('user', getFakeUser())).lastID)
 
-      const task = (await insert('task', getFakeTaskFromDatabase(project)))
-        .lastID!
+      const client = definitely(
+        (await insert('client', getFakeClient(user))).lastID
+      )
+      const project = definitely(
+        (await insert('project', getFakeProject(client))).lastID
+      )
 
-      const sessionId = (
-        await insert('session', getFakeSessionFromDatabase(task))
-      ).lastID!
+      const task = definitely(
+        (await insert('task', getFakeTaskFromDatabase(project))).lastID
+      )
+
+      const sessionId = definitely(
+        (await insert('session', getFakeSessionFromDatabase(task))).lastID
+      )
 
       await remove('user', { id: user })
 
@@ -114,31 +135,42 @@ describe('init', () => {
 
   describe('update chain', () => {
     it('should update the task and project when a session is created for them', async () => {
-      const user = (await insert('user', getFakeUser())).lastID!
-      const client = (await insert('client', getFakeClient(user))).lastID!
-      const project = (await insert('project', getFakeProject(client))).lastID!
+      const user = definitely((await insert('user', getFakeUser())).lastID)
 
-      const task = (await insert('task', getFakeTaskFromDatabase(project)))
-        .lastID!
+      const client = definitely(
+        (await insert('client', getFakeClient(user))).lastID
+      )
 
-      const projectUpdatedAtBefore = (await db.get<Project>(
-        SQL`SELECT updated_at FROM project WHERE id = ${project}`
-      ))!.updated_at
+      const project = definitely(
+        (await insert('project', getFakeProject(client))).lastID
+      )
 
-      const taskUpdatedAtBefore = (await db.get<Task>(
-        SQL`SELECT updated_at FROM task WHERE id = ${task}`
-      ))!.updated_at
+      const task = definitely(
+        (await insert('task', getFakeTaskFromDatabase(project))).lastID
+      )
 
-      await (() => new Promise(done => setTimeout(() => done(), 1000)))()
+      const projectUpdatedAtBefore = definitely(
+        await db.get<Project>(
+          SQL`SELECT updated_at FROM project WHERE id = ${project}`
+        )
+      ).updated_at
+
+      const taskUpdatedAtBefore = definitely(
+        await db.get<Task>(SQL`SELECT updated_at FROM task WHERE id = ${task}`)
+      ).updated_at
+
+      await sleep(1000)
       await insert('session', getFakeSessionFromDatabase(task))
 
-      const projectUpdatedAtAfter = (await db.get<Project>(
-        SQL`SELECT updated_at FROM project WHERE id = ${project}`
-      ))!.updated_at
+      const projectUpdatedAtAfter = definitely(
+        await db.get<Project>(
+          SQL`SELECT updated_at FROM project WHERE id = ${project}`
+        )
+      ).updated_at
 
-      const taskUpdatedAtAfter = (await db.get<Task>(
-        SQL`SELECT updated_at FROM task WHERE id = ${task}`
-      ))!.updated_at
+      const taskUpdatedAtAfter = definitely(
+        await db.get<Task>(SQL`SELECT updated_at FROM task WHERE id = ${task}`)
+      ).updated_at
 
       expect(projectUpdatedAtBefore).not.toBe(projectUpdatedAtAfter)
       expect(taskUpdatedAtBefore).not.toBe(taskUpdatedAtAfter)

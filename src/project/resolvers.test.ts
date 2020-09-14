@@ -7,6 +7,7 @@ import resolvers from './resolvers'
 import { getDatabase } from '../misc/getDatabase'
 import { UserFromDatabase } from '../user/interface'
 import SQL from 'sql-template-strings'
+import { definitely } from '../misc/definitely'
 
 describe('project resolvers', () => {
   beforeAll(async () => {
@@ -16,16 +17,15 @@ describe('project resolvers', () => {
   describe('User', () => {
     describe('cashedBalance', () => {
       it('should work', async () => {
-        const { lastID: userId } = await insert('user', getFakeUser())
+        const userId = definitely((await insert('user', getFakeUser())).lastID)
 
-        const { lastID: clientId } = await insert(
-          'client',
-          getFakeClient(userId!)
+        const clientId = definitely(
+          (await insert('client', getFakeClient(userId))).lastID
         )
 
         await insert(
           'project',
-          getFakeProject(clientId!, {
+          getFakeProject(clientId, {
             cashed_at: toSQLDate(new Date()),
             cashed_balance: 15
           })
@@ -33,7 +33,7 @@ describe('project resolvers', () => {
 
         await insert(
           'project',
-          getFakeProject(clientId!, {
+          getFakeProject(clientId, {
             cashed_at: toSQLDate(new Date()),
             cashed_balance: 25
           })
@@ -41,9 +41,11 @@ describe('project resolvers', () => {
 
         const db = await getDatabase()
 
-        const userFromDatabase = (await db.get<UserFromDatabase>(
-          SQL`SELECT * FROM user WHERE id = ${userId}`
-        ))!
+        const userFromDatabase = definitely(
+          await db.get<UserFromDatabase>(
+            SQL`SELECT * FROM user WHERE id = ${userId}`
+          )
+        )
 
         const cashedBalance = await resolvers.User.cashedBalance(
           userFromDatabase,
