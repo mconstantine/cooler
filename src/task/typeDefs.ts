@@ -63,8 +63,8 @@ export default gql`
   }
 
   extend type Mutation {
-    createTask(task: TaskCreationInput): Task
-    updateTask(id: Int!, task: TaskUpdateInput): Task
+    createTask(task: TaskCreationInput!): Task
+    updateTask(id: Int!, task: TaskUpdateInput!): Task
     deleteTask(id: Int!): Task
   }
 

@@ -31,7 +31,7 @@ export default gql`
 
   extend type Mutation {
     createTax(tax: TaxCreationInput!): Tax
-    updateTax(id: Int!, tax: TaxUpdateInput): Tax
+    updateTax(id: Int!, tax: TaxUpdateInput!): Tax
     deleteTax(id: Int!): Tax
   }
 

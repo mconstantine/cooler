@@ -33,7 +33,7 @@ export default gql`
   extend type Mutation {
     startSession(task: Int!): Session
     stopSession(id: Int!): Session
-    updateSession(id: Int!, session: SessionUpdateInput): Session
+    updateSession(id: Int!, session: SessionUpdateInput!): Session
     deleteSession(id: Int!): Session
     createTimesheet(for: CreateTimesheetInput!): String
   }
