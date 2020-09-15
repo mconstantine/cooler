@@ -7,7 +7,6 @@ import {
 } from './model'
 import { User, UserFromDatabase } from '../user/interface'
 import { Client, ClientFromDatabase } from '../client/interface'
-import { insert } from '../misc/dbUtils'
 import { getFakeUser } from '../test/getFakeUser'
 import { getFakeClient } from '../test/getFakeClient'
 import { getDatabase } from '../misc/getDatabase'
@@ -21,6 +20,7 @@ import { fromDatabase as clientFromDatabase } from '../client/model'
 import { fromDatabase } from './model'
 import { definitely } from '../misc/definitely'
 import { getConnectionNodes } from '../test/getConnectionNodes'
+import { getID } from '../test/getID'
 
 let user1: User
 let user2: User
@@ -33,24 +33,12 @@ beforeAll(async () => {
   await init()
 
   const db = await getDatabase()
-  const user1Id = definitely((await insert('user', getFakeUser())).lastID)
-  const user2Id = definitely((await insert('user', getFakeUser())).lastID)
-
-  const client1Id = definitely(
-    (await insert('client', getFakeClient(user1Id))).lastID
-  )
-
-  const client2Id = definitely(
-    (await insert('client', getFakeClient(user2Id))).lastID
-  )
-
-  const project1Id = definitely(
-    (await insert('project', getFakeProject(client1Id))).lastID
-  )
-
-  const project2Id = definitely(
-    (await insert('project', getFakeProject(client2Id))).lastID
-  )
+  const user1Id = await getID('user', getFakeUser())
+  const user2Id = await getID('user', getFakeUser())
+  const client1Id = await getID('client', getFakeClient(user1Id))
+  const client2Id = await getID('client', getFakeClient(user2Id))
+  const project1Id = await getID('project', getFakeProject(client1Id))
+  const project2Id = await getID('project', getFakeProject(client2Id))
 
   user1 = userFromDatabase(
     definitely(

@@ -8,6 +8,7 @@ import { getDatabase } from '../misc/getDatabase'
 import { UserFromDatabase } from '../user/interface'
 import SQL from 'sql-template-strings'
 import { definitely } from '../misc/definitely'
+import { getID } from '../test/getID'
 
 describe('project resolvers', () => {
   beforeAll(async () => {
@@ -17,11 +18,8 @@ describe('project resolvers', () => {
   describe('User', () => {
     describe('cashedBalance', () => {
       it('should work', async () => {
-        const userId = definitely((await insert('user', getFakeUser())).lastID)
-
-        const clientId = definitely(
-          (await insert('client', getFakeClient(userId))).lastID
-        )
+        const userId = await getID('user', getFakeUser())
+        const clientId = await getID('client', getFakeClient(userId))
 
         await insert(
           'project',

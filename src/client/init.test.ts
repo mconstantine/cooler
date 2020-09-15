@@ -9,6 +9,7 @@ import { User, UserCreationInput } from '../user/interface'
 import { getFakeUser } from '../test/getFakeUser'
 import { definitely } from '../misc/definitely'
 import { sleep } from '../test/sleep'
+import { getID } from '../test/getID'
 
 describe('initClient', () => {
   describe('happy path', () => {
@@ -21,10 +22,7 @@ describe('initClient', () => {
       await init()
 
       const userData = getFakeUser()
-
-      const lastID = definitely(
-        (await insert<UserCreationInput>('user', userData)).lastID
-      )
+      const lastID = await getID<UserCreationInput>('user', userData)
 
       user = { ...userData, id: lastID }
     })
@@ -34,7 +32,7 @@ describe('initClient', () => {
     })
 
     it('should save the creation time automatically', async () => {
-      const { lastID } = await insert('client', getFakeClient(user.id))
+      const lastID = await getID('client', getFakeClient(user.id))
 
       const client = definitely(
         await db.get<ClientFromDatabase>(
@@ -51,7 +49,7 @@ describe('initClient', () => {
 
       expect(client.address_city).not.toBe(updated.address_city)
 
-      const { lastID } = await insert('client', client)
+      const lastID = await getID('client', client)
 
       const updateDateBefore = definitely(
         await db.get<Client>(SQL`SELECT * FROM client WHERE id = ${lastID}`)
@@ -69,9 +67,9 @@ describe('initClient', () => {
 
     it("should delete all user's clients when the user is deleted", async () => {
       const userData = getFakeUser()
-      const userId = definitely((await insert('user', userData)).lastID)
+      const userId = await getID('user', userData)
       const clientData = getFakeClient(userId)
-      const { lastID: clientId } = await insert('client', clientData)
+      const clientId = await getID('client', clientData)
 
       await remove('user', { id: userId })
 

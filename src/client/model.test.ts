@@ -1,5 +1,4 @@
 import { getFakeUser } from '../test/getFakeUser'
-import { insert } from '../misc/dbUtils'
 import { User } from '../user/interface'
 import { getDatabase } from '../misc/getDatabase'
 import SQL from 'sql-template-strings'
@@ -16,6 +15,7 @@ import { ApolloError } from 'apollo-server-express'
 import { init } from '../init'
 import { definitely } from '../misc/definitely'
 import { getConnectionNodes } from '../test/getConnectionNodes'
+import { getID } from '../test/getID'
 
 let user1: User
 let user2: User
@@ -28,12 +28,13 @@ beforeAll(async () => {
   const db = await getDatabase()
   const user1Data = getFakeUser()
   const user2Data = getFakeUser()
-  const user1Id = definitely((await insert('user', user1Data)).lastID)
-  const user2Id = definitely((await insert('user', user2Data)).lastID)
+  const user1Id = await getID('user', user1Data)
+  const user2Id = await getID('user', user2Data)
 
   user1 = definitely(
     await db.get(SQL`SELECT * FROM user WHERE id = ${user1Id}`)
   )
+
   user2 = definitely(
     await db.get(SQL`SELECT * FROM user WHERE id = ${user2Id}`)
   )

@@ -2,7 +2,7 @@ import { User, UserFromDatabase } from '../user/interface'
 import { TaskFromDatabase } from '../task/interface'
 import { Session, SessionFromDatabase } from './interface'
 import { getDatabase } from '../misc/getDatabase'
-import { insert, remove, toSQLDate, update } from '../misc/dbUtils'
+import { remove, toSQLDate, update } from '../misc/dbUtils'
 import { getFakeUser } from '../test/getFakeUser'
 import { getFakeClient } from '../test/getFakeClient'
 import { getFakeProject } from '../test/getFakeProject'
@@ -24,6 +24,7 @@ import { init } from '../init'
 import { definitely } from '../misc/definitely'
 import { fromDatabase as userFromDatabase } from '../user/model'
 import { getConnectionNodes } from '../test/getConnectionNodes'
+import { getID } from '../test/getID'
 
 let user1: User
 let user2: User
@@ -36,39 +37,16 @@ beforeAll(async () => {
   await init()
 
   const db = await getDatabase()
-  const user1Id = definitely((await insert('user', getFakeUser())).lastID)
-  const user2Id = definitely((await insert('user', getFakeUser())).lastID)
-
-  const client1Id = definitely(
-    (await insert('client', getFakeClient(user1Id))).lastID
-  )
-  const client2Id = definitely(
-    (await insert('client', getFakeClient(user2Id))).lastID
-  )
-
-  const project1Id = definitely(
-    (await insert('project', getFakeProject(client1Id))).lastID
-  )
-
-  const project2Id = definitely(
-    (await insert('project', getFakeProject(client2Id))).lastID
-  )
-
-  const task1Id = definitely(
-    (await insert('task', getFakeTaskFromDatabase(project1Id))).lastID
-  )
-
-  const task2Id = definitely(
-    (await insert('task', getFakeTaskFromDatabase(project2Id))).lastID
-  )
-
-  const session1Id = definitely(
-    (await insert('session', getFakeSessionFromDatabase(task1Id))).lastID
-  )
-
-  const session2Id = definitely(
-    (await insert('session', getFakeSessionFromDatabase(task2Id))).lastID
-  )
+  const user1Id = await getID('user', getFakeUser())
+  const user2Id = await getID('user', getFakeUser())
+  const client1Id = await getID('client', getFakeClient(user1Id))
+  const client2Id = await getID('client', getFakeClient(user2Id))
+  const project1Id = await getID('project', getFakeProject(client1Id))
+  const project2Id = await getID('project', getFakeProject(client2Id))
+  const task1Id = await getID('task', getFakeTaskFromDatabase(project1Id))
+  const task2Id = await getID('task', getFakeTaskFromDatabase(project2Id))
+  const session1Id = await getID('session', getFakeSessionFromDatabase(task1Id))
+  const session2Id = await getID('session', getFakeSessionFromDatabase(task2Id))
 
   user1 = userFromDatabase(
     definitely(
@@ -151,7 +129,8 @@ describe('startSession', () => {
 
 describe('stopSession', () => {
   it('should work', async () => {
-    let session = definitely(await startSession(task1.id, user1))
+    let session: Session
+    session = definitely(await startSession(task1.id, user1))
     expect(session.end_time).toBeNull()
     session = definitely(await stopSession(session.id, user1))
     expect(session.end_time).not.toBeNull()

@@ -17,6 +17,7 @@ import {
   toDatabase as userToDatabase
 } from '../user/model'
 import { definitely } from '../misc/definitely'
+import { getID } from '../test/getID'
 
 describe('session resolvers', () => {
   let db: Database
@@ -27,15 +28,9 @@ describe('session resolvers', () => {
     await init()
     db = await getDatabase()
 
-    const userId = definitely((await insert('user', getFakeUser())).lastID)
-
-    const clientId = definitely(
-      (await insert('client', getFakeClient(userId))).lastID
-    )
-
-    const projectId = definitely(
-      (await insert('project', getFakeProject(clientId))).lastID
-    )
+    const userId = await getID('user', getFakeUser())
+    const clientId = await getID('client', getFakeClient(userId))
+    const projectId = await getID('project', getFakeProject(clientId))
 
     user = definitely(
       await db.get<User>(SQL`SELECT * FROM user WHERE id = ${userId}`)
@@ -52,16 +47,12 @@ describe('session resolvers', () => {
     let task: TaskFromDatabase
 
     beforeAll(async () => {
-      const taskId = definitely(
-        (
-          await insert(
-            'task',
-            getFakeTaskFromDatabase(project.id, {
-              expectedWorkingHours: 10,
-              hourlyCost: 50
-            })
-          )
-        ).lastID
+      const taskId = await getID(
+        'task',
+        getFakeTaskFromDatabase(project.id, {
+          expectedWorkingHours: 10,
+          hourlyCost: 50
+        })
       )
 
       task = definitely(
@@ -86,6 +77,7 @@ describe('session resolvers', () => {
           { user },
           null as any
         )
+
         const balance = await resolvers.Task.balance(
           task,
           {},
@@ -211,40 +203,28 @@ describe('session resolvers', () => {
 
     describe('with tasks', () => {
       beforeAll(async () => {
-        const task1Id = definitely(
-          (
-            await insert(
-              'task',
-              getFakeTask(project.id, {
-                expectedWorkingHours: 10,
-                hourlyCost: 25
-              })
-            )
-          ).lastID
+        const task1Id = await getID(
+          'task',
+          getFakeTask(project.id, {
+            expectedWorkingHours: 10,
+            hourlyCost: 25
+          })
         )
 
-        const task2Id = definitely(
-          (
-            await insert(
-              'task',
-              getFakeTask(project.id, {
-                expectedWorkingHours: 5,
-                hourlyCost: 30
-              })
-            )
-          ).lastID
+        const task2Id = await getID(
+          'task',
+          getFakeTask(project.id, {
+            expectedWorkingHours: 5,
+            hourlyCost: 30
+          })
         )
 
-        const task3Id = definitely(
-          (
-            await insert(
-              'task',
-              getFakeTask(project.id, {
-                expectedWorkingHours: 20,
-                hourlyCost: 10
-              })
-            )
-          ).lastID
+        const task3Id = await getID(
+          'task',
+          getFakeTask(project.id, {
+            expectedWorkingHours: 20,
+            hourlyCost: 10
+          })
         )
 
         // 3 hours
@@ -386,7 +366,7 @@ describe('session resolvers', () => {
     const since = '1990-01-01 04:30:00'
 
     beforeAll(async () => {
-      const { lastID } = await insert('user', getFakeUser())
+      const lastID = await getID('user', getFakeUser())
 
       user = userFromDatabase(
         definitely(
@@ -435,73 +415,48 @@ describe('session resolvers', () => {
 
     describe('with data', () => {
       beforeAll(async () => {
-        const client1Id = definitely(
-          (await insert('client', getFakeClient(user.id))).lastID
+        const client1Id = await getID('client', getFakeClient(user.id))
+        const client2Id = await getID('client', getFakeClient(user.id))
+
+        const project1Id = await getID(
+          'project',
+          getFakeProject(client1Id, {
+            cashed_at: null
+          })
         )
 
-        const client2Id = definitely(
-          (await insert('client', getFakeClient(user.id))).lastID
+        const project2Id = await getID(
+          'project',
+          getFakeProject(client2Id, {
+            cashed_at: toSQLDate(new Date())
+          })
         )
 
-        const project1Id = definitely(
-          (
-            await insert(
-              'project',
-              getFakeProject(client1Id, {
-                cashed_at: null
-              })
-            )
-          ).lastID
+        const task1Id = await getID(
+          'task',
+          getFakeTaskFromDatabase(project1Id, {
+            expectedWorkingHours: 10,
+            hourlyCost: 25,
+            start_time: '1990-01-01 00:00:00'
+          })
         )
 
-        const project2Id = definitely(
-          (
-            await insert(
-              'project',
-              getFakeProject(client2Id, {
-                cashed_at: toSQLDate(new Date())
-              })
-            )
-          ).lastID
+        const task2Id = await getID(
+          'task',
+          getFakeTaskFromDatabase(project1Id, {
+            expectedWorkingHours: 5,
+            hourlyCost: 30,
+            start_time: '1990-01-01 06:30:00'
+          })
         )
 
-        const task1Id = definitely(
-          (
-            await insert(
-              'task',
-              getFakeTaskFromDatabase(project1Id, {
-                expectedWorkingHours: 10,
-                hourlyCost: 25,
-                start_time: '1990-01-01 00:00:00'
-              })
-            )
-          ).lastID
-        )
-
-        const task2Id = definitely(
-          (
-            await insert(
-              'task',
-              getFakeTaskFromDatabase(project1Id, {
-                expectedWorkingHours: 5,
-                hourlyCost: 30,
-                start_time: '1990-01-01 06:30:00'
-              })
-            )
-          ).lastID
-        )
-
-        const task3Id = definitely(
-          (
-            await insert(
-              'task',
-              getFakeTaskFromDatabase(project2Id, {
-                expectedWorkingHours: 20,
-                hourlyCost: 10,
-                start_time: '1990-01-01 18:45:00'
-              })
-            )
-          ).lastID
+        const task3Id = await getID(
+          'task',
+          getFakeTaskFromDatabase(project2Id, {
+            expectedWorkingHours: 20,
+            hourlyCost: 10,
+            start_time: '1990-01-01 18:45:00'
+          })
         )
 
         // 3 hours - not taken into consideration as "since" is before this

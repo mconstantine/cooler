@@ -1,6 +1,6 @@
 import { getDatabase } from '../misc/getDatabase'
 import { Database } from 'sqlite'
-import { insert, update, remove, toSQLDate } from '../misc/dbUtils'
+import { update, remove, toSQLDate } from '../misc/dbUtils'
 import { getFakeProject } from '../test/getFakeProject'
 import SQL from 'sql-template-strings'
 import { Project, ProjectFromDatabase } from './interface'
@@ -12,6 +12,7 @@ import { init } from '../init'
 import { fromDatabase } from './model'
 import { definitely } from '../misc/definitely'
 import { sleep } from '../test/sleep'
+import { getID } from '../test/getID'
 
 describe('initProject', () => {
   describe('happy path', () => {
@@ -25,9 +26,9 @@ describe('initProject', () => {
       await init()
 
       const userData = getFakeUser()
-      const userId = definitely((await insert('user', userData)).lastID)
+      const userId = await getID('user', userData)
       const clientData = getFakeClient(userId)
-      const clientId = (await insert('client', clientData)).lastID
+      const clientId = await getID('client', clientData)
 
       user = { ...userData, id: userId } as User
       client = { ...clientData, id: clientId } as Client
@@ -38,7 +39,8 @@ describe('initProject', () => {
     })
 
     it('should save the creation time automatically', async () => {
-      const { lastID } = await insert('project', getFakeProject(client.id))
+      const lastID = await getID('project', getFakeProject(client.id))
+
       const project = definitely(
         await db.get<ProjectFromDatabase>(
           SQL`SELECT * FROM project WHERE id = ${lastID}`
@@ -56,7 +58,7 @@ describe('initProject', () => {
 
       expect(project.name).not.toBe(updated.name)
 
-      const { lastID } = await insert('project', project)
+      const lastID = await getID('project', project)
 
       const updateDateBefore = definitely(
         await db.get<ProjectFromDatabase>(
@@ -78,9 +80,9 @@ describe('initProject', () => {
 
     it("should delete all client's projects when the client is deleted", async () => {
       const clientData = getFakeClient(user.id)
-      const clientId = definitely((await insert('client', clientData)).lastID)
+      const clientId = await getID('client', clientData)
       const projectData = getFakeProject(clientId)
-      const { lastID: projectId } = await insert('project', projectData)
+      const projectId = await getID('project', projectData)
 
       await remove('client', { id: clientId })
 
@@ -94,7 +96,7 @@ describe('initProject', () => {
     it('should set cashed_balance to null if cashed_date is set to null', async () => {
       let project: Project
 
-      const { lastID } = await insert(
+      const lastID = await getID(
         'project',
         getFakeProject(client.id, { cashed_at: null })
       )
@@ -133,7 +135,7 @@ describe('initProject', () => {
     })
 
     it('should set the cashed balance to zero if there are no sessions', async () => {
-      const { lastID: projectId } = await insert(
+      const projectId = await getID(
         'project',
         getFakeProject(client.id, {
           cashed_at: null

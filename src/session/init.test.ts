@@ -13,6 +13,7 @@ import { init } from '../init'
 import { ID } from '../misc/Types'
 import { definitely } from '../misc/definitely'
 import { sleep } from '../test/sleep'
+import { getID } from '../test/getID'
 
 describe('init', () => {
   let db: Database
@@ -30,20 +31,12 @@ describe('init', () => {
     })
 
     it("should delete all task's sessions when a task is deleted", async () => {
-      user = definitely((await insert('user', getFakeUser())).lastID)
-      client = definitely((await insert('client', getFakeClient(user))).lastID)
+      user = await getID('user', getFakeUser())
+      client = await getID('client', getFakeClient(user))
 
-      const project = definitely(
-        (await insert('project', getFakeProject(client))).lastID
-      )
-
-      const task = definitely(
-        (await insert('task', getFakeTaskFromDatabase(project))).lastID
-      )
-
-      const sessionId = definitely(
-        (await insert('session', getFakeSessionFromDatabase(task))).lastID
-      )
+      const project = await getID('project', getFakeProject(client))
+      const task = await getID('task', getFakeTaskFromDatabase(project))
+      const sessionId = await getID('session', getFakeSessionFromDatabase(task))
 
       await remove('task', { id: task })
 
@@ -57,26 +50,18 @@ describe('init', () => {
 
   describe('project cashed balance default', () => {
     it('should calculate the cashed balance from the sessions by default', async () => {
-      const projectId = definitely(
-        (
-          await insert(
-            'project',
-            getFakeProject(client, {
-              cashed_at: null
-            })
-          )
-        ).lastID
+      const projectId = await getID(
+        'project',
+        getFakeProject(client, {
+          cashed_at: null
+        })
       )
 
-      const taskId = definitely(
-        (
-          await insert(
-            'task',
-            getFakeTask(projectId, {
-              hourlyCost: 10.5
-            })
-          )
-        ).lastID
+      const taskId = await getID(
+        'task',
+        getFakeTask(projectId, {
+          hourlyCost: 10.5
+        })
       )
 
       const now = new Date()
@@ -106,22 +91,11 @@ describe('init', () => {
 
   describe('deletion chain', () => {
     it('should make user deletion bubble down to sessions', async () => {
-      const user = definitely((await insert('user', getFakeUser())).lastID)
-
-      const client = definitely(
-        (await insert('client', getFakeClient(user))).lastID
-      )
-      const project = definitely(
-        (await insert('project', getFakeProject(client))).lastID
-      )
-
-      const task = definitely(
-        (await insert('task', getFakeTaskFromDatabase(project))).lastID
-      )
-
-      const sessionId = definitely(
-        (await insert('session', getFakeSessionFromDatabase(task))).lastID
-      )
+      const user = await getID('user', getFakeUser())
+      const client = await getID('client', getFakeClient(user))
+      const project = await getID('project', getFakeProject(client))
+      const task = await getID('task', getFakeTaskFromDatabase(project))
+      const sessionId = await getID('session', getFakeSessionFromDatabase(task))
 
       await remove('user', { id: user })
 
@@ -135,19 +109,10 @@ describe('init', () => {
 
   describe('update chain', () => {
     it('should update the task and project when a session is created for them', async () => {
-      const user = definitely((await insert('user', getFakeUser())).lastID)
-
-      const client = definitely(
-        (await insert('client', getFakeClient(user))).lastID
-      )
-
-      const project = definitely(
-        (await insert('project', getFakeProject(client))).lastID
-      )
-
-      const task = definitely(
-        (await insert('task', getFakeTaskFromDatabase(project))).lastID
-      )
+      const user = await getID('user', getFakeUser())
+      const client = await getID('client', getFakeClient(user))
+      const project = await getID('project', getFakeProject(client))
+      const task = await getID('task', getFakeTaskFromDatabase(project))
 
       const projectUpdatedAtBefore = definitely(
         await db.get<Project>(
