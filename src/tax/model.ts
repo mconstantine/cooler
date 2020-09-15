@@ -9,6 +9,7 @@ import { queryToConnection } from '../misc/queryToConnection'
 import { Connection } from '../misc/Connection'
 import { fromDatabase as userFromDatabase } from '../user/model'
 import { definitely } from '../misc/definitely'
+import { removeUndefined } from '../misc/removeUndefined'
 
 export async function createTax(
   { label, value }: TaxCreationInput,
@@ -80,9 +81,7 @@ export async function updateTax(
       )
     }
 
-    const args = Object.entries({ label, value })
-      .filter(([, value]) => value !== undefined)
-      .reduce((res, [key, value]) => ({ ...res, [key]: value }), {})
+    const args = removeUndefined({ label, value })
 
     await update('tax', { id, ...args })
   }
@@ -114,6 +113,7 @@ export async function deleteTax(id: number, user: User): Promise<Tax | null> {
 
 export async function getTaxUser(tax: Tax): Promise<User> {
   const db = await getDatabase()
+
   const user = definitely(
     await db.get<UserFromDatabase>(
       SQL`SELECT * FROM user WHERE id = ${tax.user}`

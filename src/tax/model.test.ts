@@ -9,6 +9,8 @@ import { createTax, getTax, listTaxes, updateTax, deleteTax } from './model'
 import { ApolloError } from 'apollo-server-express'
 import { Tax } from './interface'
 import { fromDatabase as userFromDatabase } from '../user/model'
+import { getID } from '../test/getID'
+import { definitely } from '../misc/definitely'
 
 let user1: User
 let user2: User
@@ -19,25 +21,34 @@ beforeAll(async () => {
   await init()
 
   const db = await getDatabase()
-  const { lastID: user1Id } = await insert('user', getFakeUser())
-  const { lastID: user2Id } = await insert('user', getFakeUser())
-  const { lastID: tax1Id } = await insert('tax', getFakeTax(user1Id!))
-  const { lastID: tax2Id } = await insert('tax', getFakeTax(user2Id!))
+  const user1Id = await getID('user', getFakeUser())
+  const user2Id = await getID('user', getFakeUser())
+  const tax1Id = await getID('tax', getFakeTax(user1Id))
+  const tax2Id = await getID('tax', getFakeTax(user2Id))
 
   user1 = userFromDatabase(
-    (await db.get<UserFromDatabase>(
-      SQL`SELECT * FROM user WHERE id = ${user1Id}`
-    ))!
+    definitely(
+      await db.get<UserFromDatabase>(
+        SQL`SELECT * FROM user WHERE id = ${user1Id}`
+      )
+    )
   )
 
   user2 = userFromDatabase(
-    (await db.get<UserFromDatabase>(
-      SQL`SELECT * FROM user WHERE id = ${user2Id}`
-    ))!
+    definitely(
+      await db.get<UserFromDatabase>(
+        SQL`SELECT * FROM user WHERE id = ${user2Id}`
+      )
+    )
   )
 
-  tax1 = (await db.get<Tax>(SQL`SELECT * FROM tax WHERE id = ${tax1Id}`))!
-  tax2 = (await db.get<Tax>(SQL`SELECT * FROM tax WHERE id = ${tax2Id}`))!
+  tax1 = definitely(
+    await db.get<Tax>(SQL`SELECT * FROM tax WHERE id = ${tax1Id}`)
+  )
+
+  tax2 = definitely(
+    await db.get<Tax>(SQL`SELECT * FROM tax WHERE id = ${tax2Id}`)
+  )
 })
 
 describe('createTax', () => {
@@ -49,8 +60,8 @@ describe('createTax', () => {
   })
 
   it('should use the user from the request by default', async () => {
-    const res = await createTax(getFakeTax(user2.id), user1)
-    expect(res?.user).toBe(user1.id)
+    const res = definitely(await createTax(getFakeTax(user2.id), user1))
+    expect(res.user).toBe(user1.id)
   })
 
   it('should not allow values below zero', async () => {

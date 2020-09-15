@@ -19,11 +19,12 @@ import { hashSync, compareSync } from 'bcryptjs'
 import { sign, verify } from 'jsonwebtoken'
 import { validate as isEmail } from 'isemail'
 import { isUserContext } from '../misc/ensureUser'
+import { removeUndefined } from '../misc/removeUndefined'
 
 export async function createUser(
   { name, email, password }: UserCreationInput,
   context: Context
-): Promise<AccessTokenResponse> {
+): Promise<AccessTokenResponse | null> {
   const db = await getDatabase()
 
   if (!isUserContext(context)) {
@@ -54,7 +55,11 @@ export async function createUser(
     password: hashSync(password, 10)
   })
 
-  return generateTokens(lastID!)
+  if (!lastID) {
+    return null
+  }
+
+  return generateTokens(lastID)
 }
 
 export async function loginUser({
@@ -62,6 +67,7 @@ export async function loginUser({
   password
 }: UserLoginInput): Promise<AccessTokenResponse> {
   const db = await getDatabase()
+
   const user = await db.get<UserFromDatabase>(
     SQL`SELECT * FROM user WHERE email = ${email}`
   )
@@ -89,6 +95,7 @@ export async function refreshToken({
   }
 
   const db = await getDatabase()
+
   const user = await db.get<Pick<UserFromDatabase, 'id'>>(
     SQL`SELECT id FROM user WHERE id = ${token.id}`
   )
@@ -121,13 +128,11 @@ export async function updateUser(
     }
   }
 
-  const args = Object.entries({
+  const args = removeUndefined({
     name,
     email,
     password: password ? hashSync(password, 10) : undefined
   })
-    .filter(([, value]) => value !== undefined)
-    .reduce((res, [key, value]) => ({ ...res, [key]: value }), {})
 
   await update('user', { ...args, id })
 
@@ -144,6 +149,7 @@ export async function updateUser(
 
 export async function deleteUser(id: number): Promise<User | null> {
   const db = await getDatabase()
+
   const user = await db.get<UserFromDatabase>(
     SQL`SELECT * FROM user WHERE id = ${id}`
   )
@@ -153,7 +159,6 @@ export async function deleteUser(id: number): Promise<User | null> {
   }
 
   await remove('user', { id })
-
   return fromDatabase(user)
 }
 

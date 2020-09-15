@@ -29,7 +29,7 @@ const createUserMutation: CreateUserMutation = (
   _parent,
   { user: { name, email, password } },
   context
-): Promise<AccessTokenResponse> => {
+): Promise<AccessTokenResponse | null> => {
   return createUser(
     {
       name: name,

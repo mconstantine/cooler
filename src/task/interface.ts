@@ -21,24 +21,9 @@ export interface TaskFromDatabase extends TaskCommonData {
   readonly updated_at: SQLDate
 }
 
-export type TaskCreationInput = Pick<
+export type TaskCreationInput = Omit<
   TaskFromDatabase,
-  | 'name'
-  | 'description'
-  | 'expectedWorkingHours'
-  | 'hourlyCost'
-  | 'project'
-  | 'start_time'
+  'id' | 'created_at' | 'updated_at'
 >
 
-export type TaskUpdateInput = Partial<
-  Pick<
-    TaskFromDatabase,
-    | 'name'
-    | 'description'
-    | 'expectedWorkingHours'
-    | 'hourlyCost'
-    | 'project'
-    | 'start_time'
-  >
->
+export type TaskUpdateInput = Partial<TaskCreationInput>

@@ -1,6 +1,5 @@
 import { init } from '../init'
 import { User, UserFromDatabase } from '../user/interface'
-import { insert } from '../misc/dbUtils'
 import { getFakeUser } from '../test/getFakeUser'
 import { getFakeClient } from '../test/getFakeClient'
 import { getDatabase } from '../misc/getDatabase'
@@ -20,6 +19,8 @@ import {
   toDatabase
 } from './model'
 import { fromDatabase as userFromDatabase } from '../user/model'
+import { getID } from '../test/getID'
+import { definitely } from '../misc/definitely'
 
 let user1: User
 let user2: User
@@ -32,53 +33,57 @@ beforeAll(async () => {
   await init()
 
   const db = await getDatabase()
-  const user1Id = (await insert('user', getFakeUser())).lastID!
-  const user2Id = (await insert('user', getFakeUser())).lastID!
-  const client1Id = (await insert('client', getFakeClient(user1Id))).lastID!
-  const client2Id = (await insert('client', getFakeClient(user2Id))).lastID!
-
-  const project1Id = (await insert('project', getFakeProject(client1Id)))
-    .lastID!
-
-  const project2Id = (await insert('project', getFakeProject(client2Id)))
-    .lastID!
-
-  const task1Id = (await insert('task', getFakeTaskFromDatabase(project1Id)))
-    .lastID!
-
-  const task2Id = (await insert('task', getFakeTaskFromDatabase(project2Id)))
-    .lastID!
+  const user1Id = await getID('user', getFakeUser())
+  const user2Id = await getID('user', getFakeUser())
+  const client1Id = await getID('client', getFakeClient(user1Id))
+  const client2Id = await getID('client', getFakeClient(user2Id))
+  const project1Id = await getID('project', getFakeProject(client1Id))
+  const project2Id = await getID('project', getFakeProject(client2Id))
+  const task1Id = await getID('task', getFakeTaskFromDatabase(project1Id))
+  const task2Id = await getID('task', getFakeTaskFromDatabase(project2Id))
 
   user1 = userFromDatabase(
-    (await db.get<UserFromDatabase>(
-      SQL`SELECT * FROM user WHERE id = ${user1Id}`
-    ))!
+    definitely(
+      await db.get<UserFromDatabase>(
+        SQL`SELECT * FROM user WHERE id = ${user1Id}`
+      )
+    )
   )
 
   user2 = userFromDatabase(
-    (await db.get<UserFromDatabase>(
-      SQL`SELECT * FROM user WHERE id = ${user2Id}`
-    ))!
+    definitely(
+      await db.get<UserFromDatabase>(
+        SQL`SELECT * FROM user WHERE id = ${user2Id}`
+      )
+    )
   )
 
-  project1 = (await db.get<ProjectFromDatabase>(
-    SQL`SELECT * FROM project WHERE id = ${project1Id}`
-  ))!
+  project1 = definitely(
+    await db.get<ProjectFromDatabase>(
+      SQL`SELECT * FROM project WHERE id = ${project1Id}`
+    )
+  )
 
-  project2 = (await db.get<ProjectFromDatabase>(
-    SQL`SELECT * FROM project WHERE id = ${project2Id}`
-  ))!
+  project2 = definitely(
+    await db.get<ProjectFromDatabase>(
+      SQL`SELECT * FROM project WHERE id = ${project2Id}`
+    )
+  )
 
   task1 = fromDatabase(
-    (await db.get<TaskFromDatabase>(
-      SQL`SELECT * FROM task WHERE id = ${task1Id}`
-    ))!
+    definitely(
+      await db.get<TaskFromDatabase>(
+        SQL`SELECT * FROM task WHERE id = ${task1Id}`
+      )
+    )
   )
 
   task2 = fromDatabase(
-    (await db.get<TaskFromDatabase>(
-      SQL`SELECT * FROM task WHERE id = ${task2Id}`
-    ))!
+    definitely(
+      await db.get<TaskFromDatabase>(
+        SQL`SELECT * FROM task WHERE id = ${task2Id}`
+      )
+    )
   )
 })
 
@@ -123,7 +128,7 @@ describe('listTasks', () => {
 describe('updateTask', () => {
   it('should work', async () => {
     const data = getFakeTaskFromDatabase(project1.id)
-    const result = (await updateTask(task1.id, data, user1))!
+    const result = definitely(await updateTask(task1.id, data, user1))
 
     expect(toDatabase(result)).toMatchObject(data)
     task1 = result
@@ -147,8 +152,13 @@ describe('deleteTask', () => {
   let task2: Task
 
   beforeAll(async () => {
-    task1 = (await createTask(getFakeTaskFromDatabase(project1.id), user1))!
-    task2 = (await createTask(getFakeTaskFromDatabase(project2.id), user2))!
+    task1 = definitely(
+      await createTask(getFakeTaskFromDatabase(project1.id), user1)
+    )
+
+    task2 = definitely(
+      await createTask(getFakeTaskFromDatabase(project2.id), user2)
+    )
   })
 
   it('should work', async () => {

@@ -10,7 +10,7 @@ export interface User {
 }
 
 export interface UserFromDatabase {
-  id: ID
+  readonly id: ID
   name: string
   email: string
   password: string

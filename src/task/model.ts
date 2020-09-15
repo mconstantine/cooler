@@ -16,6 +16,7 @@ import { Project, ProjectFromDatabase } from '../project/interface'
 import { fromDatabase as projectFromDatabase } from '../project/model'
 import { SQLDate } from '../misc/Types'
 import { definitely } from '../misc/definitely'
+import { removeUndefined } from '../misc/removeUndefined'
 
 export async function createTask(
   {
@@ -29,6 +30,7 @@ export async function createTask(
   user: User
 ): Promise<Task | null> {
   const db = await getDatabase()
+
   const projectUser = await db.get<{ user: number }>(SQL`
     SELECT client.user
     FROM project
@@ -114,6 +116,7 @@ export async function updateTask(
   user: User
 ): Promise<Task | null> {
   const db = await getDatabase()
+
   const currentTask = await db.get<{ user: number }>(SQL`
     SELECT client.user
     FROM task
@@ -167,7 +170,7 @@ export async function updateTask(
       }
     }
 
-    const args = Object.entries({
+    const args = removeUndefined({
       name,
       description,
       expectedWorkingHours,
@@ -175,8 +178,6 @@ export async function updateTask(
       project,
       start_time
     })
-      .filter(([, value]) => value !== undefined)
-      .reduce((res, [key, value]) => ({ ...res, [key]: value }), {})
 
     await update('task', { ...args, id })
   }

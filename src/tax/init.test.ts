@@ -1,9 +1,10 @@
 import { getDatabase } from '../misc/getDatabase'
 import SQL from 'sql-template-strings'
 import { init } from '../init'
-import { insert, remove } from '../misc/dbUtils'
+import { remove } from '../misc/dbUtils'
 import { getFakeUser } from '../test/getFakeUser'
 import { getFakeTax } from '../test/getFakeTax'
+import { getID } from '../test/getID'
 
 describe('init taxes', () => {
   beforeAll(async () => {
@@ -17,8 +18,8 @@ describe('init taxes', () => {
 
   it('should delete taxes if a user is deleted', async () => {
     const db = await getDatabase()
-    const { lastID: user } = await insert('user', getFakeUser())
-    const { lastID: tax } = await insert('tax', getFakeTax(user!))
+    const user = await getID('user', getFakeUser())
+    const tax = await getID('tax', getFakeTax(user))
 
     expect(await db.get(SQL`SELECT * FROM tax WHERE id = ${tax}`)).toBeDefined()
 
