@@ -5,16 +5,17 @@ interface ProjectCommonData {
   name: string
   description: string
   client: ID
-  cashed_at: SQLDate | null
   cashed_balance: number | null
 }
 
 export interface Project extends ProjectCommonData {
+  cashed_at: Date | null
   readonly created_at: Date
   readonly updated_at: Date
 }
 
 export interface ProjectFromDatabase extends ProjectCommonData {
+  cashed_at: SQLDate | null
   readonly created_at: SQLDate
   readonly updated_at: SQLDate
 }

@@ -263,6 +263,7 @@ export async function getClientProjects(
 export function fromDatabase(project: ProjectFromDatabase): Project {
   return {
     ...project,
+    cashed_at: project.cashed_at ? fromSQLDate(project.cashed_at) : null,
     created_at: fromSQLDate(project.created_at),
     updated_at: fromSQLDate(project.updated_at)
   }
