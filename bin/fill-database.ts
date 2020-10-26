@@ -38,14 +38,14 @@ import { SessionFromDatabase } from '../src/session/interface'
   await init()
   await db.exec(`DELETE FROM user`)
 
-  const { accessToken } = await createUser(
+  const { accessToken } = (await createUser(
     {
       name: 'Mauro Constantinescu',
       email: 'mauro.constantinescu@gmail.com',
       password: 'password'
     },
     {}
-  )
+  ))!
 
   const token = verify(accessToken, process.env.SECRET!) as Token
   const user = await db.get<UserFromDatabase>(
