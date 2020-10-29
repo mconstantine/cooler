@@ -19,14 +19,13 @@ import { ConnectionQueryArgs } from '../misc/ConnectionQueryArgs'
 import { ensureUser } from '../misc/ensureUser'
 import { Context, User, UserFromDatabase } from '../user/interface'
 import { Connection } from '../misc/Connection'
-import { PubSub } from 'apollo-server-express'
 import {
   publish,
   Subscription,
   SubscriptionImplementation
 } from '../misc/Types'
+import { pubsub } from '../pubsub'
 
-const pubsub = new PubSub()
 const CLIENT_CREATED = 'CLIENT_CREATED'
 
 type ClientNameResolver = GraphQLFieldResolver<ClientFromDatabase, Context>
@@ -73,7 +72,7 @@ const createClientMutation: CreateClientMutation = async (
   const res = await createClient({ ...client }, ensureUser(context))
 
   res &&
-    publish<Client, ClientSubscription>(pubsub, CLIENT_CREATED, {
+    publish<Client, ClientSubscription>(CLIENT_CREATED, {
       createdClient: res
     })
 

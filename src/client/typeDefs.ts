@@ -102,6 +102,6 @@ export default gql`
   }
 
   extend type Subscription {
-    createdClient: Client
+    createdClient: Client!
   }
 `
