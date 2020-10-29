@@ -24,7 +24,8 @@ import {
   publish,
   SQLDate,
   Subscription,
-  SubscriptionImplementation
+  SubscriptionImplementation,
+  WithFilter
 } from '../misc/Types'
 import { Connection } from '../misc/Connection'
 import { withFilter } from 'apollo-server-express'
@@ -198,14 +199,12 @@ const resolvers: ProjectResolvers = {
   },
   Subscription: {
     createdProject: {
-      subscribe: withFilter(
-        () => pubsub.asyncIterator([PROJECT_CREATED]),
-        // TODO: give types to these
-        (payload, variables) => {
-          console.log(payload, variables)
-          return true
-        }
-      )
+      subscribe: withFilter(() => pubsub.asyncIterator([PROJECT_CREATED]), ((
+        { createdProject },
+        { client }
+      ) => {
+        return client === createdProject.client
+      }) as WithFilter<{ client: number | null }, ProjectSubscription>)
     }
   }
 }
