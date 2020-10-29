@@ -20,8 +20,17 @@ import { Client, ClientFromDatabase } from '../client/interface'
 import { ConnectionQueryArgs } from '../misc/ConnectionQueryArgs'
 import { Context, UserFromDatabase } from '../user/interface'
 import { ensureUser } from '../misc/ensureUser'
-import { SQLDate } from '../misc/Types'
+import {
+  publish,
+  SQLDate,
+  Subscription,
+  SubscriptionImplementation
+} from '../misc/Types'
 import { Connection } from '../misc/Connection'
+import { withFilter } from 'apollo-server-express'
+import { pubsub } from '../pubsub'
+
+const PROJECT_CREATED = 'PROJECT_CREATED'
 
 type ProjectClientResolver = GraphQLFieldResolver<ProjectFromDatabase, any>
 
@@ -77,12 +86,23 @@ type CreateProjectMutation = GraphQLFieldResolver<
   { project: ProjectCreationInput }
 >
 
-const createProjectMutation: CreateProjectMutation = (
+interface ProjectSubscription extends Subscription<Project> {
+  createdProject: SubscriptionImplementation<Project>
+}
+
+const createProjectMutation: CreateProjectMutation = async (
   _parent,
   { project },
   context
 ): Promise<Project | null> => {
-  return createProject(project, ensureUser(context))
+  const res = await createProject(project, ensureUser(context))
+
+  res &&
+    publish<Project, ProjectSubscription>(PROJECT_CREATED, {
+      createdProject: res
+    })
+
+  return res
 }
 
 type UpdateProjectMutation = GraphQLFieldResolver<
@@ -153,6 +173,7 @@ interface ProjectResolvers {
     project: ProjectQuery
     projects: ProjectsQuery
   }
+  Subscription: ProjectSubscription
 }
 
 const resolvers: ProjectResolvers = {
@@ -174,6 +195,18 @@ const resolvers: ProjectResolvers = {
   Query: {
     project: projectQuery,
     projects: projectsQuery
+  },
+  Subscription: {
+    createdProject: {
+      subscribe: withFilter(
+        () => pubsub.asyncIterator([PROJECT_CREATED]),
+        // TODO: give types to these
+        (payload, variables) => {
+          console.log(payload, variables)
+          return true
+        }
+      )
+    }
   }
 }
 

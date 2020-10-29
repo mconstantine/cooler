@@ -75,4 +75,8 @@ export default gql`
       orderBy: String
     ): ProjectConnection!
   }
+
+  extend type Subscription {
+    createdProject(client: Int): Project!
+  }
 `
