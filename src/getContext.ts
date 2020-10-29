@@ -1,20 +1,12 @@
 import { Context, Token, TokenType, UserFromDatabase } from './user/interface'
-import { Request } from 'express'
 import { verify } from 'jsonwebtoken'
 import { getDatabase } from './misc/getDatabase'
 import SQL from 'sql-template-strings'
 import { fromDatabase } from './user/model'
+import { ExpressContext } from 'apollo-server-express/dist/ApolloServer'
+import { SubscriptionServerOptions } from 'apollo-server-core/src'
 
-export const getContext = async ({
-  req
-}: {
-  req: Request
-}): Promise<Context> => {
-  if (!req.headers.authorization || req.headers.authorization.length < 7) {
-    return {}
-  }
-
-  const accessToken = req.headers.authorization.substring(7)
+async function validateToken(accessToken: string): Promise<Context> {
   let token: Token
 
   try {
@@ -37,4 +29,31 @@ export const getContext = async ({
   }
 
   return { user: fromDatabase(user) }
+}
+
+export const getContext = async ({
+  req,
+  connection
+}: ExpressContext): Promise<Context> => {
+  if (connection) {
+    return connection.context
+  }
+
+  if (!req.headers.authorization || req.headers.authorization.length < 7) {
+    return {}
+  }
+
+  const accessToken = req.headers.authorization.substring(7)
+
+  return await validateToken(accessToken)
+}
+
+export const subscriptionOptions: Partial<SubscriptionServerOptions> = {
+  onConnect: async (params: Object): Promise<Context> => {
+    if ('accessToken' in params) {
+      return await validateToken(params['accessToken'])
+    } else {
+      return {}
+    }
+  }
 }
