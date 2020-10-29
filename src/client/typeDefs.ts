@@ -100,4 +100,8 @@ export default gql`
       orderBy: String
     ): ClientConnection!
   }
+
+  extend type Subscription {
+    createdClient: Client
+  }
 `
