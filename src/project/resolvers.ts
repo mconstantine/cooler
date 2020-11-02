@@ -18,18 +18,21 @@ import {
 } from './model'
 import { Client, ClientFromDatabase } from '../client/interface'
 import { ConnectionQueryArgs } from '../misc/ConnectionQueryArgs'
-import { Context, UserFromDatabase } from '../user/interface'
+import { Context, UserContext, UserFromDatabase } from '../user/interface'
 import { ensureUser } from '../misc/ensureUser'
 import {
   publish,
-  SQLDate,
   Subscription,
   SubscriptionImplementation,
   WithFilter
-} from '../misc/Types'
+} from '../misc/pubsub'
 import { Connection } from '../misc/Connection'
 import { withFilter } from 'apollo-server-express'
 import { pubsub } from '../pubsub'
+import { SQLDate } from '../misc/Types'
+import { getDatabase } from '../misc/getDatabase'
+import SQL from 'sql-template-strings'
+import { definitely } from '../misc/definitely'
 
 const PROJECT_CREATED = 'PROJECT_CREATED'
 
@@ -89,6 +92,36 @@ type CreateProjectMutation = GraphQLFieldResolver<
 
 interface ProjectSubscription extends Subscription<Project> {
   createdProject: SubscriptionImplementation<Project>
+}
+
+const projectSubscription: ProjectSubscription = {
+  createdProject: {
+    subscribe: withFilter(
+      () => pubsub.asyncIterator([PROJECT_CREATED]),
+      (async ({ createdProject }, { client }, context) => {
+        const db = await getDatabase()
+        const { user } = definitely(
+          await db.get<{ user: number }>(SQL`
+        SELECT client.user
+        FROM project
+        JOIN client ON client.id = project.client
+        WHERE project.id = ${createdProject.id}
+      `)
+        )
+
+        if (user !== context.user.id) {
+          return false
+        }
+
+        return !client || client === createdProject.client
+      }) as WithFilter<
+        { client: number | null },
+        ProjectSubscription,
+        UserContext,
+        Project
+      >
+    )
+  }
 }
 
 const createProjectMutation: CreateProjectMutation = async (
@@ -197,16 +230,7 @@ const resolvers: ProjectResolvers = {
     project: projectQuery,
     projects: projectsQuery
   },
-  Subscription: {
-    createdProject: {
-      subscribe: withFilter(() => pubsub.asyncIterator([PROJECT_CREATED]), ((
-        { createdProject },
-        { client }
-      ) => {
-        return !client || client === createdProject.client
-      }) as WithFilter<{ client: number | null }, ProjectSubscription>)
-    }
-  }
+  Subscription: projectSubscription
 }
 
 export default resolvers

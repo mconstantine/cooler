@@ -17,14 +17,16 @@ import {
 } from './model'
 import { ConnectionQueryArgs } from '../misc/ConnectionQueryArgs'
 import { ensureUser } from '../misc/ensureUser'
-import { Context, User, UserFromDatabase } from '../user/interface'
+import { Context, User, UserContext, UserFromDatabase } from '../user/interface'
 import { Connection } from '../misc/Connection'
 import {
   publish,
   Subscription,
-  SubscriptionImplementation
-} from '../misc/Types'
+  SubscriptionImplementation,
+  WithFilter
+} from '../misc/pubsub'
 import { pubsub } from '../pubsub'
+import { withFilter } from 'apollo-server-express'
 
 const CLIENT_CREATED = 'CLIENT_CREATED'
 
@@ -62,6 +64,18 @@ type CreateClientMutation = GraphQLFieldResolver<
 
 interface ClientSubscription extends Subscription<Client> {
   createdClient: SubscriptionImplementation<Client>
+}
+
+const clientSubscription: ClientSubscription = {
+  createdClient: {
+    subscribe: withFilter(() => pubsub.asyncIterator([CLIENT_CREATED]), ((
+      { createdClient },
+      _,
+      context
+    ) => {
+      return createdClient.user === context.user.id
+    }) as WithFilter<{}, ClientSubscription, UserContext, Client>)
+  }
 }
 
 const createClientMutation: CreateClientMutation = async (
@@ -167,11 +181,7 @@ const resolvers: ClientResolvers = {
     client: clientQuery,
     clients: clientsQuery
   },
-  Subscription: {
-    createdClient: {
-      subscribe: () => pubsub.asyncIterator([CLIENT_CREATED])
-    }
-  }
+  Subscription: clientSubscription
 }
 
 export default resolvers
