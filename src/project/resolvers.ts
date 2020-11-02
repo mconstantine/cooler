@@ -203,7 +203,7 @@ const resolvers: ProjectResolvers = {
         { createdProject },
         { client }
       ) => {
-        return client === createdProject.client
+        return !client || client === createdProject.client
       }) as WithFilter<{ client: number | null }, ProjectSubscription>)
     }
   }
