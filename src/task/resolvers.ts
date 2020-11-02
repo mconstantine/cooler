@@ -17,9 +17,22 @@ import {
   getProjectTasks
 } from './model'
 import { ConnectionQueryArgs } from '../misc/ConnectionQueryArgs'
-import { Context, UserFromDatabase } from '../user/interface'
+import { Context, UserContext, UserFromDatabase } from '../user/interface'
 import { ensureUser } from '../misc/ensureUser'
 import { Connection } from '../misc/Connection'
+import {
+  publish,
+  Subscription,
+  SubscriptionImplementation,
+  WithFilter
+} from '../misc/pubsub'
+import { withFilter } from 'apollo-server-express'
+import { pubsub } from '../pubsub'
+import { definitely } from '../misc/definitely'
+import { getDatabase } from '../misc/getDatabase'
+import SQL from 'sql-template-strings'
+
+const TASK_CREATED = 'TASK_CREATED'
 
 type TaskProjectResolver = GraphQLFieldResolver<TaskFromDatabase, any>
 
@@ -53,18 +66,56 @@ const projectTasksResolver: ProjectTasksResolver = (
   return getProjectTasks(project, args)
 }
 
+interface TaskSubscription extends Subscription<Task> {
+  createdTask: SubscriptionImplementation<Task>
+}
+
+const taskSubscription: TaskSubscription = {
+  createdTask: {
+    subscribe: withFilter(() => pubsub.asyncIterator([TASK_CREATED]), (async (
+      { createdTask },
+      { project },
+      context
+    ) => {
+      const db = await getDatabase()
+      const { user } = definitely(
+        await db.get(SQL`
+          SELECT client.user
+          FROM task
+          JOIN project ON task.project = project.id
+          JOIN client ON project.client = client.id
+          WHERE task.id = ${createdTask.id}
+        `)
+      )
+
+      if (user !== context.user.id) {
+        return false
+      }
+
+      return !project || project === createdTask.project
+    }) as WithFilter<{ project: number | null }, TaskSubscription, UserContext, Task>)
+  }
+}
+
 type CreateTaskMutation = GraphQLFieldResolver<
   any,
   Context,
   { task: TaskCreationInput }
 >
 
-const createTaskMutation: CreateTaskMutation = (
+const createTaskMutation: CreateTaskMutation = async (
   _parent,
   { task },
   context
 ): Promise<Task | null> => {
-  return createTask(task, ensureUser(context))
+  const res = await createTask(task, ensureUser(context))
+
+  res &&
+    publish<Task, TaskSubscription>(TASK_CREATED, {
+      createdTask: res
+    })
+
+  return res
 }
 
 type UpdateTaskMutation = GraphQLFieldResolver<
@@ -134,6 +185,7 @@ interface TaskResolvers {
     task: TaskQuery
     tasks: TasksQuery
   }
+  Subscription: TaskSubscription
 }
 
 const resolvers: TaskResolvers = {
@@ -154,7 +206,8 @@ const resolvers: TaskResolvers = {
   Query: {
     task: taskQuery,
     tasks: tasksQuery
-  }
+  },
+  Subscription: taskSubscription
 }
 
 export default resolvers

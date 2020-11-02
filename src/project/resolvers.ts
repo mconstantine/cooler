@@ -84,12 +84,6 @@ const userCashedBalanceResolver: UserCashedBalanceResolver = async (
   return getUserCashedBalance(user, since)
 }
 
-type CreateProjectMutation = GraphQLFieldResolver<
-  any,
-  Context,
-  { project: ProjectCreationInput }
->
-
 interface ProjectSubscription extends Subscription<Project> {
   createdProject: SubscriptionImplementation<Project>
 }
@@ -123,6 +117,12 @@ const projectSubscription: ProjectSubscription = {
     )
   }
 }
+
+type CreateProjectMutation = GraphQLFieldResolver<
+  any,
+  Context,
+  { project: ProjectCreationInput }
+>
 
 const createProjectMutation: CreateProjectMutation = async (
   _parent,

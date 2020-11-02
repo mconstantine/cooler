@@ -79,4 +79,8 @@ export default gql`
       orderBy: String
     ): TaskConnection!
   }
+
+  extend type Subscription {
+    createdTask(project: Int): Task!
+  }
 `
