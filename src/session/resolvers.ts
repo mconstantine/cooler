@@ -25,7 +25,7 @@ import {
   getProjectActualWorkingHours,
   getProjectBudget,
   getProjectBalance,
-  getUserOpenSession,
+  getUserOpenSessions,
   getUserExpectedWorkingHours,
   getUserActualWorkingHours,
   getUserBudget,
@@ -133,12 +133,17 @@ const projectBalanceResolver: ProjectBalanceResolver = (
   return getProjectBalance(project)
 }
 
-type UserOpenSessionResolver = GraphQLFieldResolver<UserFromDatabase, Context>
+type UserOpenSessionsResolver = GraphQLFieldResolver<
+  UserFromDatabase,
+  Context,
+  ConnectionQueryArgs
+>
 
-const userOpenSessionResolver: UserOpenSessionResolver = (
-  user
-): Promise<Session | null> => {
-  return getUserOpenSession(user)
+const userOpenSessionsResolver: UserOpenSessionsResolver = (
+  user,
+  args
+): Promise<Connection<Session>> => {
+  return getUserOpenSessions(user, args)
 }
 
 type UserExpectedWorkingHoursResolver = GraphQLFieldResolver<
@@ -388,7 +393,7 @@ interface SessionResolvers {
     balance: ProjectBalanceResolver
   }
   User: {
-    openSession: UserOpenSessionResolver
+    openSessions: UserOpenSessionsResolver
     expectedWorkingHours: UserExpectedWorkingHoursResolver
     actualWorkingHours: UserActualWorkingHoursResolver
     budget: UserBudgetResolver
@@ -425,7 +430,7 @@ const resolvers: SessionResolvers = {
     balance: projectBalanceResolver
   },
   User: {
-    openSession: userOpenSessionResolver,
+    openSessions: userOpenSessionsResolver,
     expectedWorkingHours: userExpectedWorkingHoursResolver,
     actualWorkingHours: userActualWorkingHoursResolver,
     budget: userBudgetResolver,

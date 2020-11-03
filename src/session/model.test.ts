@@ -2,7 +2,7 @@ import { User, UserFromDatabase } from '../user/interface'
 import { TaskFromDatabase } from '../task/interface'
 import { Session, SessionFromDatabase } from './interface'
 import { getDatabase } from '../misc/getDatabase'
-import { remove, toSQLDate, update } from '../misc/dbUtils'
+import { remove } from '../misc/dbUtils'
 import { getFakeUser } from '../test/getFakeUser'
 import { getFakeClient } from '../test/getFakeClient'
 import { getFakeProject } from '../test/getFakeProject'
@@ -105,25 +105,16 @@ describe('startSession', () => {
     }).rejects.toBeInstanceOf(ApolloError)
   })
 
-  it('should not allow the creation of an open session if there is one already', async () => {
-    await update('session', {
-      id: session1.id,
-      end_time: null
-    })
+  it('should not allow to open more than one session per task', async () => {
+    const session = definitely(await startSession(task1.id, user1))
+
+    expect(session).toBeTruthy()
 
     await expect(async () => {
       await startSession(task1.id, user1)
     }).rejects.toBeInstanceOf(ApolloError)
 
-    await update('session', {
-      id: session1.id,
-      end_time: toSQLDate(definitely(session1.end_time))
-    })
-  })
-
-  it('should allow the creation of an open session if there is one owned by another user', async () => {
-    const session = definitely(await startSession(task2.id, user2))
-    await stopSession(session.id, user2)
+    await remove('session', { id: session.id })
   })
 })
 

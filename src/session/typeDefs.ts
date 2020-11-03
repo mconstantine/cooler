@@ -83,6 +83,12 @@ export default gql`
   }
 
   extend type User {
-    openSession: Session
+    openSessions(
+      first: Int
+      last: Int
+      before: String
+      after: String
+      orderBy: String
+    ): SessionConnection
   }
 `

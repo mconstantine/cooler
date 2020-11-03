@@ -49,18 +49,17 @@ export async function startSession(
     throw new ApolloError('Unauthorized', 'COOLER_403')
   }
 
-  const [{ count }] = await db.all<[{ count: number }]>(SQL`
-    SELECT COUNT(session.id) AS count
-    FROM session
-    JOIN task ON task.id = session.task
-    JOIN project ON project.id = task.project
-    JOIN client ON client.id = project.client
-    WHERE client.user = ${user.id} AND session.end_time IS NULL
-  `)
+  const { count } = definitely(
+    await db.get<{ count: number }>(SQL`
+      SELECT COUNT(*) as count
+      FROM session
+      WHERE task = ${taskId} AND end_time IS NULL
+    `)
+  )
 
   if (count) {
     throw new ApolloError(
-      'You cannot have more than one open session',
+      'There is already an open session for this task',
       'COOLER_409'
     )
   }
@@ -503,25 +502,23 @@ export async function getProjectBalance(
   return balance
 }
 
-export async function getUserOpenSession(
-  user: UserFromDatabase
-): Promise<Session | null> {
-  const db = await getDatabase()
+export async function getUserOpenSessions(
+  user: UserFromDatabase,
+  args: ConnectionQueryArgs
+): Promise<Connection<Session>> {
+  const openSessions = await queryToConnection<SessionFromDatabase>(
+    args,
+    ['session.*'],
+    'session',
+    SQL`
+      JOIN task ON task.id = session.task
+      JOIN project ON project.id = task.project
+      JOIN client ON client.id = project.client
+      WHERE client.user = ${user.id} AND session.end_time IS NULL
+    `
+  )
 
-  const openSession = await db.get<SessionFromDatabase>(SQL`
-    SELECT session.*
-    FROM session
-    JOIN task ON task.id = session.task
-    JOIN project ON project.id = task.project
-    JOIN client ON client.id = project.client
-    WHERE client.user = ${user.id} AND session.end_time IS NULL
-  `)
-
-  if (!openSession) {
-    return null
-  }
-
-  return fromDatabase(openSession)
+  return mapConnection(openSessions, fromDatabase)
 }
 
 export async function getUserExpectedWorkingHours(
