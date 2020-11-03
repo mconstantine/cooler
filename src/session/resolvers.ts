@@ -5,7 +5,7 @@ import {
   SessionUpdateInput,
   TimesheetCreationInput
 } from './interface'
-import { Context, UserFromDatabase } from '../user/interface'
+import { Context, UserContext, UserFromDatabase } from '../user/interface'
 import { ConnectionQueryArgs } from '../misc/ConnectionQueryArgs'
 import { Task, TaskFromDatabase } from '../task/interface'
 import { ensureUser } from '../misc/ensureUser'
@@ -35,6 +35,20 @@ import {
 import { ProjectFromDatabase } from '../project/interface'
 import { SQLDate } from '../misc/Types'
 import { Connection } from '../misc/Connection'
+import {
+  publish,
+  Subscription,
+  SubscriptionImplementation,
+  WithFilter
+} from '../misc/pubsub'
+import { withFilter } from 'apollo-server-express'
+import { pubsub } from '../pubsub'
+import { definitely } from '../misc/definitely'
+import { getDatabase } from '../misc/getDatabase'
+import SQL from 'sql-template-strings'
+
+const SESSION_STARTED = 'SESSION_STARTED'
+const SESSION_STOPPED = 'SESSION_STOPPED'
 
 export interface SinceArg {
   since?: SQLDate
@@ -179,24 +193,120 @@ const userBalanceResolver: UserBalanceResolver = (
   return getUserBalance(user, args)
 }
 
+interface SessionSubscription extends Subscription<Session> {
+  startedSession: SubscriptionImplementation<Session>
+  stoppedSession: SubscriptionImplementation<Session>
+}
+
+const sessionSubscription: SessionSubscription = {
+  startedSession: {
+    subscribe: withFilter(
+      () => pubsub.asyncIterator([SESSION_STARTED]),
+      (async (
+        { startedSession },
+        { project: targetProject, task: targetTask },
+        context
+      ) => {
+        const db = await getDatabase()
+
+        const { user, project } = definitely(
+          await db.get(SQL`
+            SELECT client.user, project.id AS project
+            FROM session
+            JOIN task ON task.id = session.task
+            JOIN project ON project.id = task.project
+            JOIN client ON client.id = project.client
+            WHERE session.id = ${startedSession.id}
+          `)
+        )
+
+        if (user !== context.user.id) {
+          return false
+        }
+
+        const isSameProject = !targetProject || targetProject === project
+        const isSameTask = !targetTask || targetTask === startedSession.task
+
+        return isSameProject && isSameTask
+      }) as WithFilter<
+        { project: number | null; task: number | null },
+        SessionSubscription,
+        UserContext,
+        Session
+      >
+    )
+  },
+  stoppedSession: {
+    subscribe: withFilter(
+      () => pubsub.asyncIterator([SESSION_STOPPED]),
+      (async (
+        { stoppedSession },
+        { project: targetProject, task: targetTask },
+        context
+      ) => {
+        const db = await getDatabase()
+
+        const { user, project } = definitely(
+          await db.get(SQL`
+            SELECT client.user, project.id AS project
+            FROM session
+            JOIN task ON task.id = session.task
+            JOIN project ON project.id = task.project
+            JOIN client ON client.id = project.client
+            WHERE session.id = ${stoppedSession.id}
+          `)
+        )
+
+        if (user !== context.user.id) {
+          return false
+        }
+
+        const isSameProject = !targetProject || targetProject === project
+        const isSameTask = !targetTask || targetTask === stoppedSession.task
+
+        return isSameProject && isSameTask
+      }) as WithFilter<
+        { project: number | null; task: number | null },
+        SessionSubscription,
+        UserContext,
+        Session
+      >
+    )
+  }
+}
+
 type StartSessionMutation = GraphQLFieldResolver<any, Context, { task: number }>
 
-const startSessionMutation: StartSessionMutation = (
+const startSessionMutation: StartSessionMutation = async (
   _parent,
   { task },
   context
 ): Promise<Session | null> => {
-  return startSession(task, ensureUser(context))
+  const res = await startSession(task, ensureUser(context))
+
+  res &&
+    publish<Session, SessionSubscription>(SESSION_STARTED, {
+      startedSession: res
+    })
+
+  return res
 }
 
 type StopSessionMutation = GraphQLFieldResolver<any, Context, { id: number }>
 
-const stopSessionMutation: StopSessionMutation = (
+const stopSessionMutation: StopSessionMutation = async (
   _parent,
   { id },
   context
 ): Promise<Session | null> => {
-  return stopSession(id, ensureUser(context))
+  const res = await stopSession(id, ensureUser(context))
+
+  res &&
+    publish<Session, SessionSubscription>(SESSION_STOPPED, {
+      stoppedSession: res
+    })
+
+  return res
 }
 
 type UpdateSessionMutation = GraphQLFieldResolver<
@@ -295,6 +405,7 @@ interface SessionResolvers {
     session: SessionQuery
     sessions: SessionsQuery
   }
+  Subscription: SessionSubscription
 }
 
 const resolvers: SessionResolvers = {
@@ -330,7 +441,8 @@ const resolvers: SessionResolvers = {
   Query: {
     session: sessionQuery,
     sessions: sessionsQuery
-  }
+  },
+  Subscription: sessionSubscription
 }
 
 export default resolvers
