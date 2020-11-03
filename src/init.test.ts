@@ -17,10 +17,14 @@ describe('init', () => {
   describe('migrations', () => {
     describe('project-cashed-balance', () => {
       it('should work', async () => {
+        const db = await getDatabase()
         const user = await getID('user', getFakeUser())
         const client = await getID('client', getFakeClient(user))
-        const projectId = await insert('project', getFakeProject(client))
-        const db = await getDatabase()
+
+        const { lastID: projectId } = await insert(
+          'project',
+          getFakeProject(client)
+        )
 
         const project = definitely(
           await db.get<Project>(

@@ -21,6 +21,7 @@ import { fromDatabase } from './model'
 import { definitely } from '../misc/definitely'
 import { getConnectionNodes } from '../test/getConnectionNodes'
 import { getID } from '../test/getID'
+import { fromSQLDate } from '../misc/dbUtils'
 
 let user1: User
 let user2: User
@@ -132,7 +133,11 @@ describe('updateProject', () => {
     const data = getFakeProject(client1.id)
     const result = definitely(await updateProject(project1.id, data, user1))
 
-    expect(result).toMatchObject(data)
+    expect(result).toMatchObject({
+      ...data,
+      cashed_at: data.cashed_at ? fromSQLDate(data.cashed_at) : null
+    })
+
     project1 = result
   })
 
