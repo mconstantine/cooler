@@ -46,6 +46,10 @@ export default gql`
     ): TaxConnection!
   }
 
+  extend type Subscription {
+    createdTax: Tax!
+  }
+
   extend type User {
     taxes(
       first: Int

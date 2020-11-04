@@ -1,6 +1,6 @@
 import { GraphQLFieldResolver } from 'graphql'
 import { Tax, TaxCreationInput, TaxUpdateInput } from './interface'
-import { Context, User, UserFromDatabase } from '../user/interface'
+import { Context, User, UserContext, UserFromDatabase } from '../user/interface'
 import { ConnectionQueryArgs } from '../misc/ConnectionQueryArgs'
 import {
   createTax,
@@ -13,6 +13,19 @@ import {
 } from './model'
 import { ensureUser } from '../misc/ensureUser'
 import { Connection } from '../misc/Connection'
+import {
+  publish,
+  Subscription,
+  SubscriptionImplementation,
+  WithFilter
+} from '../misc/pubsub'
+import { withFilter } from 'apollo-server-express'
+import { pubsub } from '../pubsub'
+import { getDatabase } from '../misc/getDatabase'
+import { definitely } from '../misc/definitely'
+import SQL from 'sql-template-strings'
+
+const TAX_CREATED = 'TAX_CREATED'
 
 type TaxUserResolver = GraphQLFieldResolver<Tax, any>
 
@@ -33,18 +46,48 @@ const userTaxesResolver: UserTaxesResolver = (
   return getUserTaxes(user, args)
 }
 
+interface TaxSubscription extends Subscription<Tax> {
+  createdTax: SubscriptionImplementation<Tax>
+}
+
+const taxSubscription: TaxSubscription = {
+  createdTax: {
+    subscribe: withFilter(() => pubsub.asyncIterator([TAX_CREATED]), (async (
+      { createdTax },
+      _args,
+      context
+    ) => {
+      const db = await getDatabase()
+      const { user } = definitely(
+        await db.get<{ user: number }>(SQL`
+          SELECT user FROM tax WHERE id = ${createdTax.id}
+        `)
+      )
+
+      return user === context.user.id
+    }) as WithFilter<{}, TaxSubscription, UserContext, Tax>)
+  }
+}
+
 type CreateTaxMutation = GraphQLFieldResolver<
   any,
   Context,
   { tax: TaxCreationInput }
 >
 
-const createTaxMutation: CreateTaxMutation = (
+const createTaxMutation: CreateTaxMutation = async (
   _parent,
   { tax },
   context
 ): Promise<Tax | null> => {
-  return createTax(tax, ensureUser(context))
+  const res = await createTax(tax, ensureUser(context))
+
+  res &&
+    publish<Tax, TaxSubscription>(TAX_CREATED, {
+      createdTax: res
+    })
+
+  return res
 }
 
 type UpdateTaxMutation = GraphQLFieldResolver<
@@ -103,6 +146,7 @@ interface TaxResolvers {
     tax: TaxQuery
     taxes: TaxesQuery
   }
+  Subscription: TaxSubscription
 }
 
 const resolvers: TaxResolvers = {
@@ -120,7 +164,8 @@ const resolvers: TaxResolvers = {
   Query: {
     tax: taxQuery,
     taxes: taxesQuery
-  }
+  },
+  Subscription: taxSubscription
 }
 
 export default resolvers
