@@ -7,7 +7,8 @@ import express from 'express'
 import path from 'path'
 import { getContext, subscriptionOptions } from './getContext'
 import http from 'http'
-;(async () => {
+
+async function start() {
   dotenv.config()
   await init()
 
@@ -34,4 +35,6 @@ import http from 'http'
   httpServer.listen({ port: process.env.SERVER_PORT }, () => {
     console.log(`Server ready at http://localhost:${process.env.SERVER_PORT}`)
   })
-})()
+}
+
+start().catch(e => console.log(e))
