@@ -16,11 +16,13 @@ import {
   deleteTask,
   getTask,
   fromDatabase,
-  toDatabase
+  toDatabase,
+  createTasksBatch
 } from './model'
 import { fromDatabase as userFromDatabase } from '../user/model'
 import { getID } from '../test/getID'
 import { definitely } from '../misc/definitely'
+import { fromSQLDate, insert, remove, toSQLDate } from '../misc/dbUtils'
 
 let user1: User
 let user2: User
@@ -96,6 +98,188 @@ describe('createTask', () => {
     await expect(async () => {
       await createTask(getFakeTaskFromDatabase(project2.id), user1)
     }).rejects.toBeInstanceOf(ApolloError)
+  })
+})
+
+describe('createTasksBatch', () => {
+  let project: number
+
+  beforeAll(async () => {
+    project = definitely(
+      await insert('project', getFakeProject(project1.client))
+    ).lastID!
+  })
+
+  afterEach(async () => {
+    await remove('task', { project })
+  })
+
+  afterAll(async () => {
+    await remove('project', { id: project })
+  })
+
+  it('should copy expected working hours, hourly cost and start time', async () => {
+    expect.assertions(21)
+
+    await createTasksBatch(
+      {
+        name: 'Task #',
+        expectedWorkingHours: 8,
+        hourlyCost: 1,
+        project,
+        start_time: toSQLDate(new Date(1990, 0, 1, 10, 42)),
+        from: toSQLDate(new Date(1990, 0, 1, 10, 0)),
+        to: toSQLDate(new Date(1990, 0, 5, 10, 0)),
+        repeat: 0x1111111
+      },
+      user1
+    )
+
+    const db = await getDatabase()
+    const tasks = await db.all<TaskFromDatabase[]>(
+      `SELECT * FROM task WHERE project = ${project}`
+    )
+
+    expect(tasks.length).toBe(5)
+
+    tasks.forEach(task => {
+      expect(task.expectedWorkingHours).toBe(8)
+      expect(task.hourlyCost).toBe(1)
+
+      const startTime = fromSQLDate(task.start_time)
+
+      expect(startTime.getHours()).toBe(10)
+      expect(startTime.getMinutes()).toBe(42)
+    })
+  })
+
+  it('should format dates correctly', async () => {
+    await createTasksBatch(
+      {
+        name: 'D-DD-DDD-DDDD, M/MM/MMM/MMMM, YY / YYYY ADAMY',
+        start_time: toSQLDate(new Date(1990, 0, 1, 10, 42)),
+        from: toSQLDate(new Date(1990, 0, 1, 10, 0)),
+        to: toSQLDate(new Date(1990, 0, 1, 10, 0)),
+        expectedWorkingHours: 8,
+        hourlyCost: 1,
+        project,
+        repeat: 0x1111111
+      },
+      user1
+    )
+
+    const db = await getDatabase()
+    const tasks = await db.all<TaskFromDatabase[]>(
+      SQL`SELECT * FROM task WHERE project = ${project}`
+    )
+
+    expect(tasks.length).toBe(1)
+    expect(tasks[0].name).toBe(
+      '1-01-Mon-Monday, 1/01/Jan/January, 90 / 1990 ADAMY'
+    )
+  })
+
+  it('should format indexes correctly', async () => {
+    await createTasksBatch(
+      {
+        name: 'Task #',
+        start_time: toSQLDate(new Date(1990, 0, 1, 10, 42)),
+        from: toSQLDate(new Date(1990, 0, 1, 10, 0)),
+        to: toSQLDate(new Date(1990, 0, 5, 10, 0)),
+        expectedWorkingHours: 8,
+        hourlyCost: 1,
+        project,
+        repeat: 0x1111111
+      },
+      user1
+    )
+
+    const db = await getDatabase()
+    const tasks = await db.all<TaskFromDatabase[]>(
+      SQL`SELECT * FROM task WHERE project = ${project}`
+    )
+
+    expect(tasks.length).toBe(5)
+    expect(tasks[0].name).toBe('Task 1')
+    expect(tasks[1].name).toBe('Task 2')
+    expect(tasks[2].name).toBe('Task 3')
+    expect(tasks[3].name).toBe('Task 4')
+    expect(tasks[4].name).toBe('Task 5')
+  })
+
+  it('should understand repeat with bit masks', async () => {
+    await createTasksBatch(
+      {
+        name: 'Task #',
+        start_time: toSQLDate(new Date(1990, 0, 1, 10, 42)),
+        from: toSQLDate(new Date(1990, 0, 1, 10, 0)),
+        to: toSQLDate(new Date(1990, 0, 7, 10, 0)),
+        expectedWorkingHours: 8,
+        hourlyCost: 1,
+        project,
+        repeat: 0x0111010
+      },
+      user1
+    )
+
+    const db = await getDatabase()
+    const tasks = await db.all<TaskFromDatabase[]>(
+      SQL`SELECT * FROM task WHERE project = ${project}`
+    )
+
+    expect(tasks.length).toBe(4)
+
+    expect(tasks).toContainEqual(
+      expect.objectContaining({
+        start_time: toSQLDate(new Date(1990, 0, 1, 10, 42))
+      })
+    )
+    expect(tasks).toContainEqual(
+      expect.objectContaining({
+        start_time: toSQLDate(new Date(1990, 0, 3, 10, 42))
+      })
+    )
+    expect(tasks).toContainEqual(
+      expect.objectContaining({
+        start_time: toSQLDate(new Date(1990, 0, 4, 10, 42))
+      })
+    )
+    expect(tasks).toContainEqual(
+      expect.objectContaining({
+        start_time: toSQLDate(new Date(1990, 0, 5, 10, 42))
+      })
+    )
+  })
+
+  it('should skip existing tasks', async () => {
+    await insert('task', {
+      name: 'Existing task',
+      expectedWorkingHours: 8,
+      hourlyCost: 1,
+      project,
+      start_time: toSQLDate(new Date(1990, 0, 3, 10, 42))
+    })
+
+    await createTasksBatch(
+      {
+        name: 'Task #',
+        start_time: toSQLDate(new Date(1990, 0, 1, 10, 42)),
+        from: toSQLDate(new Date(1990, 0, 1, 10, 0)),
+        to: toSQLDate(new Date(1990, 0, 7, 10, 0)),
+        expectedWorkingHours: 8,
+        hourlyCost: 1,
+        project,
+        repeat: 0x0111010
+      },
+      user1
+    )
+
+    const db = await getDatabase()
+    const tasks = await db.all<TaskFromDatabase[]>(
+      SQL`SELECT * FROM task WHERE project = ${project}`
+    )
+
+    expect(tasks.length).toBe(4)
   })
 })
 

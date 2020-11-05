@@ -26,4 +26,14 @@ export type TaskCreationInput = Omit<
   'id' | 'created_at' | 'updated_at'
 >
 
+export interface TasksBatchCreationInput
+  extends Pick<
+    TaskFromDatabase,
+    'name' | 'expectedWorkingHours' | 'hourlyCost' | 'project' | 'start_time'
+  > {
+  from: SQLDate
+  to: SQLDate
+  repeat: number
+}
+
 export type TaskUpdateInput = Partial<TaskCreationInput>

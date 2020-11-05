@@ -33,6 +33,17 @@ export default gql`
     start_time: Date!
   }
 
+  input TasksBatchCreationInput {
+    name: String!
+    expectedWorkingHours: Int!
+    hourlyCost: Float!
+    project: Int!
+    start_time: Date!
+    from: Date!
+    to: Date!
+    repeat: Int!
+  }
+
   input TaskUpdateInput {
     name: String
     description: String
@@ -64,6 +75,7 @@ export default gql`
 
   extend type Mutation {
     createTask(task: TaskCreationInput!): Task
+    createTasksBatch(input: TasksBatchCreationInput): Project
     updateTask(id: Int!, task: TaskUpdateInput!): Task
     deleteTask(id: Int!): Task
   }

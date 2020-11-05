@@ -3,6 +3,7 @@ import {
   Task,
   TaskCreationInput,
   TaskFromDatabase,
+  TasksBatchCreationInput,
   TaskUpdateInput
 } from './interface'
 import { Project, ProjectFromDatabase } from '../project/interface'
@@ -14,7 +15,8 @@ import {
   getTask,
   getTaskProject,
   getUserTasks,
-  getProjectTasks
+  getProjectTasks,
+  createTasksBatch
 } from './model'
 import { ConnectionQueryArgs } from '../misc/ConnectionQueryArgs'
 import { Context, UserContext, UserFromDatabase } from '../user/interface'
@@ -118,6 +120,20 @@ const createTaskMutation: CreateTaskMutation = async (
   return res
 }
 
+type CreateTasksBatchMutation = GraphQLFieldResolver<
+  any,
+  Context,
+  { input: TasksBatchCreationInput }
+>
+
+const createTasksBatchMutation: CreateTasksBatchMutation = (
+  _parent,
+  { input },
+  context
+): Promise<Project | null> => {
+  return createTasksBatch(input, ensureUser(context))
+}
+
 type UpdateTaskMutation = GraphQLFieldResolver<
   any,
   Context,
@@ -178,6 +194,7 @@ interface TaskResolvers {
   }
   Mutation: {
     createTask: CreateTaskMutation
+    createTasksBatch: CreateTasksBatchMutation
     updateTask: UpdateTaskMutation
     deleteTask: DeleteTaskMutation
   }
@@ -200,6 +217,7 @@ const resolvers: TaskResolvers = {
   },
   Mutation: {
     createTask: createTaskMutation,
+    createTasksBatch: createTasksBatchMutation,
     updateTask: updateTaskMutation,
     deleteTask: deleteTaskMutation
   },
