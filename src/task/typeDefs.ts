@@ -95,6 +95,6 @@ export default gql`
   }
 
   extend type Subscription {
-    createdTask(project: Int): Task!
+    createdTask(project: Int, from: Date, to: Date): Task!
   }
 `

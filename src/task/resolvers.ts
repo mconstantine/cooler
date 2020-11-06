@@ -34,6 +34,7 @@ import { definitely } from '../misc/definitely'
 import { getDatabase } from '../misc/getDatabase'
 import SQL from 'sql-template-strings'
 import { SQLDate } from '../misc/Types'
+import { fromSQLDate } from '../misc/dbUtils'
 
 const TASK_CREATED = 'TASK_CREATED'
 
@@ -77,7 +78,7 @@ const taskSubscription: TaskSubscription = {
   createdTask: {
     subscribe: withFilter(() => pubsub.asyncIterator([TASK_CREATED]), (async (
       { createdTask },
-      { project },
+      { project, from, to },
       context
     ) => {
       const db = await getDatabase()
@@ -95,8 +96,26 @@ const taskSubscription: TaskSubscription = {
         return false
       }
 
-      return !project || project === createdTask.project
-    }) as WithFilter<{ project: number | null }, TaskSubscription, UserContext, Task>)
+      let res = !project || project === createdTask.project
+
+      if (from) {
+        const fromTime = fromSQLDate(from)
+        res = res && createdTask.start_time.getTime() >= fromTime.getTime()
+      }
+
+      if (to) {
+        const toTime = fromSQLDate(to)
+
+        toTime.setHours(23)
+        toTime.setMinutes(59)
+        toTime.setSeconds(59)
+        toTime.setMilliseconds(999)
+
+        res = res && createdTask.start_time.getTime() <= toTime.getTime()
+      }
+
+      return res
+    }) as WithFilter<{ project: number | null; from: SQLDate | null; to: SQLDate | null }, TaskSubscription, UserContext, Task>)
   }
 }
 
