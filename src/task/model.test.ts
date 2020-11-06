@@ -27,7 +27,6 @@ import {
 import { getID } from '../test/getID'
 import { definitely } from '../misc/definitely'
 import { fromSQLDate, insert, remove, toSQLDate } from '../misc/dbUtils'
-import { Client, ClientFromDatabase } from '../client/interface'
 
 let user1: User
 let user2: User
