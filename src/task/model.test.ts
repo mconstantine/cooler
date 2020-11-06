@@ -17,12 +17,17 @@ import {
   getTask,
   fromDatabase,
   toDatabase,
-  createTasksBatch
+  createTasksBatch,
+  getUserTasks
 } from './model'
-import { fromDatabase as userFromDatabase } from '../user/model'
+import {
+  fromDatabase as userFromDatabase,
+  toDatabase as userToDatabase
+} from '../user/model'
 import { getID } from '../test/getID'
 import { definitely } from '../misc/definitely'
 import { fromSQLDate, insert, remove, toSQLDate } from '../misc/dbUtils'
+import { Client, ClientFromDatabase } from '../client/interface'
 
 let user1: User
 let user2: User
@@ -87,6 +92,86 @@ beforeAll(async () => {
       )
     )
   )
+})
+
+describe('getTodayTasks', () => {
+  let user: User
+  let task1: Task
+  let task2: Task
+
+  beforeAll(async () => {
+    const db = await getDatabase()
+    const userId = await getID('user', getFakeUser())
+    const clientId = await getID('client', getFakeClient(userId))
+    const projectId = await getID('project', getFakeProject(clientId))
+
+    const task1Id = await getID(
+      'task',
+      getFakeTaskFromDatabase(projectId, {
+        start_time: toSQLDate(new Date())
+      })
+    )
+
+    const task2Id = await getID(
+      'task',
+      getFakeTaskFromDatabase(projectId, {
+        start_time: toSQLDate(new Date(Date.now() + 86400000))
+      })
+    )
+
+    user = userFromDatabase(
+      definitely(
+        await db.get<UserFromDatabase>(
+          SQL`SELECT * FROM user WHERE id = ${userId}`
+        )
+      )
+    )
+
+    task1 = fromDatabase(
+      definitely(
+        await db.get<TaskFromDatabase>(
+          SQL`SELECT * FROM task WHERE id = ${task1Id}`
+        )
+      )
+    )
+
+    task2 = fromDatabase(
+      definitely(
+        await db.get<TaskFromDatabase>(
+          SQL`SELECT * FROM task WHERE id = ${task2Id}`
+        )
+      )
+    )
+  })
+
+  afterAll(async () => {
+    await remove('user', { id: user.id })
+  })
+
+  it('should work', async () => {
+    const now = new Date()
+
+    const tasks = await getUserTasks(userToDatabase(user), {
+      from: toSQLDate(
+        new Date(now.getFullYear(), now.getMonth(), now.getDate())
+      ),
+      to: toSQLDate(
+        new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1)
+      )
+    })
+
+    expect(tasks.edges.map(({ node }) => node)).toContainEqual(
+      expect.objectContaining({
+        id: task1.id
+      })
+    )
+
+    expect(tasks.edges.map(({ node }) => node)).not.toContainEqual(
+      expect.objectContaining({
+        id: task2.id
+      })
+    )
+  })
 })
 
 describe('createTask', () => {

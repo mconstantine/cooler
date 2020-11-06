@@ -389,17 +389,29 @@ export async function getTaskProject(task: TaskFromDatabase): Promise<Project> {
 
 export async function getUserTasks(
   user: UserFromDatabase,
-  args: ConnectionQueryArgs
+  args: ConnectionQueryArgs & { from?: SQLDate; to?: SQLDate }
 ): Promise<Connection<Task>> {
+  let rest = SQL`
+    JOIN project ON project.id = task.project
+    JOIN client ON project.client = client.id
+    WHERE client.user = ${user.id}
+  `
+
+  args.from &&
+    rest.append(SQL`
+    AND start_time >= ${args.from}
+  `)
+
+  args.to &&
+    rest.append(SQL`
+    AND start_time <= ${args.to}
+  `)
+
   const connection = await queryToConnection<TaskFromDatabase>(
     args,
     ['task.*'],
     'task',
-    SQL`
-      JOIN project ON project.id = task.project
-      JOIN client ON project.client = client.id
-      WHERE client.user = ${user.id}
-    `
+    rest
   )
 
   return mapConnection(connection, fromDatabase)

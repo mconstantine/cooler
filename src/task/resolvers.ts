@@ -33,6 +33,7 @@ import { pubsub } from '../pubsub'
 import { definitely } from '../misc/definitely'
 import { getDatabase } from '../misc/getDatabase'
 import SQL from 'sql-template-strings'
+import { SQLDate } from '../misc/Types'
 
 const TASK_CREATED = 'TASK_CREATED'
 
@@ -46,7 +47,7 @@ const taskProjectResolver: TaskProjectResolver = async (
 
 type UserTasksResolver = GraphQLFieldResolver<
   UserFromDatabase,
-  ConnectionQueryArgs
+  ConnectionQueryArgs & { from?: SQLDate; to?: SQLDate }
 >
 
 const userTasksResolver: UserTasksResolver = (

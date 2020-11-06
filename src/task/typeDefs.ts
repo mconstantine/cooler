@@ -60,6 +60,8 @@ export default gql`
       before: String
       after: String
       orderBy: String
+      from: Date
+      to: Date
     ): TaskConnection
   }
 
