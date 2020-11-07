@@ -1,161 +1,186 @@
-import { insert, update, remove } from './dbUtils'
+import { option, task, taskEither } from 'fp-ts'
+import { pipe } from 'fp-ts/function'
+import { Option } from 'fp-ts/Option'
+import SQL from 'sql-template-strings'
+import { dbExec, dbGet, dbGetAll, insert, remove, update } from './dbUtils'
+import { PositiveInteger } from './Types'
 
-interface FakeDatabase {
-  run: jest.Mock
+interface Row {
+  id: PositiveInteger
+  key: string
+  value: string
+  optional?: string
 }
 
-const testResult = 'testResult'
-const mockDatabase: FakeDatabase = { run: jest.fn(() => testResult) }
-
-jest.mock('./getDatabase', () => ({
-  getDatabase: () => mockDatabase
-}))
+interface RowInput extends Omit<Row, 'id'> {}
 
 describe('dbUtils', () => {
-  beforeEach(() => {
-    mockDatabase.run.mockClear()
+  beforeAll(async () => {
+    await dbExec(SQL`
+      CREATE TABLE IF NOT EXISTS tmp (
+        id INTEGER PRIMARY KEY,
+        key TEXT NOT NULL,
+        value TEXT NOT NULL,
+        optional TEXT
+      )
+    `)()
+
+    await dbExec(SQL`
+      INSERT INTO tmp (
+        key, value
+      ) VALUES (
+        "one", "1"
+      ), (
+        "two", "2"
+      ), (
+        "three", "3"
+      )
+    `)()
   })
 
-  describe('insert', () => {
+  afterAll(async () => {
+    await dbExec(SQL`DROP TABLE tmp`)()
+  })
+
+  describe('dbGet', () => {
     it('should work', async () => {
-      const data = {
-        col1: 'value1',
-        col2: 'value2'
+      const row = await pipe(
+        dbGet<Row>(SQL`SELECT * FROM tmp WHERE key = "one"`),
+        taskEither.getOrElse(() =>
+          task.fromIO(() => option.none as Option<Row>)
+        )
+      )()
+
+      expect(option.isSome(row)).toBe(true)
+    })
+  })
+
+  describe('dbAll', () => {
+    it('should work', async () => {
+      const rows = await pipe(
+        dbGetAll<Row>(SQL`SELECT * FROM tmp`),
+        taskEither.getOrElse(() => task.fromIO(() => [] as Row[]))
+      )()
+
+      expect(rows.length).toBeGreaterThan(0)
+    })
+  })
+
+  describe('insert and remove', () => {
+    it('should work', async () => {
+      const data: RowInput = {
+        key: 'seven',
+        value: '7'
       }
 
-      const result = await insert('someTable', data)
+      const lastID = await pipe(
+        insert('tmp', data),
+        taskEither.getOrElse(() => task.fromIO(() => 0))
+      )()
 
-      expect(result).toBe(testResult)
-      expect(mockDatabase.run).toHaveBeenCalledWith(
-        'INSERT INTO someTable (`col1`, `col2`) VALUES (?, ?)',
-        'value1',
-        'value2'
-      )
+      expect(typeof lastID).toBe('number')
+      expect(lastID).toBeGreaterThan(0)
+
+      const changes = await pipe(
+        remove('tmp', { id: lastID }),
+        taskEither.getOrElse(() => task.fromIO(() => 0))
+      )()
+
+      expect(changes).toBe(1)
     })
 
     it('should handle multiple rows', async () => {
-      const data = [
+      const data: RowInput[] = [
         {
-          col1: 'value1',
-          col2: 'value2'
+          key: 'sixty',
+          value: '42'
         },
         {
-          col1: 'value3',
-          col2: 'value4'
+          key: 'eighty',
+          value: '42'
         }
       ]
 
-      const result = await insert('someTable', data)
+      await insert('tmp', data)()
 
-      expect(result).toBe(testResult)
-      expect(mockDatabase.run).toHaveBeenCalledWith(
-        'INSERT INTO someTable (`col1`, `col2`) VALUES (?, ?), (?, ?)',
-        'value1',
-        'value2',
-        'value3',
-        'value4'
-      )
+      const changes = await pipe(
+        remove('tmp', { value: '42' }),
+        taskEither.getOrElse(() => task.fromIO(() => 0))
+      )()
+
+      expect(changes).toBe(2)
     })
 
-    it('should remove keys of undefined values', async () => {
-      const data = [
+    it('should remove keys with undefined value', async () => {
+      const data: RowInput[] = [
         {
-          col1: 'value1',
-          col2: undefined,
-          col3: 'value3'
+          key: 'twenty',
+          value: '20',
+          optional: undefined
         },
         {
-          col1: 'value4',
-          col2: undefined,
-          col3: 'value6'
+          key: 'twentyone',
+          value: '20',
+          optional: undefined
         }
       ]
 
-      const result = await insert('someTable', data)
+      await insert('tmp', data)()
 
-      expect(result).toBe(testResult)
-      expect(mockDatabase.run).toHaveBeenCalledWith(
-        'INSERT INTO someTable (`col1`, `col3`) VALUES (?, ?), (?, ?)',
-        'value1',
-        'value3',
-        'value4',
-        'value6'
-      )
+      const rows = await pipe(
+        dbGetAll<Row>(SQL`SELECT * FROM tmp WHERE value = "20"`),
+        taskEither.getOrElse(() => task.fromIO(() => [] as Row[]))
+      )()
+
+      expect(rows.length).toBe(2)
+      expect(rows).toContainEqual(expect.objectContaining({ optional: null }))
+
+      const changes = await pipe(
+        remove('tmp', { value: '20' }),
+        taskEither.getOrElse(() => task.fromIO(() => 0))
+      )()
+
+      expect(changes).toBe(2)
     })
   })
 
   describe('update', () => {
     it('should work', async () => {
-      const data = {
-        primary: 42,
-        col1: 'value1',
-        col2: 'value2'
+      const data: RowInput = {
+        key: 'thirty',
+        value: '30'
       }
 
-      const result = await update('someTable', data, 'primary')
+      const lastID = await pipe(
+        insert('tmp', data),
+        taskEither.getOrElse(() => task.fromIO(() => 0))
+      )()
 
-      expect(result).toBe(testResult)
-      expect(mockDatabase.run).toHaveBeenCalledWith(
-        'UPDATE someTable SET `col1` = ?, `col2` = ? WHERE `primary` = ?',
-        'value1',
-        'value2',
-        42
-      )
-    })
+      expect(lastID).toBeGreaterThan(0)
 
-    it('should remove keys of undefined values', async () => {
-      const data = {
-        primary: 42,
-        col1: 'value1',
-        col2: undefined,
-        col3: 'value3'
-      }
+      let changes = await pipe(
+        update('tmp', { key: 'thirty', value: '32' }, 'key'),
+        taskEither.getOrElse(() => task.fromIO(() => 0))
+      )()
 
-      const result = await update('someTable', data, 'primary')
+      expect(changes).toBe(1)
 
-      expect(result).toBe(testResult)
-      expect(mockDatabase.run).toHaveBeenCalledWith(
-        'UPDATE someTable SET `col1` = ?, `col3` = ? WHERE `primary` = ?',
-        'value1',
-        'value3',
-        42
-      )
-    })
-  })
+      const result = await pipe(
+        dbGet<Row>(SQL`SELECT * FROM tmp WHERE id = ${lastID}`),
+        taskEither.getOrElse(() =>
+          task.fromIO(() => option.none as Option<Row>)
+        )
+      )()
 
-  describe('remove', () => {
-    it('should work with no WHERE clause', async () => {
-      const result = await remove('someTable')
+      expect(option.isSome(result)).toBe(true)
+      expect((result as option.Some<Row>).value.value).toBe('32')
 
-      expect(result).toBe(testResult)
-      expect(mockDatabase.run).toHaveBeenCalledWith('DELETE FROM someTable')
-    })
+      changes = await pipe(
+        remove('tmp', { value: '32' }),
+        taskEither.getOrElse(() => task.fromIO(() => 0))
+      )()
 
-    it('should work with WHERE clause', async () => {
-      const data = { col1: 'value1' }
-      const result = await remove('someTable', data)
-
-      expect(result).toBe(testResult)
-      expect(mockDatabase.run).toHaveBeenCalledWith(
-        'DELETE FROM someTable WHERE `col1` = ?',
-        'value1'
-      )
-    })
-
-    it('should AND queries by default', async () => {
-      const data = {
-        col1: 'value1',
-        col2: 'value2'
-      }
-
-      const result = await remove('someTable', data)
-
-      expect(result).toBe(testResult)
-      expect(mockDatabase.run).toHaveBeenCalledWith(
-        'DELETE FROM someTable WHERE `col1` = ? AND `col2` = ?',
-        'value1',
-        'value2'
-      )
+      expect(changes).toBe(1)
     })
   })
 })
