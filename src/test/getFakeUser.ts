@@ -1,16 +1,18 @@
-import { UserFromDatabase } from '../user/interface'
+import { UserCreationInput } from '../user/interface'
 import faker from 'faker'
+import { NonEmptyString } from 'io-ts-types'
+import { EmailString } from '../misc/Types'
 
-type UserInput = Omit<UserFromDatabase, 'id' | 'created_at' | 'updated_at'>
-
-export function getFakeUser(data: Partial<UserInput> = {}): UserInput {
+export function getFakeUser(
+  data: Partial<UserCreationInput> = {}
+): UserCreationInput {
   const firstName = faker.name.firstName()
   const lastName = faker.name.lastName()
 
   return {
-    name: `${firstName} ${lastName}`,
-    email: faker.internet.email(firstName, lastName),
-    password: faker.internet.password(),
+    name: `${firstName} ${lastName}` as NonEmptyString,
+    email: faker.internet.email(firstName, lastName) as EmailString,
+    password: faker.internet.password() as NonEmptyString,
     ...data
   }
 }

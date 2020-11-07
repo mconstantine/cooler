@@ -1,9 +1,10 @@
-import { getDatabase } from '../misc/getDatabase'
+import { ApolloError } from 'apollo-server-express'
+import { TaskEither } from 'fp-ts/TaskEither'
+import SQL from 'sql-template-strings'
+import { dbExec } from '../misc/dbUtils'
 
-export default async function init() {
-  const db = await getDatabase()
-
-  await db.exec(`
+export default function init(): TaskEither<ApolloError, void> {
+  return dbExec(SQL`
     CREATE TABLE IF NOT EXISTS user (
       id INTEGER NOT NULL PRIMARY KEY,
       name TEXT NOT NULL,

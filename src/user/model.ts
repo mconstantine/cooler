@@ -1,204 +1,227 @@
 import {
   User,
-  TokenType,
   Token,
   AccessTokenResponse,
   Context,
-  UserFromDatabase,
   UserCreationInput,
   UserLoginInput,
   RefreshTokenInput,
   UserUpdateInput,
   UserContext
 } from './interface'
-import { getDatabase } from '../misc/getDatabase'
 import SQL from 'sql-template-strings'
 import { ApolloError } from 'apollo-server-express'
-import { insert, update, remove, fromSQLDate, toSQLDate } from '../misc/dbUtils'
+import { dbGet } from '../misc/dbUtils'
 import { hashSync, compareSync } from 'bcryptjs'
-import { sign, verify } from 'jsonwebtoken'
-import { validate as isEmail } from 'isemail'
+import { sign, SignOptions, verify, VerifyOptions } from 'jsonwebtoken'
 import { isUserContext } from '../misc/ensureUser'
 import { removeUndefined } from '../misc/removeUndefined'
+import { NonEmptyString } from 'io-ts-types'
+import { None, Option, Some } from 'fp-ts/Option'
+import { boolean, either, option, taskEither } from 'fp-ts'
+import { constUndefined, constVoid, pipe } from 'fp-ts/function'
+import { coolerError, PositiveInteger } from '../misc/Types'
+import { TaskEither } from 'fp-ts/TaskEither'
+import { getUserByEmail, getUserById, insertUser } from './database'
+import { Int, type } from 'io-ts'
 
-export async function createUser(
-  { name, email, password }: UserCreationInput,
+export function createUser(
+  input: UserCreationInput,
   context: Context
-): Promise<AccessTokenResponse | null> {
-  const db = await getDatabase()
+): TaskEither<ApolloError, AccessTokenResponse> {
+  const { name, email, password } = input
 
-  if (!isUserContext(context)) {
-    const { count } = (await db.get(
-      SQL`SELECT COUNT(id) as count FROM user`
-    )) as { count: number }
-
-    if (count) {
-      throw new ApolloError('Unauthorized', 'COOLER_403')
-    }
-  }
-
-  if (!isEmail(email)) {
-    throw new ApolloError('Invalid e-mail format', 'COOLER_400')
-  }
-
-  const duplicate = await db.get<UserFromDatabase>(
-    SQL`SELECT id FROM user WHERE email = ${email}`
+  return pipe(
+    isUserContext(context),
+    boolean.fold(
+      () =>
+        pipe(
+          dbGet(SQL`SELECT COUNT(id) as count FROM user`, type({ count: Int })),
+          taskEither.chain(
+            taskEither.fromOption(() =>
+              coolerError('COOLER_500', 'Unable to count existing users')
+            )
+          )
+        ),
+      () => taskEither.fromIO(() => ({ count: 0 }))
+    ),
+    taskEither.chain(
+      taskEither.fromPredicate(
+        ({ count }) => count > 0,
+        () => coolerError('COOLER_500', 'Unable to count users')
+      )
+    ),
+    taskEither.chain(() => getUserByEmail(email)),
+    taskEither.chain(
+      option.fold(
+        () => taskEither.right(void 0),
+        () => taskEither.left(coolerError('COOLER_409', 'Duplicate user'))
+      )
+    ),
+    taskEither.chain(() =>
+      insertUser({
+        name,
+        email,
+        password: hashSync(password, 10) as NonEmptyString
+      })
+    ),
+    taskEither.map(generateTokens)
   )
-
-  if (duplicate) {
-    throw new ApolloError('Duplicate user', 'COOLER_409')
-  }
-
-  const { lastID } = await insert<UserCreationInput>('user', {
-    name,
-    email,
-    password: hashSync(password, 10)
-  })
-
-  if (!lastID) {
-    return null
-  }
-
-  return generateTokens(lastID)
 }
 
-export async function loginUser({
-  email,
-  password
-}: UserLoginInput): Promise<AccessTokenResponse> {
-  const db = await getDatabase()
+export function loginUser(
+  input: UserLoginInput
+): TaskEither<ApolloError, AccessTokenResponse> {
+  const { email, password } = input
 
-  const user = await db.get<UserFromDatabase>(
-    SQL`SELECT * FROM user WHERE email = ${email}`
+  return pipe(
+    getUserByEmail(email),
+    taskEither.chain(
+      taskEither.fromOption(() => coolerError('COOLER_404', 'User not found'))
+    ),
+    taskEither.chain(
+      taskEither.fromPredicate(
+        user => compareSync(password, user.password),
+        () => coolerError('COOLER_400', 'Wrong password')
+      )
+    ),
+    taskEither.map(({ id }) => generateTokens(id))
   )
-
-  if (!user) {
-    throw new ApolloError('User not found', 'COOLER_404')
-  }
-
-  if (!compareSync(password, user.password)) {
-    throw new ApolloError('Wrong password', 'COOLER_400')
-  }
-
-  return generateTokens(user.id)
 }
 
-export async function refreshToken({
-  refreshToken
-}: RefreshTokenInput): Promise<AccessTokenResponse> {
-  const token = verify(refreshToken, process.env.SECRET!, {
-    ignoreExpiration: true
-  }) as Token
+export function refreshToken(
+  input: RefreshTokenInput
+): TaskEither<ApolloError, AccessTokenResponse> {
+  const { refreshToken } = input
 
-  if (token.type !== TokenType.REFRESH || !token.id) {
-    throw new ApolloError('Invalid token', 'COOLER_400')
-  }
-
-  const db = await getDatabase()
-
-  const user = await db.get<Pick<UserFromDatabase, 'id'>>(
-    SQL`SELECT id FROM user WHERE id = ${token.id}`
+  return pipe(
+    verifyToken(refreshToken, {
+      ignoreExpiration: true
+    }),
+    taskEither.fromOption(() => coolerError('COOLER_400', 'Invalid token')),
+    taskEither.chain(
+      taskEither.fromPredicate(
+        token => token.type === 'REFRESH',
+        () => coolerError('COOLER_400', 'Invalid token type')
+      )
+    ),
+    taskEither.chain(token => getUserById(token.id)),
+    taskEither.chain(
+      taskEither.fromOption(() => coolerError('COOLER_404', 'User not found'))
+    ),
+    taskEither.map(user => generateTokens(user.id, refreshToken))
   )
-
-  if (!user) {
-    throw new ApolloError('Invalid token', 'COOLER_400')
-  }
-
-  return generateTokens(user.id, refreshToken)
 }
 
-export async function updateUser(
-  id: number,
+export function updateUser(
+  id: PositiveInteger,
   user: UserUpdateInput
-): Promise<User | null> {
+): TaskEither<ApolloError, Option<User>> {
   const { name, email, password } = user
-  const db = await getDatabase()
 
-  if (email) {
-    if (!isEmail(email)) {
-      throw new ApolloError('Invalid e-mail format', 'COOLER_400')
-    }
-
-    const duplicate = await db.get<UserFromDatabase>(SQL`
-      SELECT id FROM user WHERE email = ${email} AND id != ${id}
-    `)
-
-    if (duplicate) {
-      throw new ApolloError('Duplicate user', 'COOLER_409')
-    }
-  }
-
-  const args = removeUndefined({
-    name,
+  return pipe(
     email,
-    password: password ? hashSync(password, 10) : undefined
-  })
+    option.fromNullable,
+    option.fold(
+      () =>
+        pipe(
+          dbGet(
+            SQL`SELECT id FROM user WHERE email = ${email} AND id != ${id}`,
+            type({ id: PositiveInteger })
+          ),
+          taskEither.chain(user =>
+            pipe(
+              user,
+              option.fold(
+                () => taskEither.right(null),
+                () =>
+                  taskEither.left(coolerError('COOLER_409', 'Duplicate user'))
+              )
+            )
+          )
+        ),
+      () => taskEither.right(null)
+    ),
+    taskEither.chain(() => getUserById(id)),
+    taskEither.chain(
+      taskEither.fromOption(() => coolerError('COOLER_404', 'User not found'))
+    ),
+    taskEither.chain(user => {
+      const args: UserUpdateInput = removeUndefined({
+        name,
+        email,
+        password: pipe(
+          password,
+          option.fromNullable,
+          option.fold(constUndefined, p => hashSync(p, 10) as NonEmptyString)
+        )
+      })
 
-  await update('user', { ...args, id })
-
-  const updatedUser = await db.get<UserFromDatabase>(
-    SQL`SELECT * FROM user WHERE id = ${id}`
+      return updateUser(user.id, args)
+    }),
+    taskEither.chain(() => getUserById(id))
   )
-
-  if (!updatedUser) {
-    return null
-  }
-
-  return fromDatabase(updatedUser)
 }
 
-export async function deleteUser(id: number): Promise<User | null> {
-  const db = await getDatabase()
-
-  const user = await db.get<UserFromDatabase>(
-    SQL`SELECT * FROM user WHERE id = ${id}`
+export function deleteUser(
+  id: PositiveInteger
+): TaskEither<ApolloError, Option<User>> {
+  return pipe(
+    getUserById(id),
+    taskEither.chain(
+      taskEither.fromOption(() => coolerError('COOLER_404', 'User not found'))
+    ),
+    taskEither.chain(user =>
+      pipe(
+        deleteUser(user.id),
+        taskEither.map(() => option.some(user))
+      )
+    )
   )
-
-  if (!user) {
-    return null
-  }
-
-  await remove('user', { id })
-  return fromDatabase(user)
 }
 
-export function getUserFromContext<C extends UserContext>(context: C): User
-export function getUserFromContext<C extends Context>(context: C): User | null {
+export function getUserFromContext<C extends UserContext>(
+  context: C
+): Some<User>
+export function getUserFromContext<C extends Context>(context: C): None
+export function getUserFromContext<C extends Context>(
+  context: C
+): Option<User> {
   if (!isUserContext(context)) {
-    return null
+    return option.none
   }
 
-  return context.user
+  return option.some(context.user)
 }
 
-export function fromDatabase(user: UserFromDatabase): User {
-  return {
-    ...user,
-    created_at: fromSQLDate(user.created_at),
-    updated_at: fromSQLDate(user.updated_at)
-  }
+function signToken(token: Token, options?: SignOptions): NonEmptyString {
+  return sign(token, process.env.SECRET!, options) as NonEmptyString
 }
 
-export function toDatabase(user: User): UserFromDatabase {
-  return {
-    ...user,
-    created_at: toSQLDate(user.created_at),
-    updated_at: toSQLDate(user.updated_at)
-  }
+function verifyToken(
+  token: NonEmptyString,
+  options?: VerifyOptions
+): Option<Token> {
+  return pipe(
+    either.tryCatch(
+      () => verify(token, process.env.SECRET!, options) as Token,
+      constVoid
+    ),
+    option.fromEither
+  )
 }
 
 function generateTokens(
-  userId: number,
-  oldRefreshToken?: string
+  userId: PositiveInteger,
+  oldRefreshToken?: NonEmptyString
 ): AccessTokenResponse {
   const expiration = new Date(Date.now() + 86400000)
 
-  const accessToken = sign(
+  const accessToken = signToken(
     {
-      type: TokenType.ACCESS,
+      type: 'ACCESS',
       id: userId
-    } as Token,
-    process.env.SECRET!,
+    },
     {
       expiresIn: 86400
     }
@@ -206,13 +229,10 @@ function generateTokens(
 
   const refreshToken =
     oldRefreshToken ||
-    sign(
-      {
-        type: TokenType.REFRESH,
-        id: userId
-      } as Token,
-      process.env.SECRET!
-    )
+    signToken({
+      type: 'REFRESH',
+      id: userId
+    })
 
   return {
     accessToken,

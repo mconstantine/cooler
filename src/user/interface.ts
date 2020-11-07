@@ -1,60 +1,105 @@
-import { SQLDate, ID } from '../misc/Types'
+import * as t from 'io-ts'
+import { DateFromISOString, NonEmptyString } from 'io-ts-types'
+import { DateFromSQLDate, EmailString, PositiveInteger } from '../misc/Types'
 
-export interface User {
-  readonly id: ID
-  name: string
-  email: string
-  password: string
-  readonly created_at: Date
-  readonly updated_at: Date
-}
+export const User = t.type(
+  {
+    id: PositiveInteger,
+    name: NonEmptyString,
+    email: EmailString,
+    password: NonEmptyString,
+    created_at: DateFromISOString,
+    updated_at: DateFromISOString
+  },
+  'User'
+)
+export type User = t.TypeOf<typeof User>
 
-export interface UserFromDatabase {
-  readonly id: ID
-  name: string
-  email: string
-  password: string
-  readonly created_at: SQLDate
-  readonly updated_at: SQLDate
-}
+export const DatabaseUser = t.type(
+  {
+    id: PositiveInteger,
+    name: NonEmptyString,
+    email: EmailString,
+    password: NonEmptyString,
+    created_at: DateFromSQLDate,
+    updated_at: DateFromSQLDate
+  },
+  'DatabaseUser'
+)
+export type DatabaseUser = t.TypeOf<typeof DatabaseUser>
 
-export enum TokenType {
-  ACCESS,
-  REFRESH
-}
+export const TokenType = t.keyof(
+  {
+    ACCESS: true,
+    REFRESH: true
+  },
+  'TokenType'
+)
+export type TokenType = t.TypeOf<typeof TokenType>
 
-export interface Token {
-  type: TokenType
-  id: ID
-}
+export const Token = t.type(
+  {
+    type: TokenType,
+    id: PositiveInteger
+  },
+  'Token'
+)
+export type Token = t.TypeOf<typeof Token>
 
-export type Context =
-  | {}
-  | {
-      user: User
-    }
+export const UserContext = t.type(
+  {
+    user: User
+  },
+  'UserContext'
+)
+export type UserContext = t.TypeOf<typeof UserContext>
 
-export interface UserContext {
-  user: User
-}
+export const Context = t.union([t.type({}), UserContext], 'Context')
+export type Context = t.TypeOf<typeof Context>
 
-export interface AccessTokenResponse {
-  accessToken: string
-  refreshToken: string
-  expiration: Date
-}
+export const AccessTokenResponse = t.type(
+  {
+    accessToken: NonEmptyString,
+    refreshToken: NonEmptyString,
+    expiration: DateFromISOString
+  },
+  'AccessTokenResponse'
+)
+export type AccessTokenResponse = t.TypeOf<typeof AccessTokenResponse>
 
-export type UserCreationInput = Pick<
-  UserFromDatabase,
-  'name' | 'email' | 'password'
->
+export const UserCreationInput = t.type(
+  {
+    name: NonEmptyString,
+    email: EmailString,
+    password: NonEmptyString
+  },
+  'UserCreationInput'
+)
+export type UserCreationInput = t.TypeOf<typeof UserCreationInput>
 
-export type UserLoginInput = Pick<UserFromDatabase, 'email' | 'password'>
+export const UserLoginInput = t.type(
+  {
+    email: EmailString,
+    password: NonEmptyString
+  },
+  'UserLoginInput'
+)
+export type UserLoginInput = t.TypeOf<typeof UserLoginInput>
 
-export type RefreshTokenInput = {
-  refreshToken: string
-}
+export const RefreshTokenInput = t.type(
+  {
+    refreshToken: NonEmptyString
+  },
+  'RefreshTokenInput'
+)
+export type RefreshTokenInput = t.TypeOf<typeof RefreshTokenInput>
 
-export type UserUpdateInput = Partial<
-  Pick<UserFromDatabase, 'name' | 'email' | 'password'>
->
+export const UserUpdateInput = t.partial(
+  {
+    name: NonEmptyString,
+    email: EmailString,
+    password: NonEmptyString
+  },
+  'UserUpdateInput'
+)
+export type UserUpdateInput = t.TypeOf<typeof UserUpdateInput>

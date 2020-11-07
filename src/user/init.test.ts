@@ -1,57 +1,85 @@
 import { init } from '../init'
-import { Database } from 'sqlite'
-import { getDatabase } from '../misc/getDatabase'
 import { getFakeUser } from '../test/getFakeUser'
-import { update } from '../misc/dbUtils'
-import { User } from './interface'
+import { dbExec } from '../misc/dbUtils'
+import { DatabaseUser } from './interface'
 import SQL from 'sql-template-strings'
-import { getID } from '../test/getID'
-import { definitely } from '../misc/definitely'
+import { constVoid, pipe } from 'fp-ts/function'
+import { option, task, taskEither } from 'fp-ts'
+import { getUserById, insertUser, updateUser } from './database'
+import { Option } from 'fp-ts/Option'
+import { testError } from '../test/util'
 import { sleep } from '../test/sleep'
+import { NonEmptyString } from 'io-ts-types'
 
-describe('initTask', () => {
+describe('initUser', () => {
   describe('happy path', () => {
-    let db: Database
-
     beforeAll(async () => {
-      await init()
-      db = await getDatabase()
+      await init()()
     })
 
     it('should create a database table', async () => {
-      await db.exec('SELECT * FROM user')
+      await dbExec(SQL`SELECT * FROM user`)()
     })
 
     it('should save the creation time automatically', async () => {
-      const lastID = await getID('user', getFakeUser())
+      const user: Option<DatabaseUser> = await pipe(
+        insertUser(getFakeUser()),
+        taskEither.chain(id => getUserById(id)),
+        taskEither.getOrElse(() =>
+          task.fromIO<Option<DatabaseUser>>(() => option.none)
+        )
+      )()
 
-      const user = definitely(
-        await db.get<User>(SQL`SELECT * FROM user WHERE id = ${lastID}`)
+      expect(option.isSome(user)).toBe(true)
+
+      pipe(
+        user,
+        option.fold(constVoid, user =>
+          expect(user.created_at).toBeInstanceOf(Date)
+        )
       )
-
-      expect(user.created_at).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/)
     })
 
     it('should keep track of the time of the last update', async () => {
-      const user = getFakeUser()
-      const updated = { name: 'Some weird name' }
+      interface Result {
+        before: Date
+        after: Date
+      }
 
-      expect(user.name).not.toBe(updated.name)
+      const res = await pipe(
+        getFakeUser(),
+        insertUser,
+        taskEither.chain(id => getUserById(id)),
+        taskEither.chain(taskEither.fromOption(testError)),
+        taskEither.chain(user => taskEither.fromTask(sleep(1000, user))),
+        taskEither.chain(user =>
+          pipe(
+            updateUser(user.id, {
+              name: (user.name + ' Jr') as NonEmptyString
+            }),
+            taskEither.chain(() => getUserById(user.id)),
+            taskEither.chain(taskEither.fromOption(testError)),
+            taskEither.map(updatedUser =>
+              option.some({
+                before: user.updated_at,
+                after: updatedUser.updated_at
+              })
+            )
+          )
+        ),
+        taskEither.getOrElse(() =>
+          task.fromIO<Option<Result>>(() => option.none)
+        )
+      )()
 
-      const lastID = await getID('user', user)
+      expect(option.isSome(res)).toBe(true)
 
-      const updateDateBefore = definitely(
-        await db.get<User>(SQL`SELECT * FROM user WHERE id = ${lastID}`)
-      ).updated_at
-
-      await sleep(1000)
-      await update('user', { id: lastID, ...updated })
-
-      const updateDateAfter = definitely(
-        await db.get<User>(SQL`SELECT * FROM user WHERE id = ${lastID}`)
-      ).updated_at
-
-      expect(updateDateBefore).not.toBe(updateDateAfter)
+      pipe(
+        res,
+        option.fold(constVoid, ({ before, after }) =>
+          expect(before.getTime()).not.toBe(after.getTime())
+        )
+      )
     })
   })
 })
