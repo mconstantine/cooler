@@ -1,18 +1,42 @@
 import { option, task, taskEither } from 'fp-ts'
 import { pipe } from 'fp-ts/function'
 import { Option } from 'fp-ts/Option'
+import * as t from 'io-ts'
+import { optionFromNullable } from 'io-ts-types'
 import SQL from 'sql-template-strings'
 import { dbExec, dbGet, dbGetAll, insert, remove, update } from './dbUtils'
 import { PositiveInteger } from './Types'
 
-interface Row {
-  id: PositiveInteger
-  key: string
-  value: string
-  optional?: string
-}
+const Row = t.type(
+  {
+    id: PositiveInteger,
+    key: t.string,
+    value: t.string,
+    optional: optionFromNullable(t.string)
+  },
+  'Row'
+)
+type Row = t.TypeOf<typeof Row>
 
-interface RowInput extends Omit<Row, 'id'> {}
+const RowInput = t.type(
+  {
+    key: t.string,
+    value: t.string,
+    optional: optionFromNullable(t.string)
+  },
+  'RowInput'
+)
+type RowInput = t.TypeOf<typeof RowInput>
+
+const RowUpateInput = t.partial(
+  {
+    key: t.string,
+    value: t.string,
+    optional: optionFromNullable(t.string)
+  },
+  'RowUpateInput'
+)
+type RowUpateInput = t.TypeOf<typeof RowUpateInput>
 
 describe('dbUtils', () => {
   beforeAll(async () => {
@@ -45,7 +69,7 @@ describe('dbUtils', () => {
   describe('dbGet', () => {
     it('should work', async () => {
       const row = await pipe(
-        dbGet<Row>(SQL`SELECT * FROM tmp WHERE key = "one"`),
+        dbGet(SQL`SELECT * FROM tmp WHERE key = "one"`, Row),
         taskEither.getOrElse(() =>
           task.fromIO(() => option.none as Option<Row>)
         )
@@ -58,7 +82,7 @@ describe('dbUtils', () => {
   describe('dbAll', () => {
     it('should work', async () => {
       const rows = await pipe(
-        dbGetAll<Row>(SQL`SELECT * FROM tmp`),
+        dbGetAll(SQL`SELECT * FROM tmp`, Row),
         taskEither.getOrElse(() => task.fromIO(() => [] as Row[]))
       )()
 
@@ -70,11 +94,12 @@ describe('dbUtils', () => {
     it('should work', async () => {
       const data: RowInput = {
         key: 'seven',
-        value: '7'
+        value: '7',
+        optional: option.none
       }
 
       const lastID = await pipe(
-        insert('tmp', data),
+        insert('tmp', data, RowInput),
         taskEither.getOrElse(() => task.fromIO(() => 0))
       )()
 
@@ -93,15 +118,17 @@ describe('dbUtils', () => {
       const data: RowInput[] = [
         {
           key: 'sixty',
-          value: '42'
+          value: '42',
+          optional: option.none
         },
         {
           key: 'eighty',
-          value: '42'
+          value: '42',
+          optional: option.none
         }
       ]
 
-      await insert('tmp', data)()
+      await insert('tmp', data, RowInput)()
 
       const changes = await pipe(
         remove('tmp', { value: '42' }),
@@ -116,24 +143,26 @@ describe('dbUtils', () => {
         {
           key: 'twenty',
           value: '20',
-          optional: undefined
+          optional: option.none
         },
         {
           key: 'twentyone',
           value: '20',
-          optional: undefined
+          optional: option.none
         }
       ]
 
-      await insert('tmp', data)()
+      await insert('tmp', data, RowInput)()
 
       const rows = await pipe(
-        dbGetAll<Row>(SQL`SELECT * FROM tmp WHERE value = "20"`),
+        dbGetAll(SQL`SELECT * FROM tmp WHERE value = "20"`, Row),
         taskEither.getOrElse(() => task.fromIO(() => [] as Row[]))
       )()
 
       expect(rows.length).toBe(2)
-      expect(rows).toContainEqual(expect.objectContaining({ optional: null }))
+      expect(rows).toContainEqual(
+        expect.objectContaining({ optional: option.none })
+      )
 
       const changes = await pipe(
         remove('tmp', { value: '20' }),
@@ -148,25 +177,26 @@ describe('dbUtils', () => {
     it('should work', async () => {
       const data: RowInput = {
         key: 'thirty',
-        value: '30'
+        value: '30',
+        optional: option.none
       }
 
       const lastID = await pipe(
-        insert('tmp', data),
-        taskEither.getOrElse(() => task.fromIO(() => 0))
+        insert('tmp', data, RowInput),
+        taskEither.getOrElse(() => task.fromIO(() => 0 as PositiveInteger))
       )()
 
       expect(lastID).toBeGreaterThan(0)
 
       let changes = await pipe(
-        update('tmp', { key: 'thirty', value: '32' }, 'key'),
+        update('tmp', lastID, { key: 'thirty', value: '32' }, RowUpateInput),
         taskEither.getOrElse(() => task.fromIO(() => 0))
       )()
 
       expect(changes).toBe(1)
 
       const result = await pipe(
-        dbGet<Row>(SQL`SELECT * FROM tmp WHERE id = ${lastID}`),
+        dbGet(SQL`SELECT * FROM tmp WHERE id = ${lastID}`, Row),
         taskEither.getOrElse(() =>
           task.fromIO(() => option.none as Option<Row>)
         )

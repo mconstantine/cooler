@@ -165,18 +165,17 @@ export function insert<D extends Record<string, any>, S>(
   )
 }
 
-export function update<D extends Record<string, any>, S, K = PositiveInteger>(
+export function update<D extends Record<string, any>, S>(
   tableName: string,
-  id: K,
+  id: PositiveInteger,
   row: D,
-  codec: Type<D, S>,
-  primaryKey = 'id'
+  codec: Type<D, S>
 ): TaskEither<ApolloError, PositiveInteger> {
   const encodedRow = codec.encode(row)
 
   // Magic reduce from { key: value } to [['key = ?'], [value]]
   const [query, args] = Object.entries(removeUndefined(encodedRow))
-    .filter(([key]) => key !== primaryKey)
+    .filter(([key]) => key !== 'id')
     .reduce(
       ([query, args], [key, value]) => {
         return [
@@ -189,7 +188,7 @@ export function update<D extends Record<string, any>, S, K = PositiveInteger>(
 
   return pipe(
     dbRun(
-      `UPDATE ${tableName} SET ${query.join(', ')} WHERE \`${primaryKey}\` = ?`,
+      `UPDATE ${tableName} SET ${query.join(', ')} WHERE \`id\` = ?`,
       ...args,
       id
     ),
