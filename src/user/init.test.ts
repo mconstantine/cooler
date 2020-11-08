@@ -22,7 +22,7 @@ describe('initUser', () => {
     })
 
     it('should save the creation time automatically', async () => {
-      const user: Option<DatabaseUser> = await pipe(
+      const user = await pipe(
         insertUser(getFakeUser()),
         taskEither.chain(id => getUserById(id)),
         taskEither.getOrElse(() =>
