@@ -22,7 +22,13 @@ import { boolean, either, option, taskEither } from 'fp-ts'
 import { constUndefined, constVoid, pipe } from 'fp-ts/function'
 import { coolerError, PositiveInteger } from '../misc/Types'
 import { TaskEither } from 'fp-ts/TaskEither'
-import { getUserByEmail, getUserById, insertUser } from './database'
+import {
+  getUserByEmail,
+  getUserById,
+  insertUser,
+  updateUser as updateDatabaseUser,
+  deleteUser as deleteDatabaseUser
+} from './database'
 import { Int, type } from 'io-ts'
 
 export function createUser(
@@ -41,15 +47,19 @@ export function createUser(
             taskEither.fromOption(() =>
               coolerError('COOLER_500', 'Unable to count existing users')
             )
+          ),
+          taskEither.chain(
+            taskEither.fromPredicate(
+              ({ count }) => count === 0,
+              () =>
+                coolerError(
+                  'COOLER_403',
+                  'Only existing users can create new users'
+                )
+            )
           )
         ),
       () => taskEither.fromIO(() => ({ count: 0 }))
-    ),
-    taskEither.chain(
-      taskEither.fromPredicate(
-        ({ count }) => count > 0,
-        () => coolerError('COOLER_500', 'Unable to count users')
-      )
     ),
     taskEither.chain(() => getUserByEmail(email)),
     taskEither.chain(
@@ -123,7 +133,8 @@ export function updateUser(
     email,
     option.fromNullable,
     option.fold(
-      () =>
+      () => taskEither.right(null),
+      email =>
         pipe(
           dbGet(
             SQL`SELECT id FROM user WHERE email = ${email} AND id != ${id}`,
@@ -139,8 +150,7 @@ export function updateUser(
               )
             )
           )
-        ),
-      () => taskEither.right(null)
+        )
     ),
     taskEither.chain(() => getUserById(id)),
     taskEither.chain(
@@ -157,7 +167,7 @@ export function updateUser(
         )
       })
 
-      return updateUser(user.id, args)
+      return updateDatabaseUser(user.id, args)
     }),
     taskEither.chain(() => getUserById(id))
   )
@@ -173,7 +183,7 @@ export function deleteUser(
     ),
     taskEither.chain(user =>
       pipe(
-        deleteUser(user.id),
+        deleteDatabaseUser(user.id),
         taskEither.map(() => option.some(user))
       )
     )
