@@ -1,6 +1,5 @@
 import {
   User,
-  Token,
   AccessTokenResponse,
   Context,
   UserCreationInput,
@@ -13,13 +12,12 @@ import SQL from 'sql-template-strings'
 import { ApolloError } from 'apollo-server-express'
 import { dbGet } from '../misc/dbUtils'
 import { hashSync, compareSync } from 'bcryptjs'
-import { sign, SignOptions, verify, VerifyOptions } from 'jsonwebtoken'
 import { isUserContext } from '../misc/ensureUser'
 import { removeUndefined } from '../misc/removeUndefined'
 import { NonEmptyString } from 'io-ts-types'
 import { None, Option, Some } from 'fp-ts/Option'
-import { boolean, either, option, taskEither } from 'fp-ts'
-import { constUndefined, constVoid, pipe } from 'fp-ts/function'
+import { boolean, option, taskEither } from 'fp-ts'
+import { constUndefined, pipe } from 'fp-ts/function'
 import { coolerError, PositiveInteger } from '../misc/Types'
 import { TaskEither } from 'fp-ts/TaskEither'
 import {
@@ -30,6 +28,7 @@ import {
   deleteUser as deleteDatabaseUser
 } from './database'
 import { Int, type } from 'io-ts'
+import { signToken, verifyToken } from '../misc/jsonWebToken'
 
 export function createUser(
   input: UserCreationInput,
@@ -202,23 +201,6 @@ export function getUserFromContext<C extends Context>(
   }
 
   return option.some(context.user)
-}
-
-function signToken(token: Token, options?: SignOptions): NonEmptyString {
-  return sign(token, process.env.SECRET!, options) as NonEmptyString
-}
-
-function verifyToken(
-  token: NonEmptyString,
-  options?: VerifyOptions
-): Option<Token> {
-  return pipe(
-    either.tryCatch(
-      () => verify(token, process.env.SECRET!, options) as Token,
-      constVoid
-    ),
-    option.fromEither
-  )
 }
 
 function generateTokens(
