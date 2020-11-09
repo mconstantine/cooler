@@ -6,7 +6,6 @@ import sessionResolvers from './session/resolvers'
 import taxResolvers from './tax/resolvers'
 import { merge } from './misc/merge'
 import { GraphQLScalarType } from 'graphql'
-import { toSQLDate } from './misc/dbUtils'
 
 const defaultResolvers = {
   Node: { __resolveType: () => 'Node' },
@@ -17,7 +16,7 @@ const defaultResolvers = {
     name: 'Date',
     description: 'Represents a JavaScript date',
     parseValue(value: string) {
-      return toSQLDate(new Date(value))
+      return new Date(value)
     },
     serialize(value: Date) {
       return value.toISOString()
