@@ -1,13 +1,10 @@
 import { GraphQLFieldResolver } from 'graphql'
 import {
-  AccessTokenResponse,
   Context,
-  User,
   UserCreationInput,
   UserLoginInput,
   RefreshTokenInput,
-  UserUpdateInput,
-  UserContext
+  UserUpdateInput
 } from './interface'
 import {
   createUser,
@@ -18,83 +15,90 @@ import {
   getUserFromContext
 } from './model'
 import { ensureUser } from '../misc/ensureUser'
+import { createResolver } from '../misc/createResolver'
+import * as t from 'io-ts'
+import { pipe } from 'fp-ts/function'
+import { option, taskEither } from 'fp-ts'
+import { coolerError, EmptyObject } from '../misc/Types'
 
+const CreateUserMutationInput = t.type(
+  {
+    user: UserCreationInput
+  },
+  'CreateUserMutationInput'
+)
+type CreateUserMutationInput = t.TypeOf<typeof CreateUserMutationInput>
 type CreateUserMutation = GraphQLFieldResolver<
   any,
   Context,
-  { user: UserCreationInput }
+  CreateUserMutationInput
 >
+const createUserMutation: CreateUserMutation = createResolver(
+  CreateUserMutationInput,
+  (_parent, { user }, context) => createUser(user, context)
+)
 
-const createUserMutation: CreateUserMutation = (
-  _parent,
-  { user: { name, email, password } },
-  context
-): Promise<AccessTokenResponse | null> => {
-  return createUser(
-    {
-      name: name,
-      email: email,
-      password: password
-    },
-    context
-  )
-}
+const LoginUserMutationInput = t.type(
+  {
+    user: UserLoginInput
+  },
+  'LoginUserMutationInput'
+)
+type LoginUserMutationInput = t.TypeOf<typeof LoginUserMutationInput>
+type LoginUserMutation = GraphQLFieldResolver<any, any, LoginUserMutationInput>
+const loginUserMutation: LoginUserMutation = createResolver(
+  LoginUserMutationInput,
+  (_parent, { user }) => loginUser(user)
+)
 
-type LoginUserMutation = GraphQLFieldResolver<
-  any,
-  any,
-  { user: UserLoginInput }
->
+type RefreshTokenMutation = GraphQLFieldResolver<any, any, RefreshTokenInput>
+const refreshTokenMutation: RefreshTokenMutation = createResolver(
+  RefreshTokenInput,
+  (_parent, args) => refreshToken(args)
+)
 
-const loginUserMutation: LoginUserMutation = (
-  _parent,
-  { user }
-): Promise<AccessTokenResponse> => {
-  return loginUser(user)
-}
-
-export type RefreshTokenMutation = GraphQLFieldResolver<
-  any,
-  any,
-  RefreshTokenInput
->
-
-export const refreshTokenMutation: RefreshTokenMutation = (
-  _parent,
-  args
-): Promise<AccessTokenResponse> => {
-  return refreshToken(args)
-}
-
-export type UpdateMeMutation = GraphQLFieldResolver<
+const UpdateMeMutationInput = t.type(
+  {
+    user: UserUpdateInput
+  },
+  'UpdateMeMutationInput'
+)
+type UpdateMeMutationInput = t.TypeOf<typeof UpdateMeMutationInput>
+type UpdateMeMutation = GraphQLFieldResolver<
   any,
   Context,
-  { user: UserUpdateInput }
+  UpdateMeMutationInput
 >
+const updateMeMutation: UpdateMeMutation = createResolver(
+  UpdateMeMutationInput,
+  (_parent, { user }, context) =>
+    pipe(
+      ensureUser(context),
+      taskEither.chain(contextUser => updateUser(contextUser.id, user)),
+      taskEither.map(option.toNullable)
+    )
+)
 
-export const updateMeMutation: UpdateMeMutation = (
-  _parent,
-  { user },
-  context
-): Promise<User | null> => {
-  return updateUser(ensureUser(context).id, user)
-}
+type DeleteMeMutation = GraphQLFieldResolver<any, Context, EmptyObject>
+const deleteMeMutation: DeleteMeMutation = createResolver(
+  EmptyObject,
+  (_parent, _args, context) =>
+    pipe(
+      ensureUser(context),
+      taskEither.chain(user => deleteUser(user.id)),
+      taskEither.map(option.toNullable)
+    )
+)
 
-export type DeleteMeMutation = GraphQLFieldResolver<any, Context, {}>
-
-export const deleteMeMutation: DeleteMeMutation = (
-  _parent,
-  _args,
-  context
-): Promise<User | null> => {
-  return deleteUser(ensureUser(context).id)
-}
-
-export type MeQuery = GraphQLFieldResolver<any, Context, {}>
-
-export const meQuery: MeQuery = (_parent, _args, context): User | null => {
-  return getUserFromContext(context as UserContext)
-}
+type MeQuery = GraphQLFieldResolver<any, Context, EmptyObject>
+const meQuery: MeQuery = createResolver(
+  EmptyObject,
+  (_parent, _args, context) =>
+    pipe(
+      getUserFromContext(context),
+      taskEither.fromOption(() => coolerError('COOLER_403', 'Unauthorized'))
+    )
+)
 
 interface UserResolvers {
   Mutation: {

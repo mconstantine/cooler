@@ -85,6 +85,9 @@ export const Percentage = t.brand(
 )
 export type Percentage = t.TypeOf<typeof Percentage>
 
+export const EmptyObject = t.type({})
+export type EmptyObject = t.TypeOf<typeof EmptyObject>
+
 const CoolerErrorType = t.keyof({
   COOLER_400: true,
   COOLER_401: true,
