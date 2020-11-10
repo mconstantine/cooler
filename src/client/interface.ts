@@ -1,437 +1,629 @@
-import { ID } from '../misc/Types'
+import * as t from 'io-ts'
+import {
+  DateFromISOString,
+  NonEmptyString,
+  optionFromNullable
+} from 'io-ts-types'
+import { DateFromSQLDate, EmailString, PositiveInteger } from '../misc/Types'
 
-export enum ClientType {
-  PRIVATE = 'PRIVATE',
-  BUSINESS = 'BUSINESS'
-}
+export const ClientType = t.keyof({
+  PRIVATE: true,
+  BUSINESS: true
+})
+export type ClientType = t.TypeOf<typeof ClientType>
 
-export enum Province {
-  AG = 'Agrigento',
-  AL = 'Alessandria',
-  AN = 'Ancona',
-  AO = 'Aosta',
-  AQ = "L'Aquila",
-  AR = 'Arezzo',
-  AP = 'Ascoli-Piceno',
-  AT = 'Asti',
-  AV = 'Avellino',
-  BA = 'Bari',
-  BT = 'Barletta-Andria-Trani',
-  BL = 'Belluno',
-  BN = 'Benevento',
-  BG = 'Bergamo',
-  BI = 'Biella',
-  BO = 'Bologna',
-  BZ = 'Bolzano',
-  BS = 'Brescia',
-  BR = 'Brindisi',
-  CA = 'Cagliari',
-  CL = 'Caltanissetta',
-  CB = 'Campobasso',
-  CI = 'Carbonia Iglesias',
-  CE = 'Caserta',
-  CT = 'Catania',
-  CZ = 'Catanzaro',
-  CH = 'Chieti',
-  CO = 'Como',
-  CS = 'Cosenza',
-  CR = 'Cremona',
-  KR = 'Crotone',
-  CN = 'Cuneo',
-  EN = 'Enna',
-  FM = 'Fermo',
-  FE = 'Ferrara',
-  FI = 'Firenze',
-  FG = 'Foggia',
-  FC = 'Forli-Cesena',
-  FR = 'Frosinone',
-  GE = 'Genova',
-  GO = 'Gorizia',
-  GR = 'Grosseto',
-  IM = 'Imperia',
-  IS = 'Isernia',
-  SP = 'La-Spezia',
-  LT = 'Latina',
-  LE = 'Lecce',
-  LC = 'Lecco',
-  LI = 'Livorno',
-  LO = 'Lodi',
-  LU = 'Lucca',
-  MC = 'Macerata',
-  MN = 'Mantova',
-  MS = 'Massa-Carrara',
-  MT = 'Matera',
-  VS = 'Medio Campidano',
-  ME = 'Messina',
-  MI = 'Milano',
-  MO = 'Modena',
-  MB = 'Monza-Brianza',
-  NA = 'Napoli',
-  NO = 'Novara',
-  NU = 'Nuoro',
-  OG = 'Ogliastra',
-  OT = 'Olbia Tempio',
-  OR = 'Oristano',
-  PD = 'Padova',
-  PA = 'Palermo',
-  PR = 'Parma',
-  PV = 'Pavia',
-  PG = 'Perugia',
-  PU = 'Pesaro-Urbino',
-  PE = 'Pescara',
-  PC = 'Piacenza',
-  PI = 'Pisa',
-  PT = 'Pistoia',
-  PN = 'Pordenone',
-  PZ = 'Potenza',
-  PO = 'Prato',
-  RG = 'Ragusa',
-  RA = 'Ravenna',
-  RC = 'Reggio-Calabria',
-  RE = 'Reggio-Emilia',
-  RI = 'Rieti',
-  RN = 'Rimini',
-  RO = 'Rovigo',
-  SA = 'Salerno',
-  SS = 'Sassari',
-  SV = 'Savona',
-  SI = 'Siena',
-  SR = 'Siracusa',
-  SO = 'Sondrio',
-  TA = 'Taranto',
-  TE = 'Teramo',
-  TR = 'Terni',
-  TO = 'Torino',
-  TP = 'Trapani',
-  TN = 'Trento',
-  TV = 'Treviso',
-  TS = 'Trieste',
-  UD = 'Udine',
-  VA = 'Varese',
-  VE = 'Venezia',
-  VB = 'Verbania',
-  VC = 'Vercelli',
-  VR = 'Verona',
-  VV = 'Vibo-Valentia',
-  VI = 'Vicenza',
-  VT = 'Viterbo',
-  EE = 'Estero'
-}
+export const Province = t.keyof(
+  {
+    AG: 'Agrigento',
+    AL: 'Alessandria',
+    AN: 'Ancona',
+    AO: 'Aosta',
+    AQ: "L'Aquila",
+    AR: 'Arezzo',
+    AP: 'Ascoli-Piceno',
+    AT: 'Asti',
+    AV: 'Avellino',
+    BA: 'Bari',
+    BT: 'Barletta-Andria-Trani',
+    BL: 'Belluno',
+    BN: 'Benevento',
+    BG: 'Bergamo',
+    BI: 'Biella',
+    BO: 'Bologna',
+    BZ: 'Bolzano',
+    BS: 'Brescia',
+    BR: 'Brindisi',
+    CA: 'Cagliari',
+    CL: 'Caltanissetta',
+    CB: 'Campobasso',
+    CI: 'Carbonia Iglesias',
+    CE: 'Caserta',
+    CT: 'Catania',
+    CZ: 'Catanzaro',
+    CH: 'Chieti',
+    CO: 'Como',
+    CS: 'Cosenza',
+    CR: 'Cremona',
+    KR: 'Crotone',
+    CN: 'Cuneo',
+    EN: 'Enna',
+    FM: 'Fermo',
+    FE: 'Ferrara',
+    FI: 'Firenze',
+    FG: 'Foggia',
+    FC: 'Forli-Cesena',
+    FR: 'Frosinone',
+    GE: 'Genova',
+    GO: 'Gorizia',
+    GR: 'Grosseto',
+    IM: 'Imperia',
+    IS: 'Isernia',
+    SP: 'La-Spezia',
+    LT: 'Latina',
+    LE: 'Lecce',
+    LC: 'Lecco',
+    LI: 'Livorno',
+    LO: 'Lodi',
+    LU: 'Lucca',
+    MC: 'Macerata',
+    MN: 'Mantova',
+    MS: 'Massa-Carrara',
+    MT: 'Matera',
+    VS: 'Medio Campidano',
+    ME: 'Messina',
+    MI: 'Milano',
+    MO: 'Modena',
+    MB: 'Monza-Brianza',
+    NA: 'Napoli',
+    NO: 'Novara',
+    NU: 'Nuoro',
+    OG: 'Ogliastra',
+    OT: 'Olbia Tempio',
+    OR: 'Oristano',
+    PD: 'Padova',
+    PA: 'Palermo',
+    PR: 'Parma',
+    PV: 'Pavia',
+    PG: 'Perugia',
+    PU: 'Pesaro-Urbino',
+    PE: 'Pescara',
+    PC: 'Piacenza',
+    PI: 'Pisa',
+    PT: 'Pistoia',
+    PN: 'Pordenone',
+    PZ: 'Potenza',
+    PO: 'Prato',
+    RG: 'Ragusa',
+    RA: 'Ravenna',
+    RC: 'Reggio-Calabria',
+    RE: 'Reggio-Emilia',
+    RI: 'Rieti',
+    RN: 'Rimini',
+    RO: 'Rovigo',
+    SA: 'Salerno',
+    SS: 'Sassari',
+    SV: 'Savona',
+    SI: 'Siena',
+    SR: 'Siracusa',
+    SO: 'Sondrio',
+    TA: 'Taranto',
+    TE: 'Teramo',
+    TR: 'Terni',
+    TO: 'Torino',
+    TP: 'Trapani',
+    TN: 'Trento',
+    TV: 'Treviso',
+    TS: 'Trieste',
+    UD: 'Udine',
+    VA: 'Varese',
+    VE: 'Venezia',
+    VB: 'Verbania',
+    VC: 'Vercelli',
+    VR: 'Verona',
+    VV: 'Vibo-Valentia',
+    VI: 'Vicenza',
+    VT: 'Viterbo',
+    EE: 'Estero'
+  },
+  'Province'
+)
+export type Province = t.TypeOf<typeof Province>
 
-export enum Country {
-  AF = 'Afghanistan',
-  AL = 'Albania',
-  DZ = 'Algeria',
-  AD = 'Andorra',
-  AO = 'Angola',
-  AI = 'Anguilla',
-  AQ = 'Antartide',
-  AG = 'Antigua e Barbuda',
-  SA = 'Arabia Saudita',
-  AR = 'Argentina',
-  AM = 'Armenia',
-  AW = 'Aruba',
-  AU = 'Australia',
-  AT = 'Austria',
-  AZ = 'Azerbaigian',
-  BS = 'Bahamas',
-  BH = 'Bahrein',
-  BD = 'Bangladesh',
-  BB = 'Barbados',
-  BE = 'Belgio',
-  BZ = 'Belize',
-  BJ = 'Benin',
-  BM = 'Bermuda',
-  BT = 'Bhutan',
-  BY = 'Bielorussia',
-  MM = 'Birmania',
-  BO = 'Bolivia',
-  BA = 'Bosnia ed Erzegovina',
-  BW = 'Botswana',
-  BR = 'Brasile',
-  BN = 'Brunei',
-  BG = 'Bulgaria',
-  BF = 'Burkina Faso',
-  BI = 'Burundi',
-  KH = 'Cambogia',
-  CM = 'Camerun',
-  CA = 'Canada',
-  CV = 'Capo Verde',
-  TD = 'Ciad',
-  CL = 'Cile',
-  CN = 'Cina',
-  CY = 'Cipro',
-  VA = 'Città del Vaticano',
-  CO = 'Colombia',
-  KM = 'Comore',
-  KP = 'Corea del Nord',
-  KR = 'Corea del Sud',
-  CI = "Costa d'Avorio",
-  CR = 'Costa Rica',
-  HR = 'Croazia',
-  CU = 'Cuba',
-  CW = 'Curaçao',
-  DK = 'Danimarca',
-  DM = 'Dominica',
-  EC = 'Ecuador',
-  EG = 'Egitto',
-  SV = 'El Salvador',
-  AE = 'Emirati Arabi Uniti',
-  ER = 'Eritrea',
-  EE = 'Estonia',
-  ET = 'Etiopia',
-  FJ = 'Figi',
-  PH = 'Filippine',
-  FI = 'Finlandia',
-  FR = 'Francia',
-  GA = 'Gabon',
-  GM = 'Gambia',
-  GS = 'Georgia del Sud e isole Sandwich meridionali',
-  GE = 'Georgia',
-  DE = 'Germania',
-  GH = 'Ghana',
-  JM = 'Giamaica',
-  JP = 'Giappone',
-  GI = 'Gibilterra',
-  DJ = 'Gibuti',
-  JO = 'Giordania',
-  GR = 'Grecia',
-  GD = 'Grenada',
-  GL = 'Groenlandia',
-  GP = 'Guadalupa',
-  GU = 'Guam',
-  GT = 'Guatemala',
-  GG = 'Guernsey',
-  GQ = 'Guinea Equatoriale',
-  GW = 'Guinea-Bissau',
-  GN = 'Guinea',
-  GF = 'Guyana francese',
-  GY = 'Guyana',
-  HT = 'Haiti',
-  HN = 'Honduras',
-  HK = 'Hong Kong',
-  IN = 'India',
-  ID = 'Indonesia',
-  IR = 'Iran',
-  IQ = 'Iraq',
-  IE = 'Irlanda',
-  IS = 'Islanda',
-  BV = 'Isola Bouvet',
-  CX = 'Isola del Natale',
-  IM = 'Isola di Man',
-  NF = 'Isola Norfolk',
-  AX = 'Isole Åland',
-  BQ = 'Isole BES',
-  KY = 'Isole Cayman',
-  CC = 'Isole Cocos e Keeling',
-  CK = 'Isole Cook',
-  FO = 'Isole Fær Øer',
-  FK = 'Isole Falkland',
-  HM = 'Isole Heard e McDonald',
-  MP = 'Isole Marianne Settentrionali',
-  MH = 'Isole Marshall',
-  UM = 'Isole minori esterne degli Stati Uniti',
-  PN = 'Isole Pitcairn',
-  SB = 'Isole Salomone',
-  TC = 'Isole Turks e Caicos',
-  VI = 'Isole Vergini americane',
-  VG = 'Isole Vergini britanniche',
-  IL = 'Israele',
-  IT = 'Italia',
-  JE = 'Jersey',
-  KZ = 'Kazakistan',
-  KE = 'Kenya',
-  KG = 'Kirghizistan',
-  KI = 'Kiribati',
-  KW = 'Kuwait',
-  LA = 'Laos',
-  LS = 'Lesotho',
-  LV = 'Lettonia',
-  LB = 'Libano',
-  LR = 'Liberia',
-  LY = 'Libia',
-  LI = 'Liechtenstein',
-  LT = 'Lituania',
-  LU = 'Lussemburgo',
-  MO = 'Macao',
-  MK = 'Macedonia del Nord',
-  MG = 'Madagascar',
-  MW = 'Malawi',
-  MY = 'Malaysia',
-  MV = 'Maldive',
-  ML = 'Mali',
-  MT = 'Malta',
-  MA = 'Marocco',
-  MQ = 'Martinica',
-  MR = 'Mauritania',
-  MU = 'Mauritius',
-  YT = 'Mayotte',
-  MX = 'Messico',
-  MD = 'Moldavia',
-  MC = 'Monaco',
-  MN = 'Mongolia',
-  ME = 'Montenegro',
-  MS = 'Montserrat',
-  MZ = 'Mozambico',
-  NA = 'Namibia',
-  NR = 'Nauru',
-  NP = 'Nepal',
-  NI = 'Nicaragua',
-  NE = 'Niger',
-  NG = 'Nigeria',
-  NU = 'Niue',
-  NO = 'Norvegia',
-  NC = 'Nuova Caledonia',
-  NZ = 'Nuova Zelanda',
-  OM = 'Oman',
-  NL = 'Paesi Bassi',
-  PK = 'Pakistan',
-  PW = 'Palau',
-  PA = 'Panama',
-  PG = 'Papua Nuova Guinea',
-  PY = 'Paraguay',
-  PE = 'Perù',
-  PF = 'Polinesia Francese',
-  PL = 'Polonia',
-  PR = 'Porto Rico',
-  PT = 'Portogallo',
-  QA = 'Qatar',
-  GB = 'Regno Unito',
-  CZ = 'Repubblica Ceca',
-  CF = 'Repubblica Centrafricana',
-  CG = 'Repubblica del Congo',
-  CD = 'Repubblica Democratica del Congo',
-  TW = 'Repubblica di Cina',
-  DO = 'Repubblica Dominicana',
-  RE = 'Riunione',
-  RO = 'Romania',
-  RW = 'Ruanda',
-  RU = 'Russia',
-  EH = 'Sahara Occidentale',
-  KN = 'Saint Kitts e Nevis',
-  VC = 'Saint Vincent e Grenadine',
-  BL = 'Saint-Barthélemy',
-  MF = 'Saint-Martin',
-  PM = 'Saint-Pierre e Miquelon',
-  AS = 'Samoa Americane',
-  WS = 'Samoa',
-  SM = 'San Marino',
-  SH = "Sant'Elena, Isola di Ascensione e Tristan da Cunha",
-  LC = 'Santa Lucia',
-  ST = 'São Tomé e Príncipe',
-  SN = 'Senegal',
-  RS = 'Serbia',
-  SC = 'Seychelles',
-  SL = 'Sierra Leone',
-  SG = 'Singapore',
-  SX = 'Sint Maarten',
-  SY = 'Siria',
-  SK = 'Slovacchia',
-  SI = 'Slovenia',
-  SO = 'Somalia',
-  ES = 'Spagna',
-  LK = 'Sri Lanka',
-  FM = 'Stati Federati di Micronesia',
-  US = "Stati Uniti d'America",
-  PS = 'Stato di Palestina',
-  ZA = 'Sudafrica',
-  SS = 'Sudan del Sud',
-  SD = 'Sudan',
-  SR = 'Suriname',
-  SJ = 'Svalbard e Jan Mayen',
-  SE = 'Svezia',
-  CH = 'Svizzera',
-  SZ = 'Swaziland',
-  TJ = 'Tagikistan',
-  TZ = 'Tanzania',
-  IO = "Territori Britannici dell'Oceano Indiano",
-  TF = 'Territori Francesi del Sud',
-  TH = 'Thailandia',
-  TL = 'Timor Est',
-  TG = 'Togo',
-  TK = 'Tokelau',
-  TO = 'Tonga',
-  TT = 'Trinidad e Tobago',
-  TN = 'Tunisia',
-  TR = 'Turchia',
-  TM = 'Turkmenistan',
-  TV = 'Tuvalu',
-  UA = 'Ucraina',
-  UG = 'Uganda',
-  HU = 'Ungheria',
-  UY = 'Uruguay',
-  UZ = 'Uzbekistan',
-  VU = 'Vanuatu',
-  VE = 'Venezuela',
-  VN = 'Vietnam',
-  WF = 'Wallis e Futuna',
-  YE = 'Yemen',
-  ZM = 'Zambia',
-  ZW = 'Zimbabwe'
-}
+export const Country = t.keyof(
+  {
+    AF: 'Afghanistan',
+    AL: 'Albania',
+    DZ: 'Algeria',
+    AD: 'Andorra',
+    AO: 'Angola',
+    AI: 'Anguilla',
+    AQ: 'Antartide',
+    AG: 'Antigua e Barbuda',
+    SA: 'Arabia Saudita',
+    AR: 'Argentina',
+    AM: 'Armenia',
+    AW: 'Aruba',
+    AU: 'Australia',
+    AT: 'Austria',
+    AZ: 'Azerbaigian',
+    BS: 'Bahamas',
+    BH: 'Bahrein',
+    BD: 'Bangladesh',
+    BB: 'Barbados',
+    BE: 'Belgio',
+    BZ: 'Belize',
+    BJ: 'Benin',
+    BM: 'Bermuda',
+    BT: 'Bhutan',
+    BY: 'Bielorussia',
+    MM: 'Birmania',
+    BO: 'Bolivia',
+    BA: 'Bosnia ed Erzegovina',
+    BW: 'Botswana',
+    BR: 'Brasile',
+    BN: 'Brunei',
+    BG: 'Bulgaria',
+    BF: 'Burkina Faso',
+    BI: 'Burundi',
+    KH: 'Cambogia',
+    CM: 'Camerun',
+    CA: 'Canada',
+    CV: 'Capo Verde',
+    TD: 'Ciad',
+    CL: 'Cile',
+    CN: 'Cina',
+    CY: 'Cipro',
+    VA: 'Città del Vaticano',
+    CO: 'Colombia',
+    KM: 'Comore',
+    KP: 'Corea del Nord',
+    KR: 'Corea del Sud',
+    CI: "Costa d'Avorio",
+    CR: 'Costa Rica',
+    HR: 'Croazia',
+    CU: 'Cuba',
+    CW: 'Curaçao',
+    DK: 'Danimarca',
+    DM: 'Dominica',
+    EC: 'Ecuador',
+    EG: 'Egitto',
+    SV: 'El Salvador',
+    AE: 'Emirati Arabi Uniti',
+    ER: 'Eritrea',
+    EE: 'Estonia',
+    ET: 'Etiopia',
+    FJ: 'Figi',
+    PH: 'Filippine',
+    FI: 'Finlandia',
+    FR: 'Francia',
+    GA: 'Gabon',
+    GM: 'Gambia',
+    GS: 'Georgia del Sud e isole Sandwich meridionali',
+    GE: 'Georgia',
+    DE: 'Germania',
+    GH: 'Ghana',
+    JM: 'Giamaica',
+    JP: 'Giappone',
+    GI: 'Gibilterra',
+    DJ: 'Gibuti',
+    JO: 'Giordania',
+    GR: 'Grecia',
+    GD: 'Grenada',
+    GL: 'Groenlandia',
+    GP: 'Guadalupa',
+    GU: 'Guam',
+    GT: 'Guatemala',
+    GG: 'Guernsey',
+    GQ: 'Guinea Equatoriale',
+    GW: 'Guinea-Bissau',
+    GN: 'Guinea',
+    GF: 'Guyana francese',
+    GY: 'Guyana',
+    HT: 'Haiti',
+    HN: 'Honduras',
+    HK: 'Hong Kong',
+    IN: 'India',
+    ID: 'Indonesia',
+    IR: 'Iran',
+    IQ: 'Iraq',
+    IE: 'Irlanda',
+    IS: 'Islanda',
+    BV: 'Isola Bouvet',
+    CX: 'Isola del Natale',
+    IM: 'Isola di Man',
+    NF: 'Isola Norfolk',
+    AX: 'Isole Åland',
+    BQ: 'Isole BES',
+    KY: 'Isole Cayman',
+    CC: 'Isole Cocos e Keeling',
+    CK: 'Isole Cook',
+    FO: 'Isole Fær Øer',
+    FK: 'Isole Falkland',
+    HM: 'Isole Heard e McDonald',
+    MP: 'Isole Marianne Settentrionali',
+    MH: 'Isole Marshall',
+    UM: 'Isole minori esterne degli Stati Uniti',
+    PN: 'Isole Pitcairn',
+    SB: 'Isole Salomone',
+    TC: 'Isole Turks e Caicos',
+    VI: 'Isole Vergini americane',
+    VG: 'Isole Vergini britanniche',
+    IL: 'Israele',
+    IT: 'Italia',
+    JE: 'Jersey',
+    KZ: 'Kazakistan',
+    KE: 'Kenya',
+    KG: 'Kirghizistan',
+    KI: 'Kiribati',
+    KW: 'Kuwait',
+    LA: 'Laos',
+    LS: 'Lesotho',
+    LV: 'Lettonia',
+    LB: 'Libano',
+    LR: 'Liberia',
+    LY: 'Libia',
+    LI: 'Liechtenstein',
+    LT: 'Lituania',
+    LU: 'Lussemburgo',
+    MO: 'Macao',
+    MK: 'Macedonia del Nord',
+    MG: 'Madagascar',
+    MW: 'Malawi',
+    MY: 'Malaysia',
+    MV: 'Maldive',
+    ML: 'Mali',
+    MT: 'Malta',
+    MA: 'Marocco',
+    MQ: 'Martinica',
+    MR: 'Mauritania',
+    MU: 'Mauritius',
+    YT: 'Mayotte',
+    MX: 'Messico',
+    MD: 'Moldavia',
+    MC: 'Monaco',
+    MN: 'Mongolia',
+    ME: 'Montenegro',
+    MS: 'Montserrat',
+    MZ: 'Mozambico',
+    NA: 'Namibia',
+    NR: 'Nauru',
+    NP: 'Nepal',
+    NI: 'Nicaragua',
+    NE: 'Niger',
+    NG: 'Nigeria',
+    NU: 'Niue',
+    NO: 'Norvegia',
+    NC: 'Nuova Caledonia',
+    NZ: 'Nuova Zelanda',
+    OM: 'Oman',
+    NL: 'Paesi Bassi',
+    PK: 'Pakistan',
+    PW: 'Palau',
+    PA: 'Panama',
+    PG: 'Papua Nuova Guinea',
+    PY: 'Paraguay',
+    PE: 'Perù',
+    PF: 'Polinesia Francese',
+    PL: 'Polonia',
+    PR: 'Porto Rico',
+    PT: 'Portogallo',
+    QA: 'Qatar',
+    GB: 'Regno Unito',
+    CZ: 'Repubblica Ceca',
+    CF: 'Repubblica Centrafricana',
+    CG: 'Repubblica del Congo',
+    CD: 'Repubblica Democratica del Congo',
+    TW: 'Repubblica di Cina',
+    DO: 'Repubblica Dominicana',
+    RE: 'Riunione',
+    RO: 'Romania',
+    RW: 'Ruanda',
+    RU: 'Russia',
+    EH: 'Sahara Occidentale',
+    KN: 'Saint Kitts e Nevis',
+    VC: 'Saint Vincent e Grenadine',
+    BL: 'Saint-Barthélemy',
+    MF: 'Saint-Martin',
+    PM: 'Saint-Pierre e Miquelon',
+    AS: 'Samoa Americane',
+    WS: 'Samoa',
+    SM: 'San Marino',
+    SH: "Sant'Elena, Isola di Ascensione e Tristan da Cunha",
+    LC: 'Santa Lucia',
+    ST: 'São Tomé e Príncipe',
+    SN: 'Senegal',
+    RS: 'Serbia',
+    SC: 'Seychelles',
+    SL: 'Sierra Leone',
+    SG: 'Singapore',
+    SX: 'Sint Maarten',
+    SY: 'Siria',
+    SK: 'Slovacchia',
+    SI: 'Slovenia',
+    SO: 'Somalia',
+    ES: 'Spagna',
+    LK: 'Sri Lanka',
+    FM: 'Stati Federati di Micronesia',
+    US: "Stati Uniti d'America",
+    PS: 'Stato di Palestina',
+    ZA: 'Sudafrica',
+    SS: 'Sudan del Sud',
+    SD: 'Sudan',
+    SR: 'Suriname',
+    SJ: 'Svalbard e Jan Mayen',
+    SE: 'Svezia',
+    CH: 'Svizzera',
+    SZ: 'Swaziland',
+    TJ: 'Tagikistan',
+    TZ: 'Tanzania',
+    IO: "Territori Britannici dell'Oceano Indiano",
+    TF: 'Territori Francesi del Sud',
+    TH: 'Thailandia',
+    TL: 'Timor Est',
+    TG: 'Togo',
+    TK: 'Tokelau',
+    TO: 'Tonga',
+    TT: 'Trinidad e Tobago',
+    TN: 'Tunisia',
+    TR: 'Turchia',
+    TM: 'Turkmenistan',
+    TV: 'Tuvalu',
+    UA: 'Ucraina',
+    UG: 'Uganda',
+    HU: 'Ungheria',
+    UY: 'Uruguay',
+    UZ: 'Uzbekistan',
+    VU: 'Vanuatu',
+    VE: 'Venezuela',
+    VN: 'Vietnam',
+    WF: 'Wallis e Futuna',
+    YE: 'Yemen',
+    ZM: 'Zambia',
+    ZW: 'Zimbabwe'
+  },
+  'Country'
+)
+export type Country = t.TypeOf<typeof Country>
 
-interface ClientCommonCommonData {
-  readonly id: ID
-  address_country: keyof typeof Country
-  address_province: keyof typeof Province
-  address_city: string
-  address_zip: string
-  address_street: string
-  address_street_number: string | null
-  address_email: string
-  user: ID
-}
+const ClientCommonData = t.type(
+  {
+    id: PositiveInteger,
+    address_country: Country,
+    address_province: Province,
+    address_city: NonEmptyString,
+    address_zip: NonEmptyString,
+    address_street: NonEmptyString,
+    address_street_number: optionFromNullable(NonEmptyString),
+    address_email: EmailString,
+    user: PositiveInteger
+  },
+  'ClientCommonData'
+)
 
-interface ClientCommonData extends ClientCommonCommonData {
-  readonly created_at: Date
-  readonly updated_at: Date
-}
+const ClientData = t.intersection(
+  [
+    ClientCommonData,
+    t.type({
+      created_at: DateFromISOString,
+      updated_at: DateFromISOString
+    })
+  ],
+  'ClientData'
+)
 
-interface ClientFromDatabaseCommonData extends ClientCommonCommonData {
-  readonly created_at: string
-  readonly updated_at: string
-}
+const DatabaseClientData = t.intersection(
+  [
+    ClientCommonData,
+    t.type({
+      created_at: DateFromSQLDate,
+      updated_at: DateFromSQLDate
+    })
+  ],
+  'DatabaseClientData'
+)
 
-interface PrivateClientCommonData {
-  type: ClientType.PRIVATE
-  fiscal_code: string
-  first_name: string
-  last_name: string
-  country_code: null
-  vat_number: null
-  business_name: null
-}
+const PrivateClientData = t.type(
+  {
+    type: t.literal('PRIVATE'),
+    fiscal_code: NonEmptyString,
+    first_name: NonEmptyString,
+    last_name: NonEmptyString
+  },
+  'PrivateClientData'
+)
 
-interface BusinessClientCommonData {
-  type: ClientType.BUSINESS
-  fiscal_code: null
-  first_name: null
-  last_name: null
-  country_code: keyof typeof Country
-  vat_number: string
-  business_name: string
-}
+const BusinessClientData = t.type(
+  {
+    type: t.literal('BUSINESS'),
+    country_code: Country,
+    vat_number: NonEmptyString,
+    business_name: NonEmptyString
+  },
+  'BusinessClientData'
+)
 
-export type PrivateClient = ClientCommonData & PrivateClientCommonData
-export type BusinessClient = ClientCommonData & BusinessClientCommonData
+export const PrivateClient = t.intersection(
+  [ClientData, PrivateClientData],
+  'PrivateClient'
+)
+export type PrivateClient = t.TypeOf<typeof PrivateClient>
 
-export type PrivateClientFromDatabase = ClientFromDatabaseCommonData &
-  PrivateClientCommonData
+export const BusinessClient = t.intersection(
+  [ClientData, BusinessClientData],
+  'BusinessClient'
+)
+export type BusinessClient = t.TypeOf<typeof BusinessClient>
 
-export type BusinessClientFromDatabase = ClientFromDatabaseCommonData &
-  BusinessClientCommonData
+export const PrivateDatabaseClient = t.intersection(
+  [DatabaseClientData, PrivateClientData],
+  'PrivateDatabaseClient'
+)
 
-export type Client = PrivateClient | BusinessClient
+export const BusinessDatabaseClient = t.intersection(
+  [DatabaseClientData, BusinessClientData],
+  'BusinessDatabaseClient'
+)
 
-export type ClientFromDatabase =
-  | PrivateClientFromDatabase
-  | BusinessClientFromDatabase
+export const Client = t.union([PrivateClient, BusinessClient], 'Client')
+export type Client = t.TypeOf<typeof Client>
 
-export type ClientCreationInput = Omit<
-  ClientFromDatabase,
-  'id' | 'created_at' | 'updated_at' | 'user'
+export const DatabaseClient = t.union(
+  [PrivateDatabaseClient, BusinessDatabaseClient],
+  'DatabaseClient'
+)
+export type DatabaseClient = t.TypeOf<typeof DatabaseClient>
+
+export const ClientCreationCommonInput = t.type(
+  {
+    user: PositiveInteger,
+    address_country: Country,
+    address_province: Province,
+    address_city: NonEmptyString,
+    address_zip: NonEmptyString,
+    address_street: NonEmptyString,
+    address_street_number: optionFromNullable(NonEmptyString),
+    address_email: EmailString
+  },
+  'ClientCreationCommonInput'
+)
+export type ClientCreationCommonInput = t.TypeOf<
+  typeof ClientCreationCommonInput
 >
 
-export type ClientUpdateInput = Partial<
-  Omit<ClientFromDatabase, 'id' | 'created_at' | 'updated_at'>
+export const PrivateClientCreationInput = t.intersection([
+  ClientCreationCommonInput,
+  t.type(
+    {
+      type: t.literal('PRIVATE'),
+      fiscal_code: NonEmptyString,
+      first_name: NonEmptyString,
+      last_name: NonEmptyString
+    },
+    'PrivateClientCreationInput'
+  )
+])
+export type PrivateClientCreationInput = t.TypeOf<
+  typeof PrivateClientCreationInput
 >
+
+export const BusinessClientCreationInput = t.intersection(
+  [
+    ClientCreationCommonInput,
+    t.type({
+      type: t.literal('BUSINESS'),
+      country_code: Country,
+      vat_number: NonEmptyString,
+      business_name: NonEmptyString
+    })
+  ],
+  'BusinessClientCreationInput'
+)
+export type BusinessClientCreationInput = t.TypeOf<
+  typeof BusinessClientCreationInput
+>
+
+export const ClientCreationInput = t.union(
+  [PrivateClientCreationInput, BusinessClientCreationInput],
+  'ClientCreationInput'
+)
+export type ClientCreationInput = t.TypeOf<typeof ClientCreationInput>
+
+export const ClientUpdateCommonInput = t.partial(
+  {
+    user: PositiveInteger,
+    address_country: Country,
+    address_province: Province,
+    address_city: NonEmptyString,
+    address_zip: NonEmptyString,
+    address_street: NonEmptyString,
+    address_street_number: optionFromNullable(NonEmptyString),
+    address_email: EmailString
+  },
+  'ClientUpdateCommonInput'
+)
+export type ClientUpdateCommonInput = t.TypeOf<typeof ClientUpdateCommonInput>
+
+export const PrivateClientUpdateInput = t.intersection(
+  [
+    ClientUpdateCommonInput,
+    t.partial({
+      type: t.literal('PRIVATE'),
+      fiscal_code: NonEmptyString,
+      first_name: NonEmptyString,
+      last_name: NonEmptyString
+    })
+  ],
+  'PrivateClientUpdateInput'
+)
+export type PrivateClientUpdateInput = t.TypeOf<typeof PrivateClientUpdateInput>
+
+export const BusinessClientUpdateInput = t.intersection(
+  [
+    ClientUpdateCommonInput,
+    t.partial({
+      type: t.literal('BUSINESS'),
+      country_code: Country,
+      vat_number: NonEmptyString,
+      business_name: NonEmptyString,
+      address_country: Country,
+      address_province: Province,
+      address_city: NonEmptyString,
+      address_zip: NonEmptyString,
+      address_street: NonEmptyString,
+      address_street_number: optionFromNullable(NonEmptyString),
+      address_email: EmailString
+    })
+  ],
+  'BusinessClientUpdateInput'
+)
+export type BusinessClientUpdateInput = t.TypeOf<
+  typeof BusinessClientUpdateInput
+>
+
+export const ClientUpdateInput = t.union(
+  [PrivateClientUpdateInput, BusinessClientUpdateInput],
+  'ClientUpdateInput'
+)
+export type ClientUpdateInput = t.TypeOf<typeof ClientUpdateInput>
+
+export function foldClientCreationInput<T>(
+  whenPrivate: (input: PrivateClientCreationInput) => T,
+  whenBusiness: (input: BusinessClientCreationInput) => T
+): (input: ClientCreationInput) => T {
+  return input => {
+    switch (input.type) {
+      case 'PRIVATE':
+        return whenPrivate(input)
+      case 'BUSINESS':
+        return whenBusiness(input)
+    }
+  }
+}
+
+export function foldClientUpdateInput<T>(
+  whenPrivate: (input: PrivateClientUpdateInput) => T,
+  whenBusiness: (input: BusinessClientUpdateInput) => T
+): (input: ClientUpdateInput & { type: ClientType }) => T {
+  return input => {
+    switch (input.type) {
+      case 'PRIVATE':
+        return whenPrivate(input)
+      case 'BUSINESS':
+        return whenBusiness(input)
+    }
+  }
+}
+
+export function foldClient<T>(
+  whenPrivate: (client: PrivateClient) => T,
+  whenBusiness: (client: BusinessClient) => T
+): (client: Client) => T {
+  return client => {
+    switch (client.type) {
+      case 'PRIVATE':
+        return whenPrivate(client)
+      case 'BUSINESS':
+        return whenBusiness(client)
+    }
+  }
+}

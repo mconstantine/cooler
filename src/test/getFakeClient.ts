@@ -1,65 +1,73 @@
 import faker from 'faker'
+import { boolean, option } from 'fp-ts'
+import { pipe } from 'fp-ts/lib/pipeable'
+import { NonEmptyString } from 'io-ts-types'
 import {
-  ClientType,
   Province,
   Country,
-  ClientFromDatabase
+  ClientCreationInput,
+  ClientType,
+  PrivateClientCreationInput,
+  BusinessClientCreationInput,
+  ClientCreationCommonInput
 } from '../client/interface'
-import { foldClientType } from '../client/model'
-import { ID } from '../misc/Types'
-
-type ClientInput = Omit<ClientFromDatabase, 'id' | 'created_at' | 'updated_at'>
+import { EmailString, PositiveInteger } from '../misc/Types'
 
 export function getFakeClient(
-  user: ID,
-  { type, ...data }: Partial<ClientInput> = {}
-): ClientInput {
-  type = type || faker.random.arrayElement(Object.values(ClientType))
+  user: PositiveInteger,
+  data?: Partial<PrivateClientCreationInput>
+): PrivateClientCreationInput
+export function getFakeClient(
+  user: PositiveInteger,
+  data?: Partial<BusinessClientCreationInput>
+): BusinessClientCreationInput
+export function getFakeClient(
+  user: PositiveInteger,
+  data: Partial<ClientCreationInput> = {}
+): ClientCreationInput {
+  const type = data.type || faker.random.arrayElement(Object.values(ClientType))
+  const country_code = faker.address.countryCode() as Country
 
-  const country_code = faker.address.countryCode() as keyof typeof Country
-
-  const commonData = {
-    type,
+  const commonData: ClientCreationCommonInput = {
     user,
     address_country: country_code,
     address_province:
       country_code !== 'IT'
         ? 'EE'
-        : (faker.random.arrayElement(
-            Object.keys(Province)
-          ) as keyof typeof Province),
-    address_city: faker.address.city(),
-    address_zip: faker.address.zipCode(),
-    address_street: faker.address.streetName(),
-    address_street_number: (1 + Math.round(Math.random() * 199)).toString(10),
-    address_email: faker.internet.email()
+        : (faker.random.arrayElement(Object.keys(Province)) as Province),
+    address_city: faker.address.city() as NonEmptyString,
+    address_zip: faker.address.zipCode() as NonEmptyString,
+    address_street: faker.address.streetName() as NonEmptyString,
+    address_street_number: option.some(
+      (1 + Math.round(Math.random() * 199)).toString(10) as NonEmptyString
+    ),
+    address_email: faker.internet.email() as EmailString
   }
 
-  return foldClientType(commonData, {
-    whenPrivate: client => ({
-      ...client,
-      ...data,
-      fiscal_code: generateFiscalCode(),
-      first_name: faker.name.firstName(),
-      last_name: faker.name.lastName(),
-      country_code: null,
-      vat_number: null,
-      business_name: null
-    }),
-    whenBusiness: client => ({
-      ...client,
-      ...data,
-      fiscal_code: null,
-      first_name: null,
-      last_name: null,
-      country_code: country_code,
-      vat_number: faker.finance.mask(11),
-      business_name: faker.company.companyName()
-    })
-  })
+  return pipe(
+    type === 'BUSINESS',
+    boolean.fold(
+      () => ({
+        ...commonData,
+        ...data,
+        type: 'PRIVATE',
+        fiscal_code: generateFiscalCode(),
+        first_name: faker.name.firstName() as NonEmptyString,
+        last_name: faker.name.lastName() as NonEmptyString
+      }),
+      () => ({
+        ...commonData,
+        // @ts-ignore
+        type: 'BUSINESS',
+        country_code: country_code,
+        vat_number: faker.finance.mask(11) as NonEmptyString,
+        business_name: faker.company.companyName() as NonEmptyString
+      })
+    )
+  )
 }
 
-function generateFiscalCode(): string {
+function generateFiscalCode(): NonEmptyString {
   const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
   const numbers = '1234567890'
   const format = 'aaaaaaddaddaddda'
@@ -70,5 +78,5 @@ function generateFiscalCode(): string {
       const target = (char === 'a' ? letters : numbers).split('')
       return target[Math.round(Math.random() * (target.length - 1))]
     })
-    .join('')
+    .join('') as NonEmptyString
 }
