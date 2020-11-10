@@ -1,5 +1,5 @@
 import initUser from './user/init'
-// import initClient from './client/init'
+import initClient from './client/init'
 // import initProject from './project/init'
 // import initTask from './task/init'
 // import initSession from './session/init'
@@ -26,10 +26,9 @@ export function init(): TaskEither<ApolloError, void> {
     //     }
     //   )
     // ),
-    taskEither.chain(() => initUser())
+    taskEither.chain(() => initUser()),
+    taskEither.chain(() => initClient())
   )
-  // await initUser()
-  // await initClient()
   // await initProject()
   // await initTask()
   // await initSession()

@@ -1,121 +1,153 @@
 import { init } from '../init'
-import { getDatabase } from '../misc/getDatabase'
-import { Database } from 'sqlite'
-import { insert, update, remove } from '../misc/dbUtils'
-import { getFakeClient } from '../test/getFakeClient'
-import { Client, ClientFromDatabase, ClientType } from './interface'
+import { insert, remove, dbExec, dbGet, update } from '../misc/dbUtils'
 import SQL from 'sql-template-strings'
-import { User, UserCreationInput } from '../user/interface'
+import { User } from '../user/interface'
 import { getFakeUser } from '../test/getFakeUser'
-import { definitely } from '../misc/definitely'
+import { pipe } from 'fp-ts/function'
+import { either, taskEither } from 'fp-ts'
+import { registerUser } from '../test/registerUser'
+import { getFakeClient } from '../test/getFakeClient'
+import {
+  ClientCreationInput,
+  ClientUpdateInput,
+  DatabaseClient
+} from './interface'
+import { testError } from '../test/util'
+import { NonEmptyString } from 'io-ts-types'
 import { sleep } from '../test/sleep'
-import { getID } from '../test/getID'
+import { coolerError } from '../misc/Types'
 
 describe('initClient', () => {
   describe('happy path', () => {
-    let db: Database
-    let user: UserCreationInput & Pick<User, 'id'>
+    let user: User
 
     beforeAll(async () => {
-      db = await getDatabase()
+      process.env.SECRET = 'shhhhh'
 
-      await init()
+      await init()()
+      const result = await registerUser(getFakeUser())()
 
-      const userData = getFakeUser()
-      const lastID = await getID<UserCreationInput>('user', userData)
+      expect(either.isRight(result)).toBe(true)
 
-      user = { ...userData, id: lastID }
+      pipe(
+        result,
+        either.fold(console.log, u => {
+          user = u
+        })
+      )
+    })
+
+    afterAll(async () => {
+      await remove('user')()
     })
 
     it('should create a database table', async () => {
-      await db.exec('SELECT * FROM client')
+      await dbExec(SQL`SELECT * FROM client`)()
     })
 
     it('should save the creation time automatically', async () => {
-      const lastID = await getID('client', getFakeClient(user.id))
+      const result = await pipe(
+        insert('client', getFakeClient(user.id), ClientCreationInput),
+        taskEither.chain(lastID =>
+          dbGet(SQL`SELECT * FROM client WHERE id = ${lastID}`, DatabaseClient)
+        ),
+        taskEither.chain(taskEither.fromOption(testError))
+      )()
 
-      const client = definitely(
-        await db.get<ClientFromDatabase>(
-          SQL`SELECT * FROM client WHERE id = ${lastID}`
-        )
+      expect(either.isRight(result)).toBe(true)
+
+      pipe(
+        result,
+        either.fold(console.log, client => {
+          expect(DatabaseClient.is(client)).toBe(true)
+          expect(client.created_at).toBeInstanceOf(Date)
+        })
       )
-
-      expect(client.created_at).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/)
     })
 
     it('should keep track of the time of the last update', async () => {
-      const client = getFakeClient(user.id)
-      const updated = { address_city: 'Some weird city' }
+      const result = await pipe(
+        insert('client', getFakeClient(user.id), ClientCreationInput),
+        taskEither.chain(lastID =>
+          dbGet(SQL`SELECT * FROM client WHERE id = ${lastID}`, DatabaseClient)
+        ),
+        taskEither.chain(taskEither.fromOption(testError)),
+        taskEither.chain(client => taskEither.fromTask(sleep(1000, client))),
+        taskEither.chain(client =>
+          pipe(
+            update(
+              'client',
+              client.id,
+              { address_city: 'Milan' as NonEmptyString },
+              ClientUpdateInput
+            ),
+            taskEither.chain(() =>
+              dbGet(
+                SQL`SELECT * FROM client WHERE id = ${client.id}`,
+                DatabaseClient
+              )
+            ),
+            taskEither.chain(taskEither.fromOption(testError)),
+            taskEither.map(updatedClient => ({
+              before: client.updated_at,
+              after: updatedClient.updated_at
+            }))
+          )
+        )
+      )()
 
-      expect(client.address_city).not.toBe(updated.address_city)
+      expect(either.isRight(result)).toBe(true)
 
-      const lastID = await getID('client', client)
-
-      const updateDateBefore = definitely(
-        await db.get<Client>(SQL`SELECT * FROM client WHERE id = ${lastID}`)
-      ).updated_at
-
-      await sleep(1000)
-      await update('client', { id: lastID, ...updated })
-
-      const updateDateAfter = definitely(
-        await db.get<Client>(SQL`SELECT * FROM client WHERE id = ${lastID}`)
-      ).updated_at
-
-      expect(updateDateBefore).not.toBe(updateDateAfter)
+      pipe(
+        result,
+        either.fold(console.log, ({ before, after }) => {
+          expect(before.getTime()).not.toBe(after.getTime())
+        })
+      )
     })
 
     it("should delete all user's clients when the user is deleted", async () => {
-      const userData = getFakeUser()
-      const userId = await getID('user', userData)
-      const clientData = getFakeClient(userId)
-      const clientId = await getID('client', clientData)
+      const result = await pipe(
+        registerUser(getFakeUser(), user),
+        taskEither.chain(user =>
+          pipe(
+            insert('client', getFakeClient(user.id), ClientCreationInput),
+            taskEither.chain(lastID =>
+              dbGet(
+                SQL`SELECT * FROM client WHERE id = ${lastID}`,
+                DatabaseClient
+              )
+            ),
+            taskEither.chain(taskEither.fromOption(testError)),
+            taskEither.chain(client =>
+              pipe(
+                remove('user', { id: user.id }),
+                taskEither.chain(() =>
+                  dbGet(
+                    SQL`SELECT * FROM client WHERE id = ${client.id}`,
+                    DatabaseClient
+                  )
+                )
+              )
+            )
+          )
+        ),
+        taskEither.chain(
+          taskEither.fromOption(() =>
+            coolerError('COOLER_404', 'This should happen')
+          )
+        )
+      )()
 
-      await remove('user', { id: userId })
+      expect(either.isLeft(result)).toBe(true)
 
-      const client = await db.get<Client>(
-        SQL`SELECT * FROM client WHERE id = ${clientId}`
+      pipe(
+        result,
+        either.fold(
+          error => expect(error.message).toBe('This should happen'),
+          console.log
+        )
       )
-
-      expect(client).toBeUndefined()
-    })
-  })
-
-  describe('validation', () => {
-    it('should check that fiscal_code exists for PRIVATE Clients', async () => {
-      const client = getFakeClient(0, { type: ClientType.PRIVATE })
-      client.fiscal_code = null
-      await expect(insert('client', client)).rejects.toBeDefined()
-    })
-
-    it('should check that first_name exists for PRIVATE Clients', async () => {
-      const client = getFakeClient(0, { type: ClientType.PRIVATE })
-      client.first_name = null
-      await expect(insert('client', client)).rejects.toBeDefined()
-    })
-
-    it('should check that last_name exists for PRIVATE Clients', async () => {
-      const client = getFakeClient(0, { type: ClientType.PRIVATE })
-      client.last_name = null
-      await expect(insert('client', client)).rejects.toBeDefined()
-    })
-
-    it('should check that country_code exists for BUSINESS Clients', async () => {
-      const client = getFakeClient(0, { type: ClientType.BUSINESS })
-      client.country_code = null
-      await expect(insert('client', client)).rejects.toBeDefined()
-    })
-
-    it('should check that vat_number exists for BUSINESS Clients', async () => {
-      const client = getFakeClient(0, { type: ClientType.BUSINESS })
-      client.vat_number = null
-      await expect(insert('client', client)).rejects.toBeDefined()
-    })
-
-    it('should check that business_name exists for BUSINESS Clients', async () => {
-      const client = getFakeClient(0, { type: ClientType.BUSINESS })
-      client.business_name = null
-      await expect(insert('client', client)).rejects.toBeDefined()
     })
   })
 })
