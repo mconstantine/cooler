@@ -273,8 +273,7 @@ describe('userModel', () => {
           updateUser(user.id, {
             name: (user.name + ' Jr') as NonEmptyString
           })
-        ),
-        taskEither.chain(taskEither.fromOption(testError))
+        )
       )()
 
       expect(either.isRight(result)).toBe(true)

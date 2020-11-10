@@ -125,7 +125,7 @@ export function refreshToken(
 export function updateUser(
   id: PositiveInteger,
   user: UserUpdateInput
-): TaskEither<ApolloError, Option<User>> {
+): TaskEither<ApolloError, User> {
   const { name, email, password } = user
 
   return pipe(
@@ -168,13 +168,14 @@ export function updateUser(
 
       return updateDatabaseUser(user.id, args)
     }),
-    taskEither.chain(() => getUserById(id))
+    taskEither.chain(() => getUserById(id)),
+    taskEither.chain(
+      taskEither.fromOption(() => coolerError('COOLER_404', 'User not found'))
+    )
   )
 }
 
-export function deleteUser(
-  id: PositiveInteger
-): TaskEither<ApolloError, Option<User>> {
+export function deleteUser(id: PositiveInteger): TaskEither<ApolloError, User> {
   return pipe(
     getUserById(id),
     taskEither.chain(
@@ -183,7 +184,7 @@ export function deleteUser(
     taskEither.chain(user =>
       pipe(
         deleteDatabaseUser(user.id),
-        taskEither.map(() => option.some(user))
+        taskEither.map(() => user)
       )
     )
   )
