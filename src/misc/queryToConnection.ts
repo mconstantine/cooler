@@ -1,7 +1,25 @@
 import SQL, { SQLStatement } from 'sql-template-strings'
-import { getDatabase } from './getDatabase'
 import { ConnectionQueryArgs } from './ConnectionQueryArgs'
-import { Connection } from './Connection'
+import { Connection, Edge } from './Connection'
+import { coolerError, PositiveInteger, NonNegativeInteger } from './Types'
+import { TaskEither } from 'fp-ts/TaskEither'
+import { ApolloError } from 'apollo-server-express'
+import { nonEmptyArray, option, taskEither } from 'fp-ts'
+import { flow, pipe } from 'fp-ts/function'
+import { dbGetAll } from './dbUtils'
+import * as t from 'io-ts'
+import { NonEmptyString } from 'io-ts-types'
+
+const ConnectionAddendum = t.type(
+  {
+    _n: NonNegativeInteger,
+    _first: NonNegativeInteger,
+    _last: NonNegativeInteger,
+    totalCount: NonNegativeInteger
+  },
+  'ConnectionAddendum'
+)
+type ConnectionAddendum = t.TypeOf<typeof ConnectionAddendum>
 
 /**
  * Runs a query as a GraphQL Connection and returns a Connection as a result
@@ -11,15 +29,22 @@ import { Connection } from './Connection'
  * @param orderBy auto explanatory
  * @param rest the rest of the query (WHERE, GROUP BY etc.) DO NOT PUT ORDER BY HERE
  */
-export async function queryToConnection<T extends { id: number }>(
+export function queryToConnection<
+  D extends { id: PositiveInteger },
+  S extends { id: number }
+>(
   args: ConnectionQueryArgs,
   select: string[],
   from: string,
+  codec: t.Type<D, S>,
   rest?: SQLStatement
-): Promise<Connection<T>> {
+): TaskEither<ApolloError, Connection<D>> {
   if ((args.first && args.before) || (args.last && args.after)) {
-    throw new Error(
-      'You must use either "first" and "after" or "last" and "before". You cannot mix and match them'
+    return taskEither.left(
+      coolerError(
+        'COOLER_400',
+        'You must use either "first" and "after" or "last" and "before". You cannot mix and match them'
+      )
     )
   }
 
@@ -72,54 +97,53 @@ export async function queryToConnection<T extends { id: number }>(
     `)
   }
 
-  const db = await getDatabase()
+  return pipe(
+    dbGetAll(query, t.intersection([codec, ConnectionAddendum])),
+    taskEither.map(
+      flow(
+        nonEmptyArray.fromArray,
+        option.fold(
+          () => ({
+            totalCount: 0 as NonNegativeInteger,
+            edges: [] as Edge<D>[],
+            pageInfo: {
+              startCursor: option.none,
+              endCursor: option.none,
+              hasPreviousPage: false,
+              hasNextPage: false
+            }
+          }),
+          records => {
+            args.before && records.reverse()
+            const firstResult = records[0]
+            const lastResult = records[records.length - 1]
 
-  const results = await db.all<
-    Array<
-      T & {
-        _n: number
-        _first: number
-        _last: number
-        totalCount: number
-      }
-    >
-  >(query)
-
-  if (!results.length) {
-    return {
-      totalCount: 0,
-      edges: [],
-      pageInfo: {
-        startCursor: '',
-        endCursor: '',
-        hasPreviousPage: false,
-        hasNextPage: false
-      }
-    }
-  }
-
-  args.before && results.reverse()
-
-  const firstResult = results[0]
-  const lastResult = results[results.length - 1]
-
-  return {
-    totalCount: firstResult.totalCount,
-    edges: results.map(result => ({
-      node: Object.entries(result)
-        .filter(
-          ([key]) => !['_n', '_first', '_last', 'totalCount'].includes(key)
+            return {
+              totalCount: firstResult.totalCount,
+              edges: records.map(record => ({
+                node: Object.entries(record)
+                  .filter(
+                    ([key]) =>
+                      !['_n', '_first', '_last', 'totalCount'].includes(key)
+                  )
+                  .reduce(
+                    (res, [key, value]) => ({ ...res, [key]: value }),
+                    {}
+                  ) as D,
+                cursor: toCursor(record.id)
+              })),
+              pageInfo: {
+                startCursor: option.some(toCursor(firstResult.id)),
+                endCursor: option.some(toCursor(lastResult.id)),
+                hasPreviousPage: firstResult.id !== firstResult._first,
+                hasNextPage: lastResult.id !== firstResult._last
+              }
+            }
+          }
         )
-        .reduce((res, [key, value]) => ({ ...res, [key]: value }), {}) as T,
-      cursor: toCursor(result.id)
-    })),
-    pageInfo: {
-      startCursor: toCursor(firstResult.id),
-      endCursor: toCursor(lastResult.id),
-      hasPreviousPage: firstResult.id !== firstResult._first,
-      hasNextPage: lastResult.id !== firstResult._last
-    }
-  }
+      )
+    )
+  )
 }
 
 export function mapConnection<I, O>(
@@ -135,10 +159,13 @@ export function mapConnection<I, O>(
   }
 }
 
-export function toCursor(value: number): string {
-  return Buffer.from(value.toString(10)).toString('base64')
+export function toCursor(value: number): NonEmptyString {
+  return Buffer.from(value.toString(10)).toString('base64') as NonEmptyString
 }
 
-function fromCursor(cursor: string): number {
-  return parseInt(Buffer.from(cursor, 'base64').toString('ascii'), 10)
+function fromCursor(cursor: NonEmptyString): PositiveInteger {
+  return parseInt(
+    Buffer.from(cursor, 'base64').toString('ascii'),
+    10
+  ) as PositiveInteger
 }

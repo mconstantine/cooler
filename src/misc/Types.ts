@@ -52,6 +52,12 @@ export const PositiveInteger = t.brand(
 )
 export type PositiveInteger = t.TypeOf<typeof PositiveInteger>
 
+export const NonNegativeInteger = t.union(
+  [PositiveInteger, t.literal(0)],
+  'NonNegativeInteger'
+)
+export type NonNegativeInteger = t.TypeOf<typeof NonNegativeInteger>
+
 interface EmailStringBrand {
   readonly EmailString: unique symbol
 }
