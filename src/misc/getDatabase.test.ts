@@ -29,7 +29,7 @@ describe('getDatabase', () => {
       return taskEither.tryCatch(
         () => {
           return db.exec(SQL`
-            CREATE TABLE IF NOT EXISTS tmp (
+            CREATE TABLE IF NOT EXISTS getDatabase (
               id INTEGER PRIMARY KEY,
               key TEXT NOT NULL,
               value TEXT NOT NULL
@@ -46,7 +46,7 @@ describe('getDatabase', () => {
     const testQuery = (db: Database): TaskEither<Error, []> => {
       return taskEither.tryCatch(
         () => {
-          return db.all<[]>(SQL`SELECT * FROM tmp`)
+          return db.all<[]>(SQL`SELECT * FROM getDatabase`)
         },
         error => {
           console.log(error)
