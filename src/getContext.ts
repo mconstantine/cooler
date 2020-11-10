@@ -9,7 +9,7 @@ import { option, task, taskEither } from 'fp-ts'
 import { getUserById } from './user/database'
 import { coolerError } from './misc/Types'
 
-function validateToken(accessToken: NonEmptyString): Task<Context> {
+export function validateToken(accessToken: NonEmptyString): Task<Context> {
   return pipe(
     verifyToken(accessToken),
     option.chain(option.fromPredicate(token => token.type === 'ACCESS')),
