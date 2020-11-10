@@ -5,6 +5,7 @@ import { pipe } from 'fp-ts/function'
 import { TaskEither } from 'fp-ts/TaskEither'
 import SQL from 'sql-template-strings'
 import { Database, ISqlite, open } from 'sqlite'
+import { testTaskEither } from '../test/util'
 import { getDatabase } from './getDatabase'
 
 const { open: actualOpen } = jest.requireActual('sqlite')
@@ -22,7 +23,7 @@ describe('getDatabase', () => {
     expect(open).toHaveBeenCalledTimes(1)
   })
 
-  it('should return a working database', () => {
+  it('should return a working database', async () => {
     expect.assertions(1)
 
     const createTable = (db: Database): TaskEither<Error, void> => {
@@ -55,18 +56,15 @@ describe('getDatabase', () => {
       )
     }
 
-    return pipe(
+    await pipe(
       getDatabase(),
       taskEither.chain(db =>
         pipe(
           createTable(db),
-          taskEither.chain(() => testQuery(db)),
-          taskEither.map(test => expect(test).toEqual([]))
+          taskEither.chain(() => testQuery(db))
         )
       ),
-      taskEither.getOrElse(error => {
-        throw error
-      })
-    )()
+      testTaskEither(test => expect(test).toEqual([]))
+    )
   })
 })

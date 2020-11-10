@@ -1,9 +1,9 @@
-import { option, task, taskEither } from 'fp-ts'
+import { option, taskEither } from 'fp-ts'
 import { pipe } from 'fp-ts/function'
-import { Option } from 'fp-ts/Option'
 import * as t from 'io-ts'
 import { optionFromNullable } from 'io-ts-types'
 import SQL from 'sql-template-strings'
+import { pipeTestTaskEither, testError, testTaskEither } from '../test/util'
 import { dbExec, dbGet, dbGetAll, insert, remove, update } from './dbUtils'
 import { PositiveInteger } from './Types'
 
@@ -68,25 +68,23 @@ describe('dbUtils', () => {
 
   describe('dbGet', () => {
     it('should work', async () => {
-      const row = await pipe(
+      await pipe(
         dbGet(SQL`SELECT * FROM dbUtils WHERE key = "one"`, Row),
-        taskEither.getOrElse(() =>
-          task.fromIO(() => option.none as Option<Row>)
-        )
-      )()
-
-      expect(option.isSome(row)).toBe(true)
+        testTaskEither(row => {
+          expect(option.isSome(row)).toBe(true)
+        })
+      )
     })
   })
 
   describe('dbAll', () => {
     it('should work', async () => {
-      const rows = await pipe(
+      await pipe(
         dbGetAll(SQL`SELECT * FROM dbUtils`, Row),
-        taskEither.getOrElse(() => task.fromIO(() => [] as Row[]))
-      )()
-
-      expect(rows.length).toBeGreaterThan(0)
+        testTaskEither(rows => {
+          expect(rows.length).toBeGreaterThan(0)
+        })
+      )
     })
   })
 
@@ -98,20 +96,17 @@ describe('dbUtils', () => {
         optional: option.none
       }
 
-      const lastID = await pipe(
+      await pipe(
         insert('dbUtils', data, RowInput),
-        taskEither.getOrElse(() => task.fromIO(() => 0))
-      )()
-
-      expect(typeof lastID).toBe('number')
-      expect(lastID).toBeGreaterThan(0)
-
-      const changes = await pipe(
-        remove('dbUtils', { id: lastID }),
-        taskEither.getOrElse(() => task.fromIO(() => 0))
-      )()
-
-      expect(changes).toBe(1)
+        pipeTestTaskEither(lastID => {
+          expect(typeof lastID).toBe('number')
+          expect(lastID).toBeGreaterThan(0)
+        }),
+        taskEither.chain(lastID => remove('dbUtils', { id: lastID })),
+        testTaskEither(changes => {
+          expect(changes).toBe(1)
+        })
+      )
     })
 
     it('should handle multiple rows', async () => {
@@ -128,14 +123,13 @@ describe('dbUtils', () => {
         }
       ]
 
-      await insert('dbUtils', data, RowInput)()
-
-      const changes = await pipe(
-        remove('dbUtils', { value: '42' }),
-        taskEither.getOrElse(() => task.fromIO(() => 0))
-      )()
-
-      expect(changes).toBe(2)
+      await pipe(
+        insert('dbUtils', data, RowInput),
+        taskEither.chain(() => remove('dbUtils', { value: '42' })),
+        testTaskEither(changes => {
+          expect(changes).toBe(2)
+        })
+      )
     })
 
     it('should remove keys with undefined value', async () => {
@@ -152,24 +146,22 @@ describe('dbUtils', () => {
         }
       ]
 
-      await insert('dbUtils', data, RowInput)()
-
-      const rows = await pipe(
-        dbGetAll(SQL`SELECT * FROM dbUtils WHERE value = "20"`, Row),
-        taskEither.getOrElse(() => task.fromIO(() => [] as Row[]))
-      )()
-
-      expect(rows.length).toBe(2)
-      expect(rows).toContainEqual(
-        expect.objectContaining({ optional: option.none })
+      await pipe(
+        insert('dbUtils', data, RowInput),
+        taskEither.chain(() =>
+          dbGetAll(SQL`SELECT * FROM dbUtils WHERE value = "20"`, Row)
+        ),
+        pipeTestTaskEither(rows => {
+          expect(rows.length).toBe(2)
+          expect(rows).toContainEqual(
+            expect.objectContaining({ optional: option.none })
+          )
+        }),
+        taskEither.chain(() => remove('dbUtils', { value: '20' })),
+        testTaskEither(changes => {
+          expect(changes).toBe(2)
+        })
       )
-
-      const changes = await pipe(
-        remove('dbUtils', { value: '20' }),
-        taskEither.getOrElse(() => task.fromIO(() => 0))
-      )()
-
-      expect(changes).toBe(2)
     })
   })
 
@@ -181,41 +173,36 @@ describe('dbUtils', () => {
         optional: option.none
       }
 
-      const lastID = await pipe(
+      await pipe(
         insert('dbUtils', data, RowInput),
-        taskEither.getOrElse(() => task.fromIO(() => 0 as PositiveInteger))
-      )()
-
-      expect(lastID).toBeGreaterThan(0)
-
-      let changes = await pipe(
-        update(
-          'dbUtils',
-          lastID,
-          { key: 'thirty', value: '32' },
-          RowUpateInput
+        pipeTestTaskEither(lastID => {
+          expect(lastID).toBeGreaterThan(0)
+        }),
+        taskEither.chain(lastID =>
+          pipe(
+            update(
+              'dbUtils',
+              lastID,
+              { key: 'thirty', value: '32' },
+              RowUpateInput
+            ),
+            pipeTestTaskEither(changes => {
+              expect(changes).toBe(1)
+            }),
+            taskEither.chain(() =>
+              dbGet(SQL`SELECT * FROM dbUtils WHERE id = ${lastID}`, Row)
+            ),
+            taskEither.chain(taskEither.fromOption(testError)),
+            pipeTestTaskEither(result => {
+              expect(result.value).toBe('32')
+            }),
+            taskEither.chain(() => remove('dbUtils', { value: '32' }))
+          )
         ),
-        taskEither.getOrElse(() => task.fromIO(() => 0))
-      )()
-
-      expect(changes).toBe(1)
-
-      const result = await pipe(
-        dbGet(SQL`SELECT * FROM dbUtils WHERE id = ${lastID}`, Row),
-        taskEither.getOrElse(() =>
-          task.fromIO(() => option.none as Option<Row>)
-        )
-      )()
-
-      expect(option.isSome(result)).toBe(true)
-      expect((result as option.Some<Row>).value.value).toBe('32')
-
-      changes = await pipe(
-        remove('dbUtils', { value: '32' }),
-        taskEither.getOrElse(() => task.fromIO(() => 0))
-      )()
-
-      expect(changes).toBe(1)
+        testTaskEither(changes => {
+          expect(changes).toBe(1)
+        })
+      )
     })
   })
 })

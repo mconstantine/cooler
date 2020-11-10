@@ -3,12 +3,11 @@ import { queryToConnection, toCursor } from './queryToConnection'
 import { pipe } from 'fp-ts/function'
 import * as t from 'io-ts'
 import { dbExec, insert } from './dbUtils'
-import { either, option, taskEither } from 'fp-ts'
-import { sequenceT } from 'fp-ts/lib/Apply'
+import { option, taskEither } from 'fp-ts'
 import { PositiveInteger } from './Types'
 import { NonEmptyString, optionFromNullable } from 'io-ts-types'
 import { getDatabase } from './getDatabase'
-import { testError } from '../test/util'
+import { testError, testTaskEither } from '../test/util'
 
 describe('queryToConnection', () => {
   describe('usage', () => {
@@ -53,28 +52,22 @@ describe('queryToConnection', () => {
         }
       ]
 
-      await pipe(
-        dbExec(SQL`
-          CREATE TABLE IF NOT EXISTS queryToConnectionUsage (
-            id INTEGER PRIMARY KEY,
-            char TEXT NOT NULL,
-            number INTEGER NOT NULL
-          )
-        `),
-        taskEither.chain(() =>
-          sequenceT(taskEither.taskEither)(
-            // @ts-ignore
-            ...dataInput.map(input =>
-              pipe(
-                insert('queryToConnectionUsage', input, DataInput),
-                taskEither.map(id => {
-                  data.push({ ...input, id })
-                })
-              )
-            )
-          )
+      await dbExec(SQL`
+        CREATE TABLE IF NOT EXISTS queryToConnectionUsage (
+          id INTEGER PRIMARY KEY,
+          char TEXT NOT NULL,
+          number INTEGER NOT NULL
         )
-      )()
+      `)()
+
+      for (const input of dataInput) {
+        await pipe(
+          insert('queryToConnectionUsage', input, DataInput),
+          taskEither.map(id => {
+            data.push({ ...input, id })
+          })
+        )()
+      }
 
       expect(data).toEqual([
         { id: 1, char: 'A', number: 4 },
@@ -89,18 +82,14 @@ describe('queryToConnection', () => {
     })
 
     it('should work', async () => {
-      const result = await queryToConnection(
-        {},
-        ['id', 'char', 'number'],
-        'queryToConnectionUsage',
-        Data
-      )()
-
-      expect(either.isRight(result)).toBe(true)
-
-      pipe(
-        result,
-        either.fold(console.log, result => {
+      await pipe(
+        queryToConnection(
+          {},
+          ['id', 'char', 'number'],
+          'queryToConnectionUsage',
+          Data
+        ),
+        testTaskEither(result => {
           expect(result.totalCount).toBe(4)
           expect(result.edges.length).toBe(4)
           expect(result.edges.map(edge => edge.node)).toEqual(data)
@@ -123,22 +112,18 @@ describe('queryToConnection', () => {
         { id: 1, char: 'A', number: 4 }
       ]
       */
-      const result = await queryToConnection(
-        {
-          first: 2 as PositiveInteger,
-          after: toCursor(3),
-          orderBy: 'number ASC' as NonEmptyString
-        },
-        ['id', 'char', 'number'],
-        'queryToConnectionUsage',
-        Data
-      )()
-
-      expect(either.isRight(result)).toBe(true)
-
-      pipe(
-        result,
-        either.fold(console.log, result => {
+      await pipe(
+        queryToConnection(
+          {
+            first: 2 as PositiveInteger,
+            after: toCursor(3),
+            orderBy: 'number ASC' as NonEmptyString
+          },
+          ['id', 'char', 'number'],
+          'queryToConnectionUsage',
+          Data
+        ),
+        testTaskEither(result => {
           expect(result.totalCount).toBe(4)
           expect(result.edges.length).toBe(2)
           expect(result.edges.map(edge => edge.node)).toEqual([
@@ -159,22 +144,18 @@ describe('queryToConnection', () => {
         { id: 2, char: 'C', number: 3 }
       ]
       */
-      const result = await queryToConnection(
-        {
-          first: 1 as PositiveInteger,
-          after: toCursor(3),
-          orderBy: 'number ASC' as NonEmptyString
-        },
-        ['id', 'char', 'number'],
-        'queryToConnectionUsage',
-        Data
-      )()
-
-      expect(either.isRight(result)).toBe(true)
-
-      pipe(
-        result,
-        either.fold(console.log, result => {
+      await pipe(
+        queryToConnection(
+          {
+            first: 1 as PositiveInteger,
+            after: toCursor(3),
+            orderBy: 'number ASC' as NonEmptyString
+          },
+          ['id', 'char', 'number'],
+          'queryToConnectionUsage',
+          Data
+        ),
+        testTaskEither(result => {
           expect(result.totalCount).toBe(4)
           expect(result.edges.length).toBe(1)
           expect(result.edges.map(edge => edge.node)).toEqual([data[1]])
@@ -192,23 +173,19 @@ describe('queryToConnection', () => {
         { id: 3, char: 'B', number: 2 }
       ]
       */
-      const result = await queryToConnection(
-        {
-          last: 1 as PositiveInteger,
-          before: toCursor(2),
-          orderBy: 'char ASC' as NonEmptyString
-        },
-        ['id', 'char', 'number'],
-        'queryToConnectionUsage',
-        Data,
-        SQL`WHERE char != ${'D'}`
-      )()
-
-      expect(either.isRight(result)).toBe(true)
-
-      pipe(
-        result,
-        either.fold(console.log, result => {
+      await pipe(
+        queryToConnection(
+          {
+            last: 1 as PositiveInteger,
+            before: toCursor(2),
+            orderBy: 'char ASC' as NonEmptyString
+          },
+          ['id', 'char', 'number'],
+          'queryToConnectionUsage',
+          Data,
+          SQL`WHERE char != ${'D'}`
+        ),
+        testTaskEither(result => {
           expect(result.totalCount).toBe(3)
           expect(result.edges.length).toBe(1)
           expect(result.edges.map(edge => edge.node)).toEqual([data[2]])
@@ -227,23 +204,19 @@ describe('queryToConnection', () => {
         { id: 3, char: 'B', number: 2 }
       ]
       */
-      const result = await queryToConnection(
-        {
-          last: 2 as PositiveInteger,
-          before: toCursor(2),
-          orderBy: 'char ASC' as NonEmptyString
-        },
-        ['id', 'char', 'number'],
-        'queryToConnectionUsage',
-        Data,
-        SQL`WHERE char != ${'D'}`
-      )()
-
-      expect(either.isRight(result)).toBe(true)
-
-      pipe(
-        result,
-        either.fold(console.log, result => {
+      await pipe(
+        queryToConnection(
+          {
+            last: 2 as PositiveInteger,
+            before: toCursor(2),
+            orderBy: 'char ASC' as NonEmptyString
+          },
+          ['id', 'char', 'number'],
+          'queryToConnectionUsage',
+          Data,
+          SQL`WHERE char != ${'D'}`
+        ),
+        testTaskEither(result => {
           expect(result.totalCount).toBe(3)
           expect(result.edges.length).toBe(2)
           expect(result.edges.map(edge => edge.node)).toEqual([
@@ -259,19 +232,15 @@ describe('queryToConnection', () => {
     })
 
     it('should handle empty results', async () => {
-      const result = await queryToConnection(
-        {},
-        ['id', 'char', 'number'],
-        'queryToConnectionUsage',
-        Data,
-        SQL`WHERE char = ${'Z'}`
-      )()
-
-      expect(either.isRight(result)).toBe(true)
-
-      pipe(
-        result,
-        either.fold(console.log, result => {
+      await pipe(
+        queryToConnection(
+          {},
+          ['id', 'char', 'number'],
+          'queryToConnectionUsage',
+          Data,
+          SQL`WHERE char = ${'Z'}`
+        ),
+        testTaskEither(result => {
           expect(result.totalCount).toBe(0)
           expect(result.edges.length).toBe(0)
           expect(result.pageInfo.startCursor).toEqual(option.none)
@@ -311,7 +280,7 @@ describe('queryToConnection', () => {
     })
 
     afterAll(async () => {
-      await dbExec(SQL`DROP TABLE queryToConnectionEncoding`)
+      await dbExec(SQL`DROP TABLE queryToConnectionEncoding`)()
     })
 
     it('should work', async () => {
@@ -319,7 +288,7 @@ describe('queryToConnection', () => {
         content: option.none
       }
 
-      const result = await pipe(
+      await pipe(
         insert('queryToConnectionEncoding', row, DataInput),
         taskEither.chain(id =>
           pipe(
@@ -334,31 +303,16 @@ describe('queryToConnection', () => {
               )
             )
           )
-        )
-      )()
-
-      expect(either.isRight(result)).toBe(true)
-
-      pipe(
-        result,
-        either.fold(console.log, async row => {
-          expect(row?.content).toBeNull()
+        ),
+        testTaskEither(result => {
+          expect(result?.content).toBeNull()
         })
       )
 
-      const connection = await queryToConnection(
-        {},
-        ['*'],
-        'queryToConnectionEncoding',
-        Data
-      )()
-
-      expect(either.isRight(connection)).toBe(true)
-
-      pipe(
-        connection,
-        either.fold(console.log, connection => {
-          expect(connection.edges[0].node.content).toEqual(option.none)
+      await pipe(
+        queryToConnection({}, ['*'], 'queryToConnectionEncoding', Data),
+        testTaskEither(result => {
+          expect(result.edges[0].node.content).toEqual(option.none)
         })
       )
     })
