@@ -1,306 +1,235 @@
 import {
   Client,
-  ClientType,
-  ClientFromDatabase,
-  PrivateClient,
-  BusinessClient,
   ClientCreationInput,
-  ClientUpdateInput
+  ClientUpdateInput,
+  foldClientCreationInput,
+  ClientCreationCommonInput,
+  PrivateClientCreationInput,
+  BusinessClientCreationInput,
+  DatabaseClient,
+  ClientUpdateCommonInput,
+  foldClientUpdateInput,
+  PrivateClientUpdateInput,
+  BusinessClientUpdateInput,
+  foldClient
 } from './interface'
-import { getDatabase } from '../misc/getDatabase'
-import { insert, update, remove, fromSQLDate } from '../misc/dbUtils'
 import SQL from 'sql-template-strings'
 import { ConnectionQueryArgs } from '../misc/ConnectionQueryArgs'
-import { queryToConnection, mapConnection } from '../misc/queryToConnection'
-import { User, UserFromDatabase } from '../user/interface'
+import { queryToConnection } from '../misc/queryToConnection'
+import { DatabaseUser, User } from '../user/interface'
 import { ApolloError } from 'apollo-server-express'
 import { Connection } from '../misc/Connection'
-import { fromDatabase as userFromDatabase } from '../user/model'
-import { ID } from '../misc/Types'
-import { removeUndefined } from '../misc/removeUndefined'
-import { definitely } from '../misc/definitely'
+import { TaskEither } from 'fp-ts/TaskEither'
+import { pipe } from 'fp-ts/function'
+import { taskEither } from 'fp-ts'
+import {
+  getClientById,
+  insertClient,
+  updateClient as updateDatabaseClient,
+  deleteClient as deleteDatabaseClient
+} from './database'
+import { coolerError, PositiveInteger } from '../misc/Types'
+import { NonEmptyString } from 'io-ts-types'
+import { getUserById } from '../user/database'
+import { ClientConnectionQuerysArgs } from './resolvers'
 
-type TypedClient = {
-  type: ClientType
-}
-
-export async function createClient(
-  {
-    address_city,
-    address_country,
-    address_email,
-    address_province,
-    address_street,
-    address_street_number,
-    address_zip,
-    business_name,
-    country_code,
-    first_name,
-    fiscal_code,
-    last_name,
-    type,
-    vat_number
-  }: ClientCreationInput,
+export function createClient(
+  input: ClientCreationInput,
   user: User
-): Promise<Client | null> {
-  const db = await getDatabase()
-
-  const { lastID } = await insert<ClientCreationInput & { user: ID }>(
-    'client',
-    {
-      address_city,
-      address_country,
-      address_email,
-      address_province,
-      address_street,
-      address_street_number,
-      address_zip,
-      business_name,
-      country_code,
-      first_name,
-      fiscal_code,
-      last_name,
-      type,
-      vat_number,
-      user: user.id
-    }
-  )
-
-  if (!lastID) {
-    return null
+): TaskEither<ApolloError, Client> {
+  const commonInput: ClientCreationCommonInput & { user: PositiveInteger } = {
+    address_city: input.address_city,
+    address_country: input.address_country,
+    address_email: input.address_email,
+    address_province: input.address_province,
+    address_street: input.address_street,
+    address_street_number: input.address_street_number,
+    address_zip: input.address_zip,
+    user: user.id
   }
 
-  const newClient = await db.get<ClientFromDatabase>(
-    SQL`SELECT * FROM client WHERE id = ${lastID}`
-  )
-
-  if (!newClient) {
-    return null
-  }
-
-  return fromDatabase(newClient)
-}
-
-export async function getClient(
-  id: number,
-  user: User
-): Promise<Client | null> {
-  const db = await getDatabase()
-
-  const client = await db.get<ClientFromDatabase>(
-    SQL`SELECT * FROM client WHERE id = ${id}`
-  )
-
-  if (!client) {
-    return null
-  }
-
-  if (client.user !== user.id) {
-    throw new ApolloError('You cannot see this client', 'COOLER_403')
-  }
-
-  return fromDatabase(client)
-}
-
-export async function listClients(
-  args: ConnectionQueryArgs & { name?: string },
-  user: User
-): Promise<Connection<Client>> {
-  const where = SQL`WHERE user = ${user.id}`
-
-  args.name &&
-    where.append(SQL` AND (
-    (type = 'BUSINESS' AND business_name LIKE ${`%${args.name}%`}) OR
-    (type = 'PRIVATE' AND first_name || ' ' || last_name LIKE ${`%${args.name}%`})
-  )`)
-
-  const connection = await queryToConnection<ClientFromDatabase>(
-    args,
-    ['*'],
-    'client',
-    where
-  )
-
-  return mapConnection(connection, fromDatabase)
-}
-
-export async function updateClient(
-  id: number,
-  client: ClientUpdateInput,
-  user: User
-): Promise<Client | null> {
-  const db = await getDatabase()
-
-  const savedClient = await db.get<ClientFromDatabase>(
-    SQL`SELECT user FROM client WHERE id = ${id}`
-  )
-
-  if (!savedClient) {
-    return null
-  }
-
-  if (savedClient.user !== user.id) {
-    throw new ApolloError('You cannot update this client', 'COOLER_403')
-  }
-
-  const {
-    type,
-    fiscal_code,
-    first_name,
-    last_name,
-    country_code,
-    vat_number,
-    business_name,
-    address_country,
-    address_province,
-    address_city,
-    address_zip,
-    address_street,
-    address_street_number,
-    address_email
-  } = client
-
-  if (
-    type ||
-    fiscal_code !== undefined ||
-    first_name !== undefined ||
-    last_name !== undefined ||
-    country_code !== undefined ||
-    vat_number !== undefined ||
-    business_name !== undefined ||
-    address_country ||
-    address_province ||
-    address_city ||
-    address_zip ||
-    address_street ||
-    address_street_number ||
-    address_email
-  ) {
-    let args = removeUndefined({
-      type,
-      fiscal_code,
-      first_name,
-      last_name,
-      country_code,
-      vat_number,
-      business_name,
-      address_country,
-      address_province,
-      address_city,
-      address_zip,
-      address_street,
-      address_street_number,
-      address_email
-    }) as Partial<Client>
-
-    if (args.type) {
-      args = {
-        ...args,
-        ...foldClientType(args as TypedClient, {
-          whenPrivate: () => ({
-            country_code: null,
-            vat_number: null,
-            business_name: null
-          }),
-          whenBusiness: () => ({
-            fiscal_code: null,
-            first_name: null,
-            last_name: null
-          })
-        })
-      } as TypedClient
-    }
-
-    await update('client', { ...args, id })
-  }
-
-  const updatedClient = await db.get<ClientFromDatabase>(
-    SQL`SELECT * FROM client WHERE id = ${id}`
-  )
-
-  if (!updatedClient) {
-    return null
-  }
-
-  return fromDatabase(updatedClient)
-}
-
-export async function deleteClient(
-  id: number,
-  user: User
-): Promise<Client | null> {
-  const db = await getDatabase()
-
-  const client = await db.get<ClientFromDatabase>(
-    SQL`SELECT * FROM client WHERE id = ${id}`
-  )
-
-  if (!client) {
-    return null
-  }
-
-  if (client.user !== user.id) {
-    throw new ApolloError('You cannot delete this client', 'COOLER_403')
-  }
-
-  await remove('client', { id })
-  return fromDatabase(client)
-}
-
-export function getClientName(
-  client: Pick<Client, 'type' | 'first_name' | 'last_name' | 'business_name'>
-): string {
-  return foldClientType(client, {
-    whenPrivate: client => `${client.first_name} ${client.last_name}`,
-    whenBusiness: client => definitely(client.business_name)
-  })
-}
-
-export async function getClientUser(client: ClientFromDatabase): Promise<User> {
-  const db = await getDatabase()
-
-  const user = definitely(
-    await db.get<UserFromDatabase>(
-      SQL`SELECT * FROM user WHERE id = ${client.user}`
+  return pipe(
+    input,
+    foldClientCreationInput(
+      (input): PrivateClientCreationInput => ({
+        ...commonInput,
+        type: input.type,
+        first_name: input.first_name,
+        last_name: input.last_name,
+        fiscal_code: input.fiscal_code
+      }),
+      (input): BusinessClientCreationInput => ({
+        ...commonInput,
+        // @ts-ignore
+        type: input.type,
+        country_code: input.country_code,
+        business_name: input.business_name,
+        vat_number: input.vat_number
+      })
+    ),
+    insertClient,
+    taskEither.chain(id => getClientById(id)),
+    taskEither.chain(
+      taskEither.fromOption(() =>
+        coolerError(
+          'COOLER_500',
+          'Unable to retrieve the client after creation'
+        )
+      )
     )
   )
-
-  return userFromDatabase(user)
 }
 
-export function foldClientType<I extends { type: ClientType }, PO = I, BO = PO>(
-  client: I,
-  match: {
-    whenPrivate: (client: I & { type: ClientType.PRIVATE }) => PO
-    whenBusiness: (client: I & { type: ClientType.BUSINESS }) => BO
-  }
-): PO | BO {
-  switch (client.type) {
-    case ClientType.PRIVATE:
-      return match.whenPrivate(client as I & PrivateClient)
-    case ClientType.BUSINESS:
-      return match.whenBusiness(client as I & BusinessClient)
-  }
+export function getClient(
+  id: PositiveInteger,
+  user: User
+): TaskEither<ApolloError, Client> {
+  return pipe(
+    getClientById(id),
+    taskEither.chain(
+      taskEither.fromOption(() => coolerError('COOLER_404', 'Client not found'))
+    ),
+    taskEither.chain(
+      taskEither.fromPredicate(
+        client => client.user === user.id,
+        () => coolerError('COOLER_403', 'You cannot see this client')
+      )
+    )
+  )
 }
 
-export async function getUserClients(
-  user: UserFromDatabase,
+export function listClients(
+  args: ClientConnectionQuerysArgs,
+  user: User
+): TaskEither<ApolloError, Connection<Client>> {
+  const where = SQL`WHERE user = ${user.id}`
+
+  if (args.name) {
+    where.append(SQL`
+      AND (
+        (type = 'BUSINESS' AND business_name LIKE ${`%${args.name}%`}) OR
+        (type = 'PRIVATE' AND first_name || ' ' || last_name LIKE ${`%${args.name}%`})
+      )`)
+  }
+
+  return queryToConnection(args, ['*'], 'client', DatabaseClient, where)
+}
+
+export function updateClient(
+  id: PositiveInteger,
+  input: ClientUpdateInput,
+  user: User
+): TaskEither<ApolloError, Client> {
+  return pipe(
+    getClientById(id),
+    taskEither.chain(
+      taskEither.fromOption(() => coolerError('COOLER_404', 'Client not found'))
+    ),
+    taskEither.chain(
+      taskEither.fromPredicate(
+        client => (input.user || client.user) === user.id,
+        () => coolerError('COOLER_403', 'You cannot update this client')
+      )
+    ),
+    taskEither.chain(client => {
+      const commonInput: ClientUpdateCommonInput = {
+        address_country: input.address_country,
+        address_province: input.address_province,
+        address_city: input.address_city,
+        address_zip: input.address_zip,
+        address_street: input.address_street,
+        address_street_number: input.address_street_number,
+        address_email: input.address_email,
+        user: user.id
+      }
+
+      const update: ClientUpdateInput = pipe(
+        { ...input, type: input.type || client.type },
+        foldClientUpdateInput(
+          (input): PrivateClientUpdateInput => ({
+            ...commonInput,
+            type: input.type,
+            first_name: input.first_name,
+            last_name: input.last_name,
+            fiscal_code: input.fiscal_code
+          }),
+          (input): BusinessClientUpdateInput => ({
+            ...commonInput,
+            // @ts-ignore
+            type: input.type,
+            country_code: input.country_code,
+            business_name: input.business_name,
+            vat_number: input.vat_number
+          })
+        )
+      )
+
+      return pipe(
+        updateDatabaseClient(client.id, update),
+        taskEither.map(() => client)
+      )
+    }),
+    taskEither.chain(client => getClientById(client.id)),
+    taskEither.chain(
+      taskEither.fromOption(() => coolerError('COOLER_404', 'Client not found'))
+    )
+  )
+}
+
+export function deleteClient(
+  id: PositiveInteger,
+  user: User
+): TaskEither<ApolloError, Client> {
+  return pipe(
+    getClientById(id),
+    taskEither.chain(
+      taskEither.fromOption(() => coolerError('COOLER_404', 'Client not found'))
+    ),
+    taskEither.chain(
+      taskEither.fromPredicate(
+        client => client.user === user.id,
+        () => coolerError('COOLER_403', 'You cannot delete this client')
+      )
+    ),
+    taskEither.chain(client =>
+      pipe(
+        deleteDatabaseClient(client.id),
+        taskEither.map(() => client)
+      )
+    )
+  )
+}
+
+export function getClientName(client: Client): NonEmptyString {
+  return pipe(
+    client,
+    foldClient(
+      client => `${client.first_name} ${client.last_name}` as NonEmptyString,
+      client => client.business_name
+    )
+  )
+}
+
+export function getClientUser(
+  client: DatabaseClient
+): TaskEither<ApolloError, User> {
+  return pipe(
+    getUserById(client.user),
+    taskEither.chain(
+      taskEither.fromOption(() => coolerError('COOLER_404', 'User not found'))
+    )
+  )
+}
+
+export function getUserClients(
+  user: DatabaseUser,
   args: ConnectionQueryArgs
-): Promise<Connection<Client>> {
-  const connection = await queryToConnection<ClientFromDatabase>(
+): TaskEither<ApolloError, Connection<Client>> {
+  return queryToConnection(
     args,
     ['*'],
     'client',
+    Client,
     SQL`WHERE user = ${user.id}`
   )
-
-  return mapConnection(connection, fromDatabase)
-}
-
-export function fromDatabase(client: ClientFromDatabase): Client {
-  return {
-    ...client,
-    created_at: fromSQLDate(client.created_at),
-    updated_at: fromSQLDate(client.updated_at)
-  }
 }
