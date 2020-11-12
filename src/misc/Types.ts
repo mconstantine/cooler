@@ -1,9 +1,10 @@
 import { pipe } from 'fp-ts/function'
 import * as t from 'io-ts'
-import { date } from 'io-ts-types'
-import { either } from 'fp-ts'
+import { date, option as tOption } from 'io-ts-types'
+import { either, option } from 'fp-ts'
 import { validate as isEmail } from 'isemail'
 import { ApolloError } from 'apollo-server-express'
+import { Option } from 'fp-ts/Option'
 
 const sqlDatePattern = /^(\d{4})-(\d{2})-(\d{2})\s(\d{2}):(\d{2}):(\d{2})$/
 
@@ -110,4 +111,40 @@ export function coolerError(
   extras?: Record<string, any>
 ): ApolloError {
   return new ApolloError(message, type, extras)
+}
+
+export interface OptionFromNull<C extends t.Mixed>
+  extends t.Type<Option<t.TypeOf<C>>, t.OutputOf<C> | null, unknown> {}
+
+export function optionFromNull<C extends t.Mixed>(
+  codec: C,
+  name: string = `Option<${codec.name}>`
+) {
+  return new t.Type(
+    name,
+    tOption(codec).is,
+    (u, c) =>
+      u === null
+        ? t.success(option.none)
+        : pipe(codec.validate(u, c), either.map(option.some)),
+    a => pipe(a, option.map(codec.encode), option.toNullable)
+  )
+}
+
+export interface OptionFromUndefinedC<C extends t.Mixed>
+  extends t.Type<Option<t.TypeOf<C>>, t.OutputOf<C> | undefined, unknown> {}
+
+export function optionFromUndefined<C extends t.Mixed>(
+  codec: C,
+  name: string = `Option<${codec.name}>`
+) {
+  return new t.Type(
+    name,
+    tOption(codec).is,
+    (u, c) =>
+      u === undefined
+        ? t.success(option.none)
+        : pipe(codec.validate(u, c), either.map(option.some)),
+    a => pipe(a, option.map(codec.encode), option.toUndefined)
+  )
 }
