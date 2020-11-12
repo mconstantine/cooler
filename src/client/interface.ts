@@ -4,7 +4,12 @@ import {
   NonEmptyString,
   optionFromNullable
 } from 'io-ts-types'
-import { DateFromSQLDate, EmailString, PositiveInteger } from '../misc/Types'
+import {
+  DateFromSQLDate,
+  EmailString,
+  optionFromNull,
+  PositiveInteger
+} from '../misc/Types'
 
 export const ClientType = t.keyof({
   PRIVATE: true,
@@ -475,7 +480,6 @@ export type DatabaseClient = t.TypeOf<typeof DatabaseClient>
 
 export const ClientCreationCommonInput = t.type(
   {
-    user: PositiveInteger,
     address_country: Country,
     address_province: Province,
     address_city: NonEmptyString,
@@ -536,7 +540,7 @@ export const ClientUpdateCommonInput = t.partial(
     address_city: NonEmptyString,
     address_zip: NonEmptyString,
     address_street: NonEmptyString,
-    address_street_number: optionFromNullable(NonEmptyString),
+    address_street_number: optionFromNull(NonEmptyString),
     address_email: EmailString
   },
   'ClientUpdateCommonInput'
