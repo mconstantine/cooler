@@ -14,13 +14,7 @@ const defaultResolvers = {
   Connection: { __resolveType: () => 'Connection' },
   Date: new GraphQLScalarType({
     name: 'Date',
-    description: 'Represents a JavaScript date',
-    parseValue(value: string) {
-      return new Date(value)
-    },
-    serialize(value: Date) {
-      return value.toISOString()
-    }
+    description: 'Represents a JavaScript date'
   })
 }
 
