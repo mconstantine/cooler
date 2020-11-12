@@ -5,8 +5,7 @@ import {
   UserCreationInput,
   UserLoginInput,
   RefreshTokenInput,
-  UserUpdateInput,
-  UserContext
+  UserUpdateInput
 } from './interface'
 import SQL from 'sql-template-strings'
 import { ApolloError } from 'apollo-server-express'
@@ -15,7 +14,7 @@ import { hashSync, compareSync } from 'bcryptjs'
 import { isUserContext } from '../misc/ensureUser'
 import { removeUndefined } from '../misc/removeUndefined'
 import { NonEmptyString } from 'io-ts-types'
-import { None, Option, Some } from 'fp-ts/Option'
+import { Option } from 'fp-ts/Option'
 import { boolean, option, taskEither } from 'fp-ts'
 import { constUndefined, pipe } from 'fp-ts/function'
 import { coolerError, PositiveInteger } from '../misc/Types'
@@ -190,10 +189,6 @@ export function deleteUser(id: PositiveInteger): TaskEither<ApolloError, User> {
   )
 }
 
-export function getUserFromContext<C extends UserContext>(
-  context: C
-): Some<User>
-export function getUserFromContext<C extends Context>(context: C): None
 export function getUserFromContext<C extends Context>(
   context: C
 ): Option<User> {
