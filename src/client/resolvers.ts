@@ -1,10 +1,4 @@
-import { GraphQLFieldResolver } from 'graphql'
-import {
-  Client,
-  ClientCreationInput,
-  ClientFromDatabase,
-  ClientUpdateInput
-} from './interface'
+import { Client, ClientCreationInput, ClientUpdateInput } from './interface'
 import {
   createClient,
   listClients,
@@ -17,154 +11,143 @@ import {
 } from './model'
 import { ConnectionQueryArgs } from '../misc/ConnectionQueryArgs'
 import { ensureUser } from '../misc/ensureUser'
-import { Context, User, UserContext, UserFromDatabase } from '../user/interface'
+import { User, DatabaseUser } from '../user/interface'
 import { Connection } from '../misc/Connection'
-import {
-  publish,
-  Subscription,
-  SubscriptionImplementation,
-  WithFilter
-} from '../misc/pubsub'
-import { pubsub } from '../pubsub'
-import { withFilter } from 'apollo-server-express'
+import { createResolver } from '../misc/createResolver'
+import * as t from 'io-ts'
+import { taskEither } from 'fp-ts'
+import { EmptyObject, PositiveInteger } from '../misc/Types'
+import { pipe } from 'fp-ts/function'
+import { NonEmptyString } from 'io-ts-types'
+import { createSubscription, createSubscriptions } from '../misc/pubsub'
 
-const CLIENT_CREATED = 'CLIENT_CREATED'
+const clientNameResolver = createResolver<Client>(
+  EmptyObject,
+  NonEmptyString,
+  client => taskEither.right(getClientName(client))
+)
 
-type ClientNameResolver = GraphQLFieldResolver<ClientFromDatabase, Context>
+const clientUserResolver = createResolver<Client>(EmptyObject, User, client =>
+  getClientUser(client)
+)
 
-const clientNameResolver: ClientNameResolver = (client): string => {
-  return getClientName(client)
-}
+const userClientsResolver = createResolver<DatabaseUser>(
+  ConnectionQueryArgs,
+  Connection(Client),
+  (user, args) => getUserClients(user, args)
+)
 
-type ClientUserResolver = GraphQLFieldResolver<ClientFromDatabase, Context>
-
-const clientUserResolver: ClientUserResolver = async (
-  client
-): Promise<User> => {
-  return getClientUser(client)
-}
-
-type UserClientsResolver = GraphQLFieldResolver<
-  UserFromDatabase,
-  ConnectionQueryArgs
->
-
-const userClientsResolver: UserClientsResolver = (
-  user,
-  args
-): Promise<Connection<Client>> => {
-  return getUserClients(user, args)
-}
-
-type CreateClientMutation = GraphQLFieldResolver<
-  any,
-  Context,
-  { client: ClientCreationInput }
->
-
-interface ClientSubscription extends Subscription<Client> {
-  createdClient: SubscriptionImplementation<Client>
-}
-
-const clientSubscription: ClientSubscription = {
-  createdClient: {
-    subscribe: withFilter(() => pubsub.asyncIterator([CLIENT_CREATED]), ((
-      { createdClient },
-      _,
-      context
-    ) => {
-      return createdClient.user === context.user.id
-    }) as WithFilter<{}, ClientSubscription, UserContext, Client>)
-  }
-}
-
-const createClientMutation: CreateClientMutation = async (
-  _parent,
-  { client },
-  context
-): Promise<Client | null> => {
-  const res = await createClient({ ...client }, ensureUser(context))
-
-  res &&
-    publish<Client, ClientSubscription>(CLIENT_CREATED, {
-      createdClient: res
-    })
-
-  return res
-}
-
-type UpdateClientMutation = GraphQLFieldResolver<
-  any,
-  Context,
+const CreatedClientSubscriptionInput = t.type(
   {
-    id: number
+    createdClient: Client
+  },
+  'CreatedClientSubscriptionInput'
+)
+type CreatedClientSubscriptionInput = t.TypeOf<
+  typeof CreatedClientSubscriptionInput
+>
+
+const createdClient = createSubscription(
+  CreatedClientSubscriptionInput,
+  Client,
+  'CLIENT_CREATED',
+  (_, { createdClient }, context) =>
+    taskEither.right(createdClient.user === context.user.id)
+)
+
+const clientSubscription = createSubscriptions({
+  createdClient
+})
+
+const CreateClientMutationInput = t.type(
+  {
+    client: ClientCreationInput
+  },
+  'CreateClientMutationInput'
+)
+const createClientMutation = createResolver(
+  CreateClientMutationInput,
+  Client,
+  (_parent, { client }, context) =>
+    pipe(
+      ensureUser(context),
+      taskEither.chain(user => createClient({ ...client }, user)),
+      taskEither.map(client => createdClient.publish(client))
+    )
+)
+
+const UpdateClientMutationInput = t.type(
+  {
+    id: PositiveInteger,
     client: ClientUpdateInput
-  }
+  },
+  'UpdateClientMutationInput'
+)
+const updateClientMutation = createResolver(
+  UpdateClientMutationInput,
+  Client,
+  (_parent, { id, client }, context) =>
+    pipe(
+      ensureUser(context),
+      taskEither.chain(user => updateClient(id, client, user))
+    )
+)
+
+const DeleteClientMutationInput = t.type(
+  {
+    id: PositiveInteger
+  },
+  'DeleteClientMutationInput'
+)
+const deleteClientMutation = createResolver(
+  DeleteClientMutationInput,
+  Client,
+  (_parent, { id }, context) =>
+    pipe(
+      ensureUser(context),
+      taskEither.chain(user => deleteClient(id, user))
+    )
+)
+
+const ClientQueryInput = t.type(
+  {
+    id: PositiveInteger
+  },
+  'ClientQueryInput'
+)
+const clientQuery = createResolver(
+  ClientQueryInput,
+  Client,
+  (_parent, { id }, context) =>
+    pipe(
+      ensureUser(context),
+      taskEither.chain(user => getClient(id, user))
+    )
+)
+
+export const ClientConnectionQuerysArgs = t.intersection(
+  [
+    ConnectionQueryArgs,
+    t.partial({
+      name: NonEmptyString
+    })
+  ],
+  'ClientConnectionQuerysArgs'
+)
+export type ClientConnectionQuerysArgs = t.TypeOf<
+  typeof ClientConnectionQuerysArgs
 >
+const clientsQuery = createResolver(
+  ClientConnectionQuerysArgs,
+  Connection(Client),
+  (_parent, args, context) =>
+    pipe(
+      ensureUser(context),
+      taskEither.chain(user => listClients(args, user))
+    )
+)
 
-const updateClientMutation: UpdateClientMutation = (
-  _parent,
-  { id, client },
-  context
-): Promise<Client | null> => {
-  return updateClient(id, client, ensureUser(context))
-}
-
-type DeleteClientMutation = GraphQLFieldResolver<any, Context, { id: number }>
-
-const deleteClientMutation: DeleteClientMutation = (
-  _parent,
-  { id },
-  context
-): Promise<Client | null> => {
-  return deleteClient(id, ensureUser(context))
-}
-
-type ClientQuery = GraphQLFieldResolver<any, Context, { id: number }>
-
-const clientQuery: ClientQuery = async (
-  _parent,
-  { id },
-  context
-): Promise<Client | null> => {
-  return await getClient(id, ensureUser(context))
-}
-
-type ClientsQuery = GraphQLFieldResolver<
-  any,
-  Context,
-  ConnectionQueryArgs & { name?: string }
->
-
-const clientsQuery: ClientsQuery = async (
-  _parent,
-  args,
-  context
-): Promise<Connection<Client>> => {
-  return listClients(args, ensureUser(context))
-}
-
-interface ClientResolvers {
-  Client: {
-    name: ClientNameResolver
-    user: ClientUserResolver
-  }
-  User: {
-    clients: UserClientsResolver
-  }
-  Mutation: {
-    createClient: CreateClientMutation
-    updateClient: UpdateClientMutation
-    deleteClient: DeleteClientMutation
-  }
-  Query: {
-    client: ClientQuery
-    clients: ClientsQuery
-  }
-  Subscription: ClientSubscription
-}
-
-const resolvers: ClientResolvers = {
+const resolvers = {
   Client: {
     name: clientNameResolver,
     user: clientUserResolver
