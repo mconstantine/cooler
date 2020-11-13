@@ -16,19 +16,19 @@ import { EmailString, PositiveInteger } from '../misc/Types'
 export function getFakeClient(
   user: PositiveInteger,
   data?: Partial<PrivateClientCreationInput>
-): PrivateClientCreationInput
+): PrivateClientCreationInput & { user: PositiveInteger }
 export function getFakeClient(
   user: PositiveInteger,
   data?: Partial<BusinessClientCreationInput>
-): BusinessClientCreationInput
+): BusinessClientCreationInput & { user: PositiveInteger }
 export function getFakeClient(
   user: PositiveInteger,
   data: Partial<ClientCreationInput> = {}
-): ClientCreationInput {
+): ClientCreationInput & { user: PositiveInteger } {
   const type = data.type || faker.random.arrayElement(Object.values(ClientType))
   const country_code = faker.address.countryCode() as Country
 
-  const commonData: ClientCreationCommonInput = {
+  const commonData: ClientCreationCommonInput & { user: PositiveInteger } = {
     user,
     address_country: country_code,
     address_province:
