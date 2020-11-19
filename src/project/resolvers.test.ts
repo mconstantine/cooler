@@ -1,58 +1,72 @@
+import { option, taskEither } from 'fp-ts'
+import { constVoid, pipe } from 'fp-ts/function'
+import { sequenceS } from 'fp-ts/lib/Apply'
+import { insertClient } from '../client/database'
 import { init } from '../init'
-import { insert, toSQLDate } from '../misc/dbUtils'
-import { getFakeUser } from '../test/getFakeUser'
+import { remove } from '../misc/dbUtils'
+import { NonNegativeNumber } from '../misc/Types'
 import { getFakeClient } from '../test/getFakeClient'
 import { getFakeProject } from '../test/getFakeProject'
+import { getFakeUser } from '../test/getFakeUser'
+import { registerUser } from '../test/registerUser'
+import { testError, testTaskEither } from '../test/util'
+import { getUserById } from '../user/database'
+import { insertProject } from './database'
 import resolvers from './resolvers'
-import { getDatabase } from '../misc/getDatabase'
-import { UserFromDatabase } from '../user/interface'
-import SQL from 'sql-template-strings'
-import { definitely } from '../misc/definitely'
-import { getID } from '../test/getID'
 
 describe('project resolvers', () => {
   beforeAll(async () => {
-    await init()
+    process.env.SECRET = 'shhhhh'
+    await pipe(init(), testTaskEither(constVoid))
+  })
+
+  afterAll(async () => {
+    delete process.env.SECRET
+    await pipe(remove('user'), testTaskEither(constVoid))
   })
 
   describe('User', () => {
     describe('cashedBalance', () => {
       it('should work', async () => {
-        const userId = await getID('user', getFakeUser())
-        const clientId = await getID('client', getFakeClient(userId))
-
-        await insert(
-          'project',
-          getFakeProject(clientId, {
-            cashed_at: toSQLDate(new Date()),
-            cashed_balance: 15
+        await pipe(
+          registerUser(getFakeUser()),
+          taskEither.chain(user =>
+            pipe(
+              insertClient(getFakeClient(user.id)),
+              taskEither.chain(client =>
+                sequenceS(taskEither.taskEither)({
+                  p1: insertProject(
+                    getFakeProject(client, {
+                      cashed: option.some({
+                        at: new Date(),
+                        balance: 15 as NonNegativeNumber
+                      })
+                    })
+                  ),
+                  p2: insertProject(
+                    getFakeProject(client, {
+                      cashed: option.some({
+                        at: new Date(),
+                        balance: 25 as NonNegativeNumber
+                      })
+                    })
+                  )
+                })
+              ),
+              taskEither.chain(() => getUserById(user.id)),
+              taskEither.chain(taskEither.fromOption(testError))
+            )
+          ),
+          taskEither.chain(user =>
+            taskEither.tryCatch(
+              () => resolvers.User.cashedBalance(user, {}, {}),
+              testError
+            )
+          ),
+          testTaskEither(result => {
+            expect(result).toBe(40)
           })
         )
-
-        await insert(
-          'project',
-          getFakeProject(clientId, {
-            cashed_at: toSQLDate(new Date()),
-            cashed_balance: 25
-          })
-        )
-
-        const db = await getDatabase()
-
-        const userFromDatabase = definitely(
-          await db.get<UserFromDatabase>(
-            SQL`SELECT * FROM user WHERE id = ${userId}`
-          )
-        )
-
-        const cashedBalance = await resolvers.User.cashedBalance(
-          userFromDatabase,
-          {},
-          {},
-          null as any
-        )
-
-        expect(cashedBalance).toBe(40)
       })
     })
   })

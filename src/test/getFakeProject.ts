@@ -1,25 +1,36 @@
 import faker from 'faker'
-import { ProjectFromDatabase } from '../project/interface'
-import { toSQLDate } from '../misc/dbUtils'
-import { ID } from '../misc/Types'
-
-type ProjectInput = Omit<
-  ProjectFromDatabase,
-  'id' | 'created_at' | 'updated_at'
->
+import { boolean, option } from 'fp-ts'
+import { pipe } from 'fp-ts/function'
+import { NonEmptyString } from 'io-ts-types'
+import { NonNegativeNumber, PositiveInteger } from '../misc/Types'
+import { ProjectCreationInput } from '../project/interface'
 
 export function getFakeProject(
-  client: ID,
-  data: Partial<ProjectInput> = {}
-): ProjectInput {
-  const isCashed =
-    data.cashed_at !== undefined ? !!data.cashed_at : Math.random() < 0.5
+  client: PositiveInteger,
+  data: Partial<ProjectCreationInput> = {}
+): ProjectCreationInput {
+  const cashed = pipe(
+    Math.random() < 0.5,
+    boolean.fold(
+      () => option.none,
+      () =>
+        option.some({
+          at: faker.date.past(1),
+          balance: 1 as NonNegativeNumber
+        })
+    )
+  )
 
   return {
-    name: faker.commerce.productName(),
-    description: faker.lorem.sentence(),
-    cashed_at: isCashed ? toSQLDate(faker.date.past(1)) : null,
-    cashed_balance: isCashed ? 1 : null,
+    name: faker.commerce.productName() as NonEmptyString,
+    description: pipe(
+      Math.random() < 0.5,
+      boolean.fold(
+        () => option.none,
+        () => option.some(faker.lorem.sentence() as NonEmptyString)
+      )
+    ),
+    cashed,
     client,
     ...data
   }

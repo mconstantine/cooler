@@ -13,13 +13,19 @@ export function pipeLog<A>(a: A): A {
   return a
 }
 
-export function testTaskEither<E, A>(
-  testFunction: (result: A) => void
-): (te: TaskEither<E, A>) => Promise<void> {
+export function testTaskEither<E, A, B>(
+  testFunction: (result: A) => B
+): (te: TaskEither<E, A>) => Promise<B> {
   return async te => {
     const result = await te()
-    expect(either.isRight(result)).toBe(true)
-    return pipe(result, either.fold(console.log, testFunction))
+    // expect(either.isRight(result)).toBe(true)
+    return pipe(
+      result,
+      either.fold(error => {
+        console.log(error)
+        return (null as unknown) as B
+      }, testFunction)
+    )
   }
 }
 

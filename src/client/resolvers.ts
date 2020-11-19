@@ -18,7 +18,7 @@ import * as t from 'io-ts'
 import { taskEither } from 'fp-ts'
 import { EmptyObject, PositiveInteger } from '../misc/Types'
 import { pipe } from 'fp-ts/function'
-import { NonEmptyString } from 'io-ts-types'
+import { NonEmptyString, optionFromNullable } from 'io-ts-types'
 import { createSubscription, createSubscriptions } from '../misc/pubsub'
 
 const clientNameResolver = createResolver<Client>(
@@ -128,8 +128,8 @@ const clientQuery = createResolver(
 export const ClientConnectionQuerysArgs = t.intersection(
   [
     ConnectionQueryArgs,
-    t.partial({
-      name: NonEmptyString
+    t.type({
+      name: optionFromNullable(NonEmptyString)
     })
   ],
   'ClientConnectionQuerysArgs'

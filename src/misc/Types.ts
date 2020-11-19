@@ -148,3 +148,7 @@ export function optionFromUndefined<C extends t.Mixed>(
     a => pipe(a, option.map(codec.encode), option.toUndefined)
   )
 }
+
+export function isObject(u: unknown): u is Object {
+  return Object.prototype.toString.call(u) === '[object Object]'
+}

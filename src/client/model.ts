@@ -20,8 +20,8 @@ import { DatabaseUser, User } from '../user/interface'
 import { ApolloError } from 'apollo-server-express'
 import { Connection } from '../misc/Connection'
 import { TaskEither } from 'fp-ts/TaskEither'
-import { pipe } from 'fp-ts/function'
-import { taskEither } from 'fp-ts'
+import { constVoid, pipe } from 'fp-ts/function'
+import { option, taskEither } from 'fp-ts'
 import {
   getClientById,
   insertClient,
@@ -104,13 +104,16 @@ export function listClients(
 ): TaskEither<ApolloError, Connection<Client>> {
   const where = SQL`WHERE user = ${user.id}`
 
-  if (args.name) {
-    where.append(SQL`
-      AND (
-        (type = 'BUSINESS' AND business_name LIKE ${`%${args.name}%`}) OR
-        (type = 'PRIVATE' AND first_name || ' ' || last_name LIKE ${`%${args.name}%`})
-      )`)
-  }
+  pipe(
+    args.name,
+    option.fold(constVoid, name =>
+      where.append(SQL`
+        AND (
+          (type = 'BUSINESS' AND business_name LIKE ${`%${name}%`}) OR
+          (type = 'PRIVATE' AND first_name || ' ' || last_name LIKE ${`%${name}%`})
+        )`)
+    )
+  )
 
   return queryToConnection(args, ['*'], 'client', DatabaseClient, where)
 }

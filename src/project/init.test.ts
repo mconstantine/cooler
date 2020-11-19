@@ -1,159 +1,218 @@
-import { getDatabase } from '../misc/getDatabase'
-import { Database } from 'sqlite'
-import { update, remove, toSQLDate } from '../misc/dbUtils'
-import { getFakeProject } from '../test/getFakeProject'
 import SQL from 'sql-template-strings'
-import { Project, ProjectFromDatabase } from './interface'
-import { Client } from '../client/interface'
+import { Client, ClientCreationInput } from '../client/interface'
 import { getFakeClient } from '../test/getFakeClient'
 import { getFakeUser } from '../test/getFakeUser'
 import { User } from '../user/interface'
 import { init } from '../init'
-import { fromDatabase } from './model'
-import { definitely } from '../misc/definitely'
+import { pipe } from 'fp-ts/function'
+import { registerUser } from '../test/registerUser'
+import { option, taskEither } from 'fp-ts'
+import { createClient } from '../client/model'
+import { dbExec, dbGet, dbRun, insert, remove, update } from '../misc/dbUtils'
+import { getFakeProject } from '../test/getFakeProject'
+import {
+  DatabaseProject,
+  ProjectCreationInput,
+  ProjectUpdateInput
+} from './interface'
+import { testError, testTaskEither } from '../test/util'
 import { sleep } from '../test/sleep'
-import { getID } from '../test/getID'
+import { NonEmptyString } from 'io-ts-types'
+import { NonNegativeNumber, PositiveInteger } from '../misc/Types'
+import { TaskEither } from 'fp-ts/TaskEither'
+import { ApolloError } from 'apollo-server-express'
 
 describe('initProject', () => {
   describe('happy path', () => {
-    let db: Database
     let client: Client
     let user: User
 
     beforeAll(async () => {
-      db = await getDatabase()
+      process.env.SECRET = 'shhhhh'
+      await init()()
+      await pipe(
+        registerUser(getFakeUser()),
+        taskEither.map(u => {
+          user = u
+          return u
+        }),
+        taskEither.chain(user => createClient(getFakeClient(user.id), user)),
+        taskEither.map(c => {
+          client = c
+          return c
+        })
+      )()
+    })
 
-      await init()
-
-      const userData = getFakeUser()
-      const userId = await getID('user', userData)
-      const clientData = getFakeClient(userId)
-      const clientId = await getID('client', clientData)
-
-      user = { ...userData, id: userId } as User
-      client = { ...clientData, id: clientId } as Client
+    afterAll(async () => {
+      await remove('user')()
+      delete process.env.SECRET
     })
 
     it('should create a database table', async () => {
-      await db.exec('SELECT * FROM project')
+      await dbExec(SQL`SELECT * FROM project`)()
     })
 
     it('should save the creation time automatically', async () => {
-      const lastID = await getID('project', getFakeProject(client.id))
-
-      const project = definitely(
-        await db.get<ProjectFromDatabase>(
-          SQL`SELECT * FROM project WHERE id = ${lastID}`
-        )
-      )
-
-      expect(project.created_at).toMatch(
-        /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/
+      await pipe(
+        getFakeProject(client.id),
+        project => insert('project', project, ProjectCreationInput),
+        taskEither.chain(lastID => getProjectById(lastID)),
+        testTaskEither(project => {
+          expect(DatabaseProject.is(project)).toBe(true)
+          expect(project.created_at).toBeInstanceOf(Date)
+        })
       )
     })
 
     it('should keep track of the time of the last update', async () => {
-      const project = getFakeProject(client.id)
-      const updated = { name: 'Some weird name' }
-
-      expect(project.name).not.toBe(updated.name)
-
-      const lastID = await getID('project', project)
-
-      const updateDateBefore = definitely(
-        await db.get<ProjectFromDatabase>(
-          SQL`SELECT * FROM project WHERE id = ${lastID}`
-        )
-      ).updated_at
-
-      await sleep(1000)
-      await update('project', { id: lastID, ...updated })
-
-      const updateDateAfter = definitely(
-        await db.get<ProjectFromDatabase>(
-          SQL`SELECT * FROM project WHERE id = ${lastID}`
-        )
-      ).updated_at
-
-      expect(updateDateBefore).not.toBe(updateDateAfter)
+      await pipe(
+        insert('project', getFakeProject(client.id), ProjectCreationInput),
+        taskEither.chain(lastID => getProjectById(lastID)),
+        taskEither.chain(before =>
+          pipe(
+            sleep(1000, null),
+            taskEither.fromTask,
+            taskEither.chain(() =>
+              update(
+                'project',
+                before.id,
+                { name: 'Some weird name' as NonEmptyString },
+                ProjectUpdateInput
+              )
+            ),
+            taskEither.chain(() => getProjectById(before.id)),
+            taskEither.map(after => ({ before, after }))
+          )
+        ),
+        testTaskEither(({ before, after }) => {
+          expect(before.updated_at.getTime()).not.toBe(
+            after.updated_at.getTime()
+          )
+        })
+      )
     })
 
     it("should delete all client's projects when the client is deleted", async () => {
-      const clientData = getFakeClient(user.id)
-      const clientId = await getID('client', clientData)
-      const projectData = getFakeProject(clientId)
-      const projectId = await getID('project', projectData)
-
-      await remove('client', { id: clientId })
-
-      const project = await db.get<ProjectFromDatabase>(
-        SQL`SELECT * FROM project WHERE id = ${projectId}`
-      )
-
-      expect(project).toBeUndefined()
-    })
-
-    it('should set cashed_balance to null if cashed_date is set to null', async () => {
-      let project: Project
-
-      const lastID = await getID(
-        'project',
-        getFakeProject(client.id, { cashed_at: null })
-      )
-
-      const getProject = async () =>
-        fromDatabase(
-          definitely(
-            await db.get<ProjectFromDatabase>(
-              SQL`SELECT * FROM project WHERE id = ${lastID}`
+      await pipe(
+        registerUser(getFakeUser(), user),
+        taskEither.chain(({ id: userId }) =>
+          pipe(
+            insert('client', getFakeClient(userId), ClientCreationInput),
+            taskEither.chain(clientId =>
+              insert('project', getFakeProject(clientId), ProjectCreationInput)
+            ),
+            taskEither.chain(projectId => getProjectById(projectId)),
+            taskEither.chain(project =>
+              pipe(
+                remove('user', { id: userId }),
+                taskEither.chain(() =>
+                  dbGet(
+                    SQL`SELECT * FROM project WHERE id = ${project.id}`,
+                    DatabaseProject
+                  )
+                )
+              )
             )
           )
-        )
-
-      project = await getProject()
-
-      expect(project.cashed_at).toBeNull()
-      expect(project.cashed_balance).toBeNull()
-
-      await update('project', {
-        id: project.id,
-        cashed_at: toSQLDate(new Date()),
-        cashed_balance: 42
-      })
-
-      project = await getProject()
-
-      expect(project.cashed_at).not.toBeNull()
-      expect(project.cashed_balance).not.toBeNull()
-
-      await update('project', { id: project.id, cashed_at: null })
-
-      project = await getProject()
-
-      expect(project.cashed_at).toBeNull()
-      expect(project.cashed_balance).toBeNull()
+        ),
+        testTaskEither(result => {
+          expect(option.isNone(result)).toBe(true)
+        })
+      )
     })
 
-    it('should set the cashed balance to zero if there are no sessions', async () => {
-      const projectId = await getID(
-        'project',
-        getFakeProject(client.id, {
-          cashed_at: null
+    it('should set cashed_balance to null if cashed_at is set to null', async () => {
+      const project = await pipe(
+        insert(
+          'project',
+          getFakeProject(client.id, {
+            cashed: option.some({
+              at: new Date(Date.UTC(1990, 0, 1)),
+              balance: 42 as NonNegativeNumber
+            })
+          }),
+          ProjectCreationInput
+        ),
+        taskEither.chain(projectId => getProjectById(projectId)),
+        testTaskEither(project => {
+          expect(DatabaseProject.encode(project)).toMatchObject({
+            cashed_at: '1990-01-01T00:00:00.000Z',
+            cashed_balance: 42
+          })
+
+          return project
         })
       )
 
-      await update('project', {
-        id: projectId,
-        cashed_at: toSQLDate(new Date())
-      })
+      await pipe(
+        dbRun(
+          SQL`UPDATE project SET cashed_at = NULL WHERE id = ${project.id}`
+        ),
+        taskEither.chain(() => getProjectById(project.id)),
+        testTaskEither(project => {
+          expect(option.isNone(project.cashed)).toBe(true)
+          expect(DatabaseProject.encode(project)).toMatchObject({
+            cashed_at: null,
+            cashed_balance: null
+          })
+        })
+      )
+    })
 
-      const project = definitely(
-        await db.get<ProjectFromDatabase>(
-          SQL`SELECT * FROM project WHERE ${projectId}`
-        )
+    it('should set cashed_balance to zero if there are no sessions', async () => {
+      const project = await pipe(
+        insert(
+          'project',
+          getFakeProject(client.id, { cashed: option.none }),
+          ProjectCreationInput
+        ),
+        taskEither.chain(projectId => getProjectById(projectId)),
+        testTaskEither(project => {
+          expect(DatabaseProject.encode(project)).toMatchObject({
+            cashed_at: null,
+            cashed_balance: null
+          })
+
+          return project
+        })
       )
 
-      expect(project.cashed_balance).toBe(0)
+      await pipe(
+        dbRun(
+          SQL`UPDATE project SET cashed_at = '1990-01-01 00:00:00' WHERE id = ${project.id}`
+        ),
+        taskEither.chain(() => getProjectById(project.id)),
+        testTaskEither(project => {
+          expect(project.cashed).toEqual(
+            option.some({
+              at: new Date(1990, 0, 1),
+              balance: 0
+            })
+          )
+
+          expect(DatabaseProject.encode(project)).toMatchObject({
+            cashed_at: new Date(1990, 0, 1).toISOString(),
+            cashed_balance: 0
+          })
+        })
+      )
     })
   })
 })
+
+function getProjectById(
+  id: PositiveInteger
+): TaskEither<ApolloError, DatabaseProject> {
+  return pipe(
+    dbGet(
+      SQL`
+        SELECT project.*, client.user FROM project
+        JOIN client ON client.id = project.client
+        WHERE project.id = ${id}
+      `,
+      DatabaseProject
+    ),
+    taskEither.chain(taskEither.fromOption(testError))
+  )
+}

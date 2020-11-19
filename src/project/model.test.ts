@@ -1,27 +1,25 @@
+import { User } from '../user/interface'
+import { Client } from '../client/interface'
+import { Project } from './interface'
+import { init } from '../init'
+import { constVoid, pipe } from 'fp-ts/function'
+import { testError, testTaskEither, testTaskEitherError } from '../test/util'
+import { registerUser } from '../test/registerUser'
+import { getFakeUser } from '../test/getFakeUser'
+import { sequenceS } from 'fp-ts/lib/Apply'
+import { option, taskEither } from 'fp-ts'
+import { getFakeClient } from '../test/getFakeClient'
+import { getClientById, insertClient } from '../client/database'
+import { getProjectById, insertProject } from './database'
+import { getFakeProject } from '../test/getFakeProject'
+import { deleteUser } from '../user/database'
 import {
   createProject,
-  listProjects,
-  updateProject,
   deleteProject,
-  getProject
+  getProject,
+  listProjects,
+  updateProject
 } from './model'
-import { User, UserFromDatabase } from '../user/interface'
-import { Client, ClientFromDatabase } from '../client/interface'
-import { getFakeUser } from '../test/getFakeUser'
-import { getFakeClient } from '../test/getFakeClient'
-import { getDatabase } from '../misc/getDatabase'
-import SQL from 'sql-template-strings'
-import { getFakeProject } from '../test/getFakeProject'
-import { ApolloError } from 'apollo-server-express'
-import { Project, ProjectFromDatabase } from './interface'
-import { init } from '../init'
-import { fromDatabase as userFromDatabase } from '../user/model'
-import { fromDatabase as clientFromDatabase } from '../client/model'
-import { fromDatabase } from './model'
-import { definitely } from '../misc/definitely'
-import { getConnectionNodes } from '../test/getConnectionNodes'
-import { getID } from '../test/getID'
-import { fromSQLDate } from '../misc/dbUtils'
 
 let user1: User
 let user2: User
@@ -31,99 +29,128 @@ let project1: Project
 let project2: Project
 
 beforeAll(async () => {
-  await init()
+  process.env.SECRET = 'shhhhh'
+  await pipe(init(), testTaskEither(constVoid))
 
-  const db = await getDatabase()
-  const user1Id = await getID('user', getFakeUser())
-  const user2Id = await getID('user', getFakeUser())
-  const client1Id = await getID('client', getFakeClient(user1Id))
-  const client2Id = await getID('client', getFakeClient(user2Id))
-  const project1Id = await getID('project', getFakeProject(client1Id))
-  const project2Id = await getID('project', getFakeProject(client2Id))
-
-  user1 = userFromDatabase(
-    definitely(
-      await db.get<UserFromDatabase>(
-        SQL`SELECT * FROM user WHERE id = ${user1Id}`
-      )
-    )
+  await pipe(
+    registerUser(getFakeUser()),
+    testTaskEither(user => {
+      user1 = user
+    })
   )
 
-  user2 = userFromDatabase(
-    definitely(
-      await db.get<UserFromDatabase>(
-        SQL`SELECT * FROM user WHERE id = ${user2Id}`
-      )
-    )
+  await pipe(
+    registerUser(getFakeUser(), user1),
+    testTaskEither(user => {
+      user2 = user
+    })
   )
 
-  client1 = clientFromDatabase(
-    definitely(
-      await db.get<ClientFromDatabase>(
-        SQL`SELECT * FROM client WHERE id = ${client1Id}`
+  await pipe(
+    sequenceS(taskEither.taskEither)({
+      c1: pipe(
+        insertClient(getFakeClient(user1.id)),
+        taskEither.chain(id => getClientById(id))
+      ),
+      c2: pipe(
+        insertClient(getFakeClient(user2.id)),
+        taskEither.chain(id => getClientById(id))
       )
-    )
+    }),
+    taskEither.map(({ c1, c2 }) => sequenceS(option.option)({ c1, c2 })),
+    taskEither.chain(taskEither.fromOption(testError)),
+    testTaskEither(({ c1, c2 }) => {
+      client1 = c1
+      client2 = c2
+    })
   )
 
-  client2 = clientFromDatabase(
-    definitely(
-      await db.get<ClientFromDatabase>(
-        SQL`SELECT * FROM client WHERE id = ${client2Id}`
+  await pipe(
+    sequenceS(taskEither.taskEither)({
+      p1: pipe(
+        insertProject(getFakeProject(client1.id)),
+        taskEither.chain(id => getProjectById(id))
+      ),
+      p2: pipe(
+        insertProject(getFakeProject(client2.id)),
+        taskEither.chain(id => getProjectById(id))
       )
-    )
+    }),
+    taskEither.map(({ p1, p2 }) => sequenceS(option.option)({ p1, p2 })),
+    taskEither.chain(taskEither.fromOption(testError)),
+    testTaskEither(({ p1, p2 }) => {
+      project1 = p1
+      project2 = p2
+    })
   )
+})
 
-  project1 = fromDatabase(
-    definitely(
-      await db.get<ProjectFromDatabase>(
-        SQL`SELECT * FROM project WHERE id = ${project1Id}`
-      )
-    )
-  )
+afterAll(async () => {
+  delete process.env.SECRET
 
-  project2 = fromDatabase(
-    definitely(
-      await db.get<ProjectFromDatabase>(
-        SQL`SELECT * FROM project WHERE id = ${project2Id}`
-      )
-    )
+  await pipe(
+    deleteUser(user1.id),
+    taskEither.chain(() => deleteUser(user2.id)),
+    testTaskEither(constVoid)
   )
 })
 
 describe('createProject', () => {
   it('should work', async () => {
-    await createProject(getFakeProject(client1.id), user1)
+    await pipe(
+      createProject(getFakeProject(client1.id), user1),
+      testTaskEither(project => {
+        expect(Project.is(project)).toBe(true)
+      })
+    )
   })
 
   it("should not allow users to create projects for other users' clients", async () => {
-    await expect(async () => {
-      await createProject(getFakeProject(client2.id), user1)
-    }).rejects.toBeInstanceOf(ApolloError)
+    await pipe(
+      createProject(getFakeProject(client2.id), user1),
+      testTaskEitherError(error => {
+        expect(error.extensions.code).toBe('COOLER_403')
+      })
+    )
   })
 })
 
 describe('getProject', () => {
   it('should work', async () => {
-    expect(await getProject(project1.id, user1)).toMatchObject(project1)
+    await pipe(
+      getProject(project1.id, user1),
+      testTaskEither(project => {
+        expect(Project.is(project)).toBe(true)
+        expect(project).toMatchObject(project1)
+      })
+    )
   })
 
   it("should not allow users to see other users' projects", async () => {
-    await expect(async () => {
-      await getProject(project2.id, user1)
-    }).rejects.toBeInstanceOf(ApolloError)
+    await pipe(
+      getProject(project2.id, user1),
+      testTaskEitherError(error => {
+        expect(error.extensions.code).toBe('COOLER_403')
+      })
+    )
   })
 })
 
 describe('listProjects', () => {
   it("should list only the user's projects", async () => {
-    const results = await listProjects({}, user1)
+    await pipe(
+      listProjects({ name: option.none }, user1),
+      testTaskEither(connection => {
+        const projects = connection.edges.map(({ node }) => node)
 
-    expect(getConnectionNodes(results)).toContainEqual(
-      expect.objectContaining({ id: project1.id })
-    )
+        expect(projects).toContainEqual(
+          expect.objectContaining({ id: project1.id })
+        )
 
-    expect(getConnectionNodes(results)).not.toContainEqual(
-      expect.objectContaining({ id: project2.id })
+        expect(projects).not.toContainEqual(
+          expect.objectContaining({ id: project2.id })
+        )
+      })
     )
   })
 })
@@ -131,26 +158,33 @@ describe('listProjects', () => {
 describe('updateProject', () => {
   it('should work', async () => {
     const data = getFakeProject(client1.id)
-    const result = definitely(await updateProject(project1.id, data, user1))
 
-    expect(result).toMatchObject({
-      ...data,
-      cashed_at: data.cashed_at ? fromSQLDate(data.cashed_at) : null
-    })
-
-    project1 = result
+    await pipe(
+      updateProject(project1.id, data, user1),
+      testTaskEither(project => {
+        expect(Project.is(project)).toBe(true)
+        expect(project).toMatchObject(data)
+        project1 = project
+      })
+    )
   })
 
   it("should not allow users to update other users' projects", async () => {
-    await expect(async () => {
-      await updateProject(project1.id, getFakeProject(client1.id), user2)
-    }).rejects.toBeInstanceOf(ApolloError)
+    await pipe(
+      updateProject(project1.id, getFakeProject(client1.id), user2),
+      testTaskEitherError(error => {
+        expect(error.extensions.code).toBe('COOLER_403')
+      })
+    )
   })
 
   it("should not allow users to assign to their projects other users' clients", async () => {
-    await expect(async () => {
-      await updateProject(project1.id, getFakeProject(client2.id), user1)
-    }).rejects.toBeInstanceOf(ApolloError)
+    await pipe(
+      updateProject(project1.id, getFakeProject(client2.id), user1),
+      testTaskEitherError(error => {
+        expect(error.extensions.code).toBe('COOLER_403')
+      })
+    )
   })
 })
 
@@ -159,22 +193,33 @@ describe('deleteProject', () => {
   let project2: Project
 
   beforeAll(async () => {
-    project1 = definitely(
-      await createProject(getFakeProject(client1.id), user1)
-    )
-
-    project2 = definitely(
-      await createProject(getFakeProject(client2.id), user2)
+    await pipe(
+      sequenceS(taskEither.taskEither)({
+        p1: createProject(getFakeProject(client1.id), user1),
+        p2: createProject(getFakeProject(client2.id), user2)
+      }),
+      testTaskEither(({ p1, p2 }) => {
+        project1 = p1
+        project2 = p2
+      })
     )
   })
 
   it('should work', async () => {
-    expect(await deleteProject(project1.id, user1)).toMatchObject(project1)
+    await pipe(
+      deleteProject(project1.id, user1),
+      testTaskEither(project => {
+        expect(project).toMatchObject(project1)
+      })
+    )
   })
 
   it("should not allow users to delete other users' projects", async () => {
-    await expect(async () => {
-      await deleteProject(project2.id, user1)
-    }).rejects.toBeInstanceOf(ApolloError)
+    await pipe(
+      deleteProject(project2.id, user1),
+      testTaskEitherError(error => {
+        expect(error.extensions.code).toBe('COOLER_403')
+      })
+    )
   })
 })

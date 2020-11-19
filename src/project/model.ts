@@ -1,237 +1,240 @@
 import {
+  DatabaseProject,
   Project,
   ProjectCreationInput,
-  ProjectFromDatabase,
   ProjectUpdateInput
 } from './interface'
-import { getDatabase } from '../misc/getDatabase'
-import { insert, update, remove, fromSQLDate } from '../misc/dbUtils'
 import SQL from 'sql-template-strings'
 import { ConnectionQueryArgs } from '../misc/ConnectionQueryArgs'
-import { queryToConnection, mapConnection } from '../misc/queryToConnection'
-import { User, UserFromDatabase } from '../user/interface'
-import { ClientFromDatabase, Client } from '../client/interface'
+import { queryToConnection } from '../misc/queryToConnection'
+import { DatabaseUser, User } from '../user/interface'
+import { DatabaseClient } from '../client/interface'
 import { ApolloError } from 'apollo-server-express'
 import { Connection } from '../misc/Connection'
-import { ID, SQLDate } from '../misc/Types'
-import { fromDatabase as clientFromDatabase } from '../client/model'
-import { removeUndefined } from '../misc/removeUndefined'
+import {
+  coolerError,
+  DateFromSQLDate,
+  NonNegativeNumber,
+  PositiveInteger
+} from '../misc/Types'
+import { TaskEither } from 'fp-ts/TaskEither'
+import { constVoid, pipe } from 'fp-ts/function'
+import { getClientById } from '../client/database'
+import { boolean, option, taskEither } from 'fp-ts'
+import { getProjectById } from './database'
+import * as t from 'io-ts'
+import {
+  insertProject,
+  updateProject as updateDatabaseProject,
+  deleteProject as deleteDatabaseProject
+} from './database'
+import { Option } from 'fp-ts/Option'
+import { dbGet } from '../misc/dbUtils'
+import { ProjectConnectionQueryArgs } from './resolvers'
 
-export async function createProject(
-  { name, description, client: clientId }: ProjectCreationInput,
+export function createProject(
+  { name, description, client }: ProjectCreationInput,
   user: User
-): Promise<Project | null> {
-  const db = await getDatabase()
-
-  const client = await db.get<ClientFromDatabase>(
-    SQL`SELECT * FROM client WHERE id = ${clientId}`
-  )
-
-  if (!client) {
-    return null
-  }
-
-  if (client.user !== user.id) {
-    throw new ApolloError(
-      'You cannot create projects for this client',
-      'COOLER_403'
+): TaskEither<ApolloError, Project> {
+  return pipe(
+    getClientById(client),
+    taskEither.chain(
+      taskEither.fromOption(() =>
+        coolerError('COOLER_404', 'Project client not found')
+      )
+    ),
+    taskEither.chain(
+      taskEither.fromPredicate(
+        client => client.user === user.id,
+        () =>
+          coolerError(
+            'COOLER_403',
+            'You cannot create projects for this client'
+          )
+      )
+    ),
+    taskEither.chain(() =>
+      insertProject({ name, description, client, cashed: option.none })
+    ),
+    taskEither.chain(id => getProjectById(id)),
+    taskEither.chain(
+      taskEither.fromOption(() =>
+        coolerError(
+          'COOLER_500',
+          'Unable to retrieve the project after creation'
+        )
+      )
     )
-  }
-
-  const { lastID } = await insert<ProjectCreationInput>('project', {
-    name,
-    description,
-    client: clientId
-  })
-
-  if (!lastID) {
-    return null
-  }
-
-  const newProject = await db.get<ProjectFromDatabase>(
-    SQL`SELECT * FROM project WHERE id = ${lastID}`
   )
-
-  if (!newProject) {
-    return null
-  }
-
-  return fromDatabase(newProject)
 }
 
-export async function getProject(
-  id: number,
+export function getProject(
+  id: PositiveInteger,
   user: User
-): Promise<Project | null> {
-  const db = await getDatabase()
-
-  const project = await db.get<ProjectFromDatabase & { user: ID }>(SQL`
-    SELECT project.*, client.user
-    FROM project
-    JOIN client ON project.client = client.id
-    WHERE project.id = ${id}
-  `)
-
-  if (!project) {
-    return null
-  }
-
-  if (project.user !== user.id) {
-    throw new ApolloError('You cannot see this project', 'COOLER_403')
-  }
-
-  return fromDatabase(project)
+): TaskEither<ApolloError, Project> {
+  return pipe(
+    getProjectById(id),
+    taskEither.chain(
+      taskEither.fromOption(() =>
+        coolerError('COOLER_404', 'Project not found')
+      )
+    ),
+    taskEither.chain(
+      taskEither.fromPredicate(
+        project => project.user === user.id,
+        () => coolerError('COOLER_403', 'You cannot see this project')
+      )
+    )
+  )
 }
 
-export async function listProjects(
-  args: ConnectionQueryArgs & { name?: string },
+export function listProjects(
+  args: ProjectConnectionQueryArgs,
   user: User
-): Promise<Connection<Project>> {
+): TaskEither<ApolloError, Connection<Project>> {
   const sql = SQL`
     JOIN client ON project.client = client.id
     WHERE client.user = ${user.id}
   `
 
-  args.name && sql.append(SQL` AND project.name LIKE ${`%${args.name}%`}`)
+  pipe(
+    args.name,
+    option.fold(constVoid, name =>
+      sql.append(SQL` AND project.name LIKE ${`%${name}%`}`)
+    )
+  )
 
-  const connection = await queryToConnection<ProjectFromDatabase>(
+  return queryToConnection(
     args,
-    ['project.*'],
+    ['project.*, client.user'],
     'project',
+    DatabaseProject,
     sql
   )
-
-  return mapConnection(connection, fromDatabase)
 }
 
-export async function updateProject(
-  id: number,
+export function updateProject(
+  id: PositiveInteger,
   project: ProjectUpdateInput,
   user: User
-): Promise<Project | null> {
-  const db = await getDatabase()
-  const { name, description, client, cashed_at, cashed_balance } = project
+): TaskEither<ApolloError, Project> {
+  const { name, description, client, cashed } = project
 
-  const currentProject = await db.get<ProjectFromDatabase & { user: ID }>(SQL`
-    SELECT project.client, client.user
-    FROM project
-    JOIN client ON project.client = client.id
-    WHERE project.id = ${id}`)
-
-  if (!currentProject) {
-    return null
-  }
-
-  if (currentProject.user !== user.id) {
-    throw new ApolloError('You cannot update this project', 'COOLER_403')
-  }
-
-  if (
-    name ||
-    description ||
-    client ||
-    cashed_at !== undefined ||
-    cashed_balance !== undefined
-  ) {
-    if (client) {
-      const newClient = await db.get<ClientFromDatabase>(
-        SQL`SELECT user FROM client WHERE id = ${client}`
+  return pipe(
+    getProjectById(id),
+    taskEither.chain(
+      taskEither.fromOption(() =>
+        coolerError('COOLER_404', 'Project not found')
       )
-
-      if (!newClient) {
-        return null
-      }
-
-      if (newClient.user !== user.id) {
-        throw new ApolloError(
-          'You cannot assign this client to a project',
-          'COOLER_403'
+    ),
+    taskEither.chain(
+      taskEither.fromPredicate(
+        project => project.user === user.id,
+        () => coolerError('COOLER_403', 'You cannot update this project')
+      )
+    ),
+    taskEither.chain(project =>
+      pipe(
+        client !== undefined,
+        boolean.fold(
+          () => taskEither.right(void 0),
+          () =>
+            pipe(
+              getClientById(client!),
+              taskEither.chain(
+                taskEither.fromOption(() =>
+                  coolerError('COOLER_404', 'Client not found')
+                )
+              ),
+              taskEither.chain(
+                taskEither.fromPredicate(
+                  client => client.user === user.id,
+                  () =>
+                    coolerError(
+                      'COOLER_403',
+                      'You cannot assign this client to a project'
+                    )
+                )
+              ),
+              taskEither.map(constVoid)
+            )
+        ),
+        taskEither.chain(() =>
+          updateDatabaseProject(project.id, {
+            name,
+            description,
+            client,
+            cashed
+          })
+        ),
+        taskEither.chain(() => getProjectById(project.id)),
+        taskEither.chain(
+          taskEither.fromOption(() =>
+            coolerError('COOLER_404', 'Project not found')
+          )
         )
-      }
-    }
-
-    const args = removeUndefined({
-      name,
-      description,
-      client,
-      cashed_at,
-      cashed_balance
-    })
-
-    await update('project', { ...args, id })
-  }
-
-  const updatedProject = await db.get<ProjectFromDatabase>(
-    SQL`SELECT * FROM project WHERE id = ${id}`
+      )
+    )
   )
-
-  if (!updatedProject) {
-    return null
-  }
-
-  return fromDatabase(updatedProject)
 }
 
-export async function deleteProject(
-  id: number,
+export function deleteProject(
+  id: PositiveInteger,
   user: User
-): Promise<Project | null> {
-  const db = await getDatabase()
-
-  const project = await db.get<ProjectFromDatabase & { user: ID }>(SQL`
-    SELECT project.*, client.user
-    FROM project
-    JOIN client ON project.client = client.id
-    WHERE project.id = ${id}
-  `)
-
-  if (!project) {
-    return null
-  }
-
-  if (project.user !== user.id) {
-    throw new ApolloError('You cannot delete this project', 'COOLER_403')
-  }
-
-  await remove('project', { id })
-
-  return fromDatabase(project)
-}
-
-export async function getProjectClient(
-  project: ProjectFromDatabase
-): Promise<Client> {
-  const db = await getDatabase()
-
-  const client = await db.get<ClientFromDatabase>(
-    SQL`SELECT * FROM client WHERE id = ${project.client}`
+): TaskEither<ApolloError, Project> {
+  return pipe(
+    getProjectById(id),
+    taskEither.chain(
+      taskEither.fromOption(() =>
+        coolerError('COOLER_404', 'Project not found')
+      )
+    ),
+    taskEither.chain(
+      taskEither.fromPredicate(
+        project => project.user === user.id,
+        () => coolerError('COOLER_403', 'You cannot delete this project')
+      )
+    ),
+    taskEither.chain(project =>
+      pipe(
+        deleteDatabaseProject(project.id),
+        taskEither.map(() => project)
+      )
+    )
   )
-
-  return clientFromDatabase(client!)
 }
 
-export async function getUserProjects(
-  user: UserFromDatabase,
+export function getProjectClient(
+  project: DatabaseProject
+): TaskEither<ApolloError, DatabaseClient> {
+  return pipe(
+    getClientById(project.client),
+    taskEither.chain(
+      taskEither.fromOption(() => coolerError('COOLER_404', 'Client not found'))
+    )
+  )
+}
+
+export function getUserProjects(
+  user: DatabaseUser,
   args: ConnectionQueryArgs
-): Promise<Connection<Project>> {
-  const connection = await queryToConnection<ProjectFromDatabase>(
+): TaskEither<ApolloError, Connection<DatabaseProject>> {
+  return queryToConnection(
     args,
     ['project.*'],
     'project',
+    DatabaseProject,
     SQL`
       JOIN client ON client.id = project.client
       WHERE client.user = ${user.id}
     `
   )
-
-  return mapConnection(connection, fromDatabase)
 }
 
-export async function getUserCashedBalance(
-  user: UserFromDatabase,
-  since?: SQLDate
-) {
-  const db = await getDatabase()
+export function getUserCashedBalance(
+  user: DatabaseUser,
+  since: Option<Date>
+): TaskEither<ApolloError, NonNegativeNumber> {
   const sql = SQL`
     SELECT IFNULL(SUM(project.cashed_balance), 0) AS balance
     FROM project
@@ -239,32 +242,39 @@ export async function getUserCashedBalance(
     WHERE client.user = ${user.id} AND project.cashed_balance IS NOT NULL
   `
 
-  since && sql.append(SQL` AND project.cashed_at >= ${since}`)
+  pipe(
+    since,
+    option.fold(constVoid, since =>
+      sql.append(
+        SQL` AND project.cashed_at >= ${DateFromSQLDate.encode(since)}`
+      )
+    )
+  )
 
-  const { balance } = (await db.get<{ balance: number }>(sql))!
+  const Result = t.type({
+    balance: NonNegativeNumber
+  })
 
-  return balance
+  return pipe(
+    dbGet(sql, Result),
+    taskEither.chain(
+      taskEither.fromOption(() =>
+        coolerError('COOLER_500', 'Unable to retrieve user balance')
+      )
+    ),
+    taskEither.map(({ balance }) => balance)
+  )
 }
 
-export async function getClientProjects(
-  client: ClientFromDatabase,
+export function getClientProjects(
+  client: DatabaseClient,
   args: ConnectionQueryArgs
-): Promise<Connection<Project>> {
-  const connection = await queryToConnection<ProjectFromDatabase>(
+): TaskEither<ApolloError, Connection<DatabaseProject>> {
+  return queryToConnection(
     args,
     ['*'],
     'project',
+    DatabaseProject,
     SQL`WHERE client = ${client.id}`
   )
-
-  return mapConnection(connection, fromDatabase)
-}
-
-export function fromDatabase(project: ProjectFromDatabase): Project {
-  return {
-    ...project,
-    cashed_at: project.cashed_at ? fromSQLDate(project.cashed_at) : null,
-    created_at: fromSQLDate(project.created_at),
-    updated_at: fromSQLDate(project.updated_at)
-  }
 }
