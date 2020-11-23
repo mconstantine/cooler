@@ -21,6 +21,7 @@ import { NonEmptyString } from 'io-ts-types'
 import { NonNegativeNumber, PositiveInteger } from '../misc/Types'
 import { TaskEither } from 'fp-ts/TaskEither'
 import { ApolloError } from 'apollo-server-express'
+import * as t from 'io-ts'
 
 describe('initProject', () => {
   describe('happy path', () => {
@@ -134,7 +135,7 @@ describe('initProject', () => {
           }),
           ProjectCreationInput
         ),
-        taskEither.chain(projectId => getProjectById(projectId)),
+        taskEither.chain(getProjectById),
         testTaskEither(project => {
           expect(DatabaseProject.encode(project)).toMatchObject({
             cashed_at: '1990-01-01T00:00:00.000Z',
@@ -195,6 +196,32 @@ describe('initProject', () => {
             cashed_at: new Date(1990, 0, 1).toISOString(),
             cashed_balance: 0
           })
+        })
+      )
+    })
+
+    it('Should save SQL dates', async () => {
+      await pipe(
+        insert(
+          'project',
+          getFakeProject(client.id, {
+            cashed: option.some({
+              at: new Date(),
+              balance: 42 as NonNegativeNumber
+            })
+          }),
+          ProjectCreationInput
+        ),
+        taskEither.chain(id =>
+          dbGet(SQL`SELECT * FROM project WHERE id = ${id}`, t.UnknownRecord)
+        ),
+        taskEither.chain(taskEither.fromOption(testError)),
+        testTaskEither(record => {
+          const sqlDatePattern = /\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}/
+
+          expect(record.cashed_at).toMatch(sqlDatePattern)
+          expect(record.created_at).toMatch(sqlDatePattern)
+          expect(record.updated_at).toMatch(sqlDatePattern)
         })
       )
     })

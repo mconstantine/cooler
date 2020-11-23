@@ -15,7 +15,11 @@ export function getFakeProject(
       () => option.none,
       () =>
         option.some({
-          at: faker.date.past(1),
+          at: (() => {
+            const date = faker.date.past(1)
+            date.setMilliseconds(0)
+            return date
+          })(),
           balance: 1 as NonNegativeNumber
         })
     )

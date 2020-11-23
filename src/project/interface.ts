@@ -4,19 +4,28 @@ import { sequenceS } from 'fp-ts/lib/Apply'
 import { Option } from 'fp-ts/Option'
 import * as t from 'io-ts'
 import {
-  date,
   DateFromISOString,
   NonEmptyString,
   option as tOption,
   optionFromNullable
 } from 'io-ts-types'
-import { NonNegativeNumber, PositiveInteger } from '../misc/Types'
+import {
+  DateFromSQLDate,
+  NonNegativeNumber,
+  PositiveInteger
+} from '../misc/Types'
 
 const CashData = t.type({
-  at: date,
+  at: DateFromISOString,
   balance: NonNegativeNumber
 })
 type CashData = t.TypeOf<typeof CashData>
+
+const DatabaseCashData = t.type({
+  at: DateFromSQLDate,
+  balance: NonNegativeNumber
+})
+type DatabaseCashData = t.TypeOf<typeof DatabaseCashData>
 
 export const PlainProject = t.type(
   {
@@ -117,8 +126,8 @@ export const Project = new t.Type<ProjectC, PlainProject>(
   (u): u is ProjectC =>
     Projectish.is(u) &&
     tOption(CashData).is(u.cashed) &&
-    date.is(u.created_at) &&
-    date.is(u.updated_at),
+    DateFromISOString.is(u.created_at) &&
+    DateFromISOString.is(u.updated_at),
   (u, c) =>
     pipe(
       ProjectMiddleware.validate(u, c),
@@ -181,8 +190,8 @@ export const DatabaseProject = new t.Type<DatabaseProjectC, PlainProject>(
   (u): u is DatabaseProjectC =>
     DatabaseProjectish.is(u) &&
     tOption(CashData).is(u.cashed) &&
-    date.is(u.created_at) &&
-    date.is(u.updated_at),
+    DateFromSQLDate.is(u.created_at) &&
+    DateFromSQLDate.is(u.updated_at),
   (u, c) =>
     pipe(
       DatabaseProjectMiddleware.validate(u, c),
@@ -247,7 +256,7 @@ interface ProjectCreationInputC {
   name: NonEmptyString
   description: Option<NonEmptyString>
   client: PositiveInteger
-  cashed: Option<CashData>
+  cashed: Option<DatabaseCashData>
 }
 
 interface PlainProjectCreationInput {
@@ -263,7 +272,7 @@ const ProjectCreationInputMiddleware = t.type(
     name: NonEmptyString,
     description: optionFromNullable(NonEmptyString),
     client: PositiveInteger,
-    cashed_at: optionFromNullable(DateFromISOString),
+    cashed_at: optionFromNullable(DateFromSQLDate),
     cashed_balance: optionFromNullable(NonNegativeNumber)
   },
   'ProjectCreationInputMiddleware'
@@ -341,7 +350,7 @@ interface ProjectUpdateInputC {
   name?: NonEmptyString
   description?: Option<NonEmptyString>
   client?: PositiveInteger
-  cashed?: Option<CashData>
+  cashed?: Option<DatabaseCashData>
 }
 
 interface PlainProjectUpdateInput {
@@ -357,7 +366,7 @@ const ProjectUpdateInputMiddleware = t.partial(
     name: NonEmptyString,
     description: optionFromNullable(NonEmptyString),
     client: PositiveInteger,
-    cashed_at: optionFromNullable(DateFromISOString),
+    cashed_at: optionFromNullable(DateFromSQLDate),
     cashed_balance: optionFromNullable(NonNegativeNumber)
   },
   'ProjectUpdateInputMiddleware'
@@ -382,7 +391,7 @@ export const ProjectUpdateInput = new t.Type<
 >(
   'ProjectUpdateInput',
   (u): u is ProjectC =>
-    ProjectUpdateInputish.is(u) && tOption(CashData).is(u.cashed),
+    ProjectUpdateInputish.is(u) && tOption(DatabaseCashData).is(u.cashed),
   (u, c) =>
     pipe(
       ProjectUpdateInputMiddleware.validate(u, c),
