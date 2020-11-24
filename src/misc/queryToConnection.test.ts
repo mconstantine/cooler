@@ -8,6 +8,7 @@ import { PositiveInteger } from './Types'
 import { NonEmptyString, optionFromNullable } from 'io-ts-types'
 import { getDatabase } from './getDatabase'
 import { testError, testTaskEither } from '../test/util'
+import { getConnectionNodes } from '../test/getConnectionNodes'
 
 describe('queryToConnection', () => {
   describe('usage', () => {
@@ -92,7 +93,7 @@ describe('queryToConnection', () => {
         testTaskEither(result => {
           expect(result.totalCount).toBe(4)
           expect(result.edges.length).toBe(4)
-          expect(result.edges.map(edge => edge.node)).toEqual(data)
+          expect(getConnectionNodes(result)).toEqual(data)
 
           const startCursor = result.edges[0].cursor
           const endCursor = result.edges[3].cursor
@@ -126,10 +127,7 @@ describe('queryToConnection', () => {
         testTaskEither(result => {
           expect(result.totalCount).toBe(4)
           expect(result.edges.length).toBe(2)
-          expect(result.edges.map(edge => edge.node)).toEqual([
-            data[1],
-            data[0]
-          ])
+          expect(getConnectionNodes(result)).toEqual([data[1], data[0]])
           expect(result.pageInfo.startCursor).toEqual(option.some(toCursor(2)))
           expect(result.pageInfo.endCursor).toEqual(option.some(toCursor(1)))
           expect(result.pageInfo.hasNextPage).toBe(false)
@@ -158,7 +156,7 @@ describe('queryToConnection', () => {
         testTaskEither(result => {
           expect(result.totalCount).toBe(4)
           expect(result.edges.length).toBe(1)
-          expect(result.edges.map(edge => edge.node)).toEqual([data[1]])
+          expect(getConnectionNodes(result)).toEqual([data[1]])
           expect(result.pageInfo.startCursor).toEqual(option.some(toCursor(2)))
           expect(result.pageInfo.endCursor).toEqual(option.some(toCursor(2)))
           expect(result.pageInfo.hasNextPage).toBe(true)
@@ -188,7 +186,7 @@ describe('queryToConnection', () => {
         testTaskEither(result => {
           expect(result.totalCount).toBe(3)
           expect(result.edges.length).toBe(1)
-          expect(result.edges.map(edge => edge.node)).toEqual([data[2]])
+          expect(getConnectionNodes(result)).toEqual([data[2]])
           expect(result.pageInfo.startCursor).toEqual(option.some(toCursor(3)))
           expect(result.pageInfo.endCursor).toEqual(option.some(toCursor(3)))
           expect(result.pageInfo.hasNextPage).toBe(true)
@@ -219,10 +217,7 @@ describe('queryToConnection', () => {
         testTaskEither(result => {
           expect(result.totalCount).toBe(3)
           expect(result.edges.length).toBe(2)
-          expect(result.edges.map(edge => edge.node)).toEqual([
-            data[0],
-            data[2]
-          ])
+          expect(getConnectionNodes(result)).toEqual([data[0], data[2]])
           expect(result.pageInfo.startCursor).toEqual(option.some(toCursor(1)))
           expect(result.pageInfo.endCursor).toEqual(option.some(toCursor(3)))
           expect(result.pageInfo.hasNextPage).toBe(true)

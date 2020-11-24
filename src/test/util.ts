@@ -18,7 +18,9 @@ export function testTaskEither<E, A, B>(
 ): (te: TaskEither<E, A>) => Promise<B> {
   return async te => {
     const result = await te()
+
     // expect(either.isRight(result)).toBe(true)
+
     return pipe(
       result,
       either.fold(error => {

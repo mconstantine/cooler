@@ -44,7 +44,7 @@ export default gql`
       before: String
       after: String
       orderBy: String
-    ): ProjectConnection
+    ): ProjectConnection!
     cashedBalance(since: Date): Float!
   }
 
@@ -55,13 +55,13 @@ export default gql`
       before: String
       after: String
       orderBy: String
-    ): ProjectConnection
+    ): ProjectConnection!
   }
 
   extend type Mutation {
-    createProject(project: ProjectCreationInput!): Project
-    updateProject(id: Int!, project: ProjectUpdateInput!): Project
-    deleteProject(id: Int!): Project
+    createProject(project: ProjectCreationInput!): Project!
+    updateProject(id: Int!, project: ProjectUpdateInput!): Project!
+    deleteProject(id: Int!): Project!
   }
 
   extend type Query {
@@ -76,7 +76,7 @@ export default gql`
     ): ProjectConnection!
   }
 
-  extend type Subscription {
-    createdProject(client: Int): Project!
-  }
+  # extend type Subscription {
+  #   createdProject(client: Int): Project!
+  # }
 `

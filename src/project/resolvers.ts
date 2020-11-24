@@ -20,7 +20,6 @@ import { ConnectionQueryArgs } from '../misc/ConnectionQueryArgs'
 import { DatabaseUser } from '../user/interface'
 import { ensureUser } from '../misc/ensureUser'
 import { Connection } from '../misc/Connection'
-import { createSubscription, createSubscriptions } from '../misc/pubsub'
 import * as t from 'io-ts'
 import { taskEither } from 'fp-ts'
 import { createResolver } from '../misc/createResolver'
@@ -61,23 +60,6 @@ const userCashedBalanceResolver = createResolver<DatabaseUser>(
   NonNegativeNumber,
   (user, { since }) => getUserCashedBalance(user, since)
 )
-
-const CreatedProjectSubscriptionInput = t.type(
-  {
-    createdProject: DatabaseProject
-  },
-  'CreatedProjectSubscriptionInput'
-)
-const createdProject = createSubscription(
-  CreatedProjectSubscriptionInput,
-  DatabaseProject,
-  'PROJECT_CREATED',
-  (_, { createdProject }, context) =>
-    taskEither.right(createdProject.user === context.user.id)
-)
-const projectSubscription = createSubscriptions({
-  createdProject
-})
 
 const CreateProjectMutationInput = t.type(
   {
@@ -185,8 +167,7 @@ const resolvers = {
   Query: {
     project: projectQuery,
     projects: projectsQuery
-  },
-  Subscription: projectSubscription
+  }
 }
 
 export default resolvers

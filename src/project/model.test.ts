@@ -20,6 +20,7 @@ import {
   listProjects,
   updateProject
 } from './model'
+import { getConnectionNodes } from '../test/getConnectionNodes'
 
 let user1: User
 let user2: User
@@ -141,7 +142,7 @@ describe('listProjects', () => {
     await pipe(
       listProjects({ name: option.none }, user1),
       testTaskEither(connection => {
-        const projects = connection.edges.map(({ node }) => node)
+        const projects = getConnectionNodes(connection)
 
         expect(projects).toContainEqual(
           expect.objectContaining({ id: project1.id })

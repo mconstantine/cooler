@@ -80,17 +80,17 @@ export default gql`
       before: String
       after: String
       orderBy: String
-    ): ClientConnection
+    ): ClientConnection!
   }
 
   extend type Mutation {
-    createClient(client: ClientCreationInput!): Client
-    updateClient(id: Int!, client: ClientUpdateInput!): Client
-    deleteClient(id: Int!): Client
+    createClient(client: ClientCreationInput!): Client!
+    updateClient(id: Int!, client: ClientUpdateInput!): Client!
+    deleteClient(id: Int!): Client!
   }
 
   extend type Query {
-    client(id: Int!): Client
+    client(id: Int!): Client!
     clients(
       name: String
       first: Int
@@ -101,7 +101,7 @@ export default gql`
     ): ClientConnection!
   }
 
-  extend type Subscription {
-    createdClient: Client!
-  }
+  # extend type Subscription {
+  #   createdClient: Client!
+  # }
 `

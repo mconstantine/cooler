@@ -19,7 +19,6 @@ import { taskEither } from 'fp-ts'
 import { EmptyObject, PositiveInteger } from '../misc/Types'
 import { pipe } from 'fp-ts/function'
 import { NonEmptyString, optionFromNullable } from 'io-ts-types'
-import { createSubscription, createSubscriptions } from '../misc/pubsub'
 
 const clientNameResolver = createResolver<Client>(
   EmptyObject,
@@ -37,28 +36,6 @@ const userClientsResolver = createResolver<DatabaseUser>(
   (user, args) => getUserClients(user, args)
 )
 
-const CreatedClientSubscriptionInput = t.type(
-  {
-    createdClient: Client
-  },
-  'CreatedClientSubscriptionInput'
-)
-type CreatedClientSubscriptionInput = t.TypeOf<
-  typeof CreatedClientSubscriptionInput
->
-
-const createdClient = createSubscription(
-  CreatedClientSubscriptionInput,
-  Client,
-  'CLIENT_CREATED',
-  (_, { createdClient }, context) =>
-    taskEither.right(createdClient.user === context.user.id)
-)
-
-const clientSubscription = createSubscriptions({
-  createdClient
-})
-
 const CreateClientMutationInput = t.type(
   {
     client: ClientCreationInput
@@ -71,8 +48,7 @@ const createClientMutation = createResolver(
   (_parent, { client }, context) =>
     pipe(
       ensureUser(context),
-      taskEither.chain(user => createClient({ ...client }, user)),
-      taskEither.map(client => createdClient.publish(client))
+      taskEither.chain(user => createClient({ ...client }, user))
     )
 )
 
@@ -163,8 +139,7 @@ const resolvers = {
   Query: {
     client: clientQuery,
     clients: clientsQuery
-  },
-  Subscription: clientSubscription
+  }
 }
 
 export default resolvers
