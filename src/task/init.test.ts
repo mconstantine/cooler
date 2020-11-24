@@ -1,149 +1,241 @@
 import { init } from '../init'
-import { getDatabase } from '../misc/getDatabase'
-import { Database } from 'sqlite'
-import { insert, update, remove } from '../misc/dbUtils'
-import { getFakeTask } from '../test/getFakeTask'
-import SQL from 'sql-template-strings'
-import { TaskFromDatabase } from './interface'
-import { ProjectFromDatabase } from '../project/interface'
+import { dbExec, dbGet, insert, remove, update } from '../misc/dbUtils'
 import { getFakeProject } from '../test/getFakeProject'
 import { getFakeClient } from '../test/getFakeClient'
-import { ClientFromDatabase } from '../client/interface'
 import { getFakeUser } from '../test/getFakeUser'
-import { getID } from '../test/getID'
-import { definitely } from '../misc/definitely'
+import { Project, ProjectCreationInput } from '../project/interface'
+import { constVoid, pipe } from 'fp-ts/function'
+import { testError, testTaskEither } from '../test/util'
+import { Client } from '../client/interface'
+import { registerUser } from '../test/registerUser'
+import { option, taskEither } from 'fp-ts'
+import { getClientById, insertClient } from '../client/database'
+import { getProjectById, insertProject } from '../project/database'
+import SQL from 'sql-template-strings'
+import { getFakeTask } from '../test/getFakeTask'
+import {
+  DatabaseTask,
+  Task,
+  TaskCreationInput,
+  TaskUpdateInput
+} from './interface'
+import { UnknownRecord } from 'io-ts'
 import { sleep } from '../test/sleep'
+import { NonEmptyString } from 'io-ts-types'
+import { User } from '../user/interface'
+import { PositiveInteger } from '../misc/Types'
 
 describe('initTask', () => {
-  let project: ProjectFromDatabase
-  let db: Database
+  let user: User
+  let project: Project
 
   beforeAll(async () => {
-    await init()
-    db = await getDatabase()
+    process.env.SECRET = 'shhhhh'
+    await pipe(init(), testTaskEither(constVoid))
+  })
+
+  afterAll(async () => {
+    delete process.env.SECRET
+    await pipe(remove('user'), testTaskEither(constVoid))
   })
 
   describe('happy path', () => {
-    let client: ClientFromDatabase
+    let client: Client
 
     beforeAll(async () => {
-      const userData = getFakeUser()
-      const userId = await getID('user', userData)
-      const clientData = getFakeClient(userId)
-      const clientId = await getID('client', clientData)
-      const projectData = getFakeProject(clientId)
-      const projectId = await getID('project', projectData)
-
-      project = definitely(
-        await db.get<ProjectFromDatabase>(
-          SQL`SELECT * FROM project WHERE id = ${projectId}`
-        )
-      )
-
-      client = definitely(
-        await db.get<ClientFromDatabase>(
-          SQL`SELECT * FROM client WHERE id = ${clientId}`
-        )
+      await pipe(
+        registerUser(getFakeUser()),
+        taskEither.chain(u => {
+          user = u
+          return insertClient(getFakeClient(u.id))
+        }),
+        taskEither.chain(getClientById),
+        taskEither.chain(taskEither.fromOption(testError)),
+        taskEither.chain(c => {
+          client = c
+          return insertProject(getFakeProject(client.id))
+        }),
+        taskEither.chain(getProjectById),
+        taskEither.chain(taskEither.fromOption(testError)),
+        testTaskEither(p => {
+          project = p
+        })
       )
     })
 
     it('should create a database table', async () => {
-      await db.exec('SELECT * FROM task')
+      await pipe(dbExec(SQL`SELECT * FROM task`), testTaskEither(constVoid))
+    })
+
+    it('should save dates in SQL format', async () => {
+      await pipe(
+        insert('task', getFakeTask(project.id), TaskCreationInput),
+        taskEither.chain(id =>
+          dbGet(SQL`SELECT * FROM task WHERE id = ${id}`, UnknownRecord)
+        ),
+        taskEither.chain(taskEither.fromOption(testError)),
+        testTaskEither(task => {
+          const sqlDatePattern = /\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}/
+
+          expect(task.start_time).toMatch(sqlDatePattern)
+          expect(task.created_at).toMatch(sqlDatePattern)
+          expect(task.updated_at).toMatch(sqlDatePattern)
+        })
+      )
     })
 
     it('should save the creation time automatically', async () => {
-      const lastID = await getID('task', getFakeTask(project.id))
-
-      const task = definitely(
-        await db.get<TaskFromDatabase>(
-          SQL`SELECT * FROM task WHERE id = ${lastID}`
-        )
+      await pipe(
+        insert('task', getFakeTask(project.id), TaskCreationInput),
+        taskEither.chain(id =>
+          dbGet(
+            SQL`
+              SELECT task.*, client.user
+              FROM task
+              JOIN project ON task.project = project.id
+              JOIN client ON project.client = client.id
+              WHERE task.id = ${id}
+            `,
+            DatabaseTask
+          )
+        ),
+        taskEither.chain(taskEither.fromOption(testError)),
+        testTaskEither(task => {
+          expect(Task.is(task)).toBe(true)
+          expect(task.created_at).toBeInstanceOf(Date)
+        })
       )
-
-      expect(task.created_at).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/)
     })
 
     it('should keep track of the time of the last update', async () => {
-      const task = getFakeTask(project.id)
-      const updated = { name: 'Some weird name' }
+      const updateData = { name: 'Some weird name' as NonEmptyString }
 
-      expect(task.name).not.toBe(updated.name)
-
-      const lastID = await getID('task', task)
-
-      const updateDateBefore = definitely(
-        await db.get<TaskFromDatabase>(
-          SQL`SELECT * FROM task WHERE id = ${lastID}`
-        )
-      ).updated_at
-
-      await sleep(1000)
-      await update('task', { id: lastID, ...updated })
-
-      const updateDateAfter = definitely(
-        await db.get<TaskFromDatabase>(
-          SQL`SELECT * FROM task WHERE id = ${lastID}`
-        )
-      ).updated_at
-
-      expect(updateDateBefore).not.toBe(updateDateAfter)
+      await pipe(
+        insert('task', getFakeTask(project.id), TaskCreationInput),
+        taskEither.chain(id =>
+          dbGet(
+            SQL`
+              SELECT task.*, client.user
+              FROM task
+              JOIN project ON task.project = project.id
+              JOIN client ON project.client = client.id
+              WHERE task.id = ${id}
+            `,
+            DatabaseTask
+          )
+        ),
+        taskEither.chain(taskEither.fromOption(testError)),
+        taskEither.chain(task => taskEither.fromTask(sleep(1000, task))),
+        taskEither.chain(task =>
+          pipe(
+            update('task', task.id, updateData, TaskUpdateInput),
+            taskEither.chain(() =>
+              dbGet(
+                SQL`
+                  SELECT task.*, client.user
+                  FROM task
+                  JOIN project ON task.project = project.id
+                  JOIN client ON project.client = client.id
+                  WHERE task.id = ${task.id}
+                `,
+                DatabaseTask
+              )
+            ),
+            taskEither.chain(taskEither.fromOption(testError)),
+            taskEither.map(({ updated_at }) => ({
+              before: task.updated_at,
+              after: updated_at
+            }))
+          )
+        ),
+        testTaskEither(({ before, after }) => {
+          expect(before.getTime()).not.toBe(after.getTime())
+        })
+      )
     })
 
     it("should delete all project's tasks when a project is deleted", async () => {
-      const projectData = getFakeProject(client.id)
-      const projectId = await getID('project', projectData)
-      const taskData = getFakeTask(projectId)
-      const taskId1 = await getID('task', taskData)
-
-      await remove('project', { id: projectId })
-
-      const task = await db.get<TaskFromDatabase>(
-        SQL`SELECT * FROM task WHERE id = ${taskId1}`
+      await pipe(
+        insert('project', getFakeProject(client.id), ProjectCreationInput),
+        taskEither.chain(projectId =>
+          pipe(
+            insert('task', getFakeTask(projectId), TaskCreationInput),
+            taskEither.chain(taskId =>
+              pipe(
+                remove('project', { id: projectId }),
+                taskEither.chain(() =>
+                  dbGet(
+                    SQL`
+                      SELECT task.*, client.user
+                      FROM task
+                      JOIN project ON task.project = project.id
+                      JOIN client ON project.client = client.id
+                      WHERE task.id = ${taskId}
+                    `,
+                    DatabaseTask
+                  )
+                )
+              )
+            )
+          )
+        ),
+        testTaskEither(result => {
+          expect(option.isNone(result)).toBe(true)
+        })
       )
-
-      expect(task).toBeUndefined()
     })
   })
 
   describe('deletion chain', () => {
     it('should make user deletion bubble down to tasks', async () => {
-      const userData = getFakeUser()
-      const userId = await getID('user', userData)
-      const clientData = getFakeClient(userId)
-      const clientId = await getID('client', clientData)
-      const projectData = getFakeProject(clientId)
-      const projectId = await getID('project', projectData)
-      const taskData = getFakeTask(projectId)
-      const taskId = await getID('task', taskData)
+      let userId: PositiveInteger
+      let taskId: PositiveInteger
 
-      await remove('user', { id: userId })
-
-      const task = await db.get<TaskFromDatabase>(
-        SQL`SELECT * FROM task WHERE id = ${taskId}`
+      await pipe(
+        registerUser(getFakeUser(), user),
+        taskEither.chain(user => {
+          userId = user.id
+          return insertClient(getFakeClient(user.id))
+        }),
+        taskEither.chain(clientId => insertProject(getFakeProject(clientId))),
+        taskEither.chain(projectId =>
+          insert('task', getFakeTask(projectId), TaskCreationInput)
+        ),
+        taskEither.chain(id => {
+          taskId = id
+          return remove('user', { id: userId })
+        }),
+        taskEither.chain(() =>
+          dbGet(SQL`SELECT * FROM task WHERE id = ${taskId}`, DatabaseTask)
+        ),
+        testTaskEither(result => {
+          expect(option.isNone(result)).toBe(true)
+        })
       )
-
-      expect(task).toBeUndefined()
     })
   })
 
   describe('project update', () => {
     it('should update the project when a task is created for it', async () => {
-      const projectUpdatedAtBefore = definitely(
-        await db.get<ProjectFromDatabase>(
-          SQL`SELECT * FROM project WHERE id = ${project.id}`
-        )
-      ).updated_at
-
-      await sleep(1000)
-      await insert('task', getFakeTask(project.id))
-
-      const projectUpdatedAtAfter = definitely(
-        await db.get<ProjectFromDatabase>(
-          SQL`SELECT * FROM project WHERE id = ${project.id}`
-        )
-      ).updated_at
-
-      expect(projectUpdatedAtBefore).not.toBe(projectUpdatedAtAfter)
+      await pipe(
+        getProjectById(project.id),
+        taskEither.chain(taskEither.fromOption(testError)),
+        taskEither.chain(project => taskEither.fromTask(sleep(1000, project))),
+        taskEither.chain(project =>
+          pipe(
+            insert('task', getFakeTask(project.id), TaskCreationInput),
+            taskEither.chain(() => getProjectById(project.id)),
+            taskEither.chain(taskEither.fromOption(testError)),
+            taskEither.map(({ updated_at }) => ({
+              before: project.updated_at,
+              after: updated_at
+            }))
+          )
+        ),
+        testTaskEither(({ before, after }) => {
+          expect(before.getTime()).not.toBe(after.getTime())
+        })
+      )
     })
   })
 })

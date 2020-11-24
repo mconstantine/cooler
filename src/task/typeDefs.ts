@@ -62,7 +62,7 @@ export default gql`
       orderBy: String
       from: Date
       to: Date
-    ): TaskConnection
+    ): TaskConnection!
   }
 
   extend type Project {
@@ -72,14 +72,14 @@ export default gql`
       before: String
       after: String
       orderBy: String
-    ): TaskConnection
+    ): TaskConnection!
   }
 
   extend type Mutation {
-    createTask(task: TaskCreationInput!): Task
-    createTasksBatch(input: TasksBatchCreationInput): Project
-    updateTask(id: Int!, task: TaskUpdateInput!): Task
-    deleteTask(id: Int!): Task
+    createTask(task: TaskCreationInput!): Task!
+    createTasksBatch(input: TasksBatchCreationInput): Project!
+    updateTask(id: Int!, task: TaskUpdateInput!): Task!
+    deleteTask(id: Int!): Task!
   }
 
   extend type Query {
@@ -94,7 +94,7 @@ export default gql`
     ): TaskConnection!
   }
 
-  extend type Subscription {
-    createdTask(project: Int, from: Date, to: Date): Task!
-  }
+  # extend type Subscription {
+  #   createdTask(project: Int, from: Date, to: Date): Task!
+  # }
 `

@@ -2,176 +2,190 @@ import {
   Task,
   TasksBatchCreationInput,
   TaskCreationInput,
-  TaskFromDatabase,
-  TaskUpdateInput
+  TaskUpdateInput,
+  DatabaseTask
 } from './interface'
-import { getDatabase } from '../misc/getDatabase'
-import { insert, update, remove, fromSQLDate, toSQLDate } from '../misc/dbUtils'
+import { dbGetAll } from '../misc/dbUtils'
 import SQL from 'sql-template-strings'
 import { ConnectionQueryArgs } from '../misc/ConnectionQueryArgs'
-import { mapConnection, queryToConnection } from '../misc/queryToConnection'
-import { User, UserFromDatabase } from '../user/interface'
+import { queryToConnection } from '../misc/queryToConnection'
+import { DatabaseUser, User } from '../user/interface'
 import { ApolloError } from 'apollo-server-express'
 import { Connection } from '../misc/Connection'
-import { Project, ProjectFromDatabase } from '../project/interface'
-import { fromDatabase as projectFromDatabase } from '../project/model'
-import { SQLDate } from '../misc/Types'
-import { definitely } from '../misc/definitely'
-import { removeUndefined } from '../misc/removeUndefined'
+import { DatabaseProject, Project } from '../project/interface'
+import { TaskEither } from 'fp-ts/TaskEither'
+import { constVoid, flow, pipe } from 'fp-ts/function'
+import { getProjectById } from '../project/database'
+import { option, taskEither } from 'fp-ts'
+import { coolerError, DateFromSQLDate, PositiveInteger } from '../misc/Types'
+import {
+  getTaskById,
+  insertTask,
+  updateTask as updateDatabaseTask,
+  deleteTask as deleteDatabasetask
+} from './database'
+import { NonEmptyString } from 'io-ts-types'
+import * as t from 'io-ts'
+import {
+  TasksConnectionQueryArgs,
+  UserTasksConnectionQueryArgs
+} from './resolvers'
 
-async function validateTaskCreation(
-  project: number,
+export function createTask(
+  input: TaskCreationInput,
   user: User
-): Promise<boolean> {
-  const db = await getDatabase()
-
-  const projectUser = await db.get<{ user: number }>(SQL`
-    SELECT client.user
-    FROM project
-    JOIN client on project.client = client.id
-    WHERE project.id = ${project}
-  `)
-
-  if (!projectUser) {
-    return false
-  }
-
-  if (projectUser.user !== user.id) {
-    throw new ApolloError('Unauthorized', 'COOLER_403')
-  }
-
-  return true
-}
-
-export async function createTask(
-  {
-    name,
-    description,
-    project,
-    expectedWorkingHours,
-    hourlyCost,
-    start_time
-  }: TaskCreationInput,
-  user: User
-): Promise<Task | null> {
-  if (!(await validateTaskCreation(project, user))) {
-    return null
-  }
-
-  const db = await getDatabase()
-
-  const { lastID } = await insert('task', {
-    name,
-    description,
-    project,
-    expectedWorkingHours,
-    hourlyCost,
-    start_time
-  })
-
-  const newTask = await db.get<TaskFromDatabase>(
-    SQL`SELECT * FROM task WHERE id = ${lastID}`
+): TaskEither<ApolloError, Task> {
+  return pipe(
+    getProjectById(input.project),
+    taskEither.chain(
+      taskEither.fromOption(() =>
+        coolerError('COOLER_404', 'Project task not found')
+      )
+    ),
+    taskEither.chain(
+      taskEither.fromPredicate(
+        project => project.user === user.id,
+        () =>
+          coolerError('COOLER_403', 'You cannot create tasks for this project')
+      )
+    ),
+    taskEither.chain(() => insertTask(input)),
+    taskEither.chain(id => getTaskById(id)),
+    taskEither.chain(
+      taskEither.fromOption(() =>
+        coolerError('COOLER_500', 'Unable to retrieve the task after creation')
+      )
+    )
   )
-
-  if (!newTask) {
-    return null
-  }
-
-  return fromDatabase(newTask)
 }
 
-export async function createTasksBatch(
+export function createTasksBatch(
   input: TasksBatchCreationInput,
   user: User
-): Promise<Project | null> {
-  if (!(await validateTaskCreation(input.project, user))) {
-    return null
-  }
-
-  const db = await getDatabase()
-
-  const existingTasks = await db.all<TaskFromDatabase[]>(SQL`
-    SELECT start_time
-    FROM task
-    WHERE project = ${input.project}
-  `)
-
-  const inputFrom = fromSQLDate(input.from)
-  const inputTo = fromSQLDate(input.to)
-
-  const inputStartTime = fromSQLDate(input.start_time)
-  const days = Math.ceil((inputTo.getTime() - inputFrom.getTime()) / 86400000)
-
-  for (let i = 0; i <= days; i++) {
-    const start_time = new Date(inputFrom.getTime() + i * 86400000)
-    const sqlDateStartTime = toSQLDate(start_time)
-
-    if (
-      existingTasks.find(
-        ({ start_time }) =>
-          start_time.substring(0, 10) === sqlDateStartTime.substring(0, 10)
+): TaskEither<ApolloError, Project> {
+  return pipe(
+    getProjectById(input.project),
+    taskEither.chain(
+      taskEither.fromOption(() =>
+        coolerError('COOLER_404', 'Project task not found')
       )
-    ) {
-      continue
-    }
+    ),
+    taskEither.chain(
+      taskEither.fromPredicate(
+        project => project.user === user.id,
+        () =>
+          coolerError('COOLER_403', 'You cannot create tasks for this project')
+      )
+    ),
+    taskEither.chain(project =>
+      pipe(
+        dbGetAll(
+          SQL`
+            SELECT start_time
+            FROM task
+            WHERE project = ${project.id}
+          `,
+          t.type({ start_time: DateFromSQLDate })
+        ),
+        taskEither.chain(existingTasks => {
+          let result: TaskEither<ApolloError, any> = taskEither.fromIO(
+            constVoid
+          )
 
-    start_time.setHours(inputStartTime.getHours())
-    start_time.setMinutes(inputStartTime.getMinutes())
-    start_time.setSeconds(inputStartTime.getSeconds())
+          const days = Math.ceil(
+            (input.to.getTime() - input.from.getTime()) / 86400000
+          )
 
-    const weekday = start_time.getDay()
-    let bitMask: number
+          for (let i = 0; i <= days; i++) {
+            const start_time = new Date(input.from.getTime() + i * 86400000)
 
-    switch (weekday) {
-      case 0:
-        bitMask = 0x0000001
-        break
-      case 1:
-        bitMask = 0x0000010
-        break
-      case 2:
-        bitMask = 0x0000100
-        break
-      case 3:
-        bitMask = 0x0001000
-        break
-      case 4:
-        bitMask = 0x0010000
-        break
-      case 5:
-        bitMask = 0x0100000
-        break
-      case 6:
-        bitMask = 0x1000000
-        break
-      default:
-        bitMask = 0x0000000
-        break
-    }
+            if (
+              existingTasks.find(
+                task =>
+                  task.start_time.getFullYear() === start_time.getFullYear() &&
+                  task.start_time.getMonth() === start_time.getMonth() &&
+                  task.start_time.getDate() === start_time.getDate()
+              )
+            ) {
+              continue
+            }
 
-    if ((bitMask & input.repeat) === 0) {
-      continue
-    }
+            start_time.setHours(input.start_time.getHours())
+            start_time.setMinutes(input.start_time.getMinutes())
+            start_time.setSeconds(input.start_time.getSeconds())
 
-    await insert('task', {
-      name: formatTaskName(input.name, start_time, i),
-      project: input.project,
-      expectedWorkingHours: input.expectedWorkingHours,
-      hourlyCost: input.hourlyCost,
-      start_time: toSQLDate(start_time)
-    })
-  }
+            const weekday = start_time.getDay()
+            let bitMask: number
 
-  const res = await db.get<ProjectFromDatabase>(SQL`
-    SELECT * FROM project WHERE id = ${input.project}
-  `)
+            switch (weekday) {
+              case 0:
+                bitMask = 0x0000001
+                break
+              case 1:
+                bitMask = 0x0000010
+                break
+              case 2:
+                bitMask = 0x0000100
+                break
+              case 3:
+                bitMask = 0x0001000
+                break
+              case 4:
+                bitMask = 0x0010000
+                break
+              case 5:
+                bitMask = 0x0100000
+                break
+              case 6:
+                bitMask = 0x1000000
+                break
+              default:
+                bitMask = 0x0000000
+                break
+            }
 
-  return res ? projectFromDatabase(res) : null
+            if ((bitMask & input.repeat) === 0) {
+              continue
+            }
+
+            result = pipe(
+              result,
+              taskEither.chain(() =>
+                insertTask({
+                  name: formatTaskName(input.name, start_time, i),
+                  description: option.none,
+                  project: input.project,
+                  expectedWorkingHours: input.expectedWorkingHours,
+                  hourlyCost: input.hourlyCost,
+                  start_time
+                })
+              )
+            )
+          }
+
+          return result
+        })
+      )
+    ),
+    taskEither.chain(() => getProjectById(input.project)),
+    taskEither.chain(
+      taskEither.fromOption(() =>
+        coolerError(
+          'COOLER_500',
+          'Unable to retrieve the project after tasks batch creation'
+        )
+      )
+    )
+  )
 }
 
 const taskNamePattern = /^\s*#\s*$|^D{1,4}$|^M{1,4}$|^Y{1,4}$/
 
-function formatTaskName(name: string, date: Date, index: number): string {
+function formatTaskName(
+  name: NonEmptyString,
+  date: Date,
+  index: number
+): NonEmptyString {
   let didMatch = false
 
   function match(matchFunction: (s: string) => string): (s: string) => string {
@@ -221,242 +235,186 @@ function formatTaskName(name: string, date: Date, index: number): string {
 
       return s
     })
-    .join('')
+    .join('') as NonEmptyString
 }
 
-export async function getTask(id: number, user: User): Promise<Task | null> {
-  const db = await getDatabase()
-
-  const task = await db.get<TaskFromDatabase & { user: number }>(SQL`
-    SELECT task.*, client.user
-    FROM task
-    JOIN project ON project.id = task.project
-    JOIN client ON client.id = project.client
-    WHERE task.id = ${id}
-  `)
-
-  if (!task) {
-    return null
-  }
-
-  if (task.user !== user.id) {
-    throw new ApolloError('You cannot see this task', 'COOLER_403')
-  }
-
-  return fromDatabase(task)
-}
-
-export async function listTasks(
-  args: ConnectionQueryArgs & { name?: string },
+export function getTask(
+  id: PositiveInteger,
   user: User
-): Promise<Connection<Task>> {
+): TaskEither<ApolloError, Task> {
+  return pipe(
+    getTaskById(id),
+    taskEither.chain(
+      taskEither.fromOption(() => coolerError('COOLER_404', 'Task not found'))
+    ),
+    taskEither.chain(
+      taskEither.fromPredicate(
+        task => task.user === user.id,
+        () => coolerError('COOLER_403', 'You cannot see this task')
+      )
+    )
+  )
+}
+
+export function listTasks(
+  args: TasksConnectionQueryArgs,
+  user: User
+): TaskEither<ApolloError, Connection<Task>> {
   const sql = SQL`
     JOIN project ON project.id = task.project
     JOIN client ON client.id = project.client
     WHERE user = ${user.id}
   `
 
-  args.name && sql.append(SQL` AND project.name LIKE ${`%${args.name}%`}`)
-
-  const connection = await queryToConnection<TaskFromDatabase>(
-    args,
-    ['task.*, client.user'],
-    'task',
-    sql
-  )
-
-  return mapConnection(connection, fromDatabase)
-}
-
-export async function updateTask(
-  id: number,
-  task: TaskUpdateInput,
-  user: User
-): Promise<Task | null> {
-  const db = await getDatabase()
-
-  const currentTask = await db.get<{ user: number }>(SQL`
-    SELECT client.user
-    FROM task
-    JOIN project ON project.id = task.project
-    JOIN client ON client.id = project.client
-    WHERE task.id = ${id}
-  `)
-
-  if (!currentTask) {
-    return null
-  }
-
-  if (currentTask.user !== user.id) {
-    throw new ApolloError('You cannot update this task', 'COOLER_403')
-  }
-
-  const {
-    name,
-    description,
-    expectedWorkingHours,
-    hourlyCost,
-    project,
-    start_time
-  } = task
-
-  if (
-    name ||
-    description ||
-    expectedWorkingHours ||
-    hourlyCost ||
-    project ||
-    start_time
-  ) {
-    if (project) {
-      const newProject = await db.get<{ user: number }>(SQL`
-        SELECT client.user
-        FROM project
-        JOIN client ON client.id = project.client
-        WHERE project.id = ${project}
-      `)
-
-      if (!newProject) {
-        return null
-      }
-
-      if (newProject.user !== user.id) {
-        throw new ApolloError(
-          'You cannot assign this project to a task',
-          'COOLER_403'
-        )
-      }
-    }
-
-    const args = removeUndefined({
-      name,
-      description,
-      expectedWorkingHours,
-      hourlyCost,
-      project,
-      start_time
-    })
-
-    await update('task', { ...args, id })
-  }
-
-  const updatedTask = await db.get<TaskFromDatabase>(
-    SQL`SELECT * FROM task WHERE id = ${id}`
-  )
-
-  if (!updatedTask) {
-    return null
-  }
-
-  return fromDatabase(updatedTask)
-}
-
-export async function deleteTask(id: number, user: User): Promise<Task | null> {
-  const db = await getDatabase()
-
-  const task = await db.get<TaskFromDatabase & { user: number }>(SQL`
-    SELECT task.*, client.user
-    FROM task
-    JOIN project ON project.id = task.project
-    JOIN client ON client.id = project.client
-    WHERE task.id = ${id}
-  `)
-
-  if (!task) {
-    return null
-  }
-
-  if (task.user !== user.id) {
-    throw new ApolloError('You cannot delete this task', 'COOLER_403')
-  }
-
-  await remove('task', { id })
-
-  return fromDatabase(task)
-}
-
-export async function getTaskProject(task: TaskFromDatabase): Promise<Project> {
-  const db = await getDatabase()
-
-  const project = definitely(
-    await db.get<ProjectFromDatabase>(
-      SQL`SELECT * FROM project WHERE id = ${task.project}`
+  pipe(
+    args.name,
+    option.fold(constVoid, name =>
+      sql.append(SQL` AND project.name LIKE ${`%${name}%`}`)
     )
   )
 
-  return projectFromDatabase(project)
+  return queryToConnection(args, ['task.*, client.user'], 'task', Task, sql)
 }
 
-export async function getUserTasks(
-  user: UserFromDatabase,
-  args: ConnectionQueryArgs & { from?: SQLDate; to?: SQLDate }
-): Promise<Connection<Task>> {
-  let rest = SQL`
+export function updateTask(
+  id: PositiveInteger,
+  input: TaskUpdateInput,
+  user: User
+): TaskEither<ApolloError, Task> {
+  return pipe(
+    getTaskById(id),
+    taskEither.chain(
+      taskEither.fromOption(() => coolerError('COOLER_404', 'Task not found'))
+    ),
+    taskEither.chain(
+      taskEither.fromPredicate(
+        task => task.user === user.id,
+        () => coolerError('COOLER_403', 'You cannot update this task')
+      )
+    ),
+    taskEither.chain(() =>
+      pipe(
+        input.project,
+        option.fromNullable,
+        option.fold(
+          () => taskEither.right(void 0),
+          flow(
+            getProjectById,
+            taskEither.chain(
+              taskEither.fromOption(() =>
+                coolerError('COOLER_404', 'New project not found')
+              )
+            ),
+            taskEither.chain(
+              taskEither.fromPredicate(
+                project => project.user === user.id,
+                () =>
+                  coolerError(
+                    'COOLER_403',
+                    'You cannot assign this project to a task'
+                  )
+              )
+            ),
+            taskEither.map(constVoid)
+          )
+        )
+      )
+    ),
+    taskEither.chain(() => updateDatabaseTask(id, input)),
+    taskEither.chain(() => getTaskById(id)),
+    taskEither.chain(
+      taskEither.fromOption(() =>
+        coolerError('COOLER_500', 'Unable to retrieve the task after update')
+      )
+    )
+  )
+}
+
+export function deleteTask(
+  id: PositiveInteger,
+  user: User
+): TaskEither<ApolloError, Task> {
+  return pipe(
+    getTaskById(id),
+    taskEither.chain(
+      taskEither.fromOption(() => coolerError('COOLER_404', 'Task not found'))
+    ),
+    taskEither.chain(
+      taskEither.fromPredicate(
+        task => task.user === user.id,
+        () => coolerError('COOLER_403', 'You cannot delete this task')
+      )
+    ),
+    taskEither.chain(task =>
+      pipe(
+        deleteDatabasetask(task.id),
+        taskEither.map(() => task)
+      )
+    )
+  )
+}
+
+export function getTaskProject(
+  task: DatabaseTask
+): TaskEither<ApolloError, Project> {
+  return pipe(
+    getProjectById(task.project),
+    taskEither.chain(
+      taskEither.fromOption(() =>
+        coolerError('COOLER_404', 'Project not found')
+      )
+    )
+  )
+}
+
+export function getUserTasks(
+  user: DatabaseUser,
+  args: UserTasksConnectionQueryArgs
+): TaskEither<ApolloError, Connection<Task>> {
+  const rest = SQL`
     JOIN project ON project.id = task.project
     JOIN client ON project.client = client.id
     WHERE client.user = ${user.id}
   `
 
-  args.from &&
-    rest.append(SQL`
-    AND start_time >= ${args.from}
-  `)
-
-  args.to &&
-    rest.append(SQL`
-    AND start_time <= ${args.to}
-  `)
-
-  const connection = await queryToConnection<TaskFromDatabase>(
-    args,
-    ['task.*'],
-    'task',
-    rest
+  pipe(
+    args.from,
+    option.fold(
+      constVoid,
+      flow(DateFromSQLDate.encode, from =>
+        rest.append(SQL` AND start_time >= ${from}`)
+      )
+    )
   )
 
-  return mapConnection(connection, fromDatabase)
+  pipe(
+    args.to,
+    option.fold(
+      constVoid,
+      flow(DateFromSQLDate.encode, to =>
+        rest.append(SQL` AND start_time <= ${to}`)
+      )
+    )
+  )
+
+  return queryToConnection(
+    args,
+    ['task.*, client.user'],
+    'task',
+    DatabaseTask,
+    rest
+  )
 }
 
-export async function getProjectTasks(
-  project: ProjectFromDatabase,
+export function getProjectTasks(
+  project: DatabaseProject,
   args: ConnectionQueryArgs
-): Promise<Connection<Task>> {
-  const connection = await queryToConnection<TaskFromDatabase>(
+): TaskEither<ApolloError, Connection<Task>> {
+  return queryToConnection(
     args,
     ['*'],
     'task',
+    DatabaseTask,
     SQL`WHERE project = ${project.id}`
   )
-
-  return mapConnection(connection, fromDatabase)
-}
-
-export function fromDatabase(task: TaskFromDatabase): Task {
-  return {
-    ...task,
-    created_at: fromSQLDate(task.created_at),
-    updated_at: fromSQLDate(task.updated_at),
-    start_time: fromSQLDate(task.start_time)
-  }
-}
-
-export function toDatabase<
-  T extends Partial<Omit<Task, 'start_time'>> & { start_time: undefined }
->(task: T): T
-export function toDatabase<
-  T extends Partial<Omit<Task, 'start_time'>> & { start_time: Date }
->(task: T): Omit<T, 'start_time'> & { start_time: SQLDate }
-export function toDatabase<
-  T extends Partial<Omit<Task, 'start_time'>> & {
-    start_time: Date | undefined
-  }
->(task: T): Omit<T, 'start_time'> & { start_time: SQLDate | undefined } {
-  return {
-    ...task,
-    ...(task.start_time
-      ? {
-          start_time: toSQLDate(task.start_time)
-        }
-      : {})
-  }
 }
