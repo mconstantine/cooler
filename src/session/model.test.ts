@@ -1,13 +1,10 @@
-import { User, UserFromDatabase } from '../user/interface'
-import { TaskFromDatabase } from '../task/interface'
-import { Session, SessionFromDatabase } from './interface'
-import { getDatabase } from '../misc/getDatabase'
-import { remove } from '../misc/dbUtils'
+import { User } from '../user/interface'
+import { dbRun } from '../misc/dbUtils'
 import { getFakeUser } from '../test/getFakeUser'
 import { getFakeClient } from '../test/getFakeClient'
 import { getFakeProject } from '../test/getFakeProject'
-import { getFakeTaskFromDatabase } from '../test/getFakeTask'
-import { getFakeSessionFromDatabase } from '../test/getFakeSession'
+import { getFakeTask } from '../test/getFakeTask'
+import { getFakeSession } from '../test/getFakeSession'
 import SQL from 'sql-template-strings'
 import {
   startSession,
@@ -15,178 +12,256 @@ import {
   updateSession,
   deleteSession,
   getSession,
-  toDatabase,
-  fromDatabase,
   stopSession
 } from './model'
-import { ApolloError } from 'apollo-server-express'
 import { init } from '../init'
-import { definitely } from '../misc/definitely'
-import { fromDatabase as userFromDatabase } from '../user/model'
 import { getConnectionNodes } from '../test/getConnectionNodes'
-import { getID } from '../test/getID'
+import { DatabaseTask } from '../task/interface'
+import { DatabaseSession, Session } from './interface'
+import { option, taskEither } from 'fp-ts'
+import { registerUser } from '../test/registerUser'
+import {
+  pipeTestTaskEither,
+  testError,
+  testTaskEither,
+  testTaskEitherError
+} from '../test/util'
+import { pipe, constVoid, identity } from 'fp-ts/function'
+import { sequenceS, sequenceT } from 'fp-ts/Apply'
+import { insertClient } from '../client/database'
+import { insertProject } from '../project/database'
+import { getTaskById, insertTask } from '../task/database'
+import { getSessionById, insertSession } from './database'
 
 let user1: User
 let user2: User
-let task1: TaskFromDatabase
-let task2: TaskFromDatabase
-let session1: Session
-let session2: Session
+let task1: DatabaseTask
+let task2: DatabaseTask
+let session1: DatabaseSession
+let session2: DatabaseSession
 
 beforeAll(async () => {
-  await init()
+  process.env.SECRET = 'shhhhh'
 
-  const db = await getDatabase()
-  const user1Id = await getID('user', getFakeUser())
-  const user2Id = await getID('user', getFakeUser())
-  const client1Id = await getID('client', getFakeClient(user1Id))
-  const client2Id = await getID('client', getFakeClient(user2Id))
-  const project1Id = await getID('project', getFakeProject(client1Id))
-  const project2Id = await getID('project', getFakeProject(client2Id))
-  const task1Id = await getID('task', getFakeTaskFromDatabase(project1Id))
-  const task2Id = await getID('task', getFakeTaskFromDatabase(project2Id))
-  const session1Id = await getID('session', getFakeSessionFromDatabase(task1Id))
-  const session2Id = await getID('session', getFakeSessionFromDatabase(task2Id))
+  await pipe(
+    init(),
+    taskEither.chain(() => registerUser(getFakeUser())),
+    pipeTestTaskEither(u => {
+      user1 = u
+    }),
+    testTaskEither(constVoid)
+  )
 
-  user1 = userFromDatabase(
-    definitely(
-      await db.get<UserFromDatabase>(
-        SQL`SELECT * FROM user WHERE id = ${user1Id}`
+  await pipe(
+    registerUser(getFakeUser(), user1),
+    pipeTestTaskEither(u => {
+      user2 = u
+    }),
+    testTaskEither(constVoid)
+  )
+
+  const { client1Id, client2Id } = await pipe(
+    sequenceS(taskEither.taskEither)({
+      client1Id: insertClient(getFakeClient(user1.id)),
+      client2Id: insertClient(getFakeClient(user2.id))
+    }),
+    testTaskEither(identity)
+  )
+
+  const { project1Id, project2Id } = await pipe(
+    sequenceS(taskEither.taskEither)({
+      project1Id: insertProject(getFakeProject(client1Id)),
+      project2Id: insertProject(getFakeProject(client2Id))
+    }),
+    testTaskEither(identity)
+  )
+
+  await pipe(
+    sequenceS(taskEither.taskEither)({
+      t1: pipe(
+        insertTask(getFakeTask(project1Id)),
+        taskEither.chain(id => getTaskById(id)),
+        taskEither.chain(taskEither.fromOption(testError))
+      ),
+      t2: pipe(
+        insertTask(getFakeTask(project2Id)),
+        taskEither.chain(id => getTaskById(id)),
+        taskEither.chain(taskEither.fromOption(testError))
       )
-    )
+    }),
+    pipeTestTaskEither(({ t1, t2 }) => {
+      task1 = t1
+      task2 = t2
+    }),
+    testTaskEither(constVoid)
   )
 
-  user2 = userFromDatabase(
-    definitely(
-      await db.get<UserFromDatabase>(
-        SQL`SELECT * FROM user WHERE id = ${user2Id}`
+  await pipe(
+    sequenceS(taskEither.taskEither)({
+      s1: pipe(
+        insertSession(getFakeSession(task1.id)),
+        taskEither.chain(id => getSessionById(id)),
+        taskEither.chain(taskEither.fromOption(testError))
+      ),
+      s2: pipe(
+        insertSession(getFakeSession(task2.id)),
+        taskEither.chain(id => getSessionById(id)),
+        taskEither.chain(taskEither.fromOption(testError))
       )
-    )
-  )
-
-  task1 = definitely(
-    await db.get<TaskFromDatabase>(
-      SQL`SELECT * FROM task WHERE id = ${task1Id}`
-    )
-  )
-
-  task2 = definitely(
-    await db.get<TaskFromDatabase>(
-      SQL`SELECT * FROM task WHERE id = ${task2Id}`
-    )
-  )
-
-  session1 = fromDatabase(
-    definitely(
-      await db.get<SessionFromDatabase>(
-        SQL`SELECT * FROM session WHERE id = ${session1Id}`
-      )
-    )
-  )
-
-  session2 = fromDatabase(
-    definitely(
-      await db.get<SessionFromDatabase>(
-        SQL`SELECT * FROM session WHERE id = ${session2Id}`
-      )
-    )
+    }),
+    pipeTestTaskEither(({ s1, s2 }) => {
+      session1 = s1
+      session2 = s2
+    }),
+    testTaskEither(constVoid)
   )
 })
 
 describe('startSession', () => {
+  afterEach(async () => {
+    await pipe(
+      dbRun(SQL`
+        DELETE FROM session
+        WHERE id != ${session1.id} AND id != ${session2.id}
+      `),
+      testTaskEither(constVoid)
+    )
+  })
+
   it('should work', async () => {
-    const session = definitely(await startSession(task1.id, user1))
-    await remove('session', { id: session.id })
+    await pipe(
+      startSession(task1.id, user1),
+      testTaskEither(session => {
+        expect(Session.is(session)).toBe(true)
+        expect(session.start_time).toBeInstanceOf(Date)
+        expect(option.isNone(session.end_time)).toBe(true)
+      })
+    )
   })
 
   it("should not allow users to create sessions for other users' tasks", async () => {
-    await expect(async () => {
-      await startSession(task2.id, user1)
-    }).rejects.toBeInstanceOf(ApolloError)
+    await pipe(
+      startSession(task2.id, user1),
+      testTaskEitherError(error => {
+        expect(error.extensions.code).toBe('COOLER_403')
+      })
+    )
   })
 
   it('should not allow to open more than one session per task', async () => {
-    const session = definitely(await startSession(task1.id, user1))
-
-    expect(session).toBeTruthy()
-
-    await expect(async () => {
-      await startSession(task1.id, user1)
-    }).rejects.toBeInstanceOf(ApolloError)
-
-    await remove('session', { id: session.id })
+    await pipe(
+      startSession(task1.id, user1),
+      pipeTestTaskEither(constVoid),
+      taskEither.chain(() => startSession(task1.id, user1)),
+      testTaskEitherError(error => {
+        expect(error.extensions.code).toBe('COOLER_409')
+      })
+    )
   })
 })
 
 describe('stopSession', () => {
   it('should work', async () => {
-    let session: Session
-    session = definitely(await startSession(task1.id, user1))
-    expect(session.end_time).toBeNull()
-    session = definitely(await stopSession(session.id, user1))
-    expect(session.end_time).not.toBeNull()
+    await pipe(
+      startSession(task1.id, user1),
+      pipeTestTaskEither(session => {
+        expect(option.isNone(session.end_time)).toBe(true)
+      }),
+      taskEither.chain(session => stopSession(session.id, user1)),
+      testTaskEither(session => {
+        expect(Session.is(session)).toBe(true)
+        expect(option.isSome(session.end_time)).toBe(true)
+      })
+    )
   })
 })
 
 describe('getSession', () => {
   it('should work', async () => {
-    expect(await getSession(session1.id, user1)).toMatchObject(session1)
+    await pipe(
+      getSession(session1.id, user1),
+      testTaskEither(session => {
+        expect(session).toMatchObject(session1)
+      })
+    )
   })
 
   it("should not allow users to see other users' sessions", async () => {
-    await expect(async () => {
-      await getSession(session2.id, user1)
-    }).rejects.toBeInstanceOf(ApolloError)
+    await pipe(
+      getSession(session2.id, user1),
+      testTaskEitherError(error => {
+        expect(error.extensions.code).toBe('COOLER_403')
+      })
+    )
   })
 })
 
 describe('listSessions', () => {
   it("should list only the user's sessions", async () => {
-    const result = await listSessions({}, user1)
+    await pipe(
+      listSessions({ task: option.none }, user1),
+      testTaskEither(connection => {
+        const sessions = getConnectionNodes(connection)
 
-    expect(getConnectionNodes(result)).toContainEqual(
-      expect.objectContaining({ id: session1.id })
-    )
+        expect(sessions).toContainEqual(
+          expect.objectContaining({ id: session1.id })
+        )
 
-    expect(getConnectionNodes(result)).not.toContainEqual(
-      expect.objectContaining({ id: session2.id })
+        expect(sessions).not.toContainEqual(
+          expect.objectContaining({ id: session2.id })
+        )
+      })
     )
   })
 })
 
 describe('updateSession', () => {
   it('should work', async () => {
-    const data = getFakeSessionFromDatabase(task2.id)
-    const result = definitely(await updateSession(session2.id, data, user2))
+    const data = getFakeSession(task2.id)
 
-    expect(toDatabase(result)).toMatchObject(data)
-    session2 = result
+    await pipe(
+      updateSession(session2.id, data, user2),
+      pipeTestTaskEither(session => {
+        expect(session).toMatchObject(data)
+      }),
+      taskEither.chain(session => getSessionById(session.id)),
+      taskEither.chain(taskEither.fromOption(testError)),
+      pipeTestTaskEither(session => {
+        session2 = session
+      }),
+      testTaskEither(constVoid)
+    )
   })
 
   it("should not allow users to update other users' sessions", async () => {
-    await expect(async () => {
-      await updateSession(
-        session1.id,
-        getFakeSessionFromDatabase(task1.id),
-        user2
-      )
-    }).rejects.toBeInstanceOf(ApolloError)
+    await pipe(
+      updateSession(session1.id, getFakeSession(task1.id), user2),
+      testTaskEitherError(error => {
+        expect(error.extensions.code).toBe('COOLER_403')
+      })
+    )
   })
 
   it("should not allow users to assign to their sessions other users' tasks", async () => {
-    await expect(async () => {
-      await updateSession(
-        session1.id,
-        getFakeSessionFromDatabase(task2.id),
-        user1
-      )
-    }).rejects.toBeInstanceOf(ApolloError)
+    await pipe(
+      updateSession(session1.id, getFakeSession(task2.id), user1),
+      testTaskEitherError(error => {
+        expect(error.extensions.code).toBe('COOLER_403')
+      })
+    )
   })
 
   it('should not allow to reopen a session', async () => {
-    await expect(async () => {
-      await updateSession(session2.id, { end_time: null }, user2)
-    }).rejects.toBeInstanceOf(ApolloError)
+    await pipe(
+      updateSession(session2.id, { end_time: option.some(new Date()) }, user2),
+      pipeTestTaskEither(constVoid),
+      taskEither.chain(() =>
+        updateSession(session2.id, { end_time: option.none }, user2)
+      ),
+      testTaskEitherError(error => {
+        expect(error.extensions.code).toBe('COOLER_409')
+      })
+    )
   })
 })
 
@@ -194,23 +269,43 @@ describe('deleteSession', () => {
   let session1: Session
   let session2: Session
 
-  beforeAll(async () => {
-    session1 = definitely(await startSession(task1.id, user1))
-    session2 = definitely(await startSession(task2.id, user2))
+  beforeEach(async () => {
+    await pipe(
+      sequenceS(taskEither.taskEither)({
+        s1: startSession(task1.id, user1),
+        s2: startSession(task2.id, user2)
+      }),
+      pipeTestTaskEither(({ s1, s2 }) => {
+        session1 = s1
+        session2 = s2
+      }),
+      testTaskEither(constVoid)
+    )
   })
 
-  afterAll(async () => {
-    await stopSession(session1.id, user1)
-    await stopSession(session2.id, user2)
+  afterEach(async () => {
+    await sequenceT(taskEither.taskEither)(
+      stopSession(session1.id, user1),
+      stopSession(session2.id, user2)
+    )()
   })
 
   it('should work', async () => {
-    expect(await deleteSession(session1.id, user1)).toMatchObject(session1)
+    await pipe(
+      deleteSession(session1.id, user1),
+      testTaskEither(session => {
+        expect(Session.is(session)).toBe(true)
+        expect(session).toMatchObject(session1)
+      })
+    )
   })
 
   it("should not allow users to delete other users' sessions", async () => {
-    await expect(async () => {
-      await deleteSession(session2.id, user1)
-    }).rejects.toBeInstanceOf(ApolloError)
+    await pipe(
+      deleteSession(session2.id, user1),
+      testTaskEitherError(error => {
+        expect(error.extensions.code).toBe('COOLER_403')
+      })
+    )
   })
 })

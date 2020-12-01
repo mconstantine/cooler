@@ -50,10 +50,10 @@ export default gql`
     ): SessionConnection!
   }
 
-  extend type Subscription {
-    startedSession(project: Int, task: Int): Session!
-    stoppedSession(project: Int, task: Int): Session!
-  }
+  # extend type Subscription {
+  #   startedSession(project: Int, task: Int): Session!
+  #   stoppedSession(project: Int, task: Int): Session!
+  # }
 
   extend type User {
     expectedWorkingHours(since: Date): Int!
