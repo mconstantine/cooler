@@ -1,6 +1,6 @@
 import faker from 'faker'
 import { boolean, option } from 'fp-ts'
-import { pipe } from 'fp-ts/lib/pipeable'
+import { pipe } from 'fp-ts/function'
 import { NonEmptyString } from 'io-ts-types'
 import {
   Province,

@@ -28,7 +28,7 @@ import {
   NonEmptyString,
   optionFromNullable
 } from 'io-ts-types'
-import { pipe } from 'fp-ts/lib/pipeable'
+import { pipe } from 'fp-ts/function'
 import { taskEither } from 'fp-ts'
 import { PositiveInteger } from '../misc/Types'
 

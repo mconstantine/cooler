@@ -1,6 +1,6 @@
 import { option, taskEither } from 'fp-ts'
 import { constVoid, pipe } from 'fp-ts/function'
-import { sequenceS } from 'fp-ts/lib/Apply'
+import { sequenceS } from 'fp-ts/Apply'
 import { DatabaseProject } from '../project/interface'
 import { getFakeUser } from '../test/getFakeUser'
 import { registerUser } from '../test/registerUser'

@@ -1,6 +1,6 @@
 import { boolean, either, option } from 'fp-ts'
 import { pipe } from 'fp-ts/function'
-import { sequenceS } from 'fp-ts/lib/Apply'
+import { sequenceS } from 'fp-ts/Apply'
 import { Option } from 'fp-ts/Option'
 import * as t from 'io-ts'
 import {

@@ -1,6 +1,6 @@
 import { option, taskEither } from 'fp-ts'
 import { constVoid, pipe } from 'fp-ts/function'
-import { sequenceS } from 'fp-ts/lib/Apply'
+import { sequenceS } from 'fp-ts/Apply'
 import { insertClient } from '../client/database'
 import { init } from '../init'
 import { remove } from '../misc/dbUtils'

@@ -11,7 +11,7 @@ import { Option } from 'fp-ts/Option'
 import { ApolloError } from 'apollo-server-express'
 import { Type } from 'io-ts'
 import { reportDecodeErrors } from './reportDecodeErrors'
-import { sequenceT } from 'fp-ts/lib/Apply'
+import { sequenceT } from 'fp-ts/Apply'
 
 export function dbRun(
   sql: ISqlite.SqlType,

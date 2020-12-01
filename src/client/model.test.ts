@@ -10,7 +10,7 @@ import {
 } from './model'
 import { Client, foldClient } from './interface'
 import { init } from '../init'
-import { pipe } from 'fp-ts/lib/pipeable'
+import { pipe } from 'fp-ts/function'
 import { taskEither } from 'fp-ts'
 import { registerUser } from '../test/registerUser'
 import {
@@ -19,7 +19,7 @@ import {
   testTaskEither,
   testTaskEitherError
 } from '../test/util'
-import { sequenceS } from 'fp-ts/lib/Apply'
+import { sequenceS } from 'fp-ts/Apply'
 import { remove } from '../misc/dbUtils'
 import { getConnectionNodes } from '../test/getConnectionNodes'
 
