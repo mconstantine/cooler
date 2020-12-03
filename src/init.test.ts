@@ -1,38 +1,41 @@
 import { init } from './init'
-import { insert } from './misc/dbUtils'
+import { remove } from './misc/dbUtils'
 import { getFakeUser } from './test/getFakeUser'
 import { getFakeClient } from './test/getFakeClient'
 import { getFakeProject } from './test/getFakeProject'
-import { getDatabase } from './misc/getDatabase'
-import { Project } from './project/interface'
-import SQL from 'sql-template-strings'
-import { getID } from './test/getID'
-import { definitely } from './misc/definitely'
+import { DatabaseProject } from './project/interface'
+import { constVoid, pipe } from 'fp-ts/function'
+import { testError, testTaskEither } from './test/util'
+import { registerUser } from './test/registerUser'
+import { taskEither } from 'fp-ts'
+import { insertClient } from './client/database'
+import { getProjectById, insertProject } from './project/database'
 
 describe('init', () => {
   beforeAll(async () => {
-    await init()
+    process.env.SECRET = 'shhhhh'
+    await pipe(init(), testTaskEither(constVoid))
+  })
+
+  afterAll(async () => {
+    delete process.env.SECRET
+    await pipe(remove('user'), testTaskEither(constVoid))
   })
 
   describe('migrations', () => {
     describe('project-cashed-balance', () => {
       it('should work', async () => {
-        const db = await getDatabase()
-        const user = await getID('user', getFakeUser())
-        const client = await getID('client', getFakeClient(user))
-
-        const { lastID: projectId } = await insert(
-          'project',
-          getFakeProject(client)
+        await pipe(
+          registerUser(getFakeUser()),
+          taskEither.chain(user => insertClient(getFakeClient(user.id))),
+          taskEither.chain(clientId => insertProject(getFakeProject(clientId))),
+          taskEither.chain(getProjectById),
+          taskEither.chain(taskEither.fromOption(testError)),
+          testTaskEither(project => {
+            const encoded = DatabaseProject.encode(project)
+            expect(encoded.cashed_balance).toBeDefined()
+          })
         )
-
-        const project = definitely(
-          await db.get<Project>(
-            SQL`SELECT * FROM project WHERE id = ${projectId}`
-          )
-        )
-
-        expect(project.cashed_balance).toBeDefined()
       })
     })
   })

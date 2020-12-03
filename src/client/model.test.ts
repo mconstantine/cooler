@@ -11,7 +11,7 @@ import {
 import { Client, foldClient } from './interface'
 import { init } from '../init'
 import { pipe } from 'fp-ts/function'
-import { taskEither } from 'fp-ts'
+import { option, taskEither } from 'fp-ts'
 import { registerUser } from '../test/registerUser'
 import {
   pipeTestTaskEither,
@@ -98,7 +98,7 @@ describe('getClient', () => {
 describe('listClients', () => {
   it("should list only the user's clients", async () => {
     await pipe(
-      listClients({}, user1),
+      listClients({ name: option.none }, user1),
       testTaskEither(connection => {
         const clients = getConnectionNodes(connection)
 
