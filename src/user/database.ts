@@ -28,7 +28,7 @@ export function updateUser(
   id: PositiveInteger,
   user: UserUpdateInput
 ): TaskEither<ApolloError, PositiveInteger> {
-  return update('user', id, { ...user }, UserUpdateInput)
+  return update('user', id, user, UserUpdateInput)
 }
 
 export function deleteUser(

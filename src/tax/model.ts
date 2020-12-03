@@ -1,136 +1,138 @@
 import { Tax, TaxCreationInput, TaxUpdateInput } from './interface'
-import { User, UserFromDatabase } from '../user/interface'
+import { DatabaseUser, User } from '../user/interface'
 import { ConnectionQueryArgs } from '../misc/ConnectionQueryArgs'
-import { insert, update, remove } from '../misc/dbUtils'
-import { getDatabase } from '../misc/getDatabase'
 import SQL from 'sql-template-strings'
 import { ApolloError } from 'apollo-server-express'
 import { queryToConnection } from '../misc/queryToConnection'
 import { Connection } from '../misc/Connection'
-import { fromDatabase as userFromDatabase } from '../user/model'
-import { definitely } from '../misc/definitely'
-import { removeUndefined } from '../misc/removeUndefined'
+import {
+  insertTax,
+  getTaxById,
+  updateTax as updateDatabaseTax,
+  deleteTax as deleteDatabaseTax
+} from './database'
+import { TaskEither } from 'fp-ts/TaskEither'
+import { pipe } from 'fp-ts/function'
+import { taskEither } from 'fp-ts'
+import { coolerError, PositiveInteger } from '../misc/Types'
+import { getUserById } from '../user/database'
 
-export async function createTax(
-  { label, value }: TaxCreationInput,
+export function createTax(
+  input: TaxCreationInput,
   user: User
-): Promise<Tax | null> {
-  if (value < 0 || value > 1) {
-    throw new ApolloError(
-      'value should be a number between zero and one',
-      'COOLER_400'
+): TaskEither<ApolloError, Tax> {
+  return pipe(
+    insertTax({ ...input, user: user.id }),
+    taskEither.chain(getTaxById),
+    taskEither.chain(
+      taskEither.fromOption(() =>
+        coolerError('COOLER_500', 'Unable to retrieve the tax after creation')
+      )
     )
-  }
-
-  const db = await getDatabase()
-  const { lastID } = await insert('tax', { label, value, user: user.id })
-  const newTax = await db.get<Tax>(SQL`SELECT * FROM tax WHERE id = ${lastID}`)
-
-  if (!newTax) {
-    return null
-  }
-
-  return newTax
+  )
 }
 
-export async function getTax(id: number, user: User): Promise<Tax | null> {
-  const db = await getDatabase()
-  const tax = await db.get<Tax>(SQL`SELECT * FROM tax WHERE id = ${id}`)
-
-  if (!tax) {
-    return null
-  }
-
-  if (tax.user !== user.id) {
-    throw new ApolloError('You cannot see this tax', 'COOLER_403')
-  }
-
-  return tax
+export function getTax(
+  id: PositiveInteger,
+  user: User
+): TaskEither<ApolloError, Tax> {
+  return pipe(
+    getTaxById(id),
+    taskEither.chain(
+      taskEither.fromOption(() => coolerError('COOLER_404', 'Tax not found'))
+    ),
+    taskEither.chain(
+      taskEither.fromPredicate(
+        tax => tax.user === user.id,
+        () => coolerError('COOLER_403', 'You cannot see this tax')
+      )
+    )
+  )
 }
 
 export function listTaxes(
   args: ConnectionQueryArgs,
   user: User
-): Promise<Connection<Tax>> {
-  return queryToConnection(args, ['tax.*'], 'tax', SQL`WHERE user = ${user.id}`)
-}
-
-export async function updateTax(
-  id: number,
-  data: TaxUpdateInput,
-  user: User
-): Promise<Tax | null> {
-  const db = await getDatabase()
-  const tax = await db.get<Tax>(SQL`SELECT * FROM tax WHERE id = ${id}`)
-
-  if (!tax) {
-    return null
-  }
-
-  if (tax.user !== user.id) {
-    throw new ApolloError('You cannot update this tax', 'COOLER_403')
-  }
-
-  const { label, value } = data
-
-  if (label || value !== undefined) {
-    if ((!value && value !== 0) || value < 0 || value > 1) {
-      throw new ApolloError(
-        'value should be a number between zero and one',
-        'COOLER_400'
-      )
-    }
-
-    const args = removeUndefined({ label, value })
-
-    await update('tax', { id, ...args })
-  }
-
-  const updatedTax = await db.get<Tax>(SQL`SELECT * FROM tax WHERE id = ${id}`)
-
-  if (!updatedTax) {
-    return null
-  }
-
-  return updatedTax
-}
-
-export async function deleteTax(id: number, user: User): Promise<Tax | null> {
-  const db = await getDatabase()
-  const tax = await db.get<Tax>(SQL`SELECT * FROM tax WHERE id = ${id}`)
-
-  if (!tax) {
-    return null
-  }
-
-  if (tax.user !== user.id) {
-    throw new ApolloError('You cannot delete this tax', 'COOLER_403')
-  }
-
-  await remove('tax', { id })
-  return tax
-}
-
-export async function getTaxUser(tax: Tax): Promise<User> {
-  const db = await getDatabase()
-
-  const user = definitely(
-    await db.get<UserFromDatabase>(
-      SQL`SELECT * FROM user WHERE id = ${tax.user}`
-    )
-  )
-
-  return userFromDatabase(user)
-}
-
-export function getUserTaxes(
-  user: UserFromDatabase,
-  args: ConnectionQueryArgs
-): Promise<Connection<Tax>> {
-  return queryToConnection<Tax>(
+): TaskEither<ApolloError, Connection<Tax>> {
+  return queryToConnection(
     args,
     ['tax.*'],
     'tax',
+    Tax,
+    SQL`WHERE user = ${user.id}`
+  )
+}
+
+export function updateTax(
+  id: PositiveInteger,
+  input: TaxUpdateInput,
+  user: User
+): TaskEither<ApolloError, Tax> {
+  return pipe(
+    getTaxById(id),
+    taskEither.chain(
+      taskEither.fromOption(() => coolerError('COOLER_404', 'Tax not found'))
+    ),
+    taskEither.chain(
+      taskEither.fromPredicate(
+        tax => tax.user === user.id,
+        () => coolerError('COOLER_403', 'You cannot update this tax')
+      )
+    ),
+    taskEither.chain(tax =>
+      updateDatabaseTax(tax.id, { ...input, user: user.id })
+    ),
+    taskEither.chain(() => getTaxById(id)),
+    taskEither.chain(
+      taskEither.fromOption(() =>
+        coolerError('COOLER_500', 'Unable to retrieve the tax after update')
+      )
+    )
+  )
+}
+
+export function deleteTax(
+  id: PositiveInteger,
+  user: User
+): TaskEither<ApolloError, Tax> {
+  return pipe(
+    getTaxById(id),
+    taskEither.chain(
+      taskEither.fromOption(() => coolerError('COOLER_404', 'Tax not found'))
+    ),
+    taskEither.chain(
+      taskEither.fromPredicate(
+        tax => tax.user === user.id,
+        () => coolerError('COOLER_403', 'You cannot delete this tax')
+      )
+    ),
+    taskEither.chain(tax =>
+      pipe(
+        deleteDatabaseTax(tax.id),
+        taskEither.map(() => tax)
+      )
+    )
+  )
+}
+
+export function getTaxUser(tax: Tax): TaskEither<ApolloError, User> {
+  return pipe(
+    getUserById(tax.user),
+    taskEither.chain(
+      taskEither.fromOption(() => coolerError('COOLER_404', 'User not found'))
+    )
+  )
+}
+
+export function getUserTaxes(
+  user: DatabaseUser,
+  args: ConnectionQueryArgs
+): TaskEither<ApolloError, Connection<Tax>> {
+  return queryToConnection(
+    args,
+    ['tax.*'],
+    'tax',
+    Tax,
     SQL`WHERE tax.user = ${user.id}`
   )
 }

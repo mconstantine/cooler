@@ -1,6 +1,5 @@
-import { GraphQLFieldResolver } from 'graphql'
 import { Tax, TaxCreationInput, TaxUpdateInput } from './interface'
-import { Context, User, UserContext, UserFromDatabase } from '../user/interface'
+import { DatabaseUser, User } from '../user/interface'
 import { ConnectionQueryArgs } from '../misc/ConnectionQueryArgs'
 import {
   createTax,
@@ -13,143 +12,86 @@ import {
 } from './model'
 import { ensureUser } from '../misc/ensureUser'
 import { Connection } from '../misc/Connection'
-import {
-  publish,
-  Subscription,
-  SubscriptionImplementation,
-  WithFilter
-} from '../misc/pubsub'
-import { withFilter } from 'apollo-server-express'
-import { pubsub } from '../pubsub'
-import { getDatabase } from '../misc/getDatabase'
-import { definitely } from '../misc/definitely'
-import SQL from 'sql-template-strings'
+import { createResolver } from '../misc/createResolver'
+import { EmptyObject, PositiveInteger } from '../misc/Types'
+import * as t from 'io-ts'
+import { pipe } from 'fp-ts/function'
+import { taskEither } from 'fp-ts'
 
-const TAX_CREATED = 'TAX_CREATED'
+const taxUserResolver = createResolver<Tax>(EmptyObject, User, getTaxUser)
 
-type TaxUserResolver = GraphQLFieldResolver<Tax, any>
+const userTaxesResolver = createResolver<DatabaseUser>(
+  ConnectionQueryArgs,
+  Connection(Tax),
+  getUserTaxes
+)
 
-const taxUserResolver: TaxUserResolver = (tax): Promise<User> => {
-  return getTaxUser(tax)
-}
+const CreateTaxMutationInput = t.type(
+  {
+    tax: TaxCreationInput
+  },
+  'CreateTaxMutationInput'
+)
+const createTaxMutation = createResolver(
+  CreateTaxMutationInput,
+  Tax,
+  (_parent, { tax }, context) =>
+    pipe(
+      ensureUser(context),
+      taskEither.chain(user => createTax(tax, user))
+    )
+)
 
-type UserTaxesResolver = GraphQLFieldResolver<
-  UserFromDatabase,
-  Context,
-  ConnectionQueryArgs
->
+const UpdateTaxMutationInput = t.type(
+  { id: PositiveInteger, tax: TaxUpdateInput },
+  'UpdateTaxMutationInput'
+)
+const updateTaxMutation = createResolver(
+  UpdateTaxMutationInput,
+  Tax,
+  (_parent, { id, tax }, context) =>
+    pipe(
+      ensureUser(context),
+      taskEither.chain(user => updateTax(id, tax, user))
+    )
+)
 
-const userTaxesResolver: UserTaxesResolver = (
-  user,
-  args
-): Promise<Connection<Tax>> => {
-  return getUserTaxes(user, args)
-}
+const DeleteTaxMutationInput = t.type(
+  { id: PositiveInteger },
+  'DeleteTaxMutationInput'
+)
+const deleteTaxMutation = createResolver(
+  DeleteTaxMutationInput,
+  Tax,
+  (_parent, { id }, context) =>
+    pipe(
+      ensureUser(context),
+      taskEither.chain(user => deleteTax(id, user))
+    )
+)
 
-interface TaxSubscription extends Subscription<Tax> {
-  createdTax: SubscriptionImplementation<Tax>
-}
+const TaxQueryInput = t.type({ id: PositiveInteger }, 'TaxQueryInput')
+const taxQuery = createResolver(
+  TaxQueryInput,
+  Tax,
+  (_parent, { id }, context) =>
+    pipe(
+      ensureUser(context),
+      taskEither.chain(user => getTax(id, user))
+    )
+)
 
-const taxSubscription: TaxSubscription = {
-  createdTax: {
-    subscribe: withFilter(() => pubsub.asyncIterator([TAX_CREATED]), (async (
-      { createdTax },
-      _args,
-      context
-    ) => {
-      const db = await getDatabase()
-      const { user } = definitely(
-        await db.get<{ user: number }>(SQL`
-          SELECT user FROM tax WHERE id = ${createdTax.id}
-        `)
-      )
+const taxesQuery = createResolver(
+  ConnectionQueryArgs,
+  Connection(Tax),
+  (_parent, args, context) =>
+    pipe(
+      ensureUser(context),
+      taskEither.chain(user => listTaxes(args, user))
+    )
+)
 
-      return user === context.user.id
-    }) as WithFilter<{}, TaxSubscription, UserContext, Tax>)
-  }
-}
-
-type CreateTaxMutation = GraphQLFieldResolver<
-  any,
-  Context,
-  { tax: TaxCreationInput }
->
-
-const createTaxMutation: CreateTaxMutation = async (
-  _parent,
-  { tax },
-  context
-): Promise<Tax | null> => {
-  const res = await createTax(tax, ensureUser(context))
-
-  res &&
-    publish<Tax, TaxSubscription>(TAX_CREATED, {
-      createdTax: res
-    })
-
-  return res
-}
-
-type UpdateTaxMutation = GraphQLFieldResolver<
-  any,
-  Context,
-  { id: number; tax: TaxUpdateInput }
->
-
-const updateTaxMutation: UpdateTaxMutation = (
-  _parent,
-  { id, tax },
-  context
-): Promise<Tax | null> => {
-  return updateTax(id, tax, ensureUser(context))
-}
-
-type DeleteTaxMutation = GraphQLFieldResolver<any, Context, { id: number }>
-
-const deleteTaxMutation: DeleteTaxMutation = (
-  _parent,
-  { id },
-  context
-): Promise<Tax | null> => {
-  return deleteTax(id, ensureUser(context))
-}
-
-type TaxQuery = GraphQLFieldResolver<any, Context, { id: number }>
-
-const taxQuery: TaxQuery = (_parent, { id }, context): Promise<Tax | null> => {
-  return getTax(id, ensureUser(context))
-}
-
-type TaxesQuery = GraphQLFieldResolver<any, Context, ConnectionQueryArgs>
-
-const taxesQuery: TaxesQuery = (
-  _parent,
-  args,
-  context
-): Promise<Connection<Tax>> => {
-  return listTaxes(args, ensureUser(context))
-}
-
-interface TaxResolvers {
-  Tax: {
-    user: TaxUserResolver
-  }
-  User: {
-    taxes: UserTaxesResolver
-  }
-  Mutation: {
-    createTax: CreateTaxMutation
-    updateTax: UpdateTaxMutation
-    deleteTax: DeleteTaxMutation
-  }
-  Query: {
-    tax: TaxQuery
-    taxes: TaxesQuery
-  }
-  Subscription: TaxSubscription
-}
-
-const resolvers: TaxResolvers = {
+const resolvers = {
   Tax: {
     user: taxUserResolver
   },
@@ -164,8 +106,7 @@ const resolvers: TaxResolvers = {
   Query: {
     tax: taxQuery,
     taxes: taxesQuery
-  },
-  Subscription: taxSubscription
+  }
 }
 
 export default resolvers

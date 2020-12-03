@@ -15,7 +15,7 @@ export default function init(): TaskEither<ApolloError, void> {
 
     CREATE TRIGGER IF NOT EXISTS tax_user_deleted AFTER DELETE ON user
     FOR EACH ROW BEGIN
-      DELETE FROM tax WHERE tax.id = OLD.id;
+      DELETE FROM tax WHERE tax.user = OLD.id;
     END;
   `)
 }
