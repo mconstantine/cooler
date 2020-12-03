@@ -24,8 +24,6 @@ describe('getDatabase', () => {
   })
 
   it('should return a working database', async () => {
-    expect.assertions(1)
-
     const createTable = (db: Database): TaskEither<Error, void> => {
       return taskEither.tryCatch(
         () => {

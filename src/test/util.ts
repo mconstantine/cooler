@@ -19,7 +19,7 @@ export function testTaskEither<E, A, B>(
   return async te => {
     const result = await te()
 
-    // expect(either.isRight(result)).toBe(true)
+    expect(either.isRight(result)).toBe(true)
 
     return pipe(
       result,
