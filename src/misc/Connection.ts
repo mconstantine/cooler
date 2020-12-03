@@ -34,7 +34,7 @@ export const Connection = <T extends t.Mixed>(T: T) =>
     `Connection<${T.name}>`
   )
 export interface Connection<T> {
-  totalCount: PositiveIntegerOrZero
+  totalCount: NonNegativeInteger
   edges: Edge<T>[]
   pageInfo: {
     startCursor: Option<NonEmptyString>

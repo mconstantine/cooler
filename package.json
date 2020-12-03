@@ -22,7 +22,7 @@
     "sqlite3": "^5.0.0"
   },
   "scripts": {
-    "test": "jest",
+    "test": "jest --rootDir src",
     "start": "ts-node-dev --respawn --transpile-only src/index.ts",
     "build": "tsc",
     "fillDatabase": "ts-node-dev bin/fill-database.ts"
