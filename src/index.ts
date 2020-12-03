@@ -1,65 +1,11 @@
-import { ApolloError, ApolloServer } from 'apollo-server-express'
-import { typeDefs } from './typeDefs'
-import { resolvers } from './resolvers'
-import { init } from './init'
-import dotenv from 'dotenv'
-import express from 'express'
-import path from 'path'
-import { getContext, subscriptionOptions } from './getContext'
-import http from 'http'
-import { either, taskEither } from 'fp-ts'
-import { pipe } from 'fp-ts/function'
-import { TaskEither } from 'fp-ts/TaskEither'
-
-function listen(server: http.Server): Promise<string> {
-  return new Promise((resolve, reject) => {
-    try {
-      server.listen({ port: process.env.SERVER_PORT }, () =>
-        resolve(`http://localhost:${process.env.SERVER_PORT}`)
-      )
-    } catch (e) {
-      reject(e)
-    }
-  })
-}
-
-function startServer(): TaskEither<ApolloError, string> {
-  dotenv.config()
-
-  return pipe(
-    init(),
-    taskEither.chain(() =>
-      taskEither.fromTask(() => {
-        const server = new ApolloServer({
-          typeDefs,
-          resolvers,
-          context: getContext,
-          subscriptions: subscriptionOptions
-        })
-
-        const app = express()
-        const httpServer = http.createServer(app)
-
-        server.applyMiddleware({ app })
-        server.installSubscriptionHandlers(httpServer)
-
-        app
-          .use('/public', express.static(path.join(process.cwd(), '/public')))
-          .use('/', express.static(path.join(process.cwd(), '../cooler/build')))
-          .use('*', (_req, res) =>
-            res.sendFile(path.join(process.cwd(), '../cooler/build/index.html'))
-          )
-
-        return listen(httpServer)
-      })
-    )
-  )
-}
+import { either } from 'fp-ts'
+import { startServer } from './startServer'
 
 startServer()().then(
   either.fold(
     error => console.log(error),
-    url => console.log(`Server ready at ${url}`)
+    () =>
+      console.log(`Server ready at http://localhost:${process.env.SERVER_PORT}`)
   ),
   error => console.log(error)
 )
