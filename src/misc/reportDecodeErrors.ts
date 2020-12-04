@@ -8,7 +8,7 @@ export function reportDecodeErrors<T>(
   return result => {
     const errors = PathReporter.report(result)
 
-    if (errors.length > 1) {
+    if (errors.length && errors[0] !== 'No errors!') {
       console.log(`Decoding error from ${origin}`)
       errors.map(error => console.error(error))
     }
