@@ -22,7 +22,8 @@
     "sqlite3": "^5.0.0"
   },
   "scripts": {
-    "test": "jest --rootDir src",
+    "test": "jest --config jest-unit.config.ts",
+    "test-api": "jest --config jest-api.config.ts --runInBand",
     "start": "ts-node-dev --respawn --transpile-only src/index.ts",
     "build": "tsc",
     "fillDatabase": "ts-node-dev bin/fill-database.ts"
