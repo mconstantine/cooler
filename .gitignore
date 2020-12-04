@@ -1,5 +1,1 @@
 node_modules
-server/build/
-.env
-data.db
-server/public/timesheets/
