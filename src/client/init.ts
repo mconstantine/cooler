@@ -47,5 +47,21 @@ export default function init(): TaskEither<ApolloError, void> {
     FOR EACH ROW BEGIN
       DELETE FROM client WHERE user = OLD.id;
     END;
+
+    CREATE TRIGGER IF NOT EXISTS client_type_updated_business AFTER UPDATE ON client
+    FOR EACH ROW WHEN NEW.type = 'BUSINESS'
+    BEGIN
+      UPDATE client
+      SET fiscal_code = NULL, first_name = NULL, last_name = NULL
+      WHERE id = NEW.id;
+    END;
+
+    CREATE TRIGGER IF NOT EXISTS client_type_updated_private AFTER UPDATE ON client
+    FOR EACH ROW WHEN NEW.type = 'PRIVATE'
+    BEGIN
+      UPDATE client
+      SET country_code = NULL, vat_number = NULL, business_name = NULL
+      WHERE id = NEW.id;
+    END;
   `)
 }
