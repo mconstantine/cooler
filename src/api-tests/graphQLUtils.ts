@@ -11,6 +11,7 @@ import { Either } from 'fp-ts/Either'
 import { TaskEither } from 'fp-ts/TaskEither'
 import * as t from 'io-ts'
 import { AccessTokenResponse } from '../user/interface'
+import { reportDecodeErrors } from '../misc/reportDecodeErrors'
 
 export function mutate<TO extends t.Mixed>(
   TO: TO,
@@ -47,6 +48,7 @@ export function mutate<TO extends t.Mixed>(
           taskEither.fromEither(
             pipe(
               TO.decode(data) as Either<t.Errors, t.TypeOf<TO>>,
+              reportDecodeErrors(TO.name),
               either.mapLeft(
                 () =>
                   new ApolloError({

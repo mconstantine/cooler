@@ -427,7 +427,7 @@ const DatabaseClientData = t.intersection(
   'DatabaseClientData'
 )
 
-const PrivateClientData = t.type(
+export const PrivateClientData = t.type(
   {
     type: t.literal('PRIVATE'),
     fiscal_code: NonEmptyString,
@@ -437,7 +437,7 @@ const PrivateClientData = t.type(
   'PrivateClientData'
 )
 
-const BusinessClientData = t.type(
+export const BusinessClientData = t.type(
   {
     type: t.literal('BUSINESS'),
     country_code: Country,

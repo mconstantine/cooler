@@ -10,25 +10,7 @@ import { remove } from '../misc/dbUtils'
 import { registerUser } from '../test/registerUser'
 import { taskEither } from 'fp-ts'
 import { sleep } from '../test/sleep'
-
-const userFragment = gql`
-  fragment User on User {
-    id
-    name
-    email
-    password
-    created_at
-    updated_at
-  }
-`
-
-const tokenFragment = gql`
-  fragment TokenResponse on TokenResponse {
-    accessToken
-    refreshToken
-    expiration
-  }
-`
+import { tokenFragment, userFragment } from './fragments'
 
 describe('user resolvers', () => {
   let client: ApolloClient<NormalizedCacheObject>
