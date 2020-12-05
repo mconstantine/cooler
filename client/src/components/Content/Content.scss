@@ -1,0 +1,6 @@
+@import '../../variables';
+
+.Content {
+  @include ss('padding-top', $spacing-large-mobile, $spacing-large-desktop);
+  @include ss('padding-bottom', $spacing-large-mobile, $spacing-large-desktop);
+}
