@@ -16,3 +16,11 @@ export const a18n: A18n = (originalA18n as unknown) as A18n
 export function unsafeLocalizedString(s: string): LocalizedString {
   return s as LocalizedString
 }
+
+export const locales = ['en', 'it']
+
+export function initI18n() {
+  originalA18n.addLocaleResource('en', require('../../public/locales/en.json'))
+  originalA18n.addLocaleResource('it', require('../../public/locales/it.json'))
+  originalA18n.setLocale('en')
+}

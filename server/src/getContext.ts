@@ -26,10 +26,25 @@ export function validateToken(accessToken: NonEmptyString): Task<Context> {
   )
 }
 
+const languageMatchPattern = /^(.+?)-/
+
 export const getContext = async ({
   req,
   connection
 }: ExpressContext): Promise<Context> => {
+  let lang = 'en'
+
+  const languageMatch =
+    req.headers['accept-language']
+      ?.split(',')?.[0]
+      ?.match(languageMatchPattern) ?? null
+
+  if (languageMatch) {
+    lang = languageMatch[1]
+  }
+
+  a18n.setLocale(lang)
+
   if (connection) {
     return connection.context
   }

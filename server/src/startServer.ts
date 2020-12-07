@@ -10,6 +10,7 @@ import http from 'http'
 import { taskEither } from 'fp-ts'
 import { pipe } from 'fp-ts/function'
 import { TaskEither } from 'fp-ts/TaskEither'
+import { initI18n } from './misc/a18n'
 
 function listen(server: http.Server): Promise<TaskEither<Error, void>> {
   return new Promise((resolve, reject) => {
@@ -42,6 +43,7 @@ export function startServer(): TaskEither<
   TaskEither<Error, void>
 > {
   dotenv.config()
+  initI18n()
 
   return pipe(
     init(),
