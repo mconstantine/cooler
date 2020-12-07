@@ -12,6 +12,7 @@ import { ApolloError } from 'apollo-server-express'
 import { Type } from 'io-ts'
 import { reportDecodeErrors } from './reportDecodeErrors'
 import { sequenceT } from 'fp-ts/Apply'
+import { a18n } from './a18n'
 
 export function dbRun(
   sql: ISqlite.SqlType,
@@ -26,7 +27,7 @@ export function dbRun(
           console.log(error)
           return coolerError(
             'COOLER_500',
-            'Unable to run statement against database'
+            a18n`Unexpected error running a statement against the database`
           )
         }
       )
@@ -44,7 +45,7 @@ export function dbExec(sql: SQLStatement): TaskEither<ApolloError, void> {
           console.log(error)
           return coolerError(
             'COOLER_500',
-            'Unable to exec statement against database'
+            a18n`Unexpected error executing a statement against the database`
           )
         }
       )
@@ -63,7 +64,10 @@ export function dbGet<S, D>(
         () => db.get<S>(sql),
         error => {
           console.log(error)
-          return coolerError('COOLER_500', 'Unable to get from database')
+          return coolerError(
+            'COOLER_500',
+            a18n`Unexpected error while fetching from the database`
+          )
         }
       )
     ),
@@ -81,7 +85,7 @@ export function dbGet<S, D>(
                 () =>
                   coolerError(
                     'COOLER_500',
-                    'Unable to decode record from database'
+                    a18n`There has been an error while decoding a database record`
                   ),
                 option.some
               )
@@ -104,7 +108,10 @@ export function dbGetAll<S, D>(
         () => db.all<S[]>(sql),
         error => {
           console.log(error)
-          return coolerError('COOLER_500', 'Unable to get from database')
+          return coolerError(
+            'COOLER_500',
+            a18n`Unexpected error while querying the database`
+          )
         }
       )
     ),
@@ -122,7 +129,7 @@ export function dbGetAll<S, D>(
               either.mapLeft(() =>
                 coolerError(
                   'COOLER_500',
-                  'Unable to decode records from database'
+                  a18n`There has been an error while decoding a database record`
                 )
               )
             )

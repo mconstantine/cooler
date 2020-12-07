@@ -10,6 +10,7 @@ import { pipe } from 'fp-ts/function'
 import { taskEither } from 'fp-ts'
 import { getDatabase } from './misc/getDatabase'
 import { coolerError } from './misc/Types'
+import { a18n } from './misc/a18n'
 
 export function init(): TaskEither<ApolloError, void> {
   return pipe(
@@ -27,7 +28,7 @@ export function init(): TaskEither<ApolloError, void> {
           console.log(error)
           return coolerError(
             'COOLER_500',
-            'Unable to perform database migrations'
+            a18n`Unable to perform database migrations`
           )
         }
       )

@@ -6,6 +6,7 @@ import sessionResolvers from './session/resolvers'
 import taxResolvers from './tax/resolvers'
 import { merge } from './misc/merge'
 import { GraphQLScalarType } from 'graphql'
+import a18n from 'a18n'
 
 const defaultResolvers = {
   Node: { __resolveType: () => 'Node' },
@@ -14,7 +15,7 @@ const defaultResolvers = {
   Connection: { __resolveType: () => 'Connection' },
   Date: new GraphQLScalarType({
     name: 'Date',
-    description: 'Represents a JavaScript date'
+    description: a18n`Represents a JavaScript date`
   })
 }
 

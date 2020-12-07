@@ -9,6 +9,7 @@ import { flow, pipe } from 'fp-ts/function'
 import { dbGetAll } from './dbUtils'
 import * as t from 'io-ts'
 import { NonEmptyString } from 'io-ts-types'
+import { a18n } from './a18n'
 
 const ConnectionAddendum = t.type(
   {
@@ -43,7 +44,7 @@ export function queryToConnection<
     return taskEither.left(
       coolerError(
         'COOLER_400',
-        'You must use either "first" and "after" or "last" and "before". You cannot mix and match them'
+        a18n`You must use either "first" and "after" or "last" and "before". You cannot mix and match them`
       )
     )
   }

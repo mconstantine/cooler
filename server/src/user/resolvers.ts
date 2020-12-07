@@ -20,6 +20,7 @@ import * as t from 'io-ts'
 import { pipe } from 'fp-ts/function'
 import { taskEither } from 'fp-ts'
 import { coolerError, EmptyObject } from '../misc/Types'
+import { a18n } from '../misc/a18n'
 
 const CreateUserMutationInput = t.type(
   {
@@ -83,7 +84,9 @@ const deleteMeMutation = createResolver(
 const meQuery = createResolver(EmptyObject, User, (_parent, _args, context) =>
   pipe(
     getUserFromContext(context),
-    taskEither.fromOption(() => coolerError('COOLER_403', 'Unauthorized'))
+    taskEither.fromOption(() =>
+      coolerError('COOLER_403', a18n`You cannot see this user`)
+    )
   )
 )
 

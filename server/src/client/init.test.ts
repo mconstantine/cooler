@@ -4,7 +4,7 @@ import SQL from 'sql-template-strings'
 import { User } from '../user/interface'
 import { getFakeUser } from '../test/getFakeUser'
 import { pipe } from 'fp-ts/function'
-import { either, taskEither } from 'fp-ts'
+import { either, option, taskEither } from 'fp-ts'
 import { registerUser } from '../test/registerUser'
 import { getFakeClient } from '../test/getFakeClient'
 import {
@@ -12,10 +12,9 @@ import {
   ClientUpdateInput,
   DatabaseClient
 } from './interface'
-import { testError } from '../test/util'
+import { testError, testTaskEither } from '../test/util'
 import { NonEmptyString } from 'io-ts-types'
 import { sleep } from '../test/sleep'
-import { coolerError } from '../misc/Types'
 
 describe('initClient', () => {
   describe('happy path', () => {
@@ -107,7 +106,7 @@ describe('initClient', () => {
     })
 
     it("should delete all user's clients when the user is deleted", async () => {
-      const result = await pipe(
+      await pipe(
         registerUser(getFakeUser(), user),
         taskEither.chain(user =>
           pipe(
@@ -132,21 +131,9 @@ describe('initClient', () => {
             )
           )
         ),
-        taskEither.chain(
-          taskEither.fromOption(() =>
-            coolerError('COOLER_404', 'This should happen')
-          )
-        )
-      )()
-
-      expect(either.isLeft(result)).toBe(true)
-
-      pipe(
-        result,
-        either.fold(
-          error => expect(error.message).toBe('This should happen'),
-          console.log
-        )
+        testTaskEither(result => {
+          expect(option.isNone(result)).toBe(true)
+        })
       )
     })
   })

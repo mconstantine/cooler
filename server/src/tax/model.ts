@@ -16,6 +16,7 @@ import { pipe } from 'fp-ts/function'
 import { taskEither } from 'fp-ts'
 import { coolerError, PositiveInteger } from '../misc/Types'
 import { getUserById } from '../user/database'
+import { a18n } from '../misc/a18n'
 
 export function createTax(
   input: TaxCreationInput,
@@ -26,7 +27,10 @@ export function createTax(
     taskEither.chain(getTaxById),
     taskEither.chain(
       taskEither.fromOption(() =>
-        coolerError('COOLER_500', 'Unable to retrieve the tax after creation')
+        coolerError(
+          'COOLER_500',
+          a18n`Unable to retrieve the tax after creation`
+        )
       )
     )
   )
@@ -39,12 +43,17 @@ export function getTax(
   return pipe(
     getTaxById(id),
     taskEither.chain(
-      taskEither.fromOption(() => coolerError('COOLER_404', 'Tax not found'))
+      taskEither.fromOption(() =>
+        coolerError(
+          'COOLER_404',
+          a18n`The tax you are looking for was not found`
+        )
+      )
     ),
     taskEither.chain(
       taskEither.fromPredicate(
         tax => tax.user === user.id,
-        () => coolerError('COOLER_403', 'You cannot see this tax')
+        () => coolerError('COOLER_403', a18n`You cannot see this tax`)
       )
     )
   )
@@ -71,12 +80,17 @@ export function updateTax(
   return pipe(
     getTaxById(id),
     taskEither.chain(
-      taskEither.fromOption(() => coolerError('COOLER_404', 'Tax not found'))
+      taskEither.fromOption(() =>
+        coolerError(
+          'COOLER_404',
+          a18n`The tax you are trying to update was not found`
+        )
+      )
     ),
     taskEither.chain(
       taskEither.fromPredicate(
         tax => tax.user === user.id,
-        () => coolerError('COOLER_403', 'You cannot update this tax')
+        () => coolerError('COOLER_403', a18n`You cannot update this tax`)
       )
     ),
     taskEither.chain(tax =>
@@ -85,7 +99,7 @@ export function updateTax(
     taskEither.chain(() => getTaxById(id)),
     taskEither.chain(
       taskEither.fromOption(() =>
-        coolerError('COOLER_500', 'Unable to retrieve the tax after update')
+        coolerError('COOLER_500', a18n`Unable to retrieve the tax after update`)
       )
     )
   )
@@ -98,12 +112,17 @@ export function deleteTax(
   return pipe(
     getTaxById(id),
     taskEither.chain(
-      taskEither.fromOption(() => coolerError('COOLER_404', 'Tax not found'))
+      taskEither.fromOption(() =>
+        coolerError(
+          'COOLER_404',
+          a18n`The tax you are trying to delete was not found`
+        )
+      )
     ),
     taskEither.chain(
       taskEither.fromPredicate(
         tax => tax.user === user.id,
-        () => coolerError('COOLER_403', 'You cannot delete this tax')
+        () => coolerError('COOLER_403', a18n`You cannot delete this tax`)
       )
     ),
     taskEither.chain(tax =>
@@ -119,7 +138,9 @@ export function getTaxUser(tax: Tax): TaskEither<ApolloError, User> {
   return pipe(
     getUserById(tax.user),
     taskEither.chain(
-      taskEither.fromOption(() => coolerError('COOLER_404', 'User not found'))
+      taskEither.fromOption(() =>
+        coolerError('COOLER_404', a18n`The user of this tax was not found`)
+      )
     )
   )
 }

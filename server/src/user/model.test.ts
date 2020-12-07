@@ -1,9 +1,9 @@
-import { taskEither } from 'fp-ts'
-import { pipe } from 'fp-ts/function'
+import { option, taskEither } from 'fp-ts'
+import { constVoid, pipe } from 'fp-ts/function'
 import { NonEmptyString } from 'io-ts-types'
 import { init } from '../init'
 import { remove } from '../misc/dbUtils'
-import { coolerError, EmailString } from '../misc/Types'
+import { EmailString } from '../misc/Types'
 import { getFakeUser } from '../test/getFakeUser'
 import {
   pipeTestTaskEither,
@@ -242,7 +242,8 @@ describe('userModel', () => {
         pipeTestTaskEitherError(error => {
           expect(error.extensions.code).toBe('COOLER_409')
         }),
-        taskEither.chain(() => remove('user', { email: user2.email }))
+        taskEither.chain(() => remove('user', { email: user2.email })),
+        testTaskEither(constVoid)
       )
     })
   })
@@ -267,13 +268,8 @@ describe('userModel', () => {
           expect(deletedUser.email).toBe(user.email)
         }),
         taskEither.chain(() => getUserByEmail(user.email)),
-        taskEither.chain(
-          taskEither.fromOption(() =>
-            coolerError('COOLER_404', 'This should happen')
-          )
-        ),
-        testTaskEitherError(error => {
-          expect(error.message).toBe('This should happen')
+        testTaskEither(result => {
+          expect(option.isNone(result)).toBe(true)
         })
       )
     })

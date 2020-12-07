@@ -7,6 +7,7 @@ import { pipe } from 'fp-ts/function'
 import { option, taskEither } from 'fp-ts'
 import { ApolloError } from 'apollo-server-express'
 import { coolerError } from './Types'
+import { a18n } from './a18n'
 
 let database: Option<Database> = option.none
 
@@ -27,7 +28,7 @@ export function getDatabase(): TaskEither<ApolloError, Database> {
               }),
             error => {
               console.log(error)
-              return coolerError('COOLER_500', 'Unable to access database')
+              return coolerError('COOLER_500', a18n`Unable to access database`)
             }
           ),
           taskEither.map(db => {

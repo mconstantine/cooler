@@ -40,6 +40,7 @@ import { sequenceS } from 'fp-ts/Apply'
 import { getClientById } from '../client/database'
 import { DatabaseProject } from '../project/interface'
 import { UserDataFromSessionResolverInput } from './resolvers'
+import { a18n } from '../misc/a18n'
 
 const TIMESHEETS_PATH = '/public/timesheets'
 
@@ -51,14 +52,17 @@ export function startSession(
     getTaskById(taskId),
     taskEither.chain(
       taskEither.fromOption(() =>
-        coolerError('COOLER_404', 'Session task not found')
+        coolerError('COOLER_404', a18n`The task of this session was not found`)
       )
     ),
     taskEither.chain(
       taskEither.fromPredicate(
         task => task.user === user.id,
         () =>
-          coolerError('COOLER_403', 'You cannot start a session for this task')
+          coolerError(
+            'COOLER_403',
+            a18n`You cannot start a session for this task`
+          )
       )
     ),
     taskEither.chain(task =>
@@ -75,7 +79,7 @@ export function startSession(
     ),
     taskEither.chain(
       taskEither.fromOption(() =>
-        coolerError('COOLER_500', 'Unable to count existing sessions')
+        coolerError('COOLER_500', a18n`Unable to count existing sessions`)
       )
     ),
     taskEither.chain(
@@ -84,7 +88,7 @@ export function startSession(
         () =>
           coolerError(
             'COOLER_409',
-            'There is already an open session for this task'
+            a18n`There is already an open session for this task`
           )
       )
     ),
@@ -98,7 +102,10 @@ export function startSession(
     taskEither.chain(getSessionById),
     taskEither.chain(
       taskEither.fromOption(() =>
-        coolerError('COOLER_500', 'Unable to retieve session after creation')
+        coolerError(
+          'COOLER_500',
+          a18n`Unable to retrieve session after creation`
+        )
       )
     )
   )
@@ -112,13 +119,16 @@ export function getSession(
     getSessionById(id),
     taskEither.chain(
       taskEither.fromOption(() =>
-        coolerError('COOLER_404', 'Session not found')
+        coolerError(
+          'COOLER_404',
+          a18n`The session you are looking for was not found`
+        )
       )
     ),
     taskEither.chain(
       taskEither.fromPredicate(
         session => session.user === user.id,
-        () => coolerError('COOLER_403', 'You cannot see this session')
+        () => coolerError('COOLER_403', a18n`You cannot see this session`)
       )
     )
   )
@@ -169,13 +179,16 @@ export function updateSession(
     getSessionById(id),
     taskEither.chain(
       taskEither.fromOption(() =>
-        coolerError('COOLER_404', 'Session not found')
+        coolerError(
+          'COOLER_404',
+          a18n`The session you want to update was not found`
+        )
       )
     ),
     taskEither.chain(
       taskEither.fromPredicate(
         session => session.user === user.id,
-        () => coolerError('COOLER_403', 'You cannot update this session')
+        () => coolerError('COOLER_403', a18n`You cannot update this session`)
       )
     ),
     taskEither.chain(
@@ -183,7 +196,8 @@ export function updateSession(
         session =>
           option.isNone(session.end_time) ||
           (!!input.end_time && option.isSome(input.end_time)),
-        () => coolerError('COOLER_409', 'You cannot reopen a closed session')
+        () =>
+          coolerError('COOLER_409', a18n`You cannot reopen a closed session`)
       )
     ),
     taskEither.chain(session =>
@@ -197,7 +211,7 @@ export function updateSession(
               getTaskById(task),
               taskEither.chain(
                 taskEither.fromOption(() =>
-                  coolerError('COOLER_404', 'Task not found')
+                  coolerError('COOLER_404', a18n`The new task was not found`)
                 )
               ),
               taskEither.chain(
@@ -206,7 +220,7 @@ export function updateSession(
                   () =>
                     coolerError(
                       'COOLER_403',
-                      'You cannot assign this task to a session'
+                      a18n`You cannot assign this task to a session`
                     )
                 )
               ),
@@ -219,7 +233,7 @@ export function updateSession(
     taskEither.chain(() => getSessionById(id)),
     taskEither.chain(
       taskEither.fromOption(() =>
-        coolerError('COOLER_500', 'Unable to find session after update')
+        coolerError('COOLER_500', a18n`Unable to find the session after update`)
       )
     )
   )
@@ -240,13 +254,16 @@ export function deleteSession(
     getSessionById(id),
     taskEither.chain(
       taskEither.fromOption(() =>
-        coolerError('COOLER_404', 'Session not found')
+        coolerError(
+          'COOLER_404',
+          a18n`The session you are trying to delete was not found`
+        )
       )
     ),
     taskEither.chain(
       taskEither.fromPredicate(
         session => session.user === user.id,
-        () => coolerError('COOLER_403', 'You cannot delete this session')
+        () => coolerError('COOLER_403', a18n`You cannot delete this session`)
       )
     ),
     taskEither.chain(session =>
@@ -269,7 +286,7 @@ export function createTimesheet(
     getProjectById(input.project),
     taskEither.chain(
       taskEither.fromOption(() =>
-        coolerError('COOLER_404', 'Project not found')
+        coolerError('COOLER_404', a18n`The project was not found`)
       )
     ),
     taskEither.chain(
@@ -278,7 +295,7 @@ export function createTimesheet(
         () =>
           coolerError(
             'COOLER_403',
-            'You cannot create a timesheet for this project'
+            a18n`You cannot create a timesheet for this project`
           )
       )
     ),
@@ -288,7 +305,10 @@ export function createTimesheet(
           getClientById(project.client),
           taskEither.chain(
             taskEither.fromOption(() =>
-              coolerError('COOLER_404', 'Project client not found')
+              coolerError(
+                'COOLER_404',
+                a18n`The client of the project was not found`
+              )
             )
           )
         ),
@@ -341,7 +361,10 @@ export function createTimesheet(
         either.tryCatch(
           () => fs.existsSync(timesheetsDirectoryPath),
           () =>
-            coolerError('COOLER_500', 'Unable to access the files directory')
+            coolerError(
+              'COOLER_500',
+              a18n`Unable to access the files directory`
+            )
         ),
         either.chain(
           boolean.fold(
@@ -351,7 +374,7 @@ export function createTimesheet(
                 () =>
                   coolerError(
                     'COOLER_500',
-                    'Unable to create the files directory'
+                    a18n`Unable to create the files directory`
                   )
               ),
             () => either.right(void 0)
@@ -361,7 +384,10 @@ export function createTimesheet(
           either.tryCatch(
             () => fs.readdirSync(timesheetsDirectoryPath),
             () =>
-              coolerError('COOLER_500', 'Unable to read the files directory')
+              coolerError(
+                'COOLER_500',
+                a18n`Unable to read the files directory`
+              )
           )
         ),
         either.chain(files =>
@@ -380,7 +406,10 @@ export function createTimesheet(
                           path.join(timesheetsDirectoryPath, filename)
                         ),
                       () =>
-                        coolerError('COOLER_500', 'Unable to delete old files')
+                        coolerError(
+                          'COOLER_500',
+                          a18n`Unable to delete the old files`
+                        )
                     )
                   ),
                   either.map(constUndefined)
@@ -423,7 +452,7 @@ export function createTimesheet(
                 content,
                 'utf8'
               ),
-            () => coolerError('COOLER_500', 'Unable to write file')
+            () => coolerError('COOLER_500', a18n`Unable to write the file`)
           )
         }),
         taskEither.fromEither
@@ -439,7 +468,9 @@ export function getSessionTask(
   return pipe(
     getTaskById(session.task),
     taskEither.chain(
-      taskEither.fromOption(() => coolerError('COOLER_404', 'Task not found'))
+      taskEither.fromOption(() =>
+        coolerError('COOLER_404', a18n`The task of this session was not found`)
+      )
     )
   )
 }
@@ -469,7 +500,9 @@ export function getTaskActualWorkingHours(
       })
     ),
     taskEither.chain(
-      taskEither.fromOption(() => coolerError('COOLER_404', 'Task not found'))
+      taskEither.fromOption(() =>
+        coolerError('COOLER_404', a18n`The task was not found`)
+      )
     ),
     taskEither.map(({ actualWorkingHours }) => actualWorkingHours)
   )
@@ -490,7 +523,9 @@ export function getTaskBudget(
       })
     ),
     taskEither.chain(
-      taskEither.fromOption(() => coolerError('COOLER_404', 'Task not found'))
+      taskEither.fromOption(() =>
+        coolerError('COOLER_404', a18n`The task was not found`)
+      )
     ),
     taskEither.map(({ budget }) => budget)
   )
@@ -514,7 +549,9 @@ export function getTaskBalance(
       })
     ),
     taskEither.chain(
-      taskEither.fromOption(() => coolerError('COOLER_404', 'Task not found'))
+      taskEither.fromOption(() =>
+        coolerError('COOLER_404', a18n`The task was not found`)
+      )
     ),
     taskEither.map(({ balance }) => balance)
   )
@@ -536,7 +573,7 @@ export function getProjectExpectedWorkingHours(
     ),
     taskEither.chain(
       taskEither.fromOption(() =>
-        coolerError('COOLER_404', 'Project not found')
+        coolerError('COOLER_404', a18n`The project was not found`)
       )
     ),
     taskEither.map(({ expectedWorkingHours }) => expectedWorkingHours)
@@ -562,7 +599,7 @@ export function getProjectActualWorkingHours(
     ),
     taskEither.chain(
       taskEither.fromOption(() =>
-        coolerError('COOLER_404', 'Project not found')
+        coolerError('COOLER_404', a18n`The project was not found`)
       )
     ),
     taskEither.map(({ actualWorkingHours }) => actualWorkingHours)
@@ -585,7 +622,7 @@ export function getProjectBudget(
     ),
     taskEither.chain(
       taskEither.fromOption(() =>
-        coolerError('COOLER_404', 'Project not found')
+        coolerError('COOLER_404', a18n`The project was not found`)
       )
     ),
     taskEither.map(({ budget }) => budget)
@@ -611,7 +648,7 @@ export function getProjectBalance(
     ),
     taskEither.chain(
       taskEither.fromOption(() =>
-        coolerError('COOLER_404', 'Project not found')
+        coolerError('COOLER_404', a18n`The project was not found`)
       )
     ),
     taskEither.map(({ balance }) => balance)
@@ -663,7 +700,9 @@ export function getUserExpectedWorkingHours(
       })
     ),
     taskEither.chain(
-      taskEither.fromOption(() => coolerError('COOLER_404', 'User not found'))
+      taskEither.fromOption(() =>
+        coolerError('COOLER_404', a18n`The user was not found`)
+      )
     ),
     taskEither.map(({ expectedWorkingHours }) => expectedWorkingHours)
   )
@@ -701,7 +740,9 @@ export function getUserActualWorkingHours(
       })
     ),
     taskEither.chain(
-      taskEither.fromOption(() => coolerError('COOLER_404', 'User not found'))
+      taskEither.fromOption(() =>
+        coolerError('COOLER_404', a18n`The user was not found`)
+      )
     ),
     taskEither.map(({ actualWorkingHours }) => actualWorkingHours)
   )
@@ -734,7 +775,9 @@ export function getUserBudget(
       })
     ),
     taskEither.chain(
-      taskEither.fromOption(() => coolerError('COOLER_404', 'User not found'))
+      taskEither.fromOption(() =>
+        coolerError('COOLER_404', a18n`The user was not found`)
+      )
     ),
     taskEither.map(({ budget }) => budget)
   )
@@ -772,7 +815,9 @@ export function getUserBalance(
       })
     ),
     taskEither.chain(
-      taskEither.fromOption(() => coolerError('COOLER_404', 'User not found'))
+      taskEither.fromOption(() =>
+        coolerError('COOLER_404', a18n`The user was not found`)
+      )
     ),
     taskEither.map(({ balance }) => balance)
   )

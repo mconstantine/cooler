@@ -28,6 +28,7 @@ import {
 } from './database'
 import { Int, type } from 'io-ts'
 import { signToken, verifyToken } from '../misc/jsonWebToken'
+import { a18n } from '../misc/a18n'
 
 export function createUser(
   input: UserCreationInput,
@@ -43,7 +44,7 @@ export function createUser(
           dbGet(SQL`SELECT COUNT(id) as count FROM user`, type({ count: Int })),
           taskEither.chain(
             taskEither.fromOption(() =>
-              coolerError('COOLER_500', 'Unable to count existing users')
+              coolerError('COOLER_500', a18n`Unable to count existing users`)
             )
           ),
           taskEither.chain(
@@ -52,7 +53,7 @@ export function createUser(
               () =>
                 coolerError(
                   'COOLER_403',
-                  'Only existing users can create new users'
+                  a18n`Only existing users can create new users`
                 )
             )
           )
@@ -63,7 +64,13 @@ export function createUser(
     taskEither.chain(
       option.fold(
         () => taskEither.right(void 0),
-        () => taskEither.left(coolerError('COOLER_409', 'Duplicate user'))
+        () =>
+          taskEither.left(
+            coolerError(
+              'COOLER_409',
+              a18n`A registered user with this e-mail address already exists`
+            )
+          )
       )
     ),
     taskEither.chain(() =>
@@ -85,12 +92,17 @@ export function loginUser(
   return pipe(
     getUserByEmail(email),
     taskEither.chain(
-      taskEither.fromOption(() => coolerError('COOLER_404', 'User not found'))
+      taskEither.fromOption(() =>
+        coolerError(
+          'COOLER_404',
+          a18n`No user was found for this e-mail address`
+        )
+      )
     ),
     taskEither.chain(
       taskEither.fromPredicate(
         user => compareSync(password, user.password),
-        () => coolerError('COOLER_400', 'Wrong password')
+        () => coolerError('COOLER_400', a18n`Wrong password`)
       )
     ),
     taskEither.map(({ id }) => generateTokens(id))
@@ -106,16 +118,20 @@ export function refreshToken(
     verifyToken(refreshToken, {
       ignoreExpiration: true
     }),
-    taskEither.fromOption(() => coolerError('COOLER_400', 'Invalid token')),
+    taskEither.fromOption(() =>
+      coolerError('COOLER_400', a18n`The refresk token is invalid`)
+    ),
     taskEither.chain(
       taskEither.fromPredicate(
         token => token.type === 'REFRESH',
-        () => coolerError('COOLER_400', 'Invalid token type')
+        () => coolerError('COOLER_400', a18n`This is not a refresh token`)
       )
     ),
     taskEither.chain(token => getUserById(token.id)),
     taskEither.chain(
-      taskEither.fromOption(() => coolerError('COOLER_404', 'User not found'))
+      taskEither.fromOption(() =>
+        coolerError('COOLER_404', a18n`No user was found for this token`)
+      )
     ),
     taskEither.map(user => generateTokens(user.id, refreshToken))
   )
@@ -144,7 +160,12 @@ export function updateUser(
               option.fold(
                 () => taskEither.right(null),
                 () =>
-                  taskEither.left(coolerError('COOLER_409', 'Duplicate user'))
+                  taskEither.left(
+                    coolerError(
+                      'COOLER_409',
+                      a18n`A registered user with the new e-mail address already exists`
+                    )
+                  )
               )
             )
           )
@@ -152,7 +173,12 @@ export function updateUser(
     ),
     taskEither.chain(() => getUserById(id)),
     taskEither.chain(
-      taskEither.fromOption(() => coolerError('COOLER_404', 'User not found'))
+      taskEither.fromOption(() =>
+        coolerError(
+          'COOLER_404',
+          a18n`The user you want to update was not found`
+        )
+      )
     ),
     taskEither.chain(user => {
       const args: UserUpdateInput = removeUndefined({
@@ -169,7 +195,12 @@ export function updateUser(
     }),
     taskEither.chain(() => getUserById(id)),
     taskEither.chain(
-      taskEither.fromOption(() => coolerError('COOLER_404', 'User not found'))
+      taskEither.fromOption(() =>
+        coolerError(
+          'COOLER_500',
+          a18n`It was impossible to retrieve the user after the update`
+        )
+      )
     )
   )
 }
@@ -178,7 +209,12 @@ export function deleteUser(id: PositiveInteger): TaskEither<ApolloError, User> {
   return pipe(
     getUserById(id),
     taskEither.chain(
-      taskEither.fromOption(() => coolerError('COOLER_404', 'User not found'))
+      taskEither.fromOption(() =>
+        coolerError(
+          'COOLER_404',
+          a18n`The user you want to delete was not found`
+        )
+      )
     ),
     taskEither.chain(user =>
       pipe(

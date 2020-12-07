@@ -8,12 +8,15 @@ import { NonEmptyString } from 'io-ts-types'
 import { option, task, taskEither } from 'fp-ts'
 import { getUserById } from './user/database'
 import { coolerError } from './misc/Types'
+import { a18n } from './misc/a18n'
 
 export function validateToken(accessToken: NonEmptyString): Task<Context> {
   return pipe(
     verifyToken(accessToken),
     option.chain(option.fromPredicate(token => token.type === 'ACCESS')),
-    taskEither.fromOption(() => coolerError('COOLER_400', 'Invalid token')),
+    taskEither.fromOption(() =>
+      coolerError('COOLER_400', a18n`Token is invalid`)
+    ),
     taskEither.chain(token => getUserById(token.id)),
     taskEither.chain(taskEither.fromOption(() => ({}))),
     taskEither.fold(

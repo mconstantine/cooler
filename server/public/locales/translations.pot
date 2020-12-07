@@ -1,0 +1,292 @@
+msgid ""
+msgstr "Content-Type: text/plain\n"
+
+msgid "Token is invalid"
+msgstr ""
+
+msgid "Server ready at http://localhost:%s"
+msgstr ""
+
+msgid "Unable to perform database migrations"
+msgstr ""
+
+msgid "Represents a JavaScript date"
+msgstr ""
+
+msgid "Unable to retrieve the client after creation"
+msgstr ""
+
+msgid "The client you are looking for was not found"
+msgstr ""
+
+msgid "You cannot see this client"
+msgstr ""
+
+msgid "The client you want to update was not found"
+msgstr ""
+
+msgid "You cannot update this client"
+msgstr ""
+
+msgid "Unable to retrieve the client after update"
+msgstr ""
+
+msgid "The client you want to delete was not found"
+msgstr ""
+
+msgid "You cannot delete this client"
+msgstr ""
+
+msgid "The user of this client was not found"
+msgstr ""
+
+msgid "Invalid parameters format"
+msgstr ""
+
+msgid "Unexpected error running a statement against the database"
+msgstr ""
+
+msgid "Unexpected error executing a statement against the database"
+msgstr ""
+
+msgid "Unexpected error while fetching from the database"
+msgstr ""
+
+msgid "There has been an error while decoding a database record"
+msgstr ""
+
+msgid "Unexpected error while querying the database"
+msgstr ""
+
+msgid "To continue, please authenticate and add a user access token to your request"
+msgstr ""
+
+msgid "Unable to access database"
+msgstr ""
+
+msgid ""
+"You must use either \"first\" and \"after\" or \"last\" and \"before\". You "
+"cannot mix and match them"
+msgstr ""
+
+msgid "The client was not found"
+msgstr ""
+
+msgid "You cannot create projects for this client"
+msgstr ""
+
+msgid "Unable to retrieve the project after creation"
+msgstr ""
+
+msgid "The project you are looking for was not found"
+msgstr ""
+
+msgid "You cannot see this project"
+msgstr ""
+
+msgid "The project you want to update was not found"
+msgstr ""
+
+msgid "You cannot update this project"
+msgstr ""
+
+msgid "The new client was not found"
+msgstr ""
+
+msgid "You cannot assign this client to a project"
+msgstr ""
+
+msgid "Unable to retrieve the project after update"
+msgstr ""
+
+msgid "The project you want to delete was not found"
+msgstr ""
+
+msgid "You cannot delete this project"
+msgstr ""
+
+msgid "The client of this project was not found"
+msgstr ""
+
+msgid "Unable to retrieve the balance of the user"
+msgstr ""
+
+msgid "The task of this session was not found"
+msgstr ""
+
+msgid "You cannot start a session for this task"
+msgstr ""
+
+msgid "Unable to count existing sessions"
+msgstr ""
+
+msgid "There is already an open session for this task"
+msgstr ""
+
+msgid "Unable to retrieve session after creation"
+msgstr ""
+
+msgid "The session you are looking for was not found"
+msgstr ""
+
+msgid "You cannot see this session"
+msgstr ""
+
+msgid "The session you want to update was not found"
+msgstr ""
+
+msgid "You cannot update this session"
+msgstr ""
+
+msgid "You cannot reopen a closed session"
+msgstr ""
+
+msgid "The new task was not found"
+msgstr ""
+
+msgid "You cannot assign this task to a session"
+msgstr ""
+
+msgid "Unable to find the session after update"
+msgstr ""
+
+msgid "The session you are trying to delete was not found"
+msgstr ""
+
+msgid "You cannot delete this session"
+msgstr ""
+
+msgid "The project was not found"
+msgstr ""
+
+msgid "You cannot create a timesheet for this project"
+msgstr ""
+
+msgid "The client of the project was not found"
+msgstr ""
+
+msgid "Unable to access the files directory"
+msgstr ""
+
+msgid "Unable to create the files directory"
+msgstr ""
+
+msgid "Unable to read the files directory"
+msgstr ""
+
+msgid "Unable to delete the old files"
+msgstr ""
+
+msgid "Unable to write the file"
+msgstr ""
+
+msgid "The task was not found"
+msgstr ""
+
+msgid "The user was not found"
+msgstr ""
+
+msgid "The project of this task was not found"
+msgstr ""
+
+msgid "You cannot create tasks for this project"
+msgstr ""
+
+msgid "Unable to retrieve the task after creation"
+msgstr ""
+
+msgid "Unable to retrieve the project after the creation of the tasks batch"
+msgstr ""
+
+msgid "The task you are looking for was not found"
+msgstr ""
+
+msgid "You cannot see this task"
+msgstr ""
+
+msgid "The task you want to update was not found"
+msgstr ""
+
+msgid "You cannot update this task"
+msgstr ""
+
+msgid "The new project was not found"
+msgstr ""
+
+msgid "You cannot assign this project to a task"
+msgstr ""
+
+msgid "Unable to retrieve the task after update"
+msgstr ""
+
+msgid "The task you want to delete was not found"
+msgstr ""
+
+msgid "You cannot delete this task"
+msgstr ""
+
+msgid "Unable to retrieve the tax after creation"
+msgstr ""
+
+msgid "The tax you are looking for was not found"
+msgstr ""
+
+msgid "You cannot see this tax"
+msgstr ""
+
+msgid "The tax you are trying to update was not found"
+msgstr ""
+
+msgid "You cannot update this tax"
+msgstr ""
+
+msgid "Unable to retrieve the tax after update"
+msgstr ""
+
+msgid "The tax you are trying to delete was not found"
+msgstr ""
+
+msgid "You cannot delete this tax"
+msgstr ""
+
+msgid "The user of this tax was not found"
+msgstr ""
+
+msgid "Unable to count existing users"
+msgstr ""
+
+msgid "Only existing users can create new users"
+msgstr ""
+
+msgid "A registered user with this e-mail address already exists"
+msgstr ""
+
+msgid "No user was found for this e-mail address"
+msgstr ""
+
+msgid "Wrong password"
+msgstr ""
+
+msgid "The refresk token is invalid"
+msgstr ""
+
+msgid "This is not a refresh token"
+msgstr ""
+
+msgid "No user was found for this token"
+msgstr ""
+
+msgid "A registered user with the new e-mail address already exists"
+msgstr ""
+
+msgid "The user you want to update was not found"
+msgstr ""
+
+msgid "It was impossible to retrieve the user after the update"
+msgstr ""
+
+msgid "The user you want to delete was not found"
+msgstr ""
+
+msgid "You cannot see this user"
+msgstr ""

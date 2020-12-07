@@ -31,6 +31,7 @@ import {
 import { Option } from 'fp-ts/Option'
 import { dbGet } from '../misc/dbUtils'
 import { ProjectConnectionQueryArgs } from './resolvers'
+import { a18n } from '../misc/a18n'
 
 export function createProject(
   { name, description, client }: ProjectCreationInput,
@@ -40,7 +41,7 @@ export function createProject(
     getClientById(client),
     taskEither.chain(
       taskEither.fromOption(() =>
-        coolerError('COOLER_404', 'Project client not found')
+        coolerError('COOLER_404', a18n`The client was not found`)
       )
     ),
     taskEither.chain(
@@ -49,7 +50,7 @@ export function createProject(
         () =>
           coolerError(
             'COOLER_403',
-            'You cannot create projects for this client'
+            a18n`You cannot create projects for this client`
           )
       )
     ),
@@ -61,7 +62,7 @@ export function createProject(
       taskEither.fromOption(() =>
         coolerError(
           'COOLER_500',
-          'Unable to retrieve the project after creation'
+          a18n`Unable to retrieve the project after creation`
         )
       )
     )
@@ -76,13 +77,16 @@ export function getProject(
     getProjectById(id),
     taskEither.chain(
       taskEither.fromOption(() =>
-        coolerError('COOLER_404', 'Project not found')
+        coolerError(
+          'COOLER_404',
+          a18n`The project you are looking for was not found`
+        )
       )
     ),
     taskEither.chain(
       taskEither.fromPredicate(
         project => project.user === user.id,
-        () => coolerError('COOLER_403', 'You cannot see this project')
+        () => coolerError('COOLER_403', a18n`You cannot see this project`)
       )
     )
   )
@@ -124,13 +128,16 @@ export function updateProject(
     getProjectById(id),
     taskEither.chain(
       taskEither.fromOption(() =>
-        coolerError('COOLER_404', 'Project not found')
+        coolerError(
+          'COOLER_404',
+          a18n`The project you want to update was not found`
+        )
       )
     ),
     taskEither.chain(
       taskEither.fromPredicate(
         project => project.user === user.id,
-        () => coolerError('COOLER_403', 'You cannot update this project')
+        () => coolerError('COOLER_403', a18n`You cannot update this project`)
       )
     ),
     taskEither.chain(project =>
@@ -143,7 +150,7 @@ export function updateProject(
               getClientById(client!),
               taskEither.chain(
                 taskEither.fromOption(() =>
-                  coolerError('COOLER_404', 'Client not found')
+                  coolerError('COOLER_404', a18n`The new client was not found`)
                 )
               ),
               taskEither.chain(
@@ -152,7 +159,7 @@ export function updateProject(
                   () =>
                     coolerError(
                       'COOLER_403',
-                      'You cannot assign this client to a project'
+                      a18n`You cannot assign this client to a project`
                     )
                 )
               ),
@@ -170,7 +177,10 @@ export function updateProject(
         taskEither.chain(() => getProjectById(project.id)),
         taskEither.chain(
           taskEither.fromOption(() =>
-            coolerError('COOLER_404', 'Project not found')
+            coolerError(
+              'COOLER_500',
+              a18n`Unable to retrieve the project after update`
+            )
           )
         )
       )
@@ -186,13 +196,16 @@ export function deleteProject(
     getProjectById(id),
     taskEither.chain(
       taskEither.fromOption(() =>
-        coolerError('COOLER_404', 'Project not found')
+        coolerError(
+          'COOLER_404',
+          a18n`The project you want to delete was not found`
+        )
       )
     ),
     taskEither.chain(
       taskEither.fromPredicate(
         project => project.user === user.id,
-        () => coolerError('COOLER_403', 'You cannot delete this project')
+        () => coolerError('COOLER_403', a18n`You cannot delete this project`)
       )
     ),
     taskEither.chain(project =>
@@ -210,7 +223,12 @@ export function getProjectClient(
   return pipe(
     getClientById(project.client),
     taskEither.chain(
-      taskEither.fromOption(() => coolerError('COOLER_404', 'Client not found'))
+      taskEither.fromOption(() =>
+        coolerError(
+          'COOLER_404',
+          a18n`The client of this project was not found`
+        )
+      )
     )
   )
 }
@@ -259,7 +277,10 @@ export function getUserCashedBalance(
     dbGet(sql, Result),
     taskEither.chain(
       taskEither.fromOption(() =>
-        coolerError('COOLER_500', 'Unable to retrieve user balance')
+        coolerError(
+          'COOLER_500',
+          a18n`Unable to retrieve the balance of the user`
+        )
       )
     ),
     taskEither.map(({ balance }) => balance)

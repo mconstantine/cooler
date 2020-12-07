@@ -107,7 +107,7 @@ type CoolerErrorType = t.TypeOf<typeof CoolerErrorType>
 
 export function coolerError(
   type: CoolerErrorType,
-  message: string,
+  message: LocalizedString,
   extras?: Record<string, any>
 ): ApolloError {
   return new ApolloError(message, type, extras)
@@ -152,3 +152,15 @@ export function optionFromUndefined<C extends t.Mixed>(
 export function isObject(u: unknown): u is Object {
   return Object.prototype.toString.call(u) === '[object Object]'
 }
+
+export type LocalizedStringBrand = string & {
+  readonly LocalizedString: unique symbol
+}
+
+export const LocalizedString = t.brand(
+  t.string,
+  (_): _ is t.Branded<string, LocalizedStringBrand> => true,
+  'LocalizedString'
+)
+
+export type LocalizedString = t.TypeOf<typeof LocalizedString>

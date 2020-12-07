@@ -5,6 +5,7 @@ import { Option } from 'fp-ts/Option'
 import { TaskEither } from 'fp-ts/TaskEither'
 import * as t from 'io-ts'
 import { Context } from '../user/interface'
+import { a18n } from './a18n'
 import { coolerError } from './Types'
 
 export function createResolver<
@@ -29,7 +30,7 @@ export function createResolver<
       args,
       argsCodec.decode,
       either.mapLeft(error =>
-        coolerError('COOLER_400', 'Invalid parameters format', error)
+        coolerError('COOLER_400', a18n`Invalid parameters format`, error)
       ),
       taskEither.fromEither,
       taskEither.chain((args: t.TypeOf<TI>) => resolve(parent, args, context)),

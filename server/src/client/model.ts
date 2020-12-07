@@ -32,6 +32,7 @@ import { coolerError, PositiveInteger } from '../misc/Types'
 import { NonEmptyString } from 'io-ts-types'
 import { getUserById } from '../user/database'
 import { ClientConnectionQuerysArgs } from './resolvers'
+import { a18n } from '../misc/a18n'
 
 export function createClient(
   input: ClientCreationInput,
@@ -73,7 +74,7 @@ export function createClient(
       taskEither.fromOption(() =>
         coolerError(
           'COOLER_500',
-          'Unable to retrieve the client after creation'
+          a18n`Unable to retrieve the client after creation`
         )
       )
     )
@@ -87,12 +88,17 @@ export function getClient(
   return pipe(
     getClientById(id),
     taskEither.chain(
-      taskEither.fromOption(() => coolerError('COOLER_404', 'Client not found'))
+      taskEither.fromOption(() =>
+        coolerError(
+          'COOLER_404',
+          a18n`The client you are looking for was not found`
+        )
+      )
     ),
     taskEither.chain(
       taskEither.fromPredicate(
         client => client.user === user.id,
-        () => coolerError('COOLER_403', 'You cannot see this client')
+        () => coolerError('COOLER_403', a18n`You cannot see this client`)
       )
     )
   )
@@ -126,12 +132,17 @@ export function updateClient(
   return pipe(
     getClientById(id),
     taskEither.chain(
-      taskEither.fromOption(() => coolerError('COOLER_404', 'Client not found'))
+      taskEither.fromOption(() =>
+        coolerError(
+          'COOLER_404',
+          a18n`The client you want to update was not found`
+        )
+      )
     ),
     taskEither.chain(
       taskEither.fromPredicate(
         client => (input.user || client.user) === user.id,
-        () => coolerError('COOLER_403', 'You cannot update this client')
+        () => coolerError('COOLER_403', a18n`You cannot update this client`)
       )
     ),
     taskEither.chain(client => {
@@ -174,7 +185,12 @@ export function updateClient(
     }),
     taskEither.chain(client => getClientById(client.id)),
     taskEither.chain(
-      taskEither.fromOption(() => coolerError('COOLER_404', 'Client not found'))
+      taskEither.fromOption(() =>
+        coolerError(
+          'COOLER_500',
+          a18n`Unable to retrieve the client after update`
+        )
+      )
     )
   )
 }
@@ -186,12 +202,17 @@ export function deleteClient(
   return pipe(
     getClientById(id),
     taskEither.chain(
-      taskEither.fromOption(() => coolerError('COOLER_404', 'Client not found'))
+      taskEither.fromOption(() =>
+        coolerError(
+          'COOLER_404',
+          a18n`The client you want to delete was not found`
+        )
+      )
     ),
     taskEither.chain(
       taskEither.fromPredicate(
         client => client.user === user.id,
-        () => coolerError('COOLER_403', 'You cannot delete this client')
+        () => coolerError('COOLER_403', a18n`You cannot delete this client`)
       )
     ),
     taskEither.chain(client =>
@@ -219,7 +240,9 @@ export function getClientUser(
   return pipe(
     getUserById(client.user),
     taskEither.chain(
-      taskEither.fromOption(() => coolerError('COOLER_404', 'User not found'))
+      taskEither.fromOption(() =>
+        coolerError('COOLER_404', a18n`The user of this client was not found`)
+      )
     )
   )
 }

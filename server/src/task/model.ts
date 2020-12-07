@@ -30,6 +30,7 @@ import {
   TasksConnectionQueryArgs,
   UserTasksConnectionQueryArgs
 } from './resolvers'
+import { a18n } from '../misc/a18n'
 
 export function createTask(
   input: TaskCreationInput,
@@ -39,21 +40,27 @@ export function createTask(
     getProjectById(input.project),
     taskEither.chain(
       taskEither.fromOption(() =>
-        coolerError('COOLER_404', 'Project task not found')
+        coolerError('COOLER_404', a18n`The project of this task was not found`)
       )
     ),
     taskEither.chain(
       taskEither.fromPredicate(
         project => project.user === user.id,
         () =>
-          coolerError('COOLER_403', 'You cannot create tasks for this project')
+          coolerError(
+            'COOLER_403',
+            a18n`You cannot create tasks for this project`
+          )
       )
     ),
     taskEither.chain(() => insertTask(input)),
     taskEither.chain(id => getTaskById(id)),
     taskEither.chain(
       taskEither.fromOption(() =>
-        coolerError('COOLER_500', 'Unable to retrieve the task after creation')
+        coolerError(
+          'COOLER_500',
+          a18n`Unable to retrieve the task after creation`
+        )
       )
     )
   )
@@ -67,14 +74,17 @@ export function createTasksBatch(
     getProjectById(input.project),
     taskEither.chain(
       taskEither.fromOption(() =>
-        coolerError('COOLER_404', 'Project task not found')
+        coolerError('COOLER_404', a18n`The project of this task was not found`)
       )
     ),
     taskEither.chain(
       taskEither.fromPredicate(
         project => project.user === user.id,
         () =>
-          coolerError('COOLER_403', 'You cannot create tasks for this project')
+          coolerError(
+            'COOLER_403',
+            a18n`You cannot create tasks for this project`
+          )
       )
     ),
     taskEither.chain(project =>
@@ -172,7 +182,7 @@ export function createTasksBatch(
       taskEither.fromOption(() =>
         coolerError(
           'COOLER_500',
-          'Unable to retrieve the project after tasks batch creation'
+          a18n`Unable to retrieve the project after the creation of the tasks batch`
         )
       )
     )
@@ -245,12 +255,17 @@ export function getTask(
   return pipe(
     getTaskById(id),
     taskEither.chain(
-      taskEither.fromOption(() => coolerError('COOLER_404', 'Task not found'))
+      taskEither.fromOption(() =>
+        coolerError(
+          'COOLER_404',
+          a18n`The task you are looking for was not found`
+        )
+      )
     ),
     taskEither.chain(
       taskEither.fromPredicate(
         task => task.user === user.id,
-        () => coolerError('COOLER_403', 'You cannot see this task')
+        () => coolerError('COOLER_403', a18n`You cannot see this task`)
       )
     )
   )
@@ -284,12 +299,17 @@ export function updateTask(
   return pipe(
     getTaskById(id),
     taskEither.chain(
-      taskEither.fromOption(() => coolerError('COOLER_404', 'Task not found'))
+      taskEither.fromOption(() =>
+        coolerError(
+          'COOLER_404',
+          a18n`The task you want to update was not found`
+        )
+      )
     ),
     taskEither.chain(
       taskEither.fromPredicate(
         task => task.user === user.id,
-        () => coolerError('COOLER_403', 'You cannot update this task')
+        () => coolerError('COOLER_403', a18n`You cannot update this task`)
       )
     ),
     taskEither.chain(() =>
@@ -302,7 +322,7 @@ export function updateTask(
             getProjectById,
             taskEither.chain(
               taskEither.fromOption(() =>
-                coolerError('COOLER_404', 'New project not found')
+                coolerError('COOLER_404', a18n`The new project was not found`)
               )
             ),
             taskEither.chain(
@@ -311,7 +331,7 @@ export function updateTask(
                 () =>
                   coolerError(
                     'COOLER_403',
-                    'You cannot assign this project to a task'
+                    a18n`You cannot assign this project to a task`
                   )
               )
             ),
@@ -324,7 +344,10 @@ export function updateTask(
     taskEither.chain(() => getTaskById(id)),
     taskEither.chain(
       taskEither.fromOption(() =>
-        coolerError('COOLER_500', 'Unable to retrieve the task after update')
+        coolerError(
+          'COOLER_500',
+          a18n`Unable to retrieve the task after update`
+        )
       )
     )
   )
@@ -337,12 +360,17 @@ export function deleteTask(
   return pipe(
     getTaskById(id),
     taskEither.chain(
-      taskEither.fromOption(() => coolerError('COOLER_404', 'Task not found'))
+      taskEither.fromOption(() =>
+        coolerError(
+          'COOLER_404',
+          a18n`The task you want to delete was not found`
+        )
+      )
     ),
     taskEither.chain(
       taskEither.fromPredicate(
         task => task.user === user.id,
-        () => coolerError('COOLER_403', 'You cannot delete this task')
+        () => coolerError('COOLER_403', a18n`You cannot delete this task`)
       )
     ),
     taskEither.chain(task =>
@@ -361,7 +389,7 @@ export function getTaskProject(
     getProjectById(task.project),
     taskEither.chain(
       taskEither.fromOption(() =>
-        coolerError('COOLER_404', 'Project not found')
+        coolerError('COOLER_404', a18n`The project of this task was not found`)
       )
     )
   )

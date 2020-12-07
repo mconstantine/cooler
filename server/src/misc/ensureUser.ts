@@ -4,12 +4,19 @@ import { TaskEither } from 'fp-ts/TaskEither'
 import { pipe } from 'fp-ts/function'
 import { boolean, taskEither } from 'fp-ts'
 import { coolerError } from './Types'
+import { a18n } from './a18n'
 
 export function ensureUser(context: Context): TaskEither<ApolloError, User> {
   return pipe(
     isUserContext(context),
     boolean.fold(
-      () => taskEither.left(coolerError('COOLER_401', 'Unauthorized')),
+      () =>
+        taskEither.left(
+          coolerError(
+            'COOLER_401',
+            a18n`To continue, please authenticate and add a user access token to your request`
+          )
+        ),
       () => taskEither.right((context as UserContext).user)
     )
   )
