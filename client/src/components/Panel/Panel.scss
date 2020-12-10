@@ -1,0 +1,29 @@
+@import '../../variables';
+
+.Panel {
+  background-color: $color-grey-soft-dark;
+  box-sizing: border-box;
+  border-radius: $border-radius-large;
+  max-width: $max-width-text + 2 * $spacing-medium-desktop;
+  margin-left: auto;
+  margin-right: auto;
+
+  @include ss('padding', $spacing-medium-mobile, $spacing-medium-desktop);
+
+  > *:first-child {
+    margin-top: 0;
+  }
+
+  > *:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.light .Panel {
+  background-color: #fff;
+  border: 1px solid $color-grey-soft-light;
+}
+
+.Panel + .Panel {
+  @include ss('margin-top', $spacing-medium-mobile, $spacing-medium-desktop);
+}

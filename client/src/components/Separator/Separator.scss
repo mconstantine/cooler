@@ -1,0 +1,7 @@
+@import '../../variables';
+
+hr {
+  @include ss('margin-top', $spacing-medium-mobile, $spacing-medium-desktop);
+  @include ss('margin-bottom', $spacing-medium-mobile, $spacing-medium-desktop);
+  border: none;
+}
