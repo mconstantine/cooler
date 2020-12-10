@@ -1,0 +1,82 @@
+@import '../../variables';
+
+.Icon {
+  display: inline-block;
+
+  &.large {
+    width: 32px;
+    height: 32px;
+  }
+
+  &.medium {
+    width: 24px;
+    height: 24px;
+  }
+
+  &.small {
+    width: 16px;
+    height: 16px;
+  }
+}
+
+.Icon + .Icon {
+  margin-left: 16px;
+}
+
+.Icon svg > * {
+  fill: #fff;
+  stroke: #fff;
+}
+
+.Icon.primary svg > * {
+  fill: $color-primary-dark;
+  stroke: $color-primary-dark;
+}
+
+.Icon.success svg > * {
+  fill: $color-success-dark;
+  stroke: $color-success-dark;
+}
+
+.Icon.warning svg > * {
+  fill: $color-warning-dark;
+  stroke: $color-warning-dark;
+}
+
+.Icon.danger svg > * {
+  fill: $color-error-dark;
+  stroke: $color-error-dark;
+}
+
+.light .Icon svg > * {
+  fill: #000;
+  stroke: #000;
+}
+
+.light .Icon.primary svg > * {
+  fill: $color-primary-light;
+  stroke: $color-primary-light;
+}
+
+.light .Icon.success svg > * {
+  fill: $color-success-light;
+  stroke: $color-success-light;
+}
+
+.light .Icon.warning svg > * {
+  fill: $color-warning-light;
+  stroke: $color-warning-light;
+}
+
+.light .Icon.danger svg > * {
+  fill: $color-error-light;
+  stroke: $color-error-light;
+}
+
+.ionicon-fill-none {
+  fill: none !important;
+}
+
+.ionicon-stroke-width {
+  stroke-width: 32px;
+}

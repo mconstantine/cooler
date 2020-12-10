@@ -1,0 +1,10 @@
+@import '../../variables';
+
+.Label {
+  font-size: 14px;
+  letter-spacing: 1px;
+  line-height: 1;
+  margin-top: 8px;
+  margin-bottom: 8px;
+  opacity: $text-medium-emphasis-amount;
+}
