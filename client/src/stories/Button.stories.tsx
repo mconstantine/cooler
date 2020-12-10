@@ -24,42 +24,35 @@ export const Button: Story = ({ onClick }) => {
         <Buttons>
           <ButtonComponent
             type="button"
-            label={unsafeLocalizedString('Default style')}
+            label={unsafeLocalizedString('Default color')}
             icon={option.none}
             action={() => onClick('default')}
           />
           <ButtonComponent
             type="button"
             color="primary"
-            label={unsafeLocalizedString('Primary style')}
+            label={unsafeLocalizedString('Primary color')}
             icon={option.none}
             action={() => onClick('primary')}
           />
           <ButtonComponent
             type="button"
-            color="flat"
-            label={unsafeLocalizedString('Flat style')}
-            icon={option.none}
-            action={() => onClick('flat')}
-          />
-          <ButtonComponent
-            type="button"
             color="success"
-            label={unsafeLocalizedString('Success style')}
+            label={unsafeLocalizedString('Success color')}
             icon={option.none}
             action={() => onClick('success')}
           />
           <ButtonComponent
             type="button"
             color="warning"
-            label={unsafeLocalizedString('Warning style')}
+            label={unsafeLocalizedString('Warning color')}
             icon={option.none}
             action={() => onClick('warning')}
           />
           <ButtonComponent
             type="button"
             color="danger"
-            label={unsafeLocalizedString('Danger style')}
+            label={unsafeLocalizedString('Danger color')}
             icon={option.none}
             action={() => onClick('danger')}
           />
@@ -77,14 +70,6 @@ export const Button: Story = ({ onClick }) => {
             label={unsafeLocalizedString('Primary disabled')}
             icon={option.none}
             action={() => onClick('primary disabled')}
-            disabled
-          />
-          <ButtonComponent
-            type="button"
-            color="flat"
-            label={unsafeLocalizedString('Flat disabled')}
-            icon={option.none}
-            action={() => onClick('flat disabled')}
             disabled
           />
           <ButtonComponent
@@ -111,50 +96,60 @@ export const Button: Story = ({ onClick }) => {
             action={() => onClick('danger disabled')}
             disabled
           />
+          <ButtonComponent
+            type="button"
+            flat
+            label={unsafeLocalizedString('Flat button')}
+            icon={option.none}
+            action={() => onClick('flat')}
+          />
+          <ButtonComponent
+            type="button"
+            flat
+            label={unsafeLocalizedString('Flat disabled')}
+            icon={option.none}
+            action={() => onClick('flat disabled')}
+            disabled
+          />
         </Buttons>
 
         <Separator />
 
-        <h4>Buttons with icons</h4>
+        <h4>Buttons with icons (some flat)</h4>
         <Buttons>
           <ButtonComponent
             type="button"
-            label={unsafeLocalizedString('Default style')}
+            label={unsafeLocalizedString('Default color')}
             icon={option.some(star)}
             action={() => onClick('default')}
           />
           <ButtonComponent
             type="button"
             color="primary"
-            label={unsafeLocalizedString('Primary style')}
+            label={unsafeLocalizedString('Primary color')}
             icon={option.some(airplane)}
             action={() => onClick('primary')}
           />
           <ButtonComponent
             type="button"
-            color="flat"
-            label={unsafeLocalizedString('Flat style')}
-            icon={option.some(heart)}
-            action={() => onClick('flat')}
-          />
-          <ButtonComponent
-            type="button"
             color="success"
-            label={unsafeLocalizedString('Success style')}
+            label={unsafeLocalizedString('Success color')}
             icon={option.some(checkmark)}
             action={() => onClick('success')}
           />
           <ButtonComponent
             type="button"
             color="warning"
-            label={unsafeLocalizedString('Warning style')}
+            flat
+            label={unsafeLocalizedString('Warning color, flat')}
             icon={option.some(warning)}
             action={() => onClick('warning')}
           />
           <ButtonComponent
             type="button"
             color="danger"
-            label={unsafeLocalizedString('Danger style')}
+            flat
+            label={unsafeLocalizedString('Danger color, flat')}
             icon={option.some(skull)}
             action={() => onClick('danger')}
           />
@@ -177,7 +172,7 @@ export const Button: Story = ({ onClick }) => {
           />
           <ButtonComponent
             type="iconButton"
-            color="flat"
+            flat
             icon={heart}
             action={() => onClick('flat')}
           />

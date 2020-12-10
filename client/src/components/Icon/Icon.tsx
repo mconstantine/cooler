@@ -1,9 +1,10 @@
 import { FC } from 'react'
+import { Color } from '../../globalDomain'
 import './Icon.scss'
 
 interface IconProps {
   src: string
-  color?: 'default' | 'primary' | 'success' | 'warning' | 'danger'
+  color?: Color
   size?: 'large' | 'medium' | 'small'
 }
 

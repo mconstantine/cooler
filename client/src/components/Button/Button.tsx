@@ -2,13 +2,14 @@ import { boolean, option } from 'fp-ts'
 import { constNull, constUndefined, flow, pipe } from 'fp-ts/function'
 import { Option } from 'fp-ts/Option'
 import { FC, MouseEvent } from 'react'
-import { LocalizedString } from '../../globalDomain'
+import { Color, LocalizedString } from '../../globalDomain'
 import { composeClassName } from '../../misc/composeClassName'
 import { Icon } from '../Icon/Icon'
 import './Button.scss'
 
 interface CommonProps {
-  color?: 'default' | 'primary' | 'flat' | 'success' | 'warning' | 'danger'
+  color?: Color
+  flat?: boolean
   disabled?: boolean
 }
 
@@ -80,6 +81,7 @@ function foldButtonLink<T>(
 export const Button: FC<Props> = ({
   color = 'default',
   disabled = false,
+  flat = false,
   ...props
 }) => {
   const href = pipe(
@@ -120,6 +122,14 @@ export const Button: FC<Props> = ({
     )
   )
 
+  const flatClassName = pipe(
+    flat,
+    boolean.fold(
+      () => '',
+      () => 'flat'
+    )
+  )
+
   const withIconClassName = pipe(
     props,
     foldLabelIcon(
@@ -140,6 +150,7 @@ export const Button: FC<Props> = ({
       className={composeClassName(
         'Button',
         color,
+        flatClassName,
         disabledClassName,
         withIconClassName
       )}
@@ -153,10 +164,10 @@ export const Button: FC<Props> = ({
           props =>
             pipe(
               props.icon,
-              option.map(src => <Icon size="medium" src={src} />),
+              option.map(src => <Icon size="medium" color={color} src={src} />),
               option.toNullable
             ),
-          props => <Icon size="medium" src={props.icon} />
+          props => <Icon size="medium" color={color} src={props.icon} />
         )
       )}
       {pipe(

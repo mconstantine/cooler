@@ -11,3 +11,5 @@ export const LocalizedString = t.brand(
 )
 
 export type LocalizedString = t.TypeOf<typeof LocalizedString>
+
+export type Color = 'default' | 'primary' | 'success' | 'warning' | 'danger'

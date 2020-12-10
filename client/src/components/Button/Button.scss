@@ -42,11 +42,6 @@
     color: $color-primary-dark;
     border-color: $color-primary-dark;
 
-    .Icon > svg * {
-      fill: $color-primary-dark;
-      stroke: $color-primary-dark;
-    }
-
     &:not(.disabled):hover {
       background-color: rgba($color-primary-dark, $opacity-hover);
     }
@@ -59,11 +54,6 @@
   &.success {
     color: $color-success-dark;
     border-color: $color-success-dark;
-
-    .Icon > svg * {
-      fill: $color-success-dark;
-      stroke: $color-success-dark;
-    }
 
     &:not(.disabled):hover {
       background-color: rgba($color-success-dark, $opacity-hover);
@@ -78,11 +68,6 @@
     color: $color-warning-dark;
     border-color: $color-warning-dark;
 
-    .Icon > svg * {
-      fill: $color-warning-dark;
-      stroke: $color-warning-dark;
-    }
-
     &:not(.disabled):hover {
       background-color: rgba($color-warning-dark, $opacity-hover);
     }
@@ -95,11 +80,6 @@
   &.danger {
     color: $color-error-dark;
     border-color: $color-error-dark;
-
-    .Icon > svg * {
-      fill: $color-error-dark;
-      stroke: $color-error-dark;
-    }
 
     &:not(.disabled):hover {
       background-color: rgba($color-error-dark, $opacity-hover);
