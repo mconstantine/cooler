@@ -1,0 +1,66 @@
+@import '../../variables';
+
+$list-max-width: $max-width-text + $icon-size-medium + 16px;
+
+.List {
+  .heading {
+    margin-bottom: 32px;
+    max-width: $list-max-width;
+  }
+
+  ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  li {
+    width: 100%;
+    min-width: 100%;
+    padding: 16px 0;
+
+    .itemContentWrapper {
+      max-width: $list-max-width;
+      display: flex;
+      align-items: center;
+    }
+
+    .Icon {
+      margin-right: 16px;
+    }
+
+    .Label,
+    .content {
+      margin-top: 0;
+      margin-bottom: 8px;
+    }
+
+    .description {
+      margin-top: 0;
+      margin-bottom: 0;
+      opacity: $text-medium-emphasis-amount;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+  }
+
+  &.unwrap li .description {
+    white-space: initial;
+    overflow: visible;
+  }
+
+  &.iconsAtTheEnd li .itemContentWrapper {
+    justify-content: space-between;
+
+    .Icon {
+      order: 1;
+      margin-right: 0;
+      margin-left: 16px;
+    }
+  }
+}
+
+.List + .List {
+  @include ss('padding-top', $spacing-large-mobile, $spacing-large-desktop);
+}
