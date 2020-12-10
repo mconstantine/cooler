@@ -1,5 +1,5 @@
 import { FC } from 'react'
-import './Cooler.scss'
+import '../../index.scss'
 
 interface Props {
   theme: 'light' | 'dark'

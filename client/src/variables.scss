@@ -8,13 +8,34 @@ $breakpoint-mobile: 320px;
 $breakpoint-desktop: 720px;
 
 $border-radius-large: 8px;
+$border-radius-small: 2px;
 
-$color-grey-soft-light: #d9d9d9;
+$color-grey-soft-light: #cecece;
+$color-grey-soft-dark: #313131;
+$color-primary-dark: #90caf9;
+$color-primary-light: #2196f3;
+$color-success-dark: #81c784;
+$color-success-light: #4caf50;
+$color-warning-dark: #fff176;
+$color-warning-light: #fbc02d;
+$color-error-dark: #e57373;
+$color-error-light: #f44336;
+
+$text-high-emphasis-amount: 0.87;
+$text-medium-emphasis-amount: 0.6;
+$text-low-emphasis-amount: 0.38;
+
+$opacity-hover: 0.15;
+$opacity-active: 0.3;
 
 $font-weight-light: 300;
 $font-weight-regular: 400;
 $font-weight-medium: 500;
 $font-weight-bold: 700;
+
+$transition-fast: 150ms;
+$transition-medium: 300ms;
+$transition-slow: 500ms;
 
 @mixin ss($property, $min, $max) {
   @include smoothstep(
