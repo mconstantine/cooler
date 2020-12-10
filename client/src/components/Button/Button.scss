@@ -1,0 +1,204 @@
+@import '../../variables';
+
+.Button {
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 12px;
+  font-size: 12px;
+  line-height: 12px;
+  font-weight: $font-weight-bold;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  border: 1px solid #fff;
+  border-radius: $border-radius-small;
+  transition: background-color $transition-fast $linear;
+  cursor: pointer;
+  color: inherit;
+  text-decoration: none;
+
+  &.withIcon,
+  &.iconOnly {
+    padding: 8px;
+  }
+
+  &:not(.disabled):hover {
+    background-color: rgba(#fff, $opacity-hover);
+  }
+
+  &:not(.disabled):active {
+    background-color: rgba(#fff, $opacity-active);
+  }
+
+  &.disabled {
+    opacity: $text-low-emphasis-amount;
+    cursor: default;
+  }
+
+  &.flat {
+    border-width: 0;
+  }
+
+  &.primary {
+    color: $color-primary-dark;
+    border-color: $color-primary-dark;
+
+    .Icon > svg * {
+      fill: $color-primary-dark;
+      stroke: $color-primary-dark;
+    }
+
+    &:not(.disabled):hover {
+      background-color: rgba($color-primary-dark, $opacity-hover);
+    }
+
+    &:not(.disabled):active {
+      background-color: rgba($color-primary-dark, $opacity-active);
+    }
+  }
+
+  &.success {
+    color: $color-success-dark;
+    border-color: $color-success-dark;
+
+    .Icon > svg * {
+      fill: $color-success-dark;
+      stroke: $color-success-dark;
+    }
+
+    &:not(.disabled):hover {
+      background-color: rgba($color-success-dark, $opacity-hover);
+    }
+
+    &:not(.disabled):active {
+      background-color: rgba($color-success-dark, $opacity-active);
+    }
+  }
+
+  &.warning {
+    color: $color-warning-dark;
+    border-color: $color-warning-dark;
+
+    .Icon > svg * {
+      fill: $color-warning-dark;
+      stroke: $color-warning-dark;
+    }
+
+    &:not(.disabled):hover {
+      background-color: rgba($color-warning-dark, $opacity-hover);
+    }
+
+    &:not(.disabled):active {
+      background-color: rgba($color-warning-dark, $opacity-active);
+    }
+  }
+
+  &.danger {
+    color: $color-error-dark;
+    border-color: $color-error-dark;
+
+    .Icon > svg * {
+      fill: $color-error-dark;
+      stroke: $color-error-dark;
+    }
+
+    &:not(.disabled):hover {
+      background-color: rgba($color-error-dark, $opacity-hover);
+    }
+
+    &:not(.disabled):active {
+      background-color: rgba($color-error-dark, $opacity-active);
+    }
+  }
+
+  &.iconOnly {
+    border-width: 0;
+  }
+
+  .Icon + * {
+    margin-left: 8px;
+  }
+}
+
+.light .Button {
+  border-color: #000;
+
+  &:not(.disabled):hover {
+    background-color: rgba(#000, $opacity-hover);
+  }
+
+  &:not(.disabled):active {
+    background-color: rgba(#000, $opacity-active);
+  }
+
+  &.primary {
+    color: $color-primary-light;
+    border-color: $color-primary-light;
+
+    .Icon > svg * {
+      fill: $color-primary-light;
+      stroke: $color-primary-light;
+    }
+
+    &:not(.disabled):hover {
+      background-color: rgba($color-primary-light, $opacity-hover);
+    }
+
+    &:not(.disabled):active {
+      background-color: rgba($color-primary-light, $opacity-active);
+    }
+  }
+
+  &.success {
+    color: $color-success-light;
+    border-color: $color-success-light;
+
+    .Icon > svg * {
+      fill: $color-success-light;
+      stroke: $color-success-light;
+    }
+
+    &:not(.disabled):hover {
+      background-color: rgba($color-success-light, $opacity-hover);
+    }
+
+    &:not(.disabled):active {
+      background-color: rgba($color-success-light, $opacity-active);
+    }
+  }
+
+  &.warning {
+    color: $color-warning-light;
+    border-color: $color-warning-light;
+
+    .Icon > svg * {
+      fill: $color-warning-light;
+      stroke: $color-warning-light;
+    }
+
+    &:not(.disabled):hover {
+      background-color: rgba($color-warning-light, $opacity-hover);
+    }
+
+    &:not(.disabled):active {
+      background-color: rgba($color-warning-light, $opacity-active);
+    }
+  }
+
+  &.danger {
+    color: $color-error-light;
+    border-color: $color-error-light;
+
+    .Icon > svg * {
+      fill: $color-error-light;
+      stroke: $color-error-light;
+    }
+
+    &:not(.disabled):hover {
+      background-color: rgba($color-error-light, $opacity-hover);
+    }
+
+    &:not(.disabled):active {
+      background-color: rgba($color-error-light, $opacity-active);
+    }
+  }
+}
