@@ -9,7 +9,16 @@ export const LocalizedString = t.brand(
   (_): _ is t.Branded<string, LocalizedStringBrand> => true,
   'LocalizedString'
 )
-
 export type LocalizedString = t.TypeOf<typeof LocalizedString>
 
-export type Color = 'default' | 'primary' | 'success' | 'warning' | 'danger'
+export const Color = t.keyof(
+  {
+    default: true,
+    primary: true,
+    success: true,
+    warning: true,
+    danger: true
+  },
+  'Color'
+)
+export type Color = t.TypeOf<typeof Color>

@@ -4,7 +4,6 @@ import {
   airplane,
   checkmark,
   heart,
-  link,
   skull,
   star,
   warning
@@ -193,26 +192,6 @@ export const Button: Story = ({ onClick }) => {
             color="danger"
             icon={skull}
             action={() => onClick('danger')}
-          />
-        </Buttons>
-
-        <Separator />
-
-        <h4>Link example</h4>
-        <Buttons>
-          <ButtonComponent
-            type="link"
-            label={unsafeLocalizedString('Go to a website')}
-            icon={option.some(link)}
-            href="https://www.example.com"
-            target="_blank"
-          />
-          <ButtonComponent
-            type="iconLink"
-            icon={link}
-            href="https://www.example.com"
-            target="_blank"
-            disabled
           />
         </Buttons>
       </Content>
