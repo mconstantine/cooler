@@ -1,6 +1,7 @@
 @import '../../variables';
 
-$list-max-width: $max-width-text + $icon-size-medium + 16px;
+$list-icons-space: $icon-size-large + $icon-size-medium + 32px;
+$list-max-width: $max-width-text + $list-icons-space;
 
 .List {
   .heading {
@@ -16,32 +17,50 @@ $list-max-width: $max-width-text + $icon-size-medium + 16px;
 
   li {
     width: 100%;
-    min-width: 100%;
-    padding: 16px 0;
+    max-width: $list-max-width;
+    padding: 16px 8px;
+
+    &.disabled {
+      opacity: $text-low-emphasis-amount;
+    }
+
+    .itemContentOuterWrapper {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
 
     .itemContentWrapper {
-      max-width: $list-max-width;
       display: flex;
       align-items: center;
+      flex-basis: 100%;
     }
 
     .Icon {
       margin-right: 16px;
     }
 
-    .Label,
-    .content {
+    .Label {
       margin-top: 0;
       margin-bottom: 8px;
     }
 
+    .content {
+      margin-bottom: 0;
+    }
+
     .description {
-      margin-top: 0;
+      margin-top: 8px;
       margin-bottom: 0;
       opacity: $text-medium-emphasis-amount;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      max-width: calc(90vw - #{$list-icons-space});
+
+      @include media($list-max-width / 90 * 100) {
+        max-width: calc(#{$list-max-width} - #{$list-icons-space});
+      }
     }
   }
 
@@ -58,6 +77,32 @@ $list-max-width: $max-width-text + $icon-size-medium + 16px;
       margin-right: 0;
       margin-left: 16px;
     }
+  }
+}
+
+.List.routed li {
+  transition: background-color $transition-fast;
+
+  &:not(.disabled) {
+    cursor: pointer;
+  }
+
+  &:not(.disabled):hover {
+    background-color: rgba(#fff, $opacity-hover);
+  }
+
+  &:not(.disabled):active {
+    background-color: rgba(#fff, $opacity-active);
+  }
+}
+
+.light .List.routed li {
+  &:not(.disabled):hover {
+    background-color: rgba(#000, $opacity-hover);
+  }
+
+  &:not(.disabled):active {
+    background-color: rgba(#000, $opacity-active);
   }
 }
 
