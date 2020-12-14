@@ -208,7 +208,7 @@ export const IconOnlyButton: Story = ({ onClick }) => {
 }
 
 const meta: Meta = {
-  title: 'Cooler/Button/Button',
+  title: 'Cooler/Buttons/Button',
   argTypes: {
     onClick: {
       action: 'clicked'

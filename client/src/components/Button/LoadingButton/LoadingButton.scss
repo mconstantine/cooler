@@ -1,0 +1,70 @@
+@import '../Button/Button';
+
+.LoadingButton {
+  .iconsAnimationWrapper {
+    position: relative;
+    width: $icon-size-medium;
+    height: $icon-size-medium;
+    margin-right: 8px;
+    overflow: hidden;
+
+    .Icon {
+      position: absolute;
+      top: 0;
+      left: 0;
+      margin-left: 0;
+      transform: translate3d(0, 0, 0);
+      opacity: 1;
+    }
+
+    .nextIcon {
+      transform: translate3d(0, 48px, 0);
+      opacity: 0;
+    }
+
+    &.animating {
+      .Icon {
+        animation: moveToAbove $transition-fast $easeInOut forwards;
+      }
+
+      .nextIcon {
+        animation: moveFromBelow $transition-fast $easeInOut forwards;
+      }
+    }
+  }
+
+  &.state-loading .iconsAnimationWrapper .Icon svg {
+    animation: rotate 1s linear infinite;
+  }
+}
+
+@keyframes moveFromBelow {
+  0% {
+    transform: translate3d(0, 48px, 0);
+    opacity: 0;
+  }
+  100% {
+    transform: translate3d(0, 0, 0);
+    opacity: 1;
+  }
+}
+
+@keyframes moveToAbove {
+  0% {
+    transform: translate3d(0, 0, 0);
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(0, -48px, 0);
+    opacity: 0;
+  }
+}
+
+@keyframes rotate {
+  0% {
+    transform: rotate(0);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
