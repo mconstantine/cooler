@@ -17,7 +17,7 @@ const description = unsafeLocalizedString(
   'Lorem ipsum dolor sit, amet consectetur adipisicing elit. Corporis autem ex vel aliquid enim commodi laudantium esse eos eligendi ullam, ratione ipsam iste dolorem consectetur nesciunt at incidunt eveniet hic.'
 )
 
-export const Readonly: Story = ({ unwrapDescriptions }) => {
+export const ReadonlyList: Story = ({ unwrapDescriptions }) => {
   return (
     <CoolerStory>
       <Content>
@@ -55,6 +55,15 @@ export const Readonly: Story = ({ unwrapDescriptions }) => {
             }
           ]}
         />
+      </Content>
+    </CoolerStory>
+  )
+}
+
+export const ReadonlyListWithIcons: Story = ({ unwrapDescriptions }) => {
+  return (
+    <CoolerStory>
+      <Content>
         <List
           type="readonlyWithIcon"
           iconsPosition="start"
@@ -126,6 +135,7 @@ export const Readonly: Story = ({ unwrapDescriptions }) => {
             }
           ]}
         />
+
         <List
           type="readonlyWithIcon"
           iconsPosition="end"
@@ -202,7 +212,7 @@ export const Readonly: Story = ({ unwrapDescriptions }) => {
   )
 }
 
-export const Routed: Story = ({ unwrapDescriptions, onClick }) => {
+export const RoutedList: Story = ({ unwrapDescriptions, onClick }) => {
   return (
     <CoolerStory>
       <Content>
@@ -244,11 +254,18 @@ export const Routed: Story = ({ unwrapDescriptions, onClick }) => {
             }
           ]}
         />
+      </Content>
+    </CoolerStory>
+  )
+}
+
+export const RoutedListWithIcons: Story = ({ unwrapDescriptions, onClick }) => {
+  return (
+    <CoolerStory>
+      <Content>
         <List
           type="routedWithIcon"
-          heading={option.some(
-            unsafeLocalizedString('Routed list with icons at the start')
-          )}
+          heading={option.some(unsafeLocalizedString('Routed list with icons'))}
           unwrapDescriptions={unwrapDescriptions}
           items={[
             {
@@ -327,7 +344,6 @@ export const Routed: Story = ({ unwrapDescriptions, onClick }) => {
 
 const meta: Meta = {
   title: 'Cooler/List',
-  component: Readonly,
   args: {
     unwrapDescriptions: false
   },

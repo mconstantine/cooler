@@ -2,9 +2,9 @@ import { boolean, option } from 'fp-ts'
 import { constNull, pipe } from 'fp-ts/function'
 import { Option } from 'fp-ts/Option'
 import { FC } from 'react'
-import { Color, LocalizedString } from '../../globalDomain'
-import { composeClassName } from '../../misc/composeClassName'
-import { Icon } from '../Icon/Icon'
+import { Color, LocalizedString } from '../../../globalDomain'
+import { composeClassName } from '../../../misc/composeClassName'
+import { Icon } from '../../Icon/Icon'
 import './Button.scss'
 
 interface CommonProps {

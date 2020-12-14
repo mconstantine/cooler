@@ -8,18 +8,16 @@ import {
   star,
   warning
 } from 'ionicons/icons'
-import { unsafeLocalizedString } from '../a18n'
-import { Button as ButtonComponent } from '../components/Button/Button'
-import { Buttons } from '../components/Buttons/Buttons'
-import { Content } from '../components/Content/Content'
-import { Separator } from '../components/Separator/Separator'
-import { CoolerStory } from './CoolerStory'
+import { unsafeLocalizedString } from '../../a18n'
+import { Button as ButtonComponent } from '../../components/Button/Button/Button'
+import { Buttons } from '../../components/Button/Buttons/Buttons'
+import { Content } from '../../components/Content/Content'
+import { CoolerStory } from '../CoolerStory'
 
 export const Button: Story = ({ onClick }) => {
   return (
     <CoolerStory>
       <Content>
-        <h4>Buttons</h4>
         <Buttons>
           <ButtonComponent
             type="button"
@@ -111,10 +109,15 @@ export const Button: Story = ({ onClick }) => {
             disabled
           />
         </Buttons>
+      </Content>
+    </CoolerStory>
+  )
+}
 
-        <Separator />
-
-        <h4>Buttons with icons (some flat)</h4>
+export const ButtonWithIcon: Story = ({ onClick }) => {
+  return (
+    <CoolerStory>
+      <Content>
         <Buttons>
           <ButtonComponent
             type="button"
@@ -153,10 +156,15 @@ export const Button: Story = ({ onClick }) => {
             action={() => onClick('danger')}
           />
         </Buttons>
+      </Content>
+    </CoolerStory>
+  )
+}
 
-        <Separator />
-
-        <h4>Icons only</h4>
+export const IconOnlyButton: Story = ({ onClick }) => {
+  return (
+    <CoolerStory>
+      <Content>
         <Buttons>
           <ButtonComponent
             type="iconButton"
@@ -200,7 +208,7 @@ export const Button: Story = ({ onClick }) => {
 }
 
 const meta: Meta = {
-  title: 'Cooler/Button',
+  title: 'Cooler/Button/Button',
   argTypes: {
     onClick: {
       action: 'clicked'
