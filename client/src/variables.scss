@@ -8,6 +8,7 @@ $breakpoint-mobile: 320px;
 $breakpoint-desktop: 720px;
 
 $border-radius-large: 8px;
+$border-radius-medium: 4px;
 $border-radius-small: 2px;
 
 $icon-size-large: 32px;
@@ -31,6 +32,8 @@ $text-low-emphasis-amount: 0.38;
 
 $opacity-hover: 0.15;
 $opacity-active: 0.3;
+$opacity-background: 0.08;
+$opacity-disabled: 0.38;
 
 $font-weight-light: 300;
 $font-weight-regular: 400;
@@ -40,6 +43,14 @@ $font-weight-bold: 700;
 $transition-fast: 150ms;
 $transition-medium: 300ms;
 $transition-slow: 500ms;
+
+@mixin label {
+  font-size: 14px;
+  letter-spacing: 1px;
+  line-height: 1;
+  font-weight: $font-weight-medium;
+  opacity: $text-medium-emphasis-amount;
+}
 
 @mixin ss($property, $min, $max) {
   @include smoothstep(

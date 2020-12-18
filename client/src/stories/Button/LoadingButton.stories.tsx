@@ -1,5 +1,5 @@
 import { Meta, Story } from '@storybook/react'
-import { either, option, task, taskEither } from 'fp-ts'
+import { either, task, taskEither } from 'fp-ts'
 import { pipe, constVoid } from 'fp-ts/function'
 import { send } from 'ionicons/icons'
 import { unsafeLocalizedString } from '../../a18n'
