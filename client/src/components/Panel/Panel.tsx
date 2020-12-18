@@ -1,6 +1,14 @@
 import { FC } from 'react'
+import { LocalizedString } from '../../globalDomain'
 import './Panel.scss'
 
-export const Panel: FC = ({ children }) => (
-  <div className="Panel">{children}</div>
+interface Props {
+  title?: LocalizedString
+}
+
+export const Panel: FC<Props> = ({ title, children }) => (
+  <div className="Panel">
+    {title ? <h3>{title}</h3> : null}
+    {children}
+  </div>
 )
