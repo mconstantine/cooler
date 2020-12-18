@@ -4,4 +4,27 @@
   @include label;
   margin-top: 8px;
   margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+
+  .Icon {
+    margin-right: 8px;
+  }
+
+  &.primary {
+    color: $color-primary-dark;
+  }
+
+  &.success {
+    color: $color-success-dark;
+  }
+
+  &.warning {
+    color: $color-warning-dark;
+  }
+
+  &.danger {
+    opacity: 1;
+    color: $color-error-dark;
+  }
 }
