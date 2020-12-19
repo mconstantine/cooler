@@ -1,12 +1,17 @@
 @import '../Button/Button';
 
 .LoadingButton {
+  position: relative;
+  padding: 0;
+
   .iconsAnimationWrapper {
     position: relative;
     width: $icon-size-medium;
     height: $icon-size-medium;
-    margin-right: 8px;
     overflow: hidden;
+    position: absolute;
+    top: 8px;
+    left: 8px;
 
     .Icon {
       position: absolute;
@@ -35,6 +40,31 @@
 
   &.state-loading .iconsAnimationWrapper .Icon svg {
     animation: rotate 1s linear infinite;
+  }
+
+  button,
+  input {
+    z-index: 1;
+    position: relative;
+    background-color: transparent;
+    color: inherit;
+    font-family: inherit;
+    font-size: inherit;
+    font-weight: inherit;
+    text-transform: inherit;
+    letter-spacing: inherit;
+    border: none;
+    outline: none;
+    margin: 0;
+    padding: 0;
+    cursor: inherit;
+    min-width: $icon-size-medium + 16px;
+    min-height: $icon-size-medium + 16px;
+    box-sizing: border-box;
+    padding-top: 8px;
+    padding-bottom: 8px;
+    padding-right: 8px;
+    padding-left: $icon-size-medium + 16px;
   }
 }
 

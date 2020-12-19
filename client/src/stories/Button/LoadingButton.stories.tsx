@@ -14,6 +14,7 @@ export const LoadingButton: Story = () => {
       <Content>
         <Buttons>
           <LoadingButtonComponent
+            type="button"
             label={unsafeLocalizedString('I succeed')}
             action={taskEither.fromTask(
               pipe(task.fromIO(constVoid), task.delay(2000))
@@ -22,6 +23,7 @@ export const LoadingButton: Story = () => {
             color="primary"
           />
           <LoadingButtonComponent
+            type="button"
             label={unsafeLocalizedString('I fail')}
             action={pipe(
               task.fromIO(() => either.left(new Error('Some Error!'))),
@@ -32,8 +34,8 @@ export const LoadingButton: Story = () => {
             flat
           />
           <LoadingButtonComponent
-            label={unsafeLocalizedString('Disabled')}
-            action={taskEither.fromIO(constVoid)}
+            type="input"
+            label={unsafeLocalizedString('Disabled input')}
             icon={send}
             disabled
           />
