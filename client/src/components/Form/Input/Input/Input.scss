@@ -1,0 +1,101 @@
+@import '../../../../variables';
+
+.Input {
+  display: flex;
+  flex-direction: column;
+
+  label {
+    background-color: rgba(#000, $opacity-active);
+    padding: 8px 12px;
+    border-bottom: 1px solid #fff;
+    border-top-left-radius: $border-radius-medium;
+    border-top-right-radius: $border-radius-medium;
+
+    span {
+      display: block;
+      @include label;
+    }
+  }
+
+  input {
+    width: 100%;
+    background-color: transparent;
+    border: none;
+    color: inherit;
+    font-size: inherit;
+    font-weight: inherit;
+    line-height: 1;
+    margin-top: 12px;
+    padding: 0;
+    outline: none;
+  }
+
+  .error {
+    display: flex;
+    align-items: center;
+    margin-top: 12px;
+
+    .Label {
+      margin-top: 0;
+      margin-bottom: 0;
+      margin-left: 8px;
+      opacity: 1;
+      color: $color-error-dark;
+    }
+  }
+
+  &.focus {
+    color: $color-primary-dark;
+
+    label {
+      border-bottom-color: $color-primary-dark;
+    }
+  }
+
+  &.error {
+    color: $color-error-dark;
+
+    label {
+      border-bottom-color: $color-error-dark;
+
+      span {
+        opacity: 1;
+      }
+    }
+  }
+
+  &.disabled {
+    opacity: $opacity-disabled;
+  }
+}
+
+.Input + .Input {
+  margin-top: 24px;
+}
+
+.light .Input {
+  label {
+    background-color: rgba(#000, $opacity-background);
+    border-bottom-color: #000;
+  }
+
+  .error .Label {
+    color: $color-error-light;
+  }
+
+  &.focus {
+    color: $color-primary-light;
+
+    label {
+      border-bottom-color: $color-primary-light;
+    }
+  }
+
+  &.error {
+    color: $color-error-light;
+
+    label {
+      border-bottom-color: $color-error-light;
+    }
+  }
+}

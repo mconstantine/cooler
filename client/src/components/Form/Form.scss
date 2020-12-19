@@ -1,0 +1,11 @@
+@import '../../variables';
+
+.Form {
+  > *:first-child {
+    margin-top: 32px;
+  }
+
+  .Buttons {
+    margin-top: 32px;
+  }
+}
