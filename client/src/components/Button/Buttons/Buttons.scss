@@ -1,6 +1,13 @@
 .Buttons {
   margin-top: -16px;
   margin-left: -16px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+
+  &.spread {
+    justify-content: space-between;
+  }
 
   .Button {
     margin-top: 16px;
