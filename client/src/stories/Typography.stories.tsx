@@ -6,22 +6,22 @@ import { CoolerStory } from './CoolerStory'
 export const Headings: Story = () => (
   <CoolerStory>
     <Content>
-      <Panel>
+      <Panel framed>
         <h1>Lorem ipsum, dolor sit amet</h1>
       </Panel>
-      <Panel>
+      <Panel framed>
         <h2>Lorem ipsum, dolor sit amet</h2>
       </Panel>
-      <Panel>
+      <Panel framed>
         <h3>Lorem ipsum, dolor sit amet</h3>
       </Panel>
-      <Panel>
+      <Panel framed>
         <h4>Lorem ipsum, dolor sit amet</h4>
       </Panel>
-      <Panel>
+      <Panel framed>
         <h5>Lorem ipsum, dolor sit amet</h5>
       </Panel>
-      <Panel>
+      <Panel framed>
         <h6>Lorem ipsum, dolor sit amet</h6>
       </Panel>
     </Content>

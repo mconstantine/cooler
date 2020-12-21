@@ -7,9 +7,10 @@ import './Modal.scss'
 interface Props {
   isOpen: boolean
   onClose: () => void
+  framed?: boolean
 }
 
-export const Modal: FC<Props> = ({ isOpen, onClose, children }) => {
+export const Modal: FC<Props> = ({ isOpen, onClose, framed, children }) => {
   const openClassName = isOpen ? 'open' : ''
 
   useEffect(() => {
@@ -33,7 +34,7 @@ export const Modal: FC<Props> = ({ isOpen, onClose, children }) => {
   return createPortal(
     <div className={composeClassName('Modal', openClassName)}>
       <div className="dim" onClick={onClose} />
-      <Panel>{children}</Panel>
+      <Panel framed={framed}>{children}</Panel>
     </div>,
     document.body
   )

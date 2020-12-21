@@ -37,7 +37,7 @@ export const TextInput: Story = () => {
   return (
     <CoolerStory>
       <Content>
-        <Panel>
+        <Panel framed>
           <TextInputComponent
             label={unsafeLocalizedString('Default text input')}
             name="text-input"

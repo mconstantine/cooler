@@ -13,7 +13,7 @@ export const NumberInput: Story = () => {
   return (
     <CoolerStory>
       <Content>
-        <Panel>
+        <Panel framed>
           <NumberInputComponent
             value={numberInputValue}
             onChange={setNumberInputValue}

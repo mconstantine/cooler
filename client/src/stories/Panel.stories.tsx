@@ -7,7 +7,7 @@ import { CoolerStory } from './CoolerStory'
 export const Panel: Story = () => (
   <CoolerStory>
     <Content>
-      <PanelComponent title={unsafeLocalizedString('Title')}>
+      <PanelComponent title={unsafeLocalizedString('Title')} framed>
         <p>
           Lorem ipsum dolor sit amet consectetur, adipisicing elit. Veritatis,
           eos omnis iure ex ab optio amet provident voluptates id dicta
