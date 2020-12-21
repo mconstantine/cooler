@@ -1,6 +1,6 @@
 @import '../../variables';
 
-$list-icons-space: $icon-size-large + 32px;
+$list-icons-space: $icon-size-large + 48px;
 $list-icons-space-details: $icon-size-large + $icon-size-medium + 48px;
 $list-max-width: $max-width-text + $list-icons-space;
 $list-max-width-details: $max-width-text + $list-icons-space-details;
@@ -9,11 +9,12 @@ $list-max-width-details: $max-width-text + $list-icons-space-details;
   .heading {
     margin-bottom: 32px;
     max-width: $list-max-width;
+    margin-left: auto;
+    margin-right: auto;
   }
 
   ul {
     list-style-type: none;
-    margin: 0;
     padding: 0;
   }
 
@@ -21,7 +22,9 @@ $list-max-width-details: $max-width-text + $list-icons-space-details;
     width: 100%;
     max-width: $list-max-width;
     box-sizing: border-box;
-    padding: 16px 8px;
+    padding: 16px;
+    margin-left: auto;
+    margin-right: auto;
 
     &.disabled {
       opacity: $text-low-emphasis-amount;
@@ -41,6 +44,10 @@ $list-max-width-details: $max-width-text + $list-icons-space-details;
 
     .Icon {
       margin-right: 16px;
+    }
+
+    .routeArrow .Icon {
+      margin-right: 0;
     }
 
     .Label {
