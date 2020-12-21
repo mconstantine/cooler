@@ -212,7 +212,7 @@ export const ReadonlyListWithIcons: Story = ({ unwrapDescriptions }) => {
   )
 }
 
-export const RoutedList: Story = ({ unwrapDescriptions, onClick }) => {
+export const RoutedList: Story = ({ unwrapDescriptions, onClick, details }) => {
   return (
     <CoolerStory>
       <Content>
@@ -220,6 +220,7 @@ export const RoutedList: Story = ({ unwrapDescriptions, onClick }) => {
           type="routed"
           heading={option.some(unsafeLocalizedString('Routed list'))}
           unwrapDescriptions={unwrapDescriptions}
+          details={details}
           items={[
             {
               key: 0,
@@ -259,7 +260,11 @@ export const RoutedList: Story = ({ unwrapDescriptions, onClick }) => {
   )
 }
 
-export const RoutedListWithIcons: Story = ({ unwrapDescriptions, onClick }) => {
+export const RoutedListWithIcons: Story = ({
+  unwrapDescriptions,
+  onClick,
+  details
+}) => {
   return (
     <CoolerStory>
       <Content>
@@ -267,6 +272,7 @@ export const RoutedListWithIcons: Story = ({ unwrapDescriptions, onClick }) => {
           type="routedWithIcon"
           heading={option.some(unsafeLocalizedString('Routed list with icons'))}
           unwrapDescriptions={unwrapDescriptions}
+          details={details}
           items={[
             {
               key: 0,
@@ -345,7 +351,8 @@ export const RoutedListWithIcons: Story = ({ unwrapDescriptions, onClick }) => {
 const meta: Meta = {
   title: 'Cooler/List',
   args: {
-    unwrapDescriptions: false
+    unwrapDescriptions: false,
+    details: true
   },
   argTypes: {
     onClick: {

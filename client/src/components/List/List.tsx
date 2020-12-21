@@ -106,10 +106,12 @@ type Props = {
   | {
       type: 'routed'
       items: RoutedItem[]
+      details?: boolean
     }
   | {
       type: 'routedWithIcon'
       items: RoutedItemWithIcon[]
+      details?: boolean
     }
 )
 
@@ -135,13 +137,20 @@ export const List: FC<Props> = ({
   const routedClassName =
     props.type === 'routed' || props.type === 'routedWithIcon' ? 'routed' : ''
 
+  const hasDetails =
+    (props.type === 'routed' || props.type === 'routedWithIcon') &&
+    props.details
+
+  const detailsClassName = hasDetails ? 'details' : ''
+
   return (
     <div
       className={composeClassName(
         'List',
         routedClassName,
         unwrap,
-        iconsAtTheEndClassName
+        iconsAtTheEndClassName,
+        detailsClassName
       )}
     >
       {pipe(
@@ -200,14 +209,11 @@ export const List: FC<Props> = ({
                 </div>
               </div>
 
-              {pipe(
-                item,
-                foldItemRouted(props.type, constNull, () => (
-                  <div className="routeArrow">
-                    <Icon src={chevronForwardOutline} size="medium" />
-                  </div>
-                ))
-              )}
+              {hasDetails ? (
+                <div className="routeArrow">
+                  <Icon src={chevronForwardOutline} size="medium" />
+                </div>
+              ) : null}
             </div>
           </li>
         ))}
