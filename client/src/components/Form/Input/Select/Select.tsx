@@ -16,9 +16,10 @@ interface Props extends FieldProps {
   options: Record<string, LocalizedString>
   onFocus?: (e: FocusEvent) => void
   onBlur?: (e: FocusEvent) => void
+  unsearchable?: boolean
 }
 
-export const Select: FC<Props> = props => {
+export const Select: FC<Props> = ({ unsearchable = false, ...props }) => {
   const [isFocus, setIsFocus] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
   const [highlightedItem, setHighlightedItem] = useState<Option<string>>(
@@ -36,8 +37,15 @@ export const Select: FC<Props> = props => {
 
   const regex = new RegExp(label, 'i')
   const filteredOptions: Record<string, LocalizedString> = pipe(
-    props.options,
-    record.filter(label => regex.test(label))
+    unsearchable,
+    boolean.fold(
+      () =>
+        pipe(
+          props.options,
+          record.filter(label => regex.test(label))
+        ),
+      () => props.options
+    )
   )
 
   const inputRef = useRef<HTMLInputElement>(null)
@@ -230,6 +238,7 @@ export const Select: FC<Props> = props => {
           onFocus={onFocus}
           onBlur={onBlur}
           autoComplete="off"
+          readOnly={unsearchable}
         />
         <Button
           type="iconButton"
