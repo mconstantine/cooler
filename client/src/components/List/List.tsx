@@ -27,6 +27,7 @@ interface ReadonlyItem {
   content: LocalizedString
   description: Option<LocalizedString>
   disabled?: boolean
+  className?: string
 }
 
 interface ReadonlyItemWithIcon {
@@ -159,64 +160,71 @@ export const List: FC<Props> = ({
         option.toNullable
       )}
       <ul>
-        {(items as Item[]).map(item => (
-          <li
-            key={item.key}
-            onClick={pipe(
-              item,
-              foldItemRouted(
-                props.type,
-                constUndefined,
-                ({ action }) => (e: MouseEvent) => {
-                  e.preventDefault()
+        {(items as Item[]).map(item => {
+          const disabledClassName = item.disabled ? 'disabled' : ''
 
-                  if (item.disabled) {
-                    return
+          return (
+            <li
+              key={item.key}
+              onClick={pipe(
+                item,
+                foldItemRouted(
+                  props.type,
+                  constUndefined,
+                  ({ action }) => (e: MouseEvent) => {
+                    e.preventDefault()
+
+                    if (item.disabled) {
+                      return
+                    }
+
+                    return action()
                   }
-
-                  return action()
-                }
-              )
-            )}
-            className={composeClassName(item.disabled ? 'disabled' : '')}
-          >
-            <div className="itemContentOuterWrapper">
-              <div className="itemContentWrapper">
-                {pipe(
-                  item,
-                  foldItemIcon(
-                    props.type,
-                    constNull,
-                    ({ icon, iconColor = 'default' }) => (
-                      <Icon color={iconColor} src={icon} />
+                )
+              )}
+              className={composeClassName(
+                item.className || '',
+                disabledClassName
+              )}
+            >
+              <div className="itemContentOuterWrapper">
+                <div className="itemContentWrapper">
+                  {pipe(
+                    item,
+                    foldItemIcon(
+                      props.type,
+                      constNull,
+                      ({ icon, iconColor = 'default' }) => (
+                        <Icon color={iconColor} src={icon} />
+                      )
                     )
-                  )
-                )}
-                <div className="itemContent">
-                  {pipe(
-                    item.label,
-                    option.map(label => <Label content={label} />),
-                    option.toNullable
                   )}
-                  <h6 className="content">{item.content}</h6>
-                  {pipe(
-                    item.description,
-                    option.map(description => (
-                      <p className="description">{description}</p>
-                    )),
-                    option.toNullable
-                  )}
+                  <div className="itemContent">
+                    {pipe(
+                      item.label,
+                      option.map(label => <Label content={label} />),
+                      option.toNullable
+                    )}
+                    <h6 className="content">{item.content}</h6>
+                    {pipe(
+                      item.description,
+                      option.map(description => (
+                        <p className="description">{description}</p>
+                      )),
+                      option.toNullable
+                    )}
+                  </div>
                 </div>
-              </div>
 
-              {hasDetails ? (
-                <div className="routeArrow">
-                  <Icon src={chevronForwardOutline} size="medium" />
-                </div>
-              ) : null}
-            </div>
-          </li>
-        ))}
+                {hasDetails ? (
+                  <div className="routeArrow">
+                    <Icon src={chevronForwardOutline} size="medium" />
+                  </div>
+                ) : null}
+              </div>
+            </li>
+          )
+        })}
       </ul>
     </div>
   )

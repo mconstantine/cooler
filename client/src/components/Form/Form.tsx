@@ -58,7 +58,7 @@ export const Form: FC<Props> = ({
   }, [loadingState])
 
   return (
-    <Panel title={props.title}>
+    <Panel title={props.title} framed>
       <form className="Form" onSubmit={onSubmit}>
         {props.children}
 

@@ -5,11 +5,14 @@ import { Option } from 'fp-ts/Option'
 import { TaskEither } from 'fp-ts/TaskEither'
 import { useReducer } from 'react'
 import { LocalizedString } from '../../globalDomain'
-import { InputProps } from './Input/Input/Input'
 import { Validator, ValidatorOutput } from './validators'
 
-interface FieldProps
-  extends Pick<InputProps, 'name' | 'value' | 'onChange' | 'error'> {}
+export interface FieldProps {
+  name: string
+  value: string
+  onChange: (value: string) => void
+  error: Option<LocalizedString>
+}
 
 type FieldValidators<Values extends Record<string, string>> = {
   [k in keyof Values]: Validator<string, unknown>

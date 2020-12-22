@@ -1,0 +1,71 @@
+@import '../../../../variables';
+
+.Select {
+  position: relative;
+
+  .Input label {
+    border-width: 1px;
+    border-style: solid;
+    border-color: inherit;
+    border-radius: $border-radius-medium;
+  }
+
+  .input {
+    position: relative;
+
+    .Button {
+      position: absolute;
+      right: 8px;
+      top: 50%;
+      transform: translate3d(0, -50%, 0);
+    }
+  }
+
+  .options {
+    position: absolute;
+    max-width: $max-width-text;
+    max-height: 50vh;
+    overflow: auto;
+    transition: opacity $transition-fast linear,
+      visibility $transition-fast linear, transform $transition-fast $easeInOut;
+    left: 0;
+    right: 0;
+    margin-left: auto;
+    margin-right: auto;
+    opacity: 0;
+    visibility: hidden;
+    transform: translate3d(0, 20px, 0);
+    background-color: $color-grey-soft-dark;
+    border-radius: $border-radius-large;
+
+    li.highlighted {
+      background-color: rgba(#fff, $opacity-active);
+    }
+  }
+
+  &.open {
+    .options {
+      transition: opacity $transition-fast linear,
+        transform $transition-fast $easeInOut;
+      opacity: 1;
+      visibility: visible;
+      transform: translate3d(0, 0, 0);
+    }
+  }
+
+  &.focus {
+    z-index: 1;
+  }
+}
+
+.Select + .Select {
+  margin-top: 24px;
+}
+
+.light .Select .options {
+  background-color: $color-grey-soft-light;
+
+  li.highlighted {
+    background-color: rgba(#000, $opacity-active);
+  }
+}
