@@ -23,6 +23,7 @@ interface ButtonProps {
 interface IconButtonProps {
   type: 'iconButton'
   icon: string
+  size?: 'large' | 'medium' | 'small'
   action: () => unknown
 }
 
@@ -107,7 +108,9 @@ export const Button: FC<Props> = ({
               option.map(src => <Icon size="medium" color={color} src={src} />),
               option.toNullable
             ),
-          ({ icon }) => <Icon size="medium" color={color} src={icon} />
+          ({ icon, size = 'medium' }) => (
+            <Icon size={size} color={color} src={icon} />
+          )
         )
       )}
       {pipe(
