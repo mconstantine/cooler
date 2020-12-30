@@ -20,6 +20,7 @@ export const NumberInput: Story = () => {
             label={unsafeLocalizedString('Number Input')}
             name="number-input"
             error={option.none}
+            warning={option.none}
           />
         </Panel>
       </Content>

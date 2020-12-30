@@ -62,29 +62,31 @@ export const Form: FC<Props> = ({
       <form className="Form" onSubmit={onSubmit}>
         {props.children}
 
-        {pipe(
-          props.formError,
-          option.fold(
-            () => null,
-            error => <Label icon={alert} color="danger" content={error} />
-          )
-        )}
+        <div className="actions">
+          {pipe(
+            props.formError,
+            option.fold(
+              () => null,
+              error => <Label icon={alert} color="danger" content={error} />
+            )
+          )}
 
-        <Buttons spacing="spread">
-          {[
-            <ControlledLoadingButton
-              key={0}
-              type="input"
-              color="primary"
-              label={submitLabel}
-              icon={submitIcon}
-              loadingState={loadingState}
-            />,
-            ...additionalButtons.map((props, index) => (
-              <Button key={index + 1} {...props} />
-            ))
-          ]}
-        </Buttons>
+          <Buttons spacing="spread">
+            {[
+              <ControlledLoadingButton
+                key={0}
+                type="input"
+                color="primary"
+                label={submitLabel}
+                icon={submitIcon}
+                loadingState={loadingState}
+              />,
+              ...additionalButtons.map((props, index) => (
+                <Button key={index + 1} {...props} />
+              ))
+            ]}
+          </Buttons>
+        </div>
       </form>
     </Panel>
   )

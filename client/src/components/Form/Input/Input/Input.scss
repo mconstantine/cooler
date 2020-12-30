@@ -30,7 +30,8 @@
     outline: none;
   }
 
-  .error {
+  > .error,
+  > .warning {
     display: flex;
     align-items: center;
     margin-top: 12px;
@@ -40,8 +41,15 @@
       margin-bottom: 0;
       margin-left: 8px;
       opacity: 1;
-      color: $color-error-dark;
     }
+  }
+
+  > .error .Label {
+    color: $color-error-dark;
+  }
+
+  > .warning .Label {
+    color: $color-warning-dark;
   }
 
   &.focus {
@@ -61,6 +69,14 @@
       span {
         opacity: 1;
       }
+    }
+  }
+
+  &.warning {
+    color: $color-warning-dark;
+
+    label {
+      border-bottom-color: $color-warning-dark;
     }
   }
 

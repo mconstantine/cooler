@@ -1,6 +1,6 @@
 import { option } from 'fp-ts'
 import { pipe } from 'fp-ts/function'
-import { alert } from 'ionicons/icons'
+import { alert, warning as warningIcon } from 'ionicons/icons'
 import { forwardRef, InputHTMLAttributes, useState } from 'react'
 import { LocalizedString } from '../../../../globalDomain'
 import { composeClassName } from '../../../../misc/composeClassName'
@@ -18,15 +18,22 @@ export type InputProps = Omit<
   }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ onInvalid, ...props }: InputProps, ref) => {
+  ({ onInvalid, error, warning, ...props }: InputProps, ref) => {
     const [isFocus, setIsFocus] = useState(false)
     const focusClassName = isFocus ? 'focus' : ''
     const disabledClassName = props.disabled ? 'disabled' : ''
 
-    const errorClassName = pipe(
-      props.error,
+    const colorClassName = pipe(
+      error,
       option.fold(
-        () => '',
+        () =>
+          pipe(
+            warning,
+            option.fold(
+              () => '',
+              () => 'warning'
+            )
+          ),
         () => 'error'
       )
     )
@@ -35,7 +42,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
       <div
         className={composeClassName(
           'Input',
-          errorClassName,
+          colorClassName,
           focusClassName,
           disabledClassName
         )}
@@ -60,14 +67,28 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           />
         </label>
         {pipe(
-          props.error,
-          option.map(error => (
-            <div className="error">
-              <Icon size="small" color="danger" src={alert} />
-              <Label content={error} />
-            </div>
-          )),
-          option.toNullable
+          error,
+          option.fold(
+            () =>
+              pipe(
+                warning,
+                option.fold(
+                  () => null,
+                  warning => (
+                    <div className="warning">
+                      <Icon size="small" color="warning" src={warningIcon} />
+                      <Label content={warning} />
+                    </div>
+                  )
+                )
+              ),
+            error => (
+              <div className="error">
+                <Icon size="small" color="danger" src={alert} />
+                <Label content={error} />
+              </div>
+            )
+          )
         )}
       </div>
     )

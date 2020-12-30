@@ -44,6 +44,7 @@ export const TextInput: Story = () => {
             value={defaultInputValue}
             onChange={setDefaultInputValue}
             error={option.none}
+            warning={option.none}
           />
           <TextInputComponent
             type="password"
@@ -52,6 +53,9 @@ export const TextInput: Story = () => {
             value={passwordInputValue}
             onChange={setPasswordInputValue}
             error={option.none}
+            warning={option.some(
+              unsafeLocalizedString('Passwords are always unsafe')
+            )}
           />
           <TextInputComponent
             label={unsafeLocalizedString('I must be empty (weird uh?)')}
@@ -59,6 +63,7 @@ export const TextInput: Story = () => {
             value={inputWithErrorValue}
             onChange={setInputWithErrorValue}
             error={error}
+            warning={option.none}
           />
           <TextInputComponent
             label={unsafeLocalizedString('Disabled input')}
@@ -66,6 +71,7 @@ export const TextInput: Story = () => {
             value={disabledInputValue}
             onChange={setDisabledInputValue}
             error={option.none}
+            warning={option.none}
             disabled
           />
         </Panel>

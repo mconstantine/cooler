@@ -4,6 +4,7 @@ import { sequenceS } from 'fp-ts/lib/Apply'
 import { Option } from 'fp-ts/Option'
 import { TaskEither } from 'fp-ts/TaskEither'
 import { useReducer } from 'react'
+import { a18n } from '../../a18n'
 import { LocalizedString } from '../../globalDomain'
 import { Validator, ValidatorOutput } from './validators'
 
@@ -12,11 +13,20 @@ export interface FieldProps {
   value: string
   onChange: (value: string) => void
   error: Option<LocalizedString>
+  warning: Option<LocalizedString>
 }
+
+export type Linter = (input: string) => Option<LocalizedString>
 
 type FieldValidators<Values extends Record<string, string>> = {
   [k in keyof Values]: Validator<string, unknown>
 }
+
+type FieldLinters<Values extends Record<string, string>> = Partial<
+  {
+    [k in keyof Values]: Linter
+  }
+>
 
 type ValidatedFields<
   Values extends Record<string, string>,
@@ -28,10 +38,12 @@ type ValidatedFields<
 interface UseFormInput<
   Values extends Record<string, string>,
   Validators extends FieldValidators<Values>,
+  Linters extends FieldLinters<Values>,
   FormValidator extends Validator<ValidatedFields<Values, Validators>, unknown>
 > {
   initialValues: Values
   validators: Validators
+  linters: Linters
   formValidator: FormValidator
   onSubmit: (
     values: ValidatorOutput<ValidatedFields<Values, Validators>, FormValidator>
@@ -50,6 +62,9 @@ interface FormState<Values extends Record<string, string>> {
   errors: {
     [k in keyof Values]: Option<LocalizedString>
   }
+  warnings: {
+    [k in keyof Values]: Option<LocalizedString>
+  }
   formError: Option<LocalizedString>
 }
 
@@ -63,6 +78,11 @@ type FormAction<Values extends Record<string, string>> =
       type: 'setError'
       name: keyof Values
       error: Option<LocalizedString>
+    }
+  | {
+      type: 'setWarning'
+      name: keyof Values
+      warning: Option<LocalizedString>
     }
   | {
       type: 'setFormError'
@@ -90,6 +110,14 @@ function formReducer<Values extends Record<string, string>>(
           [action.name]: action.error
         }
       }
+    case 'setWarning':
+      return {
+        ...state,
+        warnings: {
+          ...state.warnings,
+          [action.name]: action.warning
+        }
+      }
     case 'setFormError':
       return {
         ...state,
@@ -101,21 +129,35 @@ function formReducer<Values extends Record<string, string>>(
 export function useForm<
   Values extends Record<string, string>,
   Validators extends FieldValidators<Values>,
+  Linters extends FieldLinters<Values>,
   FormValidator extends Validator<ValidatedFields<Values, Validators>, unknown>
 >({
   initialValues,
   validators,
+  linters,
   formValidator,
   onSubmit
-}: UseFormInput<Values, Validators, FormValidator>): UseFormOutput<Values> {
-  const [{ values, errors, formError }, dispatch] = useReducer(formReducer, {
-    values: initialValues,
-    errors: pipe(
-      initialValues,
-      record.map(() => option.none)
-    ),
-    formError: option.none
-  })
+}: UseFormInput<
+  Values,
+  Validators,
+  Linters,
+  FormValidator
+>): UseFormOutput<Values> {
+  const [{ values, errors, warnings, formError }, dispatch] = useReducer(
+    formReducer,
+    {
+      values: initialValues,
+      errors: pipe(
+        initialValues,
+        record.map(() => option.none)
+      ),
+      warnings: pipe(
+        initialValues,
+        record.map(() => option.none)
+      ),
+      formError: option.none
+    }
+  )
 
   function validateField<K extends keyof Values & string>(
     name: K,
@@ -136,15 +178,38 @@ export function useForm<
     )
   }
 
+  function lintField<K extends keyof Values & string>(
+    name: K,
+    value: string
+  ): void {
+    return pipe(
+      linters[name],
+      option.fromNullable,
+      option.fold(
+        () => option.none,
+        linter => linter(value)
+      ),
+      warning =>
+        dispatch({
+          type: 'setWarning',
+          name,
+          warning
+        })
+    )
+  }
+
   const setValue: UseFormOutput<Values>['setValue'] = name => value => {
     dispatch({ type: 'setValue', name, value })
+    dispatch({ type: 'setFormError', error: option.none })
     validateField(name, value)()
+    lintField(name, value)
   }
 
   const fieldProps: UseFormOutput<Values>['fieldProps'] = name => ({
     name,
     value: values[name],
     error: errors[name],
+    warning: warnings[name],
     onChange: setValue(name)
   })
 
@@ -152,6 +217,9 @@ export function useForm<
     values,
     record.mapWithIndex(name => validateField(name, values[name])),
     sequenceS(taskEither.taskEither),
+    taskEither.mapLeft(
+      () => a18n`Some fields are not valid. Please fix them before continuing`
+    ),
     taskEither.chain(values =>
       formValidator(values as ValidatedFields<Values, Validators>)
     ),

@@ -1,5 +1,7 @@
 import * as t from 'io-ts'
+import { NonEmptyString, optionFromNullable } from 'io-ts-types'
 import { unsafeLocalizedString } from '../a18n'
+import { EmailString } from '../globalDomain'
 
 export const ProvinceValues = {
   AG: unsafeLocalizedString('Agrigento'),
@@ -374,3 +376,71 @@ export const CountryValues = {
 
 export const Country = t.keyof(CountryValues)
 export type Country = t.TypeOf<typeof Country>
+
+export const ClientCreationCommonInput = t.type(
+  {
+    address_country: Country,
+    address_province: Province,
+    address_city: NonEmptyString,
+    address_zip: NonEmptyString,
+    address_street: NonEmptyString,
+    address_street_number: optionFromNullable(NonEmptyString),
+    address_email: EmailString
+  },
+  'ClientCreationCommonInput'
+)
+export type ClientCreationCommonInput = t.TypeOf<
+  typeof ClientCreationCommonInput
+>
+
+export const PrivateClientCreationInput = t.intersection([
+  ClientCreationCommonInput,
+  t.type(
+    {
+      type: t.literal('PRIVATE'),
+      fiscal_code: NonEmptyString,
+      first_name: NonEmptyString,
+      last_name: NonEmptyString
+    },
+    'PrivateClientCreationInput'
+  )
+])
+export type PrivateClientCreationInput = t.TypeOf<
+  typeof PrivateClientCreationInput
+>
+
+export const BusinessClientCreationInput = t.intersection(
+  [
+    ClientCreationCommonInput,
+    t.type({
+      type: t.literal('BUSINESS'),
+      country_code: Country,
+      vat_number: NonEmptyString,
+      business_name: NonEmptyString
+    })
+  ],
+  'BusinessClientCreationInput'
+)
+export type BusinessClientCreationInput = t.TypeOf<
+  typeof BusinessClientCreationInput
+>
+
+export const ClientCreationInput = t.union(
+  [PrivateClientCreationInput, BusinessClientCreationInput],
+  'ClientCreationInput'
+)
+export type ClientCreationInput = t.TypeOf<typeof ClientCreationInput>
+
+export function foldClientCreationInput<T>(
+  whenPrivate: (input: PrivateClientCreationInput) => T,
+  whenBusiness: (input: BusinessClientCreationInput) => T
+): (input: ClientCreationInput) => T {
+  return input => {
+    switch (input.type) {
+      case 'PRIVATE':
+        return whenPrivate(input)
+      case 'BUSINESS':
+        return whenBusiness(input)
+    }
+  }
+}

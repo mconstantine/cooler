@@ -5,7 +5,7 @@ import { caretDownSharp } from 'ionicons/icons'
 import { FC, FocusEvent, useCallback, useEffect, useRef, useState } from 'react'
 import { Color, LocalizedString } from '../../../../globalDomain'
 import { composeClassName } from '../../../../misc/composeClassName'
-import { Button } from '../../../Button/Button/Button'
+import { Icon } from '../../../Icon/Icon'
 import { List } from '../../../List/List'
 import { FieldProps } from '../../useForm'
 import { Input } from '../Input/Input'
@@ -19,8 +19,12 @@ interface Props extends FieldProps {
   unsearchable?: boolean
 }
 
-export const Select: FC<Props> = ({ unsearchable = false, ...props }) => {
-  const [isFocus, setIsFocus] = useState(false)
+export const Select: FC<Props> = ({
+  unsearchable = false,
+  options,
+  onBlur: onBlurProp,
+  ...props
+}) => {
   const [isOpen, setIsOpen] = useState(false)
   const [highlightedItem, setHighlightedItem] = useState<Option<string>>(
     option.none
@@ -28,12 +32,14 @@ export const Select: FC<Props> = ({ unsearchable = false, ...props }) => {
 
   const [label, setLabel] = useState(
     pipe(
-      Object.entries(props.options).find(([key]) => key === props.value),
+      Object.entries(options).find(([key]) => key === props.value),
       option.fromNullable,
       option.map(([, value]) => value),
       option.getOrElse(() => '')
     )
   )
+
+  const inputRef = useRef<HTMLInputElement>(null)
 
   const regex = new RegExp(label, 'i')
   const filteredOptions: Record<string, LocalizedString> = pipe(
@@ -41,48 +47,47 @@ export const Select: FC<Props> = ({ unsearchable = false, ...props }) => {
     boolean.fold(
       () =>
         pipe(
-          props.options,
+          options,
           record.filter(label => regex.test(label))
         ),
-      () => props.options
+      () => options
     )
   )
-
-  const inputRef = useRef<HTMLInputElement>(null)
 
   const notifyChange = useCallback(
     (label: string): void => {
       pipe(
-        Object.entries(props.options).find(([, value]) => value === label),
+        Object.entries(options).find(([, value]) => value === label),
         option.fromNullable,
         option.map(([key]) => key),
         option.fold(constVoid, props.onChange)
       )
     },
-    [props.options, props.onChange]
+    [options, props.onChange]
   )
 
-  const onFocus = (e: FocusEvent) => {
-    props.onFocus?.(e)
-    setIsFocus(true)
+  const onFocus = (e?: FocusEvent) => {
+    e && props.onFocus?.(e)
     setIsOpen(true)
-    inputRef.current && inputRef.current.focus()
   }
 
-  const onBlur = (e: FocusEvent) => {
-    if (record.size(filteredOptions) === 1) {
-      const label = Object.values(filteredOptions)[0]
-      setLabel(label)
-      notifyChange(label)
+  const onBlur = useCallback(
+    (e?: FocusEvent) => {
       setHighlightedItem(option.none)
-    }
 
-    window.setTimeout(() => {
-      props.onBlur?.(e)
-      setIsFocus(false)
-      setIsOpen(false)
-    }, 150)
-  }
+      if (record.size(filteredOptions) === 1) {
+        const label = Object.values(filteredOptions)[0]
+        setLabel(label)
+        notifyChange(label)
+      }
+
+      window.setTimeout(() => {
+        e && onBlurProp?.(e)
+        setIsOpen(false)
+      }, 150)
+    },
+    [filteredOptions, notifyChange, onBlurProp]
+  )
 
   const onInputChange = (input: string) => {
     setLabel(input)
@@ -90,7 +95,7 @@ export const Select: FC<Props> = ({ unsearchable = false, ...props }) => {
     setHighlightedItem(option.none)
 
     pipe(
-      Object.entries(props.options).find(([, value]) => value === input),
+      Object.entries(options).find(([, value]) => value === input),
       option.fromNullable,
       option.map(([key]) => key),
       option.getOrElse(() => ''),
@@ -98,21 +103,12 @@ export const Select: FC<Props> = ({ unsearchable = false, ...props }) => {
     )
   }
 
-  const onSelectArrowClick = () => {
-    if (isOpen) {
-      setIsOpen(false)
-    } else {
-      setIsOpen(true)
-      inputRef.current && inputRef.current.focus()
-    }
-  }
-
   const iconColor: Color = pipe(
     props.error,
     option.fold(
       () =>
         pipe(
-          isFocus,
+          isOpen,
           boolean.fold(
             () => 'default',
             () => 'primary'
@@ -122,16 +118,16 @@ export const Select: FC<Props> = ({ unsearchable = false, ...props }) => {
     )
   )
 
-  const focusClassName = isFocus ? 'focus' : ''
   const openClassName = isOpen ? 'open' : ''
 
   useEffect(() => {
     const inputElement = inputRef.current
 
     const onKeyUp = (e: KeyboardEvent) => {
+      e.stopPropagation()
+
       if (e.code === 'Escape') {
-        setIsOpen(false)
-        setHighlightedItem(option.none)
+        onBlur()
       } else if (e.code === 'ArrowDown') {
         const items = Object.keys(filteredOptions)
 
@@ -178,12 +174,14 @@ export const Select: FC<Props> = ({ unsearchable = false, ...props }) => {
     return () => {
       inputElement && inputElement.removeEventListener('keyup', onKeyUp)
     }
-  }, [isOpen, filteredOptions])
+  }, [isOpen, filteredOptions, onBlur])
 
   useEffect(() => {
     const inputElement = inputRef.current
 
     const onKeyUp = (e: KeyboardEvent) => {
+      e.stopPropagation()
+
       if (e.code === 'Enter') {
         pipe(
           highlightedItem,
@@ -191,25 +189,20 @@ export const Select: FC<Props> = ({ unsearchable = false, ...props }) => {
             const label = filteredOptions[highlightedItem]
             setLabel(label)
             notifyChange(label)
-            setIsOpen(false)
-            setHighlightedItem(option.none)
+            onBlur()
           })
         )
       }
     }
 
-    pipe(
-      highlightedItem,
-      option.fold(
-        constVoid,
-        () => inputElement && inputElement.addEventListener('keyup', onKeyUp)
-      )
-    )
+    if (isOpen && option.isSome(highlightedItem)) {
+      inputElement && inputElement.addEventListener('keyup', onKeyUp)
+    }
 
     return () => {
       inputElement && inputElement.removeEventListener('keyup', onKeyUp)
     }
-  }, [filteredOptions, highlightedItem, notifyChange])
+  }, [isOpen, filteredOptions, highlightedItem, notifyChange, onBlur])
 
   useEffect(() => {
     if (!props.value) {
@@ -217,7 +210,7 @@ export const Select: FC<Props> = ({ unsearchable = false, ...props }) => {
     }
 
     pipe(
-      Object.entries(props.options).find(([key]) => key === props.value),
+      Object.entries(options).find(([key]) => key === props.value),
       option.fromNullable,
       option.map(([, value]) => value),
       option.getOrElse(() => ''),
@@ -225,10 +218,32 @@ export const Select: FC<Props> = ({ unsearchable = false, ...props }) => {
     )
 
     setHighlightedItem(option.none)
-  }, [props.value, props.options])
+  }, [props.value, options])
+
+  const optionItems = pipe(
+    filteredOptions,
+    record.mapWithIndex((value, label) => ({
+      key: value,
+      label: option.none,
+      content: label,
+      description: option.none,
+      className: pipe(
+        highlightedItem,
+        option.fold(constUndefined, highlightedItem =>
+          highlightedItem === value ? 'highlighted' : undefined
+        )
+      ),
+      action: () => {
+        setLabel(label)
+        notifyChange(label)
+        setHighlightedItem(option.none)
+      }
+    })),
+    Object.values
+  )
 
   return (
-    <div className={composeClassName('Select', openClassName, focusClassName)}>
+    <div className={composeClassName('Select', openClassName)}>
       <div className="input">
         <Input
           {...props}
@@ -237,44 +252,18 @@ export const Select: FC<Props> = ({ unsearchable = false, ...props }) => {
           onChange={onInputChange}
           onFocus={onFocus}
           onBlur={onBlur}
-          autoComplete="off"
+          autoComplete="none"
           readOnly={unsearchable}
         />
-        <Button
-          type="iconButton"
-          color={iconColor}
-          icon={caretDownSharp}
+        <Icon
+          className="arrowIcon"
+          src={caretDownSharp}
           size="small"
-          flat
-          action={onSelectArrowClick}
+          color={iconColor}
         />
       </div>
       <div className="options">
-        <List
-          type="routed"
-          heading={option.none}
-          items={pipe(
-            filteredOptions,
-            record.mapWithIndex((value, label) => ({
-              key: value,
-              label: option.none,
-              content: label,
-              description: option.none,
-              className: pipe(
-                highlightedItem,
-                option.fold(constUndefined, highlightedItem =>
-                  highlightedItem === value ? 'highlighted' : undefined
-                )
-              ),
-              action: () => {
-                setLabel(label)
-                notifyChange(label)
-                setHighlightedItem(option.none)
-              }
-            })),
-            Object.values
-          )}
-        />
+        <List type="routed" heading={option.none} items={optionItems} />
       </div>
     </div>
   )

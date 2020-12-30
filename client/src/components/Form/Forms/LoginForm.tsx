@@ -82,7 +82,7 @@ export const LoginForm: FC<Props> = props => {
       ),
       email: validators.fromCodec<EmailString>(
         EmailString,
-        a18n`This is not a valid e-mail address`
+        commonErrors.invalidEmail
       ),
       password: validators.nonBlankString(commonErrors.nonBlank),
       passwordConfirmation: pipe(
@@ -93,6 +93,7 @@ export const LoginForm: FC<Props> = props => {
         )
       )
     },
+    linters: {},
     formValidator: pipe(
       formType,
       foldFormType(

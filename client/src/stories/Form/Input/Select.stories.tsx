@@ -14,6 +14,8 @@ import { boolean, option } from 'fp-ts'
 import { pipe } from 'fp-ts/function'
 import { Option } from 'fp-ts/Option'
 import { LocalizedString } from '../../../globalDomain'
+import { Separator } from '../../../components/Separator/Separator'
+import { Button } from '../../../components/Button/Button/Button'
 
 export const Select: Story = () => {
   const [province, setProvince] = useState<Province>('MI')
@@ -53,6 +55,7 @@ export const Select: Story = () => {
             }
           }}
           error={provinceError}
+          warning={option.none}
         />
 
         <SelectComponent
@@ -70,6 +73,23 @@ export const Select: Story = () => {
             }
           }}
           error={countryError}
+          warning={
+            country === 'FR'
+              ? option.some(unsafeLocalizedString('Warning: France sucks!'))
+              : option.none
+          }
+        />
+
+        <Separator />
+
+        <Button
+          type="button"
+          label={unsafeLocalizedString('Show a warning')}
+          icon={option.none}
+          action={() => {
+            setProvince('EE')
+            setCountry('FR')
+          }}
         />
       </Content>
     </CoolerStory>

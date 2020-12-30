@@ -5,7 +5,21 @@
     margin-top: 32px;
   }
 
-  .Buttons {
+  .actions {
     margin-top: 32px;
+  }
+
+  .Buttons {
+    margin-top: 8px;
+  }
+
+  > h1,
+  > h2,
+  > h3,
+  > h4,
+  > h5,
+  > h6 {
+    margin-top: 1.5em;
+    margin-bottom: 1.5em;
   }
 }

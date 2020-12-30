@@ -12,10 +12,11 @@
 
   .input {
     position: relative;
+    cursor: pointer;
 
-    .Button {
+    .arrowIcon {
       position: absolute;
-      right: 8px;
+      right: 16px;
       top: 50%;
       transform: translate3d(0, -50%, 0);
     }
@@ -46,6 +47,8 @@
   }
 
   &.open {
+    z-index: 10;
+
     .options {
       transition: opacity $transition-fast linear,
         transform $transition-fast $easeInOut;
@@ -54,13 +57,11 @@
       transform: translate3d(0, 0, 0);
     }
   }
-
-  &.focus {
-    z-index: 10;
-  }
 }
 
-.Select + .Select {
+.Select + .Select,
+.Select + .Input,
+.Input + .Select {
   margin-top: 24px;
 }
 
