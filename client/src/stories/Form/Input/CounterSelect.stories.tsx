@@ -32,7 +32,7 @@ export const CounterSelect: Story = () => {
 }
 
 const meta: Meta = {
-  title: 'Cooler/Form/Inputs/CounterSelect'
+  title: 'Cooler/Form/Inputs/Counter Select'
 }
 
 export default meta

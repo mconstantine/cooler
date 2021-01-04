@@ -81,7 +81,7 @@ export const TextInput: Story = () => {
 }
 
 const meta: Meta = {
-  title: 'Cooler/Form/Inputs/TextInput'
+  title: 'Cooler/Form/Inputs/Text Input'
 }
 
 export default meta

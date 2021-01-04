@@ -31,7 +31,7 @@ export const CounterInput: Story = () => {
 }
 
 const meta: Meta = {
-  title: 'Cooler/Form/Inputs/CounterInput'
+  title: 'Cooler/Form/Inputs/Counter Input'
 }
 
 export default meta

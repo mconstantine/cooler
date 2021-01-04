@@ -29,7 +29,7 @@ export const NumberInput: Story = () => {
 }
 
 const meta: Meta = {
-  title: 'Cooler/Form/Inputs/NumberInput'
+  title: 'Cooler/Form/Inputs/Number Input'
 }
 
 export default meta

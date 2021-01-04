@@ -32,7 +32,7 @@ export const LoginForm: Story = ({ onRegister, onLogin }) => {
 }
 
 const meta: Meta = {
-  title: 'Cooler/Form/LoginForm',
+  title: 'Cooler/Form/Login Form',
   argTypes: {
     onRegister: { action: 'registered' },
     onLogin: { action: 'logged in' }

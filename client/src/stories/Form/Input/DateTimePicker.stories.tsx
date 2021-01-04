@@ -49,7 +49,7 @@ export const DateTimePicker: Story = () => {
 }
 
 const meta: Meta = {
-  title: 'Cooler/Form/Inputs/DateTimePicker'
+  title: 'Cooler/Form/Inputs/Date Time Picker'
 }
 
 export default meta

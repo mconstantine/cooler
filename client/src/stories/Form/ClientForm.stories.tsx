@@ -19,7 +19,7 @@ export const ClientForm: Story = ({ onSubmit: logSubmission }) => {
 }
 
 const meta: Meta = {
-  title: 'Cooler/Form/ClientForm',
+  title: 'Cooler/Form/Client Form',
   argTypes: {
     onSubmit: { action: 'submit' }
   }
