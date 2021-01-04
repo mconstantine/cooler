@@ -5,6 +5,7 @@
   flex-direction: column;
 
   label {
+    display: block;
     background-color: rgba(#000, $opacity-active);
     padding: 8px 12px;
     border-bottom: 1px solid #fff;

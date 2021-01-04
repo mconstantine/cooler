@@ -1,16 +1,18 @@
 import { boolean, option } from 'fp-ts'
 import { constNull, pipe } from 'fp-ts/function'
 import { Option } from 'fp-ts/Option'
-import { FC } from 'react'
+import { FC, HTMLProps } from 'react'
 import { Color, LocalizedString } from '../../../globalDomain'
 import { composeClassName } from '../../../misc/composeClassName'
 import { Icon } from '../../Icon/Icon'
 import './Button.scss'
 
-interface CommonProps {
+interface CommonProps extends Omit<HTMLProps<HTMLButtonElement>, 'action'> {
   color?: Color
   flat?: boolean
   disabled?: boolean
+  selected?: boolean
+  className?: string
 }
 
 interface ButtonProps {
@@ -47,6 +49,8 @@ export const Button: FC<Props> = ({
   color = 'default',
   disabled = false,
   flat = false,
+  className = '',
+  selected = false,
   ...props
 }) => {
   const disabledClassName = pipe(
@@ -62,6 +66,14 @@ export const Button: FC<Props> = ({
     boolean.fold(
       () => '',
       () => 'flat'
+    )
+  )
+
+  const selectedClassName = pipe(
+    selected,
+    boolean.fold(
+      () => '',
+      () => 'selected'
     )
   )
 
@@ -84,8 +96,10 @@ export const Button: FC<Props> = ({
     <button
       className={composeClassName(
         'Button',
+        className,
         color,
         flatClassName,
+        selectedClassName,
         disabledClassName,
         withIconClassName
       )}

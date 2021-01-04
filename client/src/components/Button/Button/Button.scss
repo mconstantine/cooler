@@ -23,6 +23,7 @@
     padding: 8px;
   }
 
+  &.selected,
   &:not(.disabled):hover {
     background-color: rgba(#fff, $opacity-hover);
   }
@@ -44,6 +45,7 @@
     color: $color-primary-dark;
     border-color: $color-primary-dark;
 
+    &.selected,
     &:not(.disabled):hover {
       background-color: rgba($color-primary-dark, $opacity-hover);
     }
@@ -57,6 +59,7 @@
     color: $color-success-dark;
     border-color: $color-success-dark;
 
+    &.selected,
     &:not(.disabled):hover {
       background-color: rgba($color-success-dark, $opacity-hover);
     }
@@ -70,6 +73,7 @@
     color: $color-warning-dark;
     border-color: $color-warning-dark;
 
+    &.selected,
     &:not(.disabled):hover {
       background-color: rgba($color-warning-dark, $opacity-hover);
     }
@@ -83,6 +87,7 @@
     color: $color-error-dark;
     border-color: $color-error-dark;
 
+    &.selected,
     &:not(.disabled):hover {
       background-color: rgba($color-error-dark, $opacity-hover);
     }
@@ -104,6 +109,7 @@
 .light .Button {
   border-color: #000;
 
+  &.selected,
   &:not(.disabled):hover {
     background-color: rgba(#000, $opacity-hover);
   }
@@ -121,6 +127,7 @@
       stroke: $color-primary-light;
     }
 
+    &.selected,
     &:not(.disabled):hover {
       background-color: rgba($color-primary-light, $opacity-hover);
     }
@@ -139,6 +146,7 @@
       stroke: $color-success-light;
     }
 
+    &.selected,
     &:not(.disabled):hover {
       background-color: rgba($color-success-light, $opacity-hover);
     }
@@ -157,6 +165,7 @@
       stroke: $color-warning-light;
     }
 
+    &.selected,
     &:not(.disabled):hover {
       background-color: rgba($color-warning-light, $opacity-hover);
     }
@@ -175,6 +184,7 @@
       stroke: $color-error-light;
     }
 
+    &.selected,
     &:not(.disabled):hover {
       background-color: rgba($color-error-light, $opacity-hover);
     }

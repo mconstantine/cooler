@@ -1,0 +1,27 @@
+.CounterInput {
+  label {
+    display: flex;
+
+    .back {
+      order: 1;
+    }
+
+    .value,
+    .forward {
+      order: 2;
+    }
+
+    .value,
+    input {
+      text-align: center;
+    }
+
+    .value {
+      flex-grow: 1;
+    }
+
+    .Icon {
+      opacity: 1;
+    }
+  }
+}

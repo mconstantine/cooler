@@ -8,9 +8,15 @@ interface Props {
   isOpen: boolean
   onClose: () => void
   framed?: boolean
+  className?: string
 }
 
-export const Modal: FC<Props> = ({ isOpen, onClose, framed, children }) => {
+export const Modal: FC<Props> = ({
+  className = '',
+  isOpen,
+  onClose,
+  ...props
+}) => {
   const openClassName = isOpen ? 'open' : ''
 
   useEffect(() => {
@@ -32,9 +38,9 @@ export const Modal: FC<Props> = ({ isOpen, onClose, framed, children }) => {
   }, [isOpen, onClose])
 
   return createPortal(
-    <div className={composeClassName('Modal', openClassName)}>
+    <div className={composeClassName('Modal', className, openClassName)}>
       <div className="dim" onClick={onClose} />
-      <Panel framed={framed}>{children}</Panel>
+      <Panel framed={props.framed}>{props.children}</Panel>
     </div>,
     document.body
   )

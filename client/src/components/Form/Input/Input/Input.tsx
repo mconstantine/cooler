@@ -18,7 +18,7 @@ export type InputProps = Omit<
   }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ onInvalid, error, warning, ...props }: InputProps, ref) => {
+  ({ onInvalid, error, warning, children, className = '', ...props }, ref) => {
     const [isFocus, setIsFocus] = useState(false)
     const focusClassName = isFocus ? 'focus' : ''
     const disabledClassName = props.disabled ? 'disabled' : ''
@@ -42,29 +42,33 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
       <div
         className={composeClassName(
           'Input',
+          className,
           colorClassName,
           focusClassName,
           disabledClassName
         )}
       >
         <label htmlFor={props.name}>
-          <span>{props.label}</span>
-          <input
-            {...props}
-            ref={ref}
-            id={props.name}
-            value={props.value}
-            onChange={e => props.onChange(e.currentTarget.value)}
-            onFocus={e => {
-              props.onFocus?.(e)
-              setIsFocus(true)
-            }}
-            onBlur={e => {
-              props.onBlur?.(e)
-              setIsFocus(false)
-            }}
-            title={props.label}
-          />
+          <div className="value">
+            <span>{props.label}</span>
+            <input
+              {...props}
+              ref={ref}
+              id={props.name}
+              value={props.value}
+              onChange={e => props.onChange(e.currentTarget.value)}
+              onFocus={e => {
+                props.onFocus?.(e)
+                setIsFocus(true)
+              }}
+              onBlur={e => {
+                props.onBlur?.(e)
+                setIsFocus(false)
+              }}
+              title={props.label}
+            />
+          </div>
+          {children}
         </label>
         {pipe(
           error,

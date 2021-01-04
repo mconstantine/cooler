@@ -56,3 +56,13 @@ export function optionalString(): Validator<string, Option<NonEmptyString>> {
 export function passThrough<I = string, O = I>(): Validator<I, O> {
   return input => taskEither.rightIO(() => (input as unknown) as O)
 }
+
+export function fromRegex(
+  regex: RegExp,
+  errorMessage: LocalizedString
+): Validator<string, string> {
+  return taskEither.fromPredicate(
+    input => regex.test(input),
+    () => errorMessage
+  )
+}
