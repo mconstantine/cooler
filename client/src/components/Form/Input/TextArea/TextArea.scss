@@ -1,21 +1,22 @@
 @import '../../../../variables';
 @import '../common';
 
-.Input {
+.TextArea {
   label {
-    border-bottom: 1px solid #fff;
-    border-top-left-radius: $border-radius-medium;
-    border-top-right-radius: $border-radius-medium;
+    border: 1px solid #fff;
+    border-radius: $border-radius-medium;
   }
 
-  input {
+  textarea {
     width: 100%;
     background-color: transparent;
     border: none;
+    resize: none;
     color: inherit;
+    font-family: inherit;
     font-size: inherit;
     font-weight: inherit;
-    line-height: 1;
+    line-height: $line-height-body;
     margin-top: 12px;
     padding: 0;
     outline: none;

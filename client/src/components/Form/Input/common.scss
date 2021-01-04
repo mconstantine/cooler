@@ -1,0 +1,123 @@
+@import '../../../variables';
+
+.Input,
+.TextArea {
+  display: flex;
+  flex-direction: column;
+
+  label {
+    display: block;
+    background-color: rgba(#000, $opacity-active);
+    padding: 8px 12px;
+
+    span {
+      display: block;
+      @include label;
+    }
+  }
+
+  > .error,
+  > .warning {
+    display: flex;
+    align-items: center;
+    margin-top: 12px;
+
+    .Label {
+      margin-top: 0;
+      margin-bottom: 0;
+      margin-left: 8px;
+      opacity: 1;
+    }
+  }
+
+  > .error .Label {
+    color: $color-error-dark;
+  }
+
+  > .warning .Label {
+    color: $color-warning-dark;
+  }
+
+  &.focus {
+    color: $color-primary-dark;
+
+    label {
+      border-color: $color-primary-dark;
+    }
+  }
+
+  &.error {
+    color: $color-error-dark;
+
+    label {
+      border-color: $color-error-dark;
+
+      span {
+        opacity: 1;
+      }
+    }
+  }
+
+  &.warning {
+    color: $color-warning-dark;
+
+    label {
+      border-color: $color-warning-dark;
+
+      span {
+        opacity: 1;
+      }
+    }
+  }
+
+  &.disabled {
+    opacity: $opacity-disabled;
+  }
+}
+
+.light .Input,
+.light .TextArea {
+  label {
+    background-color: rgba(#000, $opacity-background);
+    border-color: #000;
+  }
+
+  .error .Label {
+    color: $color-error-light;
+  }
+
+  .warning .Label {
+    color: $color-warning-light;
+  }
+
+  &.focus {
+    color: $color-primary-light;
+
+    label {
+      border-color: $color-primary-light;
+    }
+  }
+
+  &.error {
+    color: $color-error-light;
+
+    label {
+      border-color: $color-error-light;
+    }
+  }
+
+  &.warning {
+    color: $color-warning-light;
+
+    label {
+      border-color: $color-warning-light;
+    }
+  }
+}
+
+.Input + .Input,
+.Input + .TextArea,
+.TextArea + .Input,
+.TextArea + .TextArea {
+  margin-top: 24px;
+}

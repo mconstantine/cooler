@@ -17,7 +17,7 @@ code {
 p,
 li {
   font-weight: $font-weight-medium;
-  line-height: 1.5;
+  line-height: $line-height-body;
   max-width: 90vw;
 
   @include media($max-width-text) {
