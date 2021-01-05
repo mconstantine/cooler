@@ -18,10 +18,9 @@ import * as t from 'io-ts'
 import { calendar, time } from 'ionicons/icons'
 import { Label } from '../../../Label/Label'
 import { TextInput } from '../TextInput/TextInput'
+import { date, DateFromISOString } from 'io-ts-types'
 
-interface Props extends Omit<FieldProps, 'value' | 'onChange'> {
-  value: Date
-  onChange: (value: Date) => void
+interface Props extends FieldProps {
   label: LocalizedString
   mode?: DateTimePickerOption
 }
@@ -161,23 +160,26 @@ function fixMinutes(minutes: string): string {
 }
 
 export const DateTimePicker: FC<Props> = ({ mode = 'datetime', ...props }) => {
+  const value = pipe(
+    DateFromISOString.decode(props.value),
+    either.getOrElse(() => new Date())
+  )
+
   const [isOpen, setIsOpen] = useState(false)
-  const [year, setYear] = useState(props.value.getFullYear().toString(10))
-  const [month, setMonth] = useState(props.value.getMonth().toString(10))
+  const [year, setYear] = useState(value.getFullYear().toString(10))
+  const [month, setMonth] = useState(value.getMonth().toString(10))
 
   const [currentMode, setCurrentMode] = useState<DateTimePickerMode>(
     mode === 'time' ? 'TIME' : 'DATE'
   )
 
-  const [hours, setHours] = useState(
-    fixHours(props.value.getHours().toString(10))
-  )
+  const [hours, setHours] = useState(fixHours(value.getHours().toString(10)))
 
   const [minutes, setMinutes] = useState(
-    fixMinutes(props.value.getMinutes().toString(10))
+    fixMinutes(value.getMinutes().toString(10))
   )
 
-  const initialValueRef = useRef(props.value)
+  const initialValueRef = useRef(value)
   const yearInputRef = useRef<HTMLInputElement>(null)
   const monthInputRef = useRef<HTMLInputElement>(null)
   const hoursInputRef = useRef<HTMLInputElement>(null)
@@ -222,12 +224,12 @@ export const DateTimePicker: FC<Props> = ({ mode = 'datetime', ...props }) => {
       }
     }
 
-    return props.onChange(date)
+    return props.onChange(date.toISOString())
   }
 
   const confirm = () => {
-    initialValueRef.current = props.value
-    onChange(props.value, true)
+    initialValueRef.current = value
+    onChange(value, true)
     setIsOpen(false)
     setCurrentMode('DATE')
   }
@@ -298,7 +300,7 @@ export const DateTimePicker: FC<Props> = ({ mode = 'datetime', ...props }) => {
       <Input
         {...props}
         className="DateTimePickerInput"
-        value={props.value.toLocaleString(a18n.getLocale(), options)}
+        value={value.toLocaleString(a18n.getLocale(), options)}
         onChange={constVoid}
         readOnly
         onFocus={() => setIsOpen(true)}
@@ -351,7 +353,7 @@ export const DateTimePicker: FC<Props> = ({ mode = 'datetime', ...props }) => {
               <>
                 <CounterInput
                   ref={yearInputRef}
-                  name="year"
+                  name={`${props.name}-year`}
                   label={a18n`Year`}
                   value={year}
                   onChange={setYear}
@@ -362,7 +364,7 @@ export const DateTimePicker: FC<Props> = ({ mode = 'datetime', ...props }) => {
                 />
                 <CounterSelect
                   ref={monthInputRef}
-                  name="month"
+                  name={`${props.name}-month`}
                   label={a18n`Month`}
                   value={month}
                   onChange={setMonth}
@@ -392,13 +394,13 @@ export const DateTimePicker: FC<Props> = ({ mode = 'datetime', ...props }) => {
                 <DaysGrid
                   year={pipe(
                     yearValidation,
-                    either.getOrElse(() => props.value.getFullYear())
+                    either.getOrElse(() => value.getFullYear())
                   )}
                   month={pipe(
                     monthValidation,
-                    either.getOrElse(() => props.value.getMonth())
+                    either.getOrElse(() => value.getMonth())
                   )}
-                  selection={props.value}
+                  selection={value}
                   onChange={date => {
                     onChange(date, true)
 
@@ -417,7 +419,7 @@ export const DateTimePicker: FC<Props> = ({ mode = 'datetime', ...props }) => {
               <div className="DateTimePickerTime">
                 <TextInput
                   ref={hoursInputRef}
-                  name="hours"
+                  name={`${props.name}-hours`}
                   label={a18n`Hours`}
                   value={hours}
                   onChange={flow(formatHours, setHours)}
@@ -429,7 +431,7 @@ export const DateTimePicker: FC<Props> = ({ mode = 'datetime', ...props }) => {
                 <Label content={':' as LocalizedString} />
                 <TextInput
                   ref={minutesInputRef}
-                  name="minutes"
+                  name={`${props.name}-minutes`}
                   label={a18n`Minutes`}
                   value={minutes}
                   onChange={flow(formatMinutes, setMinutes)}
