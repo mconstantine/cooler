@@ -1,8 +1,10 @@
-import { either } from 'fp-ts'
-import { pipe } from 'fp-ts/function'
+import { either, option } from 'fp-ts'
+import { flow, identity, pipe } from 'fp-ts/function'
+import { Option } from 'fp-ts/Option'
 import * as t from 'io-ts'
-import { NonEmptyString, NumberFromString } from 'io-ts-types'
+import { IntFromString, NonEmptyString, NumberFromString } from 'io-ts-types'
 import { validate as isEmail } from 'isemail'
+import { option as tOption } from 'io-ts-types/option'
 
 export type LocalizedStringBrand = string & {
   readonly LocalizedString: unique symbol
@@ -38,6 +40,16 @@ export const Color = t.keyof(
 )
 export type Color = t.TypeOf<typeof Color>
 
+export const Size = t.keyof(
+  {
+    large: true,
+    medium: true,
+    small: true
+  },
+  'Size'
+)
+export type Size = t.TypeOf<typeof Size>
+
 export function unsafeNonEmptyString(s: string): NonEmptyString {
   return s as NonEmptyString
 }
@@ -52,6 +64,30 @@ export const PositiveInteger = t.brand(
   'PositiveInteger'
 )
 export type PositiveInteger = t.TypeOf<typeof PositiveInteger>
+
+export const PositiveIntegerFromString: t.Type<
+  PositiveInteger,
+  string,
+  unknown
+> = new t.Type(
+  'PositiveIntegerFromString',
+  PositiveInteger.is,
+  (u, c) =>
+    pipe(
+      IntFromString.decode(u),
+      either.chain(n =>
+        n > 0 ? t.success(n as PositiveInteger) : t.failure(u, c)
+      )
+    ),
+  n => n.toString(10)
+)
+export type PositiveIntegerFromString = t.TypeOf<
+  typeof PositiveIntegerFromString
+>
+
+export function unsafePositiveInteger(n: number): PositiveInteger {
+  return n as PositiveInteger
+}
 
 export const NonNegativeInteger = t.union(
   [PositiveInteger, t.literal(0)],
@@ -123,6 +159,19 @@ export const PercentageFromString: t.Type<
   n => (n * 100).toString()
 )
 export type PercentageFromString = t.TypeOf<typeof PercentageFromString>
+
+export const OptionFromEmptyString: t.Type<
+  Option<NonEmptyString>,
+  string
+> = new t.Type(
+  'OptionFromEmptyString',
+  tOption(NonEmptyString).is,
+  flow(
+    NonEmptyString.decode,
+    either.fold(() => t.success(option.none), flow(option.some, t.success))
+  ),
+  flow(option.fold(() => '', identity))
+)
 
 export function unsafePercentage(n: number): Percentage {
   return n as Percentage

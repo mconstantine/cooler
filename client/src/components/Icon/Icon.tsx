@@ -1,12 +1,12 @@
 import { FC } from 'react'
-import { Color } from '../../globalDomain'
+import { Color, Size } from '../../globalDomain'
 import { composeClassName } from '../../misc/composeClassName'
 import './Icon.scss'
 
 interface IconProps {
   src: string
   color?: Color
-  size?: 'large' | 'medium' | 'small'
+  size?: Size
   className?: string
 }
 
