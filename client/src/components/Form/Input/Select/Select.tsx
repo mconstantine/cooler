@@ -59,8 +59,6 @@ export interface SelectProps extends FieldProps {
   children?: ReactNode
 }
 
-// TODO: add placeholder
-// TODO: show something when nothing is found (maybe a prop)
 export const Select = forwardRef<HTMLInputElement, SelectProps>(
   (
     {
@@ -98,13 +96,13 @@ export const Select = forwardRef<HTMLInputElement, SelectProps>(
     const notifyChange = useCallback(
       (label: string): void => {
         pipe(
-          Object.entries(options).find(([, value]) => value === label),
+          Object.entries(filteredOptions).find(([, value]) => value === label),
           option.fromNullable,
           option.map(([key]) => key),
           option.fold(constVoid, props.onChange)
         )
       },
-      [options, props.onChange]
+      [filteredOptions, props.onChange]
     )
 
     const onFocus = (e?: FocusEvent) => {
@@ -137,7 +135,7 @@ export const Select = forwardRef<HTMLInputElement, SelectProps>(
       setHighlightedItem(option.none)
 
       pipe(
-        Object.entries(options).find(([, value]) => value === input),
+        Object.entries(filteredOptions).find(([, value]) => value === input),
         option.fromNullable,
         option.map(([key]) => key),
         option.getOrElse(() => ''),
@@ -259,7 +257,7 @@ export const Select = forwardRef<HTMLInputElement, SelectProps>(
       }
 
       pipe(
-        Object.entries(options).find(([key]) => key === props.value),
+        Object.entries(filteredOptions).find(([key]) => key === props.value),
         option.fromNullable,
         option.map(([, value]) => value),
         option.getOrElse(() => ''),
@@ -267,7 +265,7 @@ export const Select = forwardRef<HTMLInputElement, SelectProps>(
       )
 
       setHighlightedItem(option.none)
-    }, [props.value, options])
+    }, [props.value, filteredOptions])
 
     useEffect(() => {
       if (props.value) {
@@ -305,7 +303,6 @@ export const Select = forwardRef<HTMLInputElement, SelectProps>(
           )
         ),
         action: () => {
-          setLabel(label)
           notifyChange(label)
           setHighlightedItem(option.none)
         }
