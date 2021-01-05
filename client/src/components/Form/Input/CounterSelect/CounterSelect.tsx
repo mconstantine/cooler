@@ -15,7 +15,7 @@ interface Props extends Omit<SelectProps, 'options'> {
 export const CounterSelect = forwardRef<HTMLInputElement, Props>(
   ({ onBack, onForward, ...props }, ref) => {
     return (
-      <Select {...props} ref={ref} className="CounterSelect CounterInput">
+      <Select {...props} ref={ref} className="Input CounterInput CounterSelect">
         <Button
           className="back"
           type="iconButton"

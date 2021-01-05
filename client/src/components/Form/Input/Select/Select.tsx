@@ -1,5 +1,13 @@
-import { array, boolean, option, record } from 'fp-ts'
-import { constUndefined, constVoid, flow, pipe } from 'fp-ts/function'
+import {
+  array,
+  boolean,
+  nonEmptyArray,
+  option,
+  record,
+  taskEither
+} from 'fp-ts'
+import { constUndefined, constVoid, flow, identity, pipe } from 'fp-ts/function'
+import { TaskEither } from 'fp-ts/TaskEither'
 import { Option } from 'fp-ts/Option'
 import { caretDownSharp } from 'ionicons/icons'
 import {
@@ -15,10 +23,28 @@ import { useCombinedRefs } from '../../../../effects/useCombinedRef'
 import { Color, LocalizedString } from '../../../../globalDomain'
 import { composeClassName } from '../../../../misc/composeClassName'
 import { Icon } from '../../../Icon/Icon'
-import { List } from '../../../List/List'
+import { List, RoutedItem } from '../../../List/List'
 import { FieldProps } from '../../useForm'
 import { Input } from '../Input/Input'
 import './Select.scss'
+import { Loading } from '../../../Loading/Loading'
+import { a18n } from '../../../../a18n'
+
+type FindOptions = (
+  query: string,
+  options: Record<string, LocalizedString>
+) => TaskEither<LocalizedString, Record<string, LocalizedString>>
+
+const defaultEmptyPlaceholder = a18n`Nothing found here`
+const defaultFindOptions: FindOptions = (query, options) => {
+  const regex = new RegExp(query, 'i')
+
+  return pipe(
+    options,
+    record.filter(label => regex.test(label)),
+    taskEither.right
+  )
+}
 
 export interface SelectProps extends FieldProps {
   className?: string
@@ -26,11 +52,15 @@ export interface SelectProps extends FieldProps {
   options: Record<string, LocalizedString>
   onFocus?: (e: FocusEvent) => void
   onBlur?: (e: FocusEvent) => void
+  findOptions?: FindOptions
+  emptyPlaceholder?: LocalizedString
   unsearchable?: boolean
   disabled?: boolean
   children?: ReactNode
 }
 
+// TODO: add placeholder
+// TODO: show something when nothing is found (maybe a prop)
 export const Select = forwardRef<HTMLInputElement, SelectProps>(
   (
     {
@@ -39,11 +69,14 @@ export const Select = forwardRef<HTMLInputElement, SelectProps>(
       onBlur: onBlurProp,
       className = '',
       disabled = false,
+      findOptions = defaultFindOptions,
+      emptyPlaceholder = defaultEmptyPlaceholder,
       ...props
     },
     ref
   ) => {
     const [isOpen, setIsOpen] = useState(false)
+    const [isLoading, setIsLoading] = useState(false)
     const [highlightedItem, setHighlightedItem] = useState<Option<string>>(
       option.none
     )
@@ -57,21 +90,10 @@ export const Select = forwardRef<HTMLInputElement, SelectProps>(
       )
     )
 
+    const [filteredOptions, setFilteredOptions] = useState(options)
+
     const innerRef = useRef<HTMLInputElement>(null)
     const inputRef = useCombinedRefs(innerRef, ref)
-
-    const regex = new RegExp(label, 'i')
-    const filteredOptions: Record<string, LocalizedString> = pipe(
-      unsearchable,
-      boolean.fold(
-        () =>
-          pipe(
-            options,
-            record.filter(label => regex.test(label))
-          ),
-        () => options
-      )
-    )
 
     const notifyChange = useCallback(
       (label: string): void => {
@@ -87,7 +109,7 @@ export const Select = forwardRef<HTMLInputElement, SelectProps>(
 
     const onFocus = (e?: FocusEvent) => {
       e && props.onFocus?.(e)
-      inputRef.current?.select()
+      !unsearchable && inputRef.current?.select()
       setIsOpen(true)
     }
 
@@ -247,7 +269,29 @@ export const Select = forwardRef<HTMLInputElement, SelectProps>(
       setHighlightedItem(option.none)
     }, [props.value, options])
 
-    const optionItems = pipe(
+    useEffect(() => {
+      if (props.value) {
+        return
+      }
+
+      setIsLoading(true)
+
+      pipe(
+        unsearchable,
+        boolean.fold(
+          () => findOptions(label, options),
+          () => taskEither.right(options)
+        ),
+        taskEither.chain(filteredOptions =>
+          taskEither.fromIO(() => {
+            setIsLoading(false)
+            setFilteredOptions(filteredOptions)
+          })
+        )
+      )()
+    }, [label, props.value, findOptions, options, unsearchable])
+
+    const optionItems: RoutedItem[] = pipe(
       filteredOptions,
       record.mapWithIndex((value, label) => ({
         key: value,
@@ -266,7 +310,21 @@ export const Select = forwardRef<HTMLInputElement, SelectProps>(
           setHighlightedItem(option.none)
         }
       })),
-      Object.values
+      Object.values,
+      nonEmptyArray.fromArray,
+      option.fold(
+        () => [
+          {
+            key: '',
+            label: option.none,
+            content: emptyPlaceholder,
+            description: option.none,
+            className: 'empty',
+            action: constVoid
+          }
+        ],
+        identity
+      )
     )
 
     return (
@@ -279,16 +337,24 @@ export const Select = forwardRef<HTMLInputElement, SelectProps>(
             onChange={onInputChange}
             onFocus={onFocus}
             onBlur={onBlur}
-            autoComplete="none"
+            autoComplete="nope"
             readOnly={unsearchable}
             disabled={disabled}
           />
-          <Icon
-            className="arrowIcon"
-            src={caretDownSharp}
-            size="small"
-            color={iconColor}
-          />
+          {pipe(
+            isLoading,
+            boolean.fold(
+              () => (
+                <Icon
+                  className="arrowIcon"
+                  src={caretDownSharp}
+                  size="small"
+                  color={iconColor}
+                />
+              ),
+              () => <Loading size="small" color={iconColor} />
+            )
+          )}
         </div>
         <div className="options">
           <List type="routed" heading={option.none} items={optionItems} />

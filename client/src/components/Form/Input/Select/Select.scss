@@ -12,9 +12,13 @@
 
   .input {
     position: relative;
-    cursor: pointer;
 
-    .arrowIcon {
+    * {
+      cursor: pointer;
+    }
+
+    .arrowIcon,
+    .Loading {
       position: absolute;
       right: 16px;
       top: 50%;
@@ -43,6 +47,15 @@
 
     li.highlighted {
       background-color: rgba(#fff, $opacity-active);
+    }
+
+    li.empty {
+      cursor: default;
+      opacity: $opacity-disabled;
+    }
+
+    li.empty:hover {
+      background-color: $color-grey-soft-dark;
     }
   }
 

@@ -21,7 +21,7 @@ const ListType = t.keyof(
 )
 type ListType = t.TypeOf<typeof ListType>
 
-interface ReadonlyItem {
+export interface ReadonlyItem {
   key: string | number
   label: Option<LocalizedString>
   content: LocalizedString
@@ -30,22 +30,22 @@ interface ReadonlyItem {
   className?: string
 }
 
-interface ReadonlyItemWithIcon {
+export interface ReadonlyItemWithIcon {
   icon: string
   iconColor?: Color
 }
 
-interface RoutedItem {
+export interface RoutedItem {
   action: () => unknown
 }
 
-interface RoutedItemWithIcon {
+export interface RoutedItemWithIcon {
   icon: string
   iconColor: Color
   action: () => unknown
 }
 
-type Item = ReadonlyItem &
+export type Item = ReadonlyItem &
   (ReadonlyItemWithIcon | RoutedItem | RoutedItemWithIcon)
 
 function foldItem<T>(
