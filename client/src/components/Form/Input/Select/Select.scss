@@ -72,16 +72,14 @@
   }
 }
 
-.Select + .Select,
-.Select + .Input,
-.Input + .Select {
-  margin-top: 24px;
-}
-
 .light .Select .options {
   background-color: $color-grey-soft-light;
 
   li.highlighted {
     background-color: rgba(#000, $opacity-active);
   }
+}
+
+.Select + .Select {
+  margin-top: 24px;
 }
