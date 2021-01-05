@@ -61,7 +61,7 @@ export const _TextArea: Story = () => {
 }
 
 const meta: Meta = {
-  title: 'Cooler/Form/Inputs/Textarea'
+  title: 'Cooler/Form/Inputs/Text Area'
 }
 
 export default meta

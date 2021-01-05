@@ -160,6 +160,23 @@ export const PercentageFromString: t.Type<
 )
 export type PercentageFromString = t.TypeOf<typeof PercentageFromString>
 
+export const BooleanFromString: t.Type<boolean, string, unknown> = new t.Type(
+  'BooleanFromString',
+  t.boolean.is,
+  (u, c) => {
+    switch (u) {
+      case 'true':
+        return t.success(true)
+      case 'false':
+        return t.success(false)
+      default:
+        return t.failure(u, c)
+    }
+  },
+  b => (b ? 'true' : 'false')
+)
+export type BooleanFromString = t.TypeOf<typeof BooleanFromString>
+
 export const OptionFromEmptyString: t.Type<
   Option<NonEmptyString>,
   string

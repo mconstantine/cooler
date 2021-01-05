@@ -16,28 +16,6 @@
     }
   }
 
-  > .error,
-  > .warning {
-    display: flex;
-    align-items: center;
-    margin-top: 12px;
-
-    .Label {
-      margin-top: 0;
-      margin-bottom: 0;
-      margin-left: 8px;
-      opacity: 1;
-    }
-  }
-
-  > .error .Label {
-    color: $color-error-dark;
-  }
-
-  > .warning .Label {
-    color: $color-warning-dark;
-  }
-
   &.focus {
     color: $color-primary-dark;
 
@@ -78,16 +56,8 @@
 .light .Input,
 .light .TextArea {
   label {
-    background-color: rgba(#000, $opacity-background);
+    background-color: transparent;
     border-color: #000;
-  }
-
-  .error .Label {
-    color: $color-error-light;
-  }
-
-  .warning .Label {
-    color: $color-warning-light;
   }
 
   &.focus {

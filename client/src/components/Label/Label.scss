@@ -20,11 +20,30 @@
   }
 
   &.warning {
+    opacity: 1;
     color: $color-warning-dark;
   }
 
   &.danger {
     opacity: 1;
     color: $color-error-dark;
+  }
+}
+
+.light .Label {
+  &.primary {
+    color: $color-primary-light;
+  }
+
+  &.success {
+    color: $color-success-light;
+  }
+
+  &.warning {
+    color: $color-warning-light;
+  }
+
+  &.danger {
+    color: $color-error-light;
   }
 }

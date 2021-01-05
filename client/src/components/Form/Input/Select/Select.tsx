@@ -268,7 +268,7 @@ export const Select = forwardRef<HTMLInputElement, SelectProps>(
     }, [props.value, filteredOptions])
 
     useEffect(() => {
-      if (props.value) {
+      if (props.value && label) {
         return
       }
 
@@ -334,7 +334,7 @@ export const Select = forwardRef<HTMLInputElement, SelectProps>(
             onChange={onInputChange}
             onFocus={onFocus}
             onBlur={onBlur}
-            autoComplete="nope"
+            autoComplete="none"
             readOnly={unsearchable}
             disabled={disabled}
           />

@@ -97,6 +97,8 @@ $easeInOutExpo: cubic-bezier(1, 0, 0, 1);
 $easeInOutCirc: cubic-bezier(0.785, 0.135, 0.15, 0.86);
 $easeInOutBack: cubic-bezier(0.68, -0.55, 0.265, 1.55);
 
+$easing-default: $easeInOut;
+
 /**
  * It creates a media query based on `min-width`.
  * @param  {dimension} $min-width The `min-width` that should trigger the media query.

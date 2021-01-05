@@ -18,7 +18,7 @@ import * as t from 'io-ts'
 import { calendar, time } from 'ionicons/icons'
 import { Label } from '../../../Label/Label'
 import { TextInput } from '../TextInput/TextInput'
-import { date, DateFromISOString } from 'io-ts-types'
+import { DateFromISOString } from 'io-ts-types'
 
 interface Props extends FieldProps {
   label: LocalizedString

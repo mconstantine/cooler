@@ -29,11 +29,11 @@
 
     &.animating {
       .Icon {
-        animation: moveToAbove $transition-fast $easeInOut forwards;
+        animation: moveToAbove $transition-fast $easing-default forwards;
       }
 
       .nextIcon {
-        animation: moveFromBelow $transition-fast $easeInOut forwards;
+        animation: moveFromBelow $transition-fast $easing-default forwards;
       }
     }
   }
