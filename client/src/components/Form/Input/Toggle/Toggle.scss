@@ -92,6 +92,10 @@
 
   &.disabled {
     opacity: $opacity-disabled;
+
+    label {
+      cursor: default;
+    }
   }
 }
 

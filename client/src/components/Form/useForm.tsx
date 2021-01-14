@@ -8,35 +8,37 @@ import { a18n } from '../../a18n'
 import { LocalizedString } from '../../globalDomain'
 import { Validator, ValidatorOutput } from './validators'
 
-export interface FieldProps {
+export interface FieldProps<T> {
   name: string
-  value: string
-  onChange: (value: string) => void
+  value: T
+  onChange: (value: T) => void
   error: Option<LocalizedString>
   warning: Option<LocalizedString>
 }
 
-export type Linter = (input: string) => Option<LocalizedString>
+export type Linter<T> = (input: T) => Option<LocalizedString>
 
-type FieldValidators<Values extends Record<string, string>> = {
-  [k in keyof Values]: Validator<string, unknown>
+type FieldValidators<Values extends Record<string, unknown>> = {
+  [k in keyof Values]: Validator<Values[k], unknown>
 }
 
-type FieldLinters<Values extends Record<string, string>> = Partial<
+type FieldLinters<Values extends Record<string, unknown>> = Partial<
   {
-    [k in keyof Values]: Linter
+    [k in keyof Values]: Linter<Values[k]>
   }
 >
 
 type ValidatedFields<
-  Values extends Record<string, string>,
+  Values extends Record<string, unknown>,
   Validators extends FieldValidators<Values>
 > = {
-  [k in keyof Values]: ValidatorOutput<string, Validators[k]>
+  [k in keyof Values]: Validators[k] extends Validator<Values[k], infer O>
+    ? O
+    : never
 }
 
 interface UseFormInput<
-  Values extends Record<string, string>,
+  Values extends Record<string, unknown>,
   Validators extends FieldValidators<Values>,
   Linters extends FieldLinters<Values>,
   FormValidator extends Validator<ValidatedFields<Values, Validators>, unknown>
@@ -50,29 +52,29 @@ interface UseFormInput<
   ) => TaskEither<unknown, unknown>
 }
 
-interface UseFormOutput<Values extends Record<string, string>> {
-  fieldProps: (name: keyof Values & string) => FieldProps
+interface UseFormOutput<Values extends Record<string, unknown>> {
+  fieldProps: <K extends keyof Values & string>(
+    name: K
+  ) => FieldProps<Values[K]>
   formError: Option<LocalizedString>
   submit: TaskEither<unknown, unknown>
-  setValue: (name: keyof Values & string) => (value: string) => void
+  setValue: <K extends keyof Values & string>(
+    name: K
+  ) => (value: Values[K]) => void
 }
 
-interface FormState<Values extends Record<string, string>> {
+interface FormState<Values extends Record<string, unknown>> {
   values: Values
-  errors: {
-    [k in keyof Values]: Option<LocalizedString>
-  }
-  warnings: {
-    [k in keyof Values]: Option<LocalizedString>
-  }
+  errors: Record<keyof Values, Option<LocalizedString>>
+  warnings: Record<keyof Values, Option<LocalizedString>>
   formError: Option<LocalizedString>
 }
 
-type FormAction<Values extends Record<string, string>> =
+type FormAction<Values extends Record<string, unknown>> =
   | {
       type: 'setValue'
       name: keyof Values
-      value: string
+      value: unknown
     }
   | {
       type: 'setError'
@@ -89,7 +91,7 @@ type FormAction<Values extends Record<string, string>> =
       error: Option<LocalizedString>
     }
 
-function formReducer<Values extends Record<string, string>>(
+function formReducer<Values extends Record<string, unknown>>(
   state: FormState<Values>,
   action: FormAction<Values>
 ): FormState<Values> {
@@ -127,7 +129,7 @@ function formReducer<Values extends Record<string, string>>(
 }
 
 export function useForm<
-  Values extends Record<string, string>,
+  Values extends Record<string, unknown>,
   Validators extends FieldValidators<Values>,
   Linters extends FieldLinters<Values>,
   FormValidator extends Validator<ValidatedFields<Values, Validators>, unknown>
@@ -161,7 +163,7 @@ export function useForm<
 
   function validateField<K extends keyof Values & string>(
     name: K,
-    value: string
+    value: Values[K]
   ): TaskEither<LocalizedString, unknown> {
     return pipe(
       validators[name](value),
@@ -180,7 +182,7 @@ export function useForm<
 
   function lintField<K extends keyof Values & string>(
     name: K,
-    value: string
+    value: Values[K]
   ): void {
     return pipe(
       linters[name],
@@ -198,16 +200,24 @@ export function useForm<
     )
   }
 
-  const setValue: UseFormOutput<Values>['setValue'] = name => value => {
+  const setValue: UseFormOutput<Values>['setValue'] = <
+    K extends keyof Values & string
+  >(
+    name: K
+  ) => (value: Values[K]) => {
     dispatch({ type: 'setValue', name, value })
     dispatch({ type: 'setFormError', error: option.none })
     validateField(name, value)()
     lintField(name, value)
   }
 
-  const fieldProps: UseFormOutput<Values>['fieldProps'] = name => ({
+  const fieldProps: UseFormOutput<Values>['fieldProps'] = <
+    K extends keyof Values & string
+  >(
+    name: K
+  ) => ({
     name,
-    value: values[name],
+    value: values[name] as Values[K],
     error: errors[name],
     warning: warnings[name],
     onChange: setValue(name)
@@ -215,7 +225,9 @@ export function useForm<
 
   const submit: UseFormOutput<Values>['submit'] = pipe(
     values,
-    record.mapWithIndex(name => validateField(name, values[name])),
+    record.mapWithIndex(<K extends keyof Values & string>(name: K) =>
+      validateField(name, values[name] as Values[K])
+    ),
     sequenceS(taskEither.taskEither),
     taskEither.mapLeft(
       () => a18n`Some fields are not valid. Please fix them before continuing`

@@ -1,5 +1,5 @@
 import { TaskEither } from 'fp-ts/TaskEither'
-import { FC, useState } from 'react'
+import { FC } from 'react'
 import {
   ClientCreationInput,
   Country,
@@ -14,12 +14,19 @@ import { a18n } from '../../../a18n'
 import { useForm } from '../useForm'
 import * as validators from '../validators'
 import { Form } from '../Form'
-import { Select } from '../Input/Select/Select'
+import {
+  getOptionValue,
+  Select,
+  SelectState,
+  toSelectState,
+  useSelectState
+} from '../Input/Select/Select'
 import { commonErrors } from '../../../misc/commonErrors'
-import { TextInput } from '../Input/TextInput/TextInput'
-import { pipe } from 'fp-ts/function'
+import { constVoid, pipe } from 'fp-ts/function'
 import { option } from 'fp-ts'
 import { fiscalCodeLinter, vatNumberLinter } from '../../../misc/clientLinters'
+import { Input } from '../Input/Input/Input'
+import { sequenceS } from 'fp-ts/Apply'
 
 interface Props {
   onSubmit: (
@@ -50,21 +57,29 @@ function foldFormType<T>(
 }
 
 export const ClientForm: FC<Props> = ({ onSubmit }) => {
-  const [formType, setFormType] = useState<FormType>('BUSINESS')
+  const [formTypeOption, setFormTypeOption] = useSelectState(
+    FormTypeValues,
+    option.some('BUSINESS')
+  )
   const formValidator = validators.passThrough<
     Omit<ClientCreationInput, 'type'>
   >()
+
+  const formType: FormType = pipe(
+    getOptionValue(formTypeOption),
+    option.getOrElse(() => 'BUSINESS')
+  )
 
   const { fieldProps, submit, formError } = useForm({
     initialValues: {
       fiscal_code: '',
       first_name: '',
       last_name: '',
-      country_code: '',
+      country_code: toSelectState<Country>(CountryValues, option.none),
       vat_number: '',
       business_name: '',
-      address_country: '',
-      address_province: '',
+      address_country: toSelectState<Country>(CountryValues, option.none),
+      address_province: toSelectState<Province>(ProvinceValues, option.none),
       address_city: '',
       address_zip: '',
       address_street: '',
@@ -100,10 +115,9 @@ export const ClientForm: FC<Props> = ({ onSubmit }) => {
       country_code: pipe(
         formType,
         foldFormType(
-          () => validators.passThrough(),
+          () => validators.passThrough<SelectState<Country>, Country>(),
           () =>
-            validators.fromCodec<Country>(
-              Country,
+            validators.fromSelectState<Country>(
               a18n`This is not a valid country`
             )
         )
@@ -122,12 +136,10 @@ export const ClientForm: FC<Props> = ({ onSubmit }) => {
           () => validators.nonBlankString(commonErrors.nonBlank)
         )
       ),
-      address_country: validators.fromCodec<Country>(
-        Country,
+      address_country: validators.fromSelectState<Country>(
         a18n`This is not a valid country`
       ),
-      address_province: validators.fromCodec<Province>(
-        Province,
+      address_province: validators.fromSelectState<Province>(
         a18n`This is not a valid province`
       ),
       address_city: validators.nonBlankString(commonErrors.nonBlank),
@@ -182,47 +194,87 @@ export const ClientForm: FC<Props> = ({ onSubmit }) => {
   const addressCountryProps = fieldProps('address_country')
   const addressProvinceProps = fieldProps('address_province')
 
+  const onCountryChange = (countryOption: SelectState<Country>) => {
+    addressCountryProps.onChange(countryOption)
+
+    pipe(
+      sequenceS(option.option)({
+        country: getOptionValue(countryOption),
+        province: getOptionValue(addressProvinceProps.value)
+      }),
+      option.fold(constVoid, ({ country, province }) => {
+        if (country === 'IT' && province === 'EE') {
+          addressProvinceProps.onChange(
+            toSelectState(ProvinceValues, option.some('AG'))
+          )
+        } else if (country !== 'IT' && province !== 'EE') {
+          addressProvinceProps.onChange(
+            toSelectState(ProvinceValues, option.some('EE'))
+          )
+        }
+      })
+    )
+  }
+
+  const onProvinceChange = (provinceOption: SelectState<Province>) => {
+    addressProvinceProps.onChange(provinceOption)
+
+    pipe(
+      sequenceS(option.option)({
+        province: getOptionValue(provinceOption),
+        country: getOptionValue(addressCountryProps.value)
+      }),
+      option.fold(constVoid, ({ province, country }) => {
+        if (province === 'EE' && country === 'IT') {
+          addressCountryProps.onChange(
+            toSelectState(CountryValues, option.some('AD'))
+          )
+        } else if (province !== 'EE' && country !== 'IT') {
+          addressCountryProps.onChange(
+            toSelectState(CountryValues, option.some('IT'))
+          )
+        }
+      })
+    )
+  }
+
   return (
     <Form title={a18n`New client`} formError={formError} submit={submit}>
       <Select
+        type="unsearchable"
         name="formType"
-        value={formType}
-        onChange={formType => setFormType(formType as FormType)}
+        value={formTypeOption}
+        onChange={value => setFormTypeOption(value as any)}
         error={option.none}
         warning={option.none}
         label={a18n`Client type`}
         options={FormTypeValues}
-        unsearchable
       />
       {pipe(
         formType,
         foldFormType(
           () => (
             <>
-              <TextInput
+              <Input
                 {...fieldProps('fiscal_code')}
                 label={a18n`Fiscal code`}
                 value={fieldProps('fiscal_code').value.toUpperCase()}
               />
-              <TextInput
-                {...fieldProps('first_name')}
-                label={a18n`First name`}
-              />
-              <TextInput {...fieldProps('last_name')} label={a18n`Last name`} />
+              <Input {...fieldProps('first_name')} label={a18n`First name`} />
+              <Input {...fieldProps('last_name')} label={a18n`Last name`} />
             </>
           ),
           () => (
             <>
               <Select
+                type="default"
                 {...fieldProps('country_code')}
                 label={a18n`Country`}
                 options={CountryValues}
+                emptyPlaceholder={a18n`No country found`}
               />
-              <TextInput
-                {...fieldProps('vat_number')}
-                label={a18n`VAT number`}
-              />
-              <TextInput
+              <Input {...fieldProps('vat_number')} label={a18n`VAT number`} />
+              <Input
                 {...fieldProps('business_name')}
                 label={a18n`Business name`}
               />
@@ -234,44 +286,29 @@ export const ClientForm: FC<Props> = ({ onSubmit }) => {
       <h5>Address</h5>
 
       <Select
+        type="default"
         {...addressCountryProps}
         label={a18n`Country`}
         options={CountryValues}
-        onChange={country => {
-          addressCountryProps.onChange(country)
-
-          if (country === 'IT' && addressProvinceProps.value === 'EE') {
-            addressProvinceProps.onChange('AG')
-          } else if (country !== 'IT' && addressProvinceProps.value !== 'EE') {
-            addressProvinceProps.onChange('EE')
-          }
-        }}
+        onChange={onCountryChange}
+        emptyPlaceholder={a18n`No country found`}
       />
       <Select
+        type="default"
         {...addressProvinceProps}
         label={a18n`Province`}
         options={ProvinceValues}
-        onChange={province => {
-          addressProvinceProps.onChange(province)
-
-          if (province === 'EE' && addressCountryProps.value === 'IT') {
-            addressCountryProps.onChange('AD')
-          } else if (province !== 'EE' && addressCountryProps.value !== 'IT') {
-            addressCountryProps.onChange('IT')
-          }
-        }}
+        onChange={onProvinceChange}
+        emptyPlaceholder={a18n`No Province found`}
       />
-      <TextInput {...fieldProps('address_city')} label={a18n`City`} />
-      <TextInput {...fieldProps('address_zip')} label={a18n`Zip code`} />
-      <TextInput {...fieldProps('address_street')} label={a18n`Street`} />
-      <TextInput
+      <Input {...fieldProps('address_city')} label={a18n`City`} />
+      <Input {...fieldProps('address_zip')} label={a18n`Zip code`} />
+      <Input {...fieldProps('address_street')} label={a18n`Street`} />
+      <Input
         {...fieldProps('address_street_number')}
         label={a18n`Street number`}
       />
-      <TextInput
-        {...fieldProps('address_email')}
-        label={a18n`E-mail address`}
-      />
+      <Input {...fieldProps('address_email')} label={a18n`E-mail address`} />
     </Form>
   )
 }

@@ -30,23 +30,22 @@ export interface ReadonlyItem {
   className?: string
 }
 
-export interface ReadonlyItemWithIcon {
+export interface ReadonlyItemWithIcon extends ReadonlyItem {
   icon: string
   iconColor?: Color
 }
 
-export interface RoutedItem {
+export interface RoutedItem extends ReadonlyItem {
   action: () => unknown
 }
 
-export interface RoutedItemWithIcon {
+export interface RoutedItemWithIcon extends ReadonlyItem {
   icon: string
   iconColor: Color
   action: () => unknown
 }
 
-export type Item = ReadonlyItem &
-  (ReadonlyItemWithIcon | RoutedItem | RoutedItemWithIcon)
+export type Item = ReadonlyItemWithIcon | RoutedItem | RoutedItemWithIcon
 
 function foldItem<T>(
   listType: ListType,

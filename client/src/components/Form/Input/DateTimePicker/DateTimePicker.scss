@@ -4,6 +4,13 @@
   cursor: pointer;
 }
 
+.DateTimePickerYear {
+  label,
+  input {
+    text-align: center;
+  }
+}
+
 .DateTimePickerModal {
   .Panel > * + * {
     @include ss('margin-top', $spacing-medium-mobile, $spacing-medium-desktop);

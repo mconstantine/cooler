@@ -8,10 +8,10 @@ import { Panel } from '../../../components/Panel/Panel'
 import { CoolerStory } from '../../CoolerStory'
 
 export const _Toggle: Story = () => {
-  const [value, setValue] = useState('true')
-  const [valueError, setValueError] = useState('')
-  const [valueWarning, setValueWarning] = useState('')
-  const [valueDisabled, setValueDisabled] = useState('')
+  const [value, setValue] = useState(true)
+  const [valueError, setValueError] = useState(false)
+  const [valueWarning, setValueWarning] = useState(false)
+  const [valueDisabled, setValueDisabled] = useState(false)
 
   return (
     <CoolerStory>

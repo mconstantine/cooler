@@ -30,13 +30,16 @@ const fakeClients: FakeClient[] = [
 
 const findClients = (
   input: string
-): TaskEither<LocalizedString, Record<string, LocalizedString>> => {
+): TaskEither<LocalizedString, Record<PositiveInteger, LocalizedString>> => {
   const regex = new RegExp(input, 'i')
 
   return pipe(
     fakeClients
       .filter(({ name }) => regex.test(name))
-      .reduce((res, { id, name }) => ({ ...res, [id.toString()]: name }), {}),
+      .reduce<Record<PositiveInteger, LocalizedString>>(
+        (res, { id, name }) => ({ ...res, [id]: name }),
+        {}
+      ),
     options => task.fromIO(() => options),
     task.delay(500),
     taskEither.rightTask

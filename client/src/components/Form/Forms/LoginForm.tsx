@@ -8,7 +8,7 @@ import { EmailString, LocalizedString } from '../../../globalDomain'
 import { commonErrors } from '../../../misc/commonErrors'
 import { Button } from '../../Button/Button/Button'
 import { Form } from '../Form'
-import { TextInput } from '../Input/TextInput/TextInput'
+import { Input } from '../Input/Input/Input'
 import { useForm } from '../useForm'
 import * as validators from '../validators'
 
@@ -173,7 +173,7 @@ export const LoginForm: FC<Props> = props => {
         formType,
         foldFormType(
           () => (
-            <TextInput
+            <Input
               {...fieldProps('name')}
               label={a18n`Full name`}
               autoComplete="name"
@@ -182,13 +182,13 @@ export const LoginForm: FC<Props> = props => {
           () => null
         )
       )}
-      <TextInput
+      <Input
         type="email"
         {...fieldProps('email')}
         label={a18n`E-mail address`}
         autoComplete="email"
       />
-      <TextInput
+      <Input
         type="password"
         {...fieldProps('password')}
         label={a18n`Password`}
@@ -198,7 +198,7 @@ export const LoginForm: FC<Props> = props => {
         formType,
         foldFormType(
           () => (
-            <TextInput
+            <Input
               type="password"
               {...fieldProps('passwordConfirmation')}
               label={a18n`Password (again)`}

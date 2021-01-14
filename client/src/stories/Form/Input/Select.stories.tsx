@@ -1,17 +1,20 @@
 import { Meta, Story } from '@storybook/react'
 import { unsafeLocalizedString } from '../../../a18n'
 import { Content } from '../../../components/Content/Content'
-import { Select as SelectComponent } from '../../../components/Form/Input/Select/Select'
+import {
+  getOptionValue,
+  Select as SelectComponent,
+  useSelectState
+} from '../../../components/Form/Input/Select/Select'
 import { CoolerStory } from '../../CoolerStory'
 import { Province, ProvinceValues } from '../../../entities/Client'
 import { useState } from 'react'
-import { boolean, option, record, task, taskEither } from 'fp-ts'
+import { option, record, task, taskEither } from 'fp-ts'
 import { pipe } from 'fp-ts/function'
 import { Option } from 'fp-ts/Option'
 import { LocalizedString } from '../../../globalDomain'
-import * as t from 'io-ts'
 import { Panel } from '../../../components/Panel/Panel'
-import { TaskEither } from 'fp-ts/TaskEither'
+import * as t from 'io-ts'
 
 const ColorValues = {
   r: unsafeLocalizedString('Red'),
@@ -35,21 +38,43 @@ const Continent = t.keyof(ContinentValues)
 type Continent = t.TypeOf<typeof Continent>
 
 export const Select: Story = () => {
-  const [province, setProvince] = useState<Province>('MI')
-  const [color, setColor] = useState<Color>('r')
-  const [continent, setContinent] = useState<Continent>('africa')
+  const [province, setProvince] = useSelectState<Province>(
+    ProvinceValues,
+    option.some('MI')
+  )
+
+  const [color, setColor] = useSelectState<Color>(ColorValues, option.some('r'))
+
+  const [continent, setContinent] = useSelectState<Continent>(
+    ContinentValues,
+    option.some('africa')
+  )
+
+  const [continents, setContinents] = useState<Partial<typeof ContinentValues>>(
+    ContinentValues
+  )
+
+  const [isLoadingContinents, setIsLoadingContinents] = useState(false)
 
   const provinceError: Option<LocalizedString> = pipe(
-    Object.keys(ProvinceValues).includes(province),
-    boolean.fold(
+    getOptionValue(province),
+    option.fold(
       () => option.some(unsafeLocalizedString('Not a province')),
       () => option.none
     )
   )
 
-  const findContinent = (
-    input: string
-  ): TaskEither<LocalizedString, Record<string, LocalizedString>> => {
+  const continentError: Option<LocalizedString> = pipe(
+    getOptionValue(continent),
+    option.fold(
+      () => option.some(unsafeLocalizedString('Not a continent')),
+      () => option.none
+    )
+  )
+
+  const findContinent = (input: string) => {
+    setIsLoadingContinents(true)
+
     const regex = new RegExp(input, 'i')
 
     return pipe(
@@ -57,8 +82,14 @@ export const Select: Story = () => {
       record.filter(value => regex.test(value)),
       options => task.fromIO(() => options),
       task.delay(1000),
-      taskEither.rightTask
-    )
+      taskEither.rightTask,
+      taskEither.chain(options =>
+        taskEither.fromIO(() => {
+          setIsLoadingContinents(false)
+          setContinents(options)
+        })
+      )
+    )()
   }
 
   return (
@@ -66,35 +97,43 @@ export const Select: Story = () => {
       <Content>
         <Panel framed>
           <SelectComponent
+            type="default"
             name="province"
             label={unsafeLocalizedString('Province (default)')}
             value={province}
             options={ProvinceValues}
-            onChange={province => setProvince(province as Province)}
+            onChange={setProvince}
             error={provinceError}
             warning={option.none}
+            emptyPlaceholder={unsafeLocalizedString('No province found')}
+            codec={Province}
           />
 
           <SelectComponent
+            type="unsearchable"
             name="color"
             label={unsafeLocalizedString('Color (unsearchable)')}
             value={color}
             options={ColorValues}
-            onChange={color => setColor(color as Color)}
+            onChange={setColor}
             error={option.none}
             warning={option.none}
-            unsearchable
+            codec={Color}
           />
 
           <SelectComponent
-            name="color"
+            type="async"
+            name="continent"
             label={unsafeLocalizedString('Continent (async)')}
             value={continent}
-            options={ContinentValues}
-            onChange={continent => setContinent(continent as Continent)}
-            error={option.none}
+            options={continents}
+            onChange={setContinent}
+            error={continentError}
             warning={option.none}
-            findOptions={findContinent}
+            onQueryChange={findContinent}
+            emptyPlaceholder={unsafeLocalizedString('No continents found')}
+            isLoading={isLoadingContinents}
+            codec={Continent}
           />
         </Panel>
       </Content>

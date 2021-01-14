@@ -12,7 +12,7 @@ export type InputProps = Omit<
   InputHTMLAttributes<HTMLInputElement>,
   'value' | 'onChange' | 'title'
 > &
-  FieldProps & {
+  FieldProps<string> & {
     label: LocalizedString
   }
 

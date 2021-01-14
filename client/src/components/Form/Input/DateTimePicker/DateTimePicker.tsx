@@ -4,12 +4,14 @@ import { constNull, constVoid, flow, pipe } from 'fp-ts/function'
 import { Option } from 'fp-ts/Option'
 import { FC, KeyboardEvent, useEffect, useMemo, useRef, useState } from 'react'
 import { a18n, localizedMonthNames } from '../../../../a18n'
-import { LocalizedString } from '../../../../globalDomain'
+import {
+  LocalizedString,
+  NonNegativeIntegerFromString
+} from '../../../../globalDomain'
 import { Button } from '../../../Button/Button/Button'
 import { Buttons } from '../../../Button/Buttons/Buttons'
 import { Modal } from '../../../Modal/Modal'
 import { FieldProps } from '../../useForm'
-import { CounterInput } from '../CounterInput/CounterInput'
 import { CounterSelect } from '../CounterSelect/CounterSelect'
 import { Input } from '../Input/Input'
 import './DateTimePicker.scss'
@@ -17,10 +19,10 @@ import { DaysGrid } from './DaysGrid'
 import * as t from 'io-ts'
 import { calendar, time } from 'ionicons/icons'
 import { Label } from '../../../Label/Label'
-import { TextInput } from '../TextInput/TextInput'
-import { DateFromISOString } from 'io-ts-types'
+import { IntFromString, NumberFromString } from 'io-ts-types'
+import { getOptionValue, useSelectState } from '../Select/Select'
 
-interface Props extends FieldProps {
+interface Props extends FieldProps<Date> {
   label: LocalizedString
   mode?: DateTimePickerOption
 }
@@ -60,31 +62,20 @@ function foldDateTimePickerMode<T>(
 
 function validateYear(year: string): Either<LocalizedString, number> {
   return pipe(
-    year,
-    either.fromPredicate(
-      year => /[0-9]{4}/.test(year),
-      () => a18n`Year should be four digits`
-    ),
-    either.map(parseInt)
-  )
-}
-
-function validateMonth(month: string): Either<LocalizedString, number> {
-  return pipe(
-    parseInt(month),
-    either.fromPredicate(
-      month => !isNaN(month) && month >= 0 && month <= 11,
-      () => a18n`Month should be one of the available options`
-    )
+    IntFromString.decode(year),
+    either.mapLeft(() => a18n`Year should be a positive number`)
   )
 }
 
 function validateHours(hours: string): Either<LocalizedString, number> {
   return pipe(
-    parseInt(hours),
-    either.fromPredicate(
-      hours => !isNaN(hours) && hours >= 0 && hours < 24,
-      () => a18n`Hours should be a number between 0 and 23`
+    NonNegativeIntegerFromString.decode(hours),
+    either.mapLeft(() => a18n`Hours should be a non negative number`),
+    either.chain(
+      either.fromPredicate(
+        hours => hours >= 0 && hours < 24,
+        () => a18n`Hours should be a number between 0 and 23`
+      )
     )
   )
 }
@@ -121,10 +112,13 @@ function fixHours(hours: string): string {
 
 function validateMinutes(minutes: string): Either<LocalizedString, number> {
   return pipe(
-    parseInt(minutes),
-    either.fromPredicate(
-      minutes => !isNaN(minutes) && minutes >= 0 && minutes < 60,
-      () => a18n`Minutes should be a number between 0 and 59`
+    NonNegativeIntegerFromString.decode(minutes),
+    either.mapLeft(() => a18n`Minutes should be a non negative number`),
+    either.chain(
+      either.fromPredicate(
+        minutes => minutes >= 0 && minutes < 60,
+        () => a18n`Hours should be a number between 0 and 59`
+      )
     )
   )
 }
@@ -160,26 +154,26 @@ function fixMinutes(minutes: string): string {
 }
 
 export const DateTimePicker: FC<Props> = ({ mode = 'datetime', ...props }) => {
-  const value = pipe(
-    DateFromISOString.decode(props.value),
-    either.getOrElse(() => new Date())
-  )
-
   const [isOpen, setIsOpen] = useState(false)
-  const [year, setYear] = useState(value.getFullYear().toString(10))
-  const [month, setMonth] = useState(value.getMonth().toString(10))
+  const [year, setYear] = useState(props.value.getFullYear().toString(10))
+  const [month, setMonth] = useSelectState(
+    localizedMonthNames,
+    option.some(props.value.getMonth())
+  )
 
   const [currentMode, setCurrentMode] = useState<DateTimePickerMode>(
     mode === 'time' ? 'TIME' : 'DATE'
   )
 
-  const [hours, setHours] = useState(fixHours(value.getHours().toString(10)))
-
-  const [minutes, setMinutes] = useState(
-    fixMinutes(value.getMinutes().toString(10))
+  const [hours, setHours] = useState(
+    fixHours(props.value.getHours().toString(10))
   )
 
-  const initialValueRef = useRef(value)
+  const [minutes, setMinutes] = useState(
+    fixMinutes(props.value.getMinutes().toString(10))
+  )
+
+  const initialValueRef = useRef(props.value)
   const yearInputRef = useRef<HTMLInputElement>(null)
   const monthInputRef = useRef<HTMLInputElement>(null)
   const hoursInputRef = useRef<HTMLInputElement>(null)
@@ -195,10 +189,12 @@ export const DateTimePicker: FC<Props> = ({ mode = 'datetime', ...props }) => {
     either.fold(option.some, () => option.none)
   )
 
-  const monthValidation = validateMonth(month)
   const monthError: Option<LocalizedString> = pipe(
-    monthValidation,
-    either.fold(option.some, () => option.none)
+    getOptionValue(month),
+    option.fold(
+      () => option.some(a18n`Month should be one of the available options`),
+      () => option.none
+    )
   )
 
   const hoursValidation = useMemo(() => validateHours(hours), [hours])
@@ -224,12 +220,12 @@ export const DateTimePicker: FC<Props> = ({ mode = 'datetime', ...props }) => {
       }
     }
 
-    return props.onChange(date.toISOString())
+    return props.onChange(date)
   }
 
   const confirm = () => {
-    initialValueRef.current = value
-    onChange(value, true)
+    initialValueRef.current = props.value
+    onChange(props.value, true)
     setIsOpen(false)
     setCurrentMode('DATE')
   }
@@ -300,7 +296,7 @@ export const DateTimePicker: FC<Props> = ({ mode = 'datetime', ...props }) => {
       <Input
         {...props}
         className="DateTimePickerInput"
-        value={value.toLocaleString(a18n.getLocale(), options)}
+        value={props.value.toLocaleString(a18n.getLocale(), options)}
         onChange={constVoid}
         readOnly
         onFocus={() => setIsOpen(true)}
@@ -351,18 +347,18 @@ export const DateTimePicker: FC<Props> = ({ mode = 'datetime', ...props }) => {
           foldDateTimePickerMode(
             () => (
               <>
-                <CounterInput
+                <Input
                   ref={yearInputRef}
                   name={`${props.name}-year`}
                   label={a18n`Year`}
                   value={year}
                   onChange={setYear}
-                  onBack={year => year - 1}
-                  onForward={year => year + 1}
                   error={yearError}
                   warning={option.none}
+                  className="DateTimePickerYear"
                 />
                 <CounterSelect
+                  codec={NumberFromString}
                   ref={monthInputRef}
                   name={`${props.name}-month`}
                   label={a18n`Month`}
@@ -390,17 +386,18 @@ export const DateTimePicker: FC<Props> = ({ mode = 'datetime', ...props }) => {
                   warning={option.none}
                   options={localizedMonthNames}
                   disabled={either.isLeft(yearValidation)}
+                  className="DateTimePickerMonth"
                 />
                 <DaysGrid
                   year={pipe(
                     yearValidation,
-                    either.getOrElse(() => value.getFullYear())
+                    either.getOrElse(() => props.value.getFullYear())
                   )}
                   month={pipe(
-                    monthValidation,
-                    either.getOrElse(() => value.getMonth())
+                    getOptionValue(month),
+                    option.getOrElse(() => props.value.getMonth())
                   )}
-                  selection={value}
+                  selection={props.value}
                   onChange={date => {
                     onChange(date, true)
 
@@ -410,14 +407,14 @@ export const DateTimePicker: FC<Props> = ({ mode = 'datetime', ...props }) => {
                   }}
                   disabled={
                     either.isLeft(yearValidation) ||
-                    either.isLeft(monthValidation)
+                    option.isNone(getOptionValue(month))
                   }
                 />
               </>
             ),
             () => (
               <div className="DateTimePickerTime">
-                <TextInput
+                <Input
                   ref={hoursInputRef}
                   name={`${props.name}-hours`}
                   label={a18n`Hours`}
@@ -429,7 +426,7 @@ export const DateTimePicker: FC<Props> = ({ mode = 'datetime', ...props }) => {
                   onKeyUp={onTimeInputKeyUp}
                 />
                 <Label content={':' as LocalizedString} />
-                <TextInput
+                <Input
                   ref={minutesInputRef}
                   name={`${props.name}-minutes`}
                   label={a18n`Minutes`}

@@ -1,25 +1,20 @@
-import { either, option } from 'fp-ts'
-import { constFalse, constNull, pipe } from 'fp-ts/function'
+import { option } from 'fp-ts'
+import { constNull, pipe } from 'fp-ts/function'
 import { alert, warning as warningIcon } from 'ionicons/icons'
 import { FC } from 'react'
-import { BooleanFromString, LocalizedString } from '../../../../globalDomain'
+import { LocalizedString } from '../../../../globalDomain'
 import { composeClassName } from '../../../../misc/composeClassName'
 import { Label } from '../../../Label/Label'
 import { FieldProps } from '../../useForm'
 import './Toggle.scss'
 
-interface Props extends FieldProps {
+interface Props extends FieldProps<boolean> {
   label: LocalizedString
   disabled?: boolean
 }
 
 export const Toggle: FC<Props> = props => {
-  const checked = pipe(
-    BooleanFromString.decode(props.value),
-    either.getOrElse(constFalse)
-  )
-
-  const checkedClassName = checked ? 'checked' : ''
+  const checkedClassName = props.value ? 'checked' : ''
   const disabledClassName = props.disabled ? 'disabled' : ''
 
   const colorClassName = pipe(
@@ -51,12 +46,8 @@ export const Toggle: FC<Props> = props => {
           id={props.name}
           name={props.name}
           type="checkbox"
-          checked={checked}
-          onChange={e =>
-            props.onChange(
-              pipe(e.currentTarget.checked, BooleanFromString.encode)
-            )
-          }
+          checked={props.value}
+          onChange={e => props.onChange(e.currentTarget.checked)}
           disabled={props.disabled}
         />
         <span className="label">{props.label}</span>

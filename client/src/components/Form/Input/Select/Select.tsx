@@ -1,345 +1,417 @@
+import { array, boolean, either, nonEmptyArray, option, record } from 'fp-ts'
 import {
-  array,
-  boolean,
-  nonEmptyArray,
-  option,
-  record,
-  taskEither
-} from 'fp-ts'
-import { constUndefined, constVoid, flow, identity, pipe } from 'fp-ts/function'
-import { TaskEither } from 'fp-ts/TaskEither'
+  constFalse,
+  constTrue,
+  constUndefined,
+  constVoid,
+  flow,
+  identity,
+  pipe
+} from 'fp-ts/function'
 import { Option } from 'fp-ts/Option'
 import { caretDownSharp } from 'ionicons/icons'
 import {
+  Dispatch,
   FocusEvent,
-  forwardRef,
   ReactNode,
+  SetStateAction,
   useCallback,
   useEffect,
   useRef,
   useState
 } from 'react'
-import { useCombinedRefs } from '../../../../effects/useCombinedRef'
+import { ReactRef, useCombinedRefs } from '../../../../effects/useCombinedRef'
 import { Color, LocalizedString } from '../../../../globalDomain'
 import { composeClassName } from '../../../../misc/composeClassName'
 import { Icon } from '../../../Icon/Icon'
 import { List, RoutedItem } from '../../../List/List'
 import { FieldProps } from '../../useForm'
 import { Input } from '../Input/Input'
-import './Select.scss'
 import { Loading } from '../../../Loading/Loading'
-import { a18n } from '../../../../a18n'
+import './Select.scss'
+import { NonEmptyArray } from 'fp-ts/NonEmptyArray'
+import * as t from 'io-ts'
 
-type FindOptions = (
-  query: string,
-  options: Record<string, LocalizedString>
-) => TaskEither<LocalizedString, Record<string, LocalizedString>>
+type Index = string | number | symbol
 
-const defaultEmptyPlaceholder = a18n`Nothing found here`
-const defaultFindOptions: FindOptions = (query, options) => {
-  const regex = new RegExp(query, 'i')
+export type SelectState<T extends Index> = [Option<T>, LocalizedString]
 
-  return pipe(
-    options,
-    record.filter(label => regex.test(label)),
-    taskEither.right
-  )
+export function toSelectState<T extends Index>(
+  options: Record<T, LocalizedString>,
+  value: Option<T>
+): SelectState<T> {
+  return [
+    value,
+    pipe(
+      value,
+      option.map(value => options[value]),
+      option.getOrElse(() => '' as LocalizedString)
+    )
+  ]
 }
 
-export interface SelectProps extends FieldProps {
-  className?: string
+export function useSelectState<T extends Index>(
+  options: Record<T, LocalizedString>,
+  initialValue: Option<T>
+): [SelectState<T>, Dispatch<SetStateAction<SelectState<T>>>] {
+  return useState(toSelectState(options, initialValue))
+}
+
+export function getOptionValue<T extends Index>(
+  option: SelectState<T>
+): Option<T> {
+  return option[0]
+}
+
+export function getOptionLabel<T extends Index>(
+  option: SelectState<T>
+): LocalizedString {
+  return option[1]
+}
+
+interface CommonSelectProps<T extends Index>
+  extends FieldProps<SelectState<T>> {
   label: LocalizedString
-  options: Record<string, LocalizedString>
+  className?: string
   onFocus?: (e: FocusEvent) => void
   onBlur?: (e: FocusEvent) => void
-  findOptions?: FindOptions
-  emptyPlaceholder?: LocalizedString
-  unsearchable?: boolean
   disabled?: boolean
   children?: ReactNode
+  ref?: ReactRef<HTMLInputElement>
+  codec: t.Type<T, string, unknown>
 }
 
-export const Select = forwardRef<HTMLInputElement, SelectProps>(
-  (
-    {
-      unsearchable = false,
-      options,
-      onBlur: onBlurProp,
-      className = '',
-      disabled = false,
-      findOptions = defaultFindOptions,
-      emptyPlaceholder = defaultEmptyPlaceholder,
-      ...props
-    },
-    ref
-  ) => {
-    const [isOpen, setIsOpen] = useState(false)
-    const [isLoading, setIsLoading] = useState(false)
-    const [highlightedItem, setHighlightedItem] = useState<Option<string>>(
-      option.none
+export interface DefaultSelectProps<T extends Index>
+  extends CommonSelectProps<T> {
+  type: 'default'
+  emptyPlaceholder: LocalizedString
+  options: Record<T, LocalizedString>
+}
+
+export interface UnsearchableSelectProps<T extends Index>
+  extends CommonSelectProps<T> {
+  type: 'unsearchable'
+  options: Record<T, LocalizedString>
+}
+
+export interface AsyncSelectProps<T extends Index>
+  extends CommonSelectProps<T> {
+  type: 'async'
+  emptyPlaceholder: LocalizedString
+  onQueryChange: (query: string) => void
+  isLoading: boolean
+  options: Partial<Record<T, LocalizedString>>
+}
+
+export type SelectProps<T extends Index> =
+  | DefaultSelectProps<T>
+  | UnsearchableSelectProps<T>
+  | AsyncSelectProps<T>
+
+function foldSelectProps<T extends Index, O>(
+  whenDefault: (props: DefaultSelectProps<T>) => O,
+  whenUnsearchable: (props: UnsearchableSelectProps<T>) => O,
+  whenAsync: (props: AsyncSelectProps<T>) => O
+): (props: SelectProps<T>) => O {
+  return props => {
+    switch (props.type) {
+      case 'default':
+        return whenDefault(props)
+      case 'unsearchable':
+        return whenUnsearchable(props)
+      case 'async':
+        return whenAsync(props)
+    }
+  }
+}
+
+export function Select<T extends Index>({
+  className = '',
+  ...props
+}: SelectProps<T>) {
+  const { onChange, onBlur: onBlurProp } = props
+  const [isOpen, setIsOpen] = useState(false)
+  const [highlightedItem, setHighlightedItem] = useState<Option<string>>(
+    option.none
+  )
+  const innerRef = useRef<HTMLInputElement>(null)
+  const inputRef = useCombinedRefs(innerRef, props.ref || null)
+
+  const options = pipe(
+    props,
+    foldSelectProps(
+      ({ options }) => {
+        const regex = new RegExp(getOptionLabel(props.value), 'i')
+
+        return pipe(
+          options,
+          record.filter(label => regex.test(label))
+        ) as Record<T, LocalizedString>
+      },
+      () => props.options,
+      () => props.options
+    )
+  )
+
+  const onInputChange = (input: LocalizedString): void => {
+    setIsOpen(true)
+    setHighlightedItem(option.none)
+
+    pipe(
+      Object.entries(options) as [string, LocalizedString][],
+      array.findFirst(([, label]) => label === input),
+      option.fold<[string, LocalizedString], [Option<T>, LocalizedString]>(
+        () => [option.none, input],
+        ([value, label]) =>
+          pipe(
+            value,
+            props.codec.decode,
+            either.fold(
+              () => [option.none, input],
+              value => [option.some(value), label]
+            )
+          )
+      ),
+      props.onChange
     )
 
-    const [label, setLabel] = useState(
-      pipe(
-        Object.entries(options).find(([key]) => key === props.value),
-        option.fromNullable,
-        option.map(([, value]) => value),
-        option.getOrElse(() => '')
+    pipe(
+      props,
+      foldSelectProps(constVoid, constVoid, ({ onQueryChange }) =>
+        onQueryChange(input)
       )
     )
+  }
 
-    const [filteredOptions, setFilteredOptions] = useState(options)
+  const onFocus = (e?: FocusEvent) => {
+    e && props.onFocus?.(e)
+    setIsOpen(true)
 
-    const innerRef = useRef<HTMLInputElement>(null)
-    const inputRef = useCombinedRefs(innerRef, ref)
+    pipe(
+      props,
+      foldSelectProps(
+        () => inputRef.current?.select(),
+        constVoid,
+        () => inputRef.current?.select()
+      )
+    )
+  }
 
-    const notifyChange = useCallback(
-      (label: string): void => {
+  const onBlur = useCallback(
+    (e?: FocusEvent) => {
+      setHighlightedItem(option.none)
+
+      if (record.size(options) === 1) {
+        const [[value, label]] = Object.entries(options) as [
+          [T, LocalizedString]
+        ]
+
         pipe(
-          Object.entries(filteredOptions).find(([, value]) => value === label),
-          option.fromNullable,
-          option.map(([key]) => key),
-          option.fold(constVoid, props.onChange)
+          value,
+          props.codec.decode,
+          either.fold(constVoid, value => onChange([option.some(value), label]))
         )
-      },
-      [filteredOptions, props.onChange]
-    )
+      }
 
-    const onFocus = (e?: FocusEvent) => {
-      e && props.onFocus?.(e)
-      !unsearchable && inputRef.current?.select()
-      setIsOpen(true)
-    }
+      window.setTimeout(() => {
+        e && onBlurProp?.(e)
+        setIsOpen(false)
+      }, 150)
+    },
+    [options, onChange, onBlurProp, props.codec]
+  )
 
-    const onBlur = useCallback(
-      (e?: FocusEvent) => {
-        setHighlightedItem(option.none)
-
-        if (record.size(filteredOptions) === 1) {
-          const label = Object.values(filteredOptions)[0]
-          setLabel(label)
-          notifyChange(label)
-        }
-
-        window.setTimeout(() => {
-          e && onBlurProp?.(e)
-          setIsOpen(false)
-        }, 150)
-      },
-      [filteredOptions, notifyChange, onBlurProp]
-    )
-
-    const onInputChange = (input: string) => {
-      setLabel(input)
-      setIsOpen(true)
-      setHighlightedItem(option.none)
-
-      pipe(
-        Object.entries(filteredOptions).find(([, value]) => value === input),
-        option.fromNullable,
-        option.map(([key]) => key),
-        option.getOrElse(() => ''),
-        props.onChange
-      )
-    }
-
-    const iconColor: Color = pipe(
-      props.error,
-      option.fold(
-        () =>
-          pipe(
-            isOpen,
-            boolean.fold(
-              () => 'default',
-              () => 'primary'
-            )
-          ),
-        () => 'danger'
-      )
-    )
-
-    const openClassName = isOpen ? 'open' : ''
-
-    useEffect(() => {
-      const inputElement = inputRef.current
-
-      const onKeyUp = (e: KeyboardEvent) => {
-        e.stopPropagation()
-
-        if (e.code === 'Escape') {
-          onBlur()
-        } else if (e.code === 'ArrowDown') {
-          const items = Object.keys(filteredOptions)
-
-          setHighlightedItem(
-            flow(
-              option.fold(
-                () => pipe(items[0], option.fromNullable),
-                highlightedItem =>
-                  pipe(
-                    items,
-                    array.findIndex(key => key === highlightedItem),
-                    option.map(n => n + 1),
-                    option.map(n => items[n]),
-                    option.map(key => key || items[0])
-                  )
-              )
-            )
+  const iconColor: Color = pipe(
+    props.error,
+    option.fold(
+      () =>
+        pipe(
+          isOpen,
+          boolean.fold(
+            () => 'default',
+            () => 'primary'
           )
-        } else if (e.code === 'ArrowUp') {
-          const items = Object.keys(filteredOptions)
-
-          setHighlightedItem(
-            flow(
-              option.fold(
-                () => pipe(items[items.length - 1], option.fromNullable),
-                highlightedItem =>
-                  pipe(
-                    items,
-                    array.findIndex(key => key === highlightedItem),
-                    option.map(n => n - 1),
-                    option.map(n => items[n]),
-                    option.map(key => key || items[items.length - 1])
-                  )
-              )
-            )
-          )
-        }
-      }
-
-      if (isOpen) {
-        inputElement && inputElement.addEventListener('keyup', onKeyUp)
-      }
-
-      return () => {
-        inputElement && inputElement.removeEventListener('keyup', onKeyUp)
-      }
-    }, [isOpen, filteredOptions, onBlur, inputRef])
-
-    useEffect(() => {
-      const inputElement = inputRef.current
-
-      const onKeyUp = (e: KeyboardEvent) => {
-        e.stopPropagation()
-
-        if (e.code === 'Enter') {
-          pipe(
-            highlightedItem,
-            option.fold(constVoid, highlightedItem => {
-              const label = filteredOptions[highlightedItem]
-              setLabel(label)
-              notifyChange(label)
-              onBlur()
-            })
-          )
-        }
-      }
-
-      if (isOpen && option.isSome(highlightedItem)) {
-        inputElement && inputElement.addEventListener('keyup', onKeyUp)
-      }
-
-      return () => {
-        inputElement && inputElement.removeEventListener('keyup', onKeyUp)
-      }
-    }, [
-      isOpen,
-      filteredOptions,
-      highlightedItem,
-      notifyChange,
-      onBlur,
-      inputRef
-    ])
-
-    useEffect(() => {
-      if (!props.value) {
-        return
-      }
-
-      pipe(
-        Object.entries(filteredOptions).find(([key]) => key === props.value),
-        option.fromNullable,
-        option.map(([, value]) => value),
-        option.getOrElse(() => ''),
-        setLabel
-      )
-
-      setHighlightedItem(option.none)
-    }, [props.value, filteredOptions])
-
-    useEffect(() => {
-      if (props.value && label) {
-        return
-      }
-
-      setIsLoading(true)
-
-      pipe(
-        unsearchable,
-        boolean.fold(
-          () => findOptions(label, options),
-          () => taskEither.right(options)
         ),
-        taskEither.chain(filteredOptions =>
-          taskEither.fromIO(() => {
-            setIsLoading(false)
-            setFilteredOptions(filteredOptions)
+      () => 'danger'
+    )
+  )
+
+  const openClassName = isOpen ? 'open' : ''
+
+  useEffect(() => {
+    const inputElement = inputRef.current
+
+    const onKeyUp = (e: KeyboardEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+
+      if (e.code === 'Escape') {
+        onBlur()
+      } else if (e.code === 'ArrowDown') {
+        const items = Object.keys(options)
+
+        setHighlightedItem(
+          flow(
+            option.fold(
+              () => pipe(items[0], option.fromNullable),
+              highlightedItem =>
+                pipe(
+                  items,
+                  array.findIndex(key => key === highlightedItem),
+                  option.map(n => n + 1),
+                  option.map(n => items[n]),
+                  option.map(key => key || items[0])
+                )
+            )
+          )
+        )
+      } else if (e.code === 'ArrowUp') {
+        const items = Object.keys(options)
+
+        setHighlightedItem(
+          flow(
+            option.fold(
+              () => pipe(items[items.length - 1], option.fromNullable),
+              highlightedItem =>
+                pipe(
+                  items,
+                  array.findIndex(key => key === highlightedItem),
+                  option.map(n => n - 1),
+                  option.map(n => items[n]),
+                  option.map(key => key || items[items.length - 1])
+                )
+            )
+          )
+        )
+      }
+    }
+
+    if (isOpen) {
+      inputElement && inputElement.addEventListener('keyup', onKeyUp)
+    }
+
+    return () => {
+      inputElement && inputElement.removeEventListener('keyup', onKeyUp)
+    }
+  }, [inputRef, isOpen, onBlur, options])
+
+  useEffect(() => {
+    const inputElement = inputRef.current
+
+    const onKeyUp = (e: KeyboardEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+
+      if (e.code === 'Enter') {
+        pipe(
+          highlightedItem,
+          option.fold(constVoid, highlightedItem => {
+            pipe(
+              highlightedItem,
+              props.codec.decode,
+              either.fold(constVoid, value =>
+                onChange([option.some(value), options[value]!])
+              )
+            )
+
+            onBlur()
           })
         )
-      )()
-    }, [label, props.value, findOptions, options, unsearchable])
+      }
+    }
 
-    const optionItems: RoutedItem[] = pipe(
-      filteredOptions,
-      record.mapWithIndex((value, label) => ({
-        key: value,
-        label: option.none,
-        content: label,
-        description: option.none,
-        className: pipe(
-          highlightedItem,
-          option.fold(constUndefined, highlightedItem =>
-            highlightedItem === value ? 'highlighted' : undefined
+    if (isOpen && option.isSome(highlightedItem)) {
+      inputElement && inputElement.addEventListener('keyup', onKeyUp)
+    }
+
+    return () => {
+      inputElement && inputElement.removeEventListener('keyup', onKeyUp)
+    }
+  }, [
+    isOpen,
+    options,
+    highlightedItem,
+    onChange,
+    onBlur,
+    inputRef,
+    props.codec
+  ])
+
+  const optionItems: RoutedItem[] = pipe(
+    Object.entries(options) as [string, LocalizedString][],
+    array.map(([value, label]) => ({
+      key: value,
+      label: option.none,
+      content: label,
+      description: option.none,
+      className: pipe(
+        highlightedItem,
+        option.fold(constUndefined, highlightedItem =>
+          highlightedItem === value ? 'highlighted' : undefined
+        )
+      ),
+      action: () => {
+        pipe(
+          value,
+          props.codec.decode,
+          either.fold(constVoid, value =>
+            props.onChange([option.some(value), label])
           )
-        ),
-        action: () => {
-          notifyChange(label)
-          setHighlightedItem(option.none)
-        }
-      })),
-      Object.values,
-      nonEmptyArray.fromArray,
-      option.fold(
-        () => [
-          {
-            key: '',
-            label: option.none,
-            content: emptyPlaceholder,
-            description: option.none,
-            className: 'empty',
-            action: constVoid
-          }
-        ],
-        identity
-      )
-    )
+        )
 
-    return (
-      <div className={composeClassName('Select', className, openClassName)}>
-        <div className="input">
-          <Input
-            {...props}
-            ref={inputRef}
-            value={label}
-            onChange={onInputChange}
-            onFocus={onFocus}
-            onBlur={onBlur}
-            autoComplete="none"
-            readOnly={unsearchable}
-            disabled={disabled}
-          />
+        setHighlightedItem(option.none)
+      }
+    })),
+    nonEmptyArray.fromArray,
+    option.fold<NonEmptyArray<RoutedItem>, RoutedItem[]>(() => {
+      const getEmptyItem = (content: LocalizedString): RoutedItem => ({
+        key: '',
+        label: option.none,
+        content,
+        description: option.none,
+        className: 'empty',
+        action: constVoid
+      })
+
+      return pipe(
+        props,
+        foldSelectProps(
+          ({ emptyPlaceholder }) => [getEmptyItem(emptyPlaceholder)],
+          () => [],
+          ({ emptyPlaceholder }) => [getEmptyItem(emptyPlaceholder)]
+        )
+      )
+    }, identity)
+  )
+
+  return (
+    <div className={composeClassName('Select', className, openClassName)}>
+      <div className="input">
+        <Input
+          name={props.name}
+          label={props.label}
+          ref={inputRef}
+          value={getOptionLabel(props.value)}
+          onChange={input => onInputChange(input as LocalizedString)}
+          onFocus={onFocus}
+          onBlur={onBlur}
+          autoComplete="off"
+          readOnly={pipe(
+            props,
+            foldSelectProps(constFalse, constTrue, constFalse)
+          )}
+          disabled={props.disabled}
+          error={props.error}
+          warning={props.warning}
+        >
+          {props.children}
           {pipe(
-            isLoading,
+            props,
+            foldSelectProps(
+              constFalse,
+              constFalse,
+              ({ isLoading }) => !!isLoading
+            ),
             boolean.fold(
               () => (
                 <Icon
@@ -352,11 +424,11 @@ export const Select = forwardRef<HTMLInputElement, SelectProps>(
               () => <Loading size="small" color={iconColor} />
             )
           )}
-        </div>
-        <div className="options">
-          <List type="routed" heading={option.none} items={optionItems} />
-        </div>
+        </Input>
       </div>
-    )
-  }
-)
+      <div className="options">
+        <List type="routed" heading={option.none} items={optionItems} />
+      </div>
+    </div>
+  )
+}

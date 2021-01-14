@@ -11,18 +11,20 @@
   }
 
   .input {
-    position: relative;
-
     * {
       cursor: pointer;
     }
 
-    .arrowIcon,
-    .Loading {
-      position: absolute;
-      right: 16px;
-      top: 50%;
-      transform: translate3d(0, -50%, 0);
+    label {
+      position: relative;
+
+      .arrowIcon,
+      .Loading {
+        position: absolute;
+        right: 16px;
+        top: 50%;
+        transform: translate3d(0, -50%, 0);
+      }
     }
   }
 

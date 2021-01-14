@@ -89,11 +89,40 @@ export function unsafePositiveInteger(n: number): PositiveInteger {
   return n as PositiveInteger
 }
 
-export const NonNegativeInteger = t.union(
-  [PositiveInteger, t.literal(0)],
+interface NonNegativeIntegerBrand {
+  readonly NonNegativeInteger: unique symbol
+}
+
+export const NonNegativeInteger = t.brand(
+  t.Int,
+  (n): n is t.Branded<t.Int, NonNegativeIntegerBrand> => n >= 0,
   'NonNegativeInteger'
 )
 export type NonNegativeInteger = t.TypeOf<typeof NonNegativeInteger>
+
+export function unsafeNonNegativeInteger(n: number): NonNegativeInteger {
+  return Math.abs(n) as NonNegativeInteger
+}
+
+export const NonNegativeIntegerFromString: t.Type<
+  NonNegativeInteger,
+  string,
+  unknown
+> = new t.Type(
+  'NonNegativeIntegerFromString',
+  NonNegativeInteger.is,
+  (u, c) =>
+    pipe(
+      IntFromString.decode(u),
+      either.chain(n =>
+        n >= 0 ? t.success(n as NonNegativeInteger) : t.failure(u, c)
+      )
+    ),
+  n => n.toString(10)
+)
+export type NonNegativeIntegerFromString = t.TypeOf<
+  typeof NonNegativeIntegerFromString
+>
 
 interface NonNegativeNumberBrand {
   readonly NonNegativeNumber: unique symbol
@@ -159,23 +188,6 @@ export const PercentageFromString: t.Type<
   n => (n * 100).toString()
 )
 export type PercentageFromString = t.TypeOf<typeof PercentageFromString>
-
-export const BooleanFromString: t.Type<boolean, string, unknown> = new t.Type(
-  'BooleanFromString',
-  t.boolean.is,
-  (u, c) => {
-    switch (u) {
-      case 'true':
-        return t.success(true)
-      case 'false':
-        return t.success(false)
-      default:
-        return t.failure(u, c)
-    }
-  },
-  b => (b ? 'true' : 'false')
-)
-export type BooleanFromString = t.TypeOf<typeof BooleanFromString>
 
 export const OptionFromEmptyString: t.Type<
   Option<NonEmptyString>,
