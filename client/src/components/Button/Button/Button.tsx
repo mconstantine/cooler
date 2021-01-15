@@ -7,7 +7,8 @@ import { composeClassName } from '../../../misc/composeClassName'
 import { Icon } from '../../Icon/Icon'
 import './Button.scss'
 
-interface CommonProps extends Omit<HTMLProps<HTMLButtonElement>, 'action'> {
+interface CommonProps
+  extends Omit<HTMLProps<HTMLButtonElement>, 'action' | 'size'> {
   color?: Color
   flat?: boolean
   disabled?: boolean
@@ -16,7 +17,7 @@ interface CommonProps extends Omit<HTMLProps<HTMLButtonElement>, 'action'> {
   className?: string
 }
 
-interface ButtonProps {
+interface DefaultButtonProps {
   type: 'button'
   label: LocalizedString
   icon: Option<string>
@@ -30,12 +31,12 @@ interface IconButtonProps {
   action: () => unknown
 }
 
-type Props = CommonProps & (ButtonProps | IconButtonProps)
+export type ButtonProps = CommonProps & (DefaultButtonProps | IconButtonProps)
 
-function foldProps<T>(
-  whenButton: (props: ButtonProps) => T,
+export function foldButtonProps<T>(
+  whenButton: (props: DefaultButtonProps) => T,
   whenIconButton: (props: IconButtonProps) => T
-): (props: Props) => T {
+): (props: ButtonProps) => T {
   return props => {
     switch (props.type) {
       case 'button':
@@ -46,7 +47,7 @@ function foldProps<T>(
   }
 }
 
-export const Button: FC<Props> = ({
+export const Button: FC<ButtonProps> = ({
   color = 'default',
   disabled = false,
   flat = false,
@@ -89,7 +90,7 @@ export const Button: FC<Props> = ({
 
   const withIconClassName = pipe(
     props,
-    foldProps(
+    foldButtonProps(
       ({ icon }) =>
         pipe(
           icon,
@@ -126,7 +127,7 @@ export const Button: FC<Props> = ({
     >
       {pipe(
         props,
-        foldProps(
+        foldButtonProps(
           ({ icon }) =>
             pipe(
               icon,
@@ -140,7 +141,7 @@ export const Button: FC<Props> = ({
       )}
       {pipe(
         props,
-        foldProps(({ label }) => <span>{label}</span>, constNull)
+        foldButtonProps(({ label }) => <span>{label}</span>, constNull)
       )}
     </button>
   )
