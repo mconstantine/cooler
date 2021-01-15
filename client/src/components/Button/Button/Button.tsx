@@ -12,6 +12,7 @@ interface CommonProps extends Omit<HTMLProps<HTMLButtonElement>, 'action'> {
   flat?: boolean
   disabled?: boolean
   selected?: boolean
+  active?: boolean
   className?: string
 }
 
@@ -51,6 +52,7 @@ export const Button: FC<Props> = ({
   flat = false,
   className = '',
   selected = false,
+  active = false,
   ...props
 }) => {
   const disabledClassName = pipe(
@@ -77,6 +79,14 @@ export const Button: FC<Props> = ({
     )
   )
 
+  const activeClassName = pipe(
+    active,
+    boolean.fold(
+      () => '',
+      () => 'active'
+    )
+  )
+
   const withIconClassName = pipe(
     props,
     foldProps(
@@ -100,6 +110,7 @@ export const Button: FC<Props> = ({
         color,
         flatClassName,
         selectedClassName,
+        activeClassName,
         disabledClassName,
         withIconClassName
       )}

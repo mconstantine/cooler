@@ -161,6 +161,59 @@ export const ButtonWithIcon: Story = ({ onClick }) => {
   )
 }
 
+export const SelectedButton: Story = ({ onClick }) => {
+  return (
+    <CoolerStory>
+      <Content>
+        <Buttons>
+          <ButtonComponent
+            type="button"
+            label={unsafeLocalizedString('Default color')}
+            icon={option.some(star)}
+            action={() => onClick('default')}
+            active
+          />
+          <ButtonComponent
+            type="button"
+            color="primary"
+            label={unsafeLocalizedString('Primary color')}
+            icon={option.some(airplane)}
+            action={() => onClick('primary')}
+            active
+          />
+          <ButtonComponent
+            type="button"
+            color="success"
+            label={unsafeLocalizedString('Success color')}
+            icon={option.some(checkmark)}
+            action={() => onClick('success')}
+            active
+          />
+          <ButtonComponent
+            type="button"
+            color="warning"
+            flat
+            label={unsafeLocalizedString('Warning color, flat')}
+            icon={option.some(warning)}
+            action={() => onClick('warning')}
+            active
+          />
+          <ButtonComponent
+            type="button"
+            color="danger"
+            flat
+            label={unsafeLocalizedString('Danger color, flat, disabled')}
+            icon={option.some(skull)}
+            action={() => onClick('danger')}
+            active
+            disabled
+          />
+        </Buttons>
+      </Content>
+    </CoolerStory>
+  )
+}
+
 export const IconOnlyButton: Story = ({ onClick }) => {
   return (
     <CoolerStory>
