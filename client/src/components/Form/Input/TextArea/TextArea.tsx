@@ -13,7 +13,7 @@ type Props = Omit<
   InputHTMLAttributes<HTMLTextAreaElement>,
   'value' | 'onChange' | 'title'
 > &
-  FieldProps & {
+  FieldProps<string> & {
     label: LocalizedString
   }
 
