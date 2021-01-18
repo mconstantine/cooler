@@ -14,11 +14,12 @@ export type LoadingState = 'default' | 'loading' | 'success' | 'error'
 
 export type CommonProps = Pick<
   ComponentProps<typeof Button>,
-  'color' | 'flat' | 'disabled'
+  'color' | 'disabled'
 > & {
   loadingState: LoadingState
   label: LocalizedString
   icon: string
+  flat?: boolean
   labels?: {
     loading: LocalizedString
     success: LocalizedString
@@ -142,15 +143,15 @@ export const ControlledLoadingButton: FC<Props> = ({
       {pipe(
         props,
         foldProps(
-          props => {
+          ({ action: actionProp }) => {
             const action = (e: MouseEvent) => {
               e.preventDefault()
 
-              if (props.disabled || props.loadingState === 'loading') {
+              if (disabled || props.loadingState === 'loading') {
                 return
               }
 
-              props.action()
+              actionProp()
             }
 
             return <button onClick={action}>{props.label}</button>

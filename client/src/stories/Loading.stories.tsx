@@ -1,40 +1,39 @@
 import { Meta, Story } from '@storybook/react'
 import { Content } from '../components/Content/Content'
 import { Loading as LoadingComponent } from '../components/Loading/Loading'
+import { Color, Size } from '../globalDomain'
+import { colorControl, sizeControl } from './args'
 import { CoolerStory } from './CoolerStory'
 
-export const Loading: Story = () => {
+interface Args {
+  color: Color
+  size: Size
+}
+
+export const Loading: Story<Args> = props => {
   return (
     <CoolerStory>
       <Content>
-        <div>
-          <LoadingComponent />
-          <LoadingComponent color="primary" />
-          <LoadingComponent color="success" />
-          <LoadingComponent color="warning" />
-          <LoadingComponent color="danger" />
-        </div>
-        <div style={{ marginTop: '12px' }}>
-          <LoadingComponent size="medium" />
-          <LoadingComponent size="medium" color="primary" />
-          <LoadingComponent size="medium" color="success" />
-          <LoadingComponent size="medium" color="warning" />
-          <LoadingComponent size="medium" color="danger" />
-        </div>
-        <div style={{ marginTop: '12px' }}>
-          <LoadingComponent size="small" />
-          <LoadingComponent size="small" color="primary" />
-          <LoadingComponent size="small" color="success" />
-          <LoadingComponent size="small" color="warning" />
-          <LoadingComponent size="small" color="danger" />
-        </div>
+        <LoadingComponent color={props.color} size={props.size} />
       </Content>
     </CoolerStory>
   )
 }
 
-const meta: Meta = {
-  title: 'Cooler/Loading'
+const meta: Meta<Args> = {
+  title: 'Cooler/Loading',
+  args: {
+    color: 'default',
+    size: 'medium'
+  },
+  argTypes: {
+    color: {
+      control: colorControl
+    },
+    size: {
+      control: sizeControl
+    }
+  }
 }
 
 export default meta

@@ -3,50 +3,83 @@ import { either, task, taskEither } from 'fp-ts'
 import { pipe, constVoid } from 'fp-ts/function'
 import { send } from 'ionicons/icons'
 import { unsafeLocalizedString } from '../../a18n'
-import { Buttons } from '../../components/Button/Buttons/Buttons'
 import { LoadingButton as LoadingButtonComponent } from '../../components/Button/LoadingButton/LoadingButton'
 import { Content } from '../../components/Content/Content'
 import { CoolerStory } from '../CoolerStory'
+import { ButtonArgs, buttonArgTypes } from './args'
 
-export const LoadingButton: Story = () => {
+type LoadingButtonResult = 'Success' | 'Failure'
+
+function foldLoadingButtonResult<T>(
+  whenSuccess: () => T,
+  whenFailure: () => T
+): (result: LoadingButtonResult) => T {
+  return result => {
+    switch (result) {
+      case 'Success':
+        return whenSuccess()
+      case 'Failure':
+        return whenFailure()
+    }
+  }
+}
+
+type Args = Omit<ButtonArgs, 'icon'> & {
+  result: LoadingButtonResult
+}
+
+const success = taskEither.fromTask(
+  pipe(task.fromIO(constVoid), task.delay(2000))
+)
+
+const failure = pipe(
+  task.fromIO(() => either.left(new Error('Some Error!'))),
+  task.delay(2000)
+)
+
+export const LoadingButton: Story<Args> = props => {
   return (
     <CoolerStory>
       <Content>
-        <Buttons>
-          <LoadingButtonComponent
-            type="button"
-            label={unsafeLocalizedString('I succeed')}
-            action={taskEither.fromTask(
-              pipe(task.fromIO(constVoid), task.delay(2000))
-            )}
-            icon={send}
-            color="primary"
-          />
-          <LoadingButtonComponent
-            type="button"
-            label={unsafeLocalizedString('I fail')}
-            action={pipe(
-              task.fromIO(() => either.left(new Error('Some Error!'))),
-              task.delay(2000)
-            )}
-            icon={send}
-            color="primary"
-            flat
-          />
-          <LoadingButtonComponent
-            type="input"
-            label={unsafeLocalizedString('Disabled input')}
-            icon={send}
-            disabled
-          />
-        </Buttons>
+        <LoadingButtonComponent
+          type="button"
+          label={props.label}
+          action={pipe(
+            props.result,
+            foldLoadingButtonResult(
+              () => success,
+              () => failure
+            )
+          )}
+          icon={send}
+          color={props.color}
+          flat={props.flat}
+          disabled={props.disabled}
+        />
       </Content>
     </CoolerStory>
   )
 }
 
-const meta: Meta = {
-  title: 'Cooler/Buttons/Loading Button'
+const meta: Meta<Args> = {
+  title: 'Cooler/Buttons/Loading Button',
+  argTypes: {
+    ...buttonArgTypes,
+    icon: { control: null },
+    result: {
+      control: {
+        type: 'select',
+        options: ['Success', 'Error']
+      }
+    }
+  },
+  args: {
+    label: unsafeLocalizedString('Loading button'),
+    color: 'default',
+    flat: false,
+    disabled: false,
+    result: 'Success'
+  }
 }
 
 export default meta

@@ -10,7 +10,6 @@ import './Button.scss'
 interface CommonProps
   extends Omit<HTMLProps<HTMLButtonElement>, 'action' | 'size'> {
   color?: Color
-  flat?: boolean
   disabled?: boolean
   selected?: boolean
   active?: boolean
@@ -21,6 +20,7 @@ interface DefaultButtonProps {
   type: 'button'
   label: LocalizedString
   icon: Option<string>
+  flat?: boolean
   action: () => unknown
 }
 
@@ -50,7 +50,6 @@ export function foldButtonProps<T>(
 export const Button: FC<ButtonProps> = ({
   color = 'default',
   disabled = false,
-  flat = false,
   className = '',
   selected = false,
   active = false,
@@ -65,10 +64,17 @@ export const Button: FC<ButtonProps> = ({
   )
 
   const flatClassName = pipe(
-    flat,
-    boolean.fold(
-      () => '',
-      () => 'flat'
+    props,
+    foldButtonProps(
+      ({ flat = false }) =>
+        pipe(
+          flat,
+          boolean.fold(
+            () => '',
+            () => 'flat'
+          )
+        ),
+      () => ''
     )
   )
 

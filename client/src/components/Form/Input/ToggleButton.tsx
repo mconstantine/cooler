@@ -15,6 +15,7 @@ type Props = Omit<ButtonProps, keyof FieldProps<boolean> | 'label' | 'action'> &
     | {
         type: 'button'
         label: LocalizedString
+        flat?: boolean
       }
     | {
         type: 'iconButton'

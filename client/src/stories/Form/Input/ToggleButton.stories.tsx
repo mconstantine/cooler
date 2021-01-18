@@ -3,23 +3,20 @@ import { boolean, option } from 'fp-ts'
 import { pipe } from 'fp-ts/function'
 import { star } from 'ionicons/icons'
 import { useState } from 'react'
+import { unsafeLocalizedString } from '../../../a18n'
 import { Content } from '../../../components/Content/Content'
 import { ToggleButton as ToggleButtonComponent } from '../../../components/Form/Input/ToggleButton'
-import { Color, LocalizedString } from '../../../globalDomain'
+import { LocalizedString } from '../../../globalDomain'
+import { ButtonArgs, buttonArgTypes } from '../../Button/args'
 import { CoolerStory } from '../../CoolerStory'
 
-interface Props {
-  label: LocalizedString
-  icon: boolean
+interface Args extends ButtonArgs {
   iconOnly: boolean
-  color: Color
   error: LocalizedString
   warning: LocalizedString
-  flat: boolean
-  disabled: boolean
 }
 
-export const ToggleButton: Story<Props> = props => {
+export const ToggleButton: Story<Args> = props => {
   const [state, setState] = useState(false)
 
   return (
@@ -83,7 +80,6 @@ export const ToggleButton: Story<Props> = props => {
                   )
                 )}
                 color={props.color}
-                flat={props.flat}
                 disabled={props.disabled}
               />
             )
@@ -94,49 +90,28 @@ export const ToggleButton: Story<Props> = props => {
   )
 }
 
-const meta: Meta = {
+const meta: Meta<Args> = {
   title: 'Cooler/Form/Inputs/Toggle Button',
   args: {
-    label: 'Toggle Button',
+    label: unsafeLocalizedString('Toggle Button'),
     icon: false,
     iconOnly: false,
     color: 'default',
-    error: '',
-    warning: '',
+    error: unsafeLocalizedString(''),
+    warning: unsafeLocalizedString(''),
     flat: false,
     disabled: false
   },
   argTypes: {
-    label: {
-      control: 'text'
-    },
-    icon: {
-      control: 'boolean'
-    },
+    ...buttonArgTypes,
     iconOnly: {
       control: 'boolean'
-    },
-    color: {
-      control: {
-        type: 'select',
-        options: {
-          Default: 'default',
-          Primary: 'primary',
-          Success: 'success'
-        }
-      }
     },
     error: {
       control: 'text'
     },
     warning: {
       control: 'text'
-    },
-    flat: {
-      control: 'boolean'
-    },
-    disabled: {
-      control: 'boolean'
     }
   }
 }
