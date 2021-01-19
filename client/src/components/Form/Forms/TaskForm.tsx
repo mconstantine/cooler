@@ -120,16 +120,9 @@ export const TaskForm: FC<Props> = props => {
       hourlyCost: validators.fromCodec<NonNegativeNumber>(
         NonNegativeNumberFromString,
         a18n`Hourly cost should be a non negative number`
-      ),
-      start_time: validators.passThrough<Date>(),
-      from: validators.passThrough<Date>(),
-      to: validators.passThrough<Date>(),
-      repeat: validators.passThrough<NonNegativeInteger>()
+      )
     },
     linters: {},
-    formValidator: validators.passThrough<
-      SingleTaskFormData & TasksBatchFormData
-    >(),
     onSubmit: flow(foldFormDataWithState(shouldRepeat, props.onSubmit))
   })
 

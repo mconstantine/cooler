@@ -93,7 +93,6 @@ export const ProjectForm: FC<Props> = props => {
       client: validators.fromSelectState<PositiveInteger>(
         a18n`Please choose a client`
       ),
-      cashedAt: validators.passThrough<Date>(),
       cashedBalance: pipe(
         cashed,
         boolean.fold(

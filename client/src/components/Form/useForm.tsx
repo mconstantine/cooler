@@ -30,25 +30,47 @@ type FieldLinters<Values extends Record<string, unknown>> = Partial<
 
 type ValidatedFields<
   Values extends Record<string, unknown>,
-  Validators extends FieldValidators<Values>
+  Validators extends Partial<FieldValidators<Values>>
 > = {
   [k in keyof Values]: Validators[k] extends Validator<Values[k], infer O>
     ? O
-    : never
+    : Validators[k] extends Validator<Values[k], infer O> | undefined
+    ? O | Values[k]
+    : Values[k]
 }
 
 interface UseFormInput<
   Values extends Record<string, unknown>,
-  Validators extends FieldValidators<Values>,
+  Validators extends Partial<FieldValidators<Values>>,
   Linters extends FieldLinters<Values>,
-  FormValidator extends Validator<ValidatedFields<Values, Validators>, unknown>
+  FormValidator extends
+    | Validator<ValidatedFields<Values, Validators>, unknown>
+    | undefined
 > {
   initialValues: Values
   validators: Validators
   linters: Linters
   formValidator: FormValidator
   onSubmit: (
-    values: ValidatorOutput<ValidatedFields<Values, Validators>, FormValidator>
+    values: FormValidator extends Validator<
+      ValidatedFields<Values, Validators>,
+      unknown
+    >
+      ? ValidatorOutput<ValidatedFields<Values, Validators>, FormValidator>
+      : ValidatedFields<Values, Validators>
+  ) => TaskEither<unknown, unknown>
+}
+
+interface UseFormInputNoFormValidator<
+  Values extends Record<string, unknown>,
+  Validators extends Partial<FieldValidators<Values>>,
+  Linters extends FieldLinters<Values>
+> {
+  initialValues: Values
+  validators: Validators
+  linters: Linters
+  onSubmit: (
+    values: ValidatedFields<Values, Validators>
   ) => TaskEither<unknown, unknown>
 }
 
@@ -130,21 +152,42 @@ function formReducer<Values extends Record<string, unknown>>(
 
 export function useForm<
   Values extends Record<string, unknown>,
-  Validators extends FieldValidators<Values>,
+  Validators extends Partial<FieldValidators<Values>>,
+  Linters extends FieldLinters<Values>
+>(
+  options: UseFormInputNoFormValidator<Values, Validators, Linters>
+): UseFormOutput<Values>
+export function useForm<
+  Values extends Record<string, unknown>,
+  Validators extends Partial<FieldValidators<Values>>,
   Linters extends FieldLinters<Values>,
-  FormValidator extends Validator<ValidatedFields<Values, Validators>, unknown>
->({
-  initialValues,
-  validators,
-  linters,
-  formValidator,
-  onSubmit
-}: UseFormInput<
-  Values,
-  Validators,
-  Linters,
-  FormValidator
->): UseFormOutput<Values> {
+  FormValidator extends
+    | Validator<ValidatedFields<Values, Validators>, unknown>
+    | undefined
+>(
+  options: UseFormInput<Values, Validators, Linters, FormValidator>
+): UseFormOutput<Values>
+export function useForm<
+  Values extends Record<string, unknown>,
+  Validators extends Partial<FieldValidators<Values>>,
+  Linters extends FieldLinters<Values>,
+  FormValidator extends
+    | Validator<ValidatedFields<Values, Validators>, unknown>
+    | undefined
+>(
+  options:
+    | UseFormInput<Values, Validators, Linters, FormValidator>
+    | UseFormInputNoFormValidator<Values, Validators, Linters>
+): UseFormOutput<Values> {
+  const { initialValues, validators, linters, onSubmit } = options
+
+  const formValidator: FormValidator = (options as UseFormInput<
+    Values,
+    Validators,
+    Linters,
+    FormValidator
+  >).formValidator
+
   const [{ values, errors, warnings, formError }, dispatch] = useReducer(
     formReducer,
     {
@@ -166,7 +209,12 @@ export function useForm<
     value: Values[K]
   ): TaskEither<LocalizedString, unknown> {
     return pipe(
-      validators[name](value),
+      validators[name],
+      option.fromNullable,
+      option.map(validator => validator(value)),
+      option.getOrElse<TaskEither<LocalizedString, unknown>>(() =>
+        taskEither.right(value)
+      ),
       taskEither.bimap(
         error => {
           dispatch({ type: 'setError', name, error: option.some(error) })
@@ -223,32 +271,66 @@ export function useForm<
     onChange: setValue(name)
   })
 
+  const validateAllFields = (
+    values: Values
+  ): TaskEither<LocalizedString, ValidatedFields<Values, Validators>> => {
+    return pipe(
+      values,
+      record.mapWithIndex(<K extends keyof Values & string>(name: K) =>
+        validateField(name, values[name] as Values[K])
+      ),
+      sequenceS(taskEither.taskEither),
+      taskEither.map(values => values as ValidatedFields<Values, Validators>)
+    )
+  }
+
+  const validateForm = (
+    values: ValidatedFields<Values, Validators>
+  ): TaskEither<
+    LocalizedString,
+    | ValidatorOutput<
+        ValidatedFields<Values, Validators>,
+        NonNullable<FormValidator>
+      >
+    | ValidatedFields<Values, Validators>
+  > => {
+    return pipe(
+      formValidator,
+      option.fromNullable,
+      option.map(formValidator =>
+        pipe(
+          formValidator(values),
+          taskEither.bimap(
+            error => {
+              dispatch({ type: 'setFormError', error: option.some(error) })
+              return error
+            },
+            output => {
+              dispatch({ type: 'setFormError', error: option.none })
+              return output as ValidatorOutput<
+                ValidatedFields<Values, Validators>,
+                NonNullable<FormValidator>
+              >
+            }
+          )
+        )
+      ),
+      option.getOrElseW(() =>
+        taskEither.rightIO(() => {
+          dispatch({ type: 'setFormError', error: option.none })
+          return values
+        })
+      )
+    )
+  }
+
   const submit: UseFormOutput<Values>['submit'] = pipe(
-    values,
-    record.mapWithIndex(<K extends keyof Values & string>(name: K) =>
-      validateField(name, values[name] as Values[K])
-    ),
-    sequenceS(taskEither.taskEither),
+    validateAllFields(values as Values),
     taskEither.mapLeft(
       () => a18n`Some fields are not valid. Please fix them before continuing`
     ),
-    taskEither.chain(values =>
-      formValidator(values as ValidatedFields<Values, Validators>)
-    ),
-    taskEither.bimap(
-      error => {
-        dispatch({ type: 'setFormError', error: option.some(error) })
-      },
-      values => {
-        dispatch({ type: 'setFormError', error: option.none })
-
-        return values as ValidatorOutput<
-          ValidatedFields<Values, Validators>,
-          FormValidator
-        >
-      }
-    ),
-    taskEither.chain(onSubmit)
+    taskEither.chain(validateForm),
+    taskEither.chainFirstW(values => onSubmit(values as any))
   )
 
   return {

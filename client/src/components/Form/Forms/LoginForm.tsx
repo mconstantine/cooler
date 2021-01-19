@@ -1,5 +1,5 @@
 import { option, taskEither } from 'fp-ts'
-import { pipe } from 'fp-ts/function'
+import { constUndefined, pipe } from 'fp-ts/function'
 import { TaskEither } from 'fp-ts/TaskEither'
 import { NonEmptyString } from 'io-ts-types'
 import { ComponentProps, FC, useState } from 'react'
@@ -60,9 +60,16 @@ interface ValidatedData {
 export const LoginForm: FC<Props> = props => {
   const [formType, setFormType] = useState<FormType>('Login')
 
-  const formValidator: validators.Validator<ValidatedData> = taskEither.fromPredicate(
-    values => values.password === values.passwordConfirmation,
-    () => a18n`The passwords don't match`
+  const formValidator: validators.Validator<ValidatedData> | undefined = pipe(
+    formType,
+    foldFormType(
+      () =>
+        taskEither.fromPredicate(
+          values => values.password === values.passwordConfirmation,
+          () => a18n`The passwords don't match`
+        ),
+      constUndefined
+    )
   )
 
   const { fieldProps, submit, formError } = useForm({
@@ -77,7 +84,7 @@ export const LoginForm: FC<Props> = props => {
         formType,
         foldFormType(
           () => validators.nonBlankString(commonErrors.nonBlank),
-          () => validators.passThrough<string>()
+          constUndefined
         )
       ),
       email: validators.fromCodec<EmailString>(
@@ -89,18 +96,12 @@ export const LoginForm: FC<Props> = props => {
         formType,
         foldFormType(
           () => validators.nonBlankString(commonErrors.nonBlank),
-          () => validators.passThrough<string>()
+          constUndefined
         )
       )
     },
     linters: {},
-    formValidator: pipe(
-      formType,
-      foldFormType(
-        () => formValidator,
-        () => validators.passThrough()
-      )
-    ),
+    formValidator,
     onSubmit: ({ name, email, password }) =>
       pipe(
         formType,

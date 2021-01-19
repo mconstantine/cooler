@@ -22,7 +22,7 @@ import {
   useSelectState
 } from '../Input/Select/Select'
 import { commonErrors } from '../../../misc/commonErrors'
-import { constVoid, pipe } from 'fp-ts/function'
+import { constUndefined, constVoid, pipe } from 'fp-ts/function'
 import { option } from 'fp-ts'
 import { fiscalCodeLinter, vatNumberLinter } from '../../../misc/clientLinters'
 import { Input } from '../Input/Input/Input'
@@ -61,9 +61,6 @@ export const ClientForm: FC<Props> = ({ onSubmit }) => {
     FormTypeValues,
     option.some('BUSINESS')
   )
-  const formValidator = validators.passThrough<
-    Omit<ClientCreationInput, 'type'>
-  >()
 
   const formType: FormType = pipe(
     getOptionValue(formTypeOption),
@@ -95,45 +92,39 @@ export const ClientForm: FC<Props> = ({ onSubmit }) => {
               validators.toUpperCase(),
               validators.nonBlankString(commonErrors.nonBlank)
             ),
-          () => validators.passThrough()
+          constUndefined
         )
       ),
       first_name: pipe(
         formType,
         foldFormType(
           () => validators.nonBlankString(commonErrors.nonBlank),
-          () => validators.passThrough()
+          constUndefined
         )
       ),
       last_name: pipe(
         formType,
         foldFormType(
           () => validators.nonBlankString(commonErrors.nonBlank),
-          () => validators.passThrough()
+          constUndefined
         )
       ),
       country_code: pipe(
         formType,
-        foldFormType(
-          () => validators.passThrough<SelectState<Country>, Country>(),
-          () =>
-            validators.fromSelectState<Country>(
-              a18n`This is not a valid country`
-            )
+        foldFormType(constUndefined, () =>
+          validators.fromSelectState<Country>(a18n`This is not a valid country`)
         )
       ),
       vat_number: pipe(
         formType,
-        foldFormType(
-          () => validators.passThrough(),
-          () => validators.nonBlankString(commonErrors.nonBlank)
+        foldFormType(constUndefined, () =>
+          validators.nonBlankString(commonErrors.nonBlank)
         )
       ),
       business_name: pipe(
         formType,
-        foldFormType(
-          () => validators.passThrough(),
-          () => validators.nonBlankString(commonErrors.nonBlank)
+        foldFormType(constUndefined, () =>
+          validators.nonBlankString(commonErrors.nonBlank)
         )
       ),
       address_country: validators.fromSelectState<Country>(
@@ -155,7 +146,6 @@ export const ClientForm: FC<Props> = ({ onSubmit }) => {
       fiscal_code: fiscalCodeLinter,
       vat_number: vatNumberLinter
     },
-    formValidator,
     onSubmit: data =>
       pipe(
         { type: formType, ...data } as ClientCreationInput,
@@ -249,6 +239,7 @@ export const ClientForm: FC<Props> = ({ onSubmit }) => {
         warning={option.none}
         label={a18n`Client type`}
         options={FormTypeValues}
+        codec={FormType}
       />
       {pipe(
         formType,
@@ -271,6 +262,7 @@ export const ClientForm: FC<Props> = ({ onSubmit }) => {
                 {...fieldProps('country_code')}
                 label={a18n`Country`}
                 options={CountryValues}
+                codec={Country}
                 emptyPlaceholder={a18n`No country found`}
               />
               <Input {...fieldProps('vat_number')} label={a18n`VAT number`} />
@@ -290,6 +282,7 @@ export const ClientForm: FC<Props> = ({ onSubmit }) => {
         {...addressCountryProps}
         label={a18n`Country`}
         options={CountryValues}
+        codec={Country}
         onChange={onCountryChange}
         emptyPlaceholder={a18n`No country found`}
       />
@@ -298,6 +291,7 @@ export const ClientForm: FC<Props> = ({ onSubmit }) => {
         {...addressProvinceProps}
         label={a18n`Province`}
         options={ProvinceValues}
+        codec={Province}
         onChange={onProvinceChange}
         emptyPlaceholder={a18n`No Province found`}
       />
