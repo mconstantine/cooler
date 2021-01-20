@@ -1,6 +1,6 @@
 @import '../../../../variables';
 
-.DateTimePickerInput * {
+.DateTimePickerInput:not(.disabled) * {
   cursor: pointer;
 }
 

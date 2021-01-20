@@ -25,6 +25,7 @@ import { getOptionValue, useSelectState } from '../Select/Select'
 interface Props extends FieldProps<Date> {
   label: LocalizedString
   mode?: DateTimePickerOption
+  disabled?: boolean
 }
 
 const DateTimePickerOptions = t.keyof(
@@ -299,7 +300,8 @@ export const DateTimePicker: FC<Props> = ({ mode = 'datetime', ...props }) => {
         value={props.value.toLocaleString(a18n.getLocale(), options)}
         onChange={constVoid}
         readOnly
-        onFocus={() => setIsOpen(true)}
+        onFocus={() => !props.disabled && setIsOpen(true)}
+        disabled={props.disabled}
       />
       <Modal
         className="DateTimePickerModal"
