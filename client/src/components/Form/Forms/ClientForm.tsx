@@ -26,6 +26,7 @@ import { option } from 'fp-ts'
 import { fiscalCodeLinter, vatNumberLinter } from '../../../misc/clientLinters'
 import { Input } from '../Input/Input/Input'
 import { sequenceS } from 'fp-ts/Apply'
+import { SimpleSelect } from '../Input/SimpleSelect'
 
 interface Props {
   onSubmit: (
@@ -227,16 +228,10 @@ export const ClientForm: FC<Props> = ({ onSubmit }) => {
 
   return (
     <Form title={a18n`New client`} formError={formError} submit={submit}>
-      <Select
-        type="unsearchable"
-        name="formType"
-        value={toSelectState(FormTypeValues, option.some(formType))}
-        onChange={flow(getOptionValue, option.fold(constVoid, setFormType))}
-        error={option.none}
-        warning={option.none}
+      <SimpleSelect
         label={a18n`Client type`}
+        {...fieldProps('type')}
         options={FormTypeValues}
-        codec={FormType}
       />
       {pipe(
         formType,

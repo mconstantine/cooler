@@ -3,7 +3,7 @@ import { constNull, constUndefined, pipe } from 'fp-ts/function'
 import { Option } from 'fp-ts/Option'
 import { TaskEither } from 'fp-ts/TaskEither'
 import { NonEmptyString } from 'io-ts-types'
-import { FC, useState } from 'react'
+import { FC } from 'react'
 import { a18n } from '../../../a18n'
 import {
   LocalizedString,
