@@ -9,7 +9,7 @@ import {
 import { TaskEither } from 'fp-ts/TaskEither'
 import { useForm } from '../useForm'
 import * as validators from '../validators'
-import { option, taskEither } from 'fp-ts'
+import { option } from 'fp-ts'
 import { toSelectState } from '../Input/Select/Select'
 import { Form } from '../Form'
 import { AsyncSelect } from '../Input/AsyncSelect'
