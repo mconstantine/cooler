@@ -1,5 +1,11 @@
 import { boolean, option } from 'fp-ts'
-import { constNull, constUndefined, pipe } from 'fp-ts/function'
+import {
+  constFalse,
+  constNull,
+  constTrue,
+  constUndefined,
+  pipe
+} from 'fp-ts/function'
 import { Option } from 'fp-ts/Option'
 import { FC, MouseEvent } from 'react'
 import { Color, LocalizedString } from '../../globalDomain'
@@ -7,21 +13,9 @@ import { composeClassName } from '../../misc/composeClassName'
 import { Icon } from '../Icon/Icon'
 import { Label } from '../Label/Label'
 import './List.scss'
-import * as t from 'io-ts'
 import { chevronForwardOutline } from 'ionicons/icons'
 
-const ListType = t.keyof(
-  {
-    readonly: true,
-    readonlyWithIcon: true,
-    routed: true,
-    routedWithIcon: true
-  },
-  'ListType'
-)
-type ListType = t.TypeOf<typeof ListType>
-
-export interface ReadonlyItem {
+interface CommonItemProps {
   key: string | number
   label: Option<LocalizedString>
   content: LocalizedString
@@ -30,174 +24,159 @@ export interface ReadonlyItem {
   className?: string
 }
 
-export interface ReadonlyItemWithIcon extends ReadonlyItem {
+export interface ReadonlyItem extends CommonItemProps {
+  type: 'readonly'
+}
+
+export interface ReadonlyItemWithIcon extends CommonItemProps {
+  type: 'readonlyWithIcon'
   icon: string
+  iconPosition: 'start' | 'end'
   iconColor?: Color
 }
 
-export interface RoutedItem extends ReadonlyItem {
+export interface RoutedItem extends CommonItemProps {
+  type: 'routed'
+  details?: boolean
   action: () => unknown
 }
 
-export interface RoutedItemWithIcon extends ReadonlyItem {
+export interface RoutedItemWithIcon extends CommonItemProps {
+  type: 'routedWithIcon'
   icon: string
+  iconPosition: 'start' | 'end'
   iconColor: Color
+  details?: boolean
   action: () => unknown
 }
 
-export type Item = ReadonlyItemWithIcon | RoutedItem | RoutedItemWithIcon
+export type Item =
+  | ReadonlyItem
+  | ReadonlyItemWithIcon
+  | RoutedItem
+  | RoutedItemWithIcon
 
 function foldItem<T>(
-  listType: ListType,
   whenReadonly: (item: ReadonlyItem) => T,
   whenWithIcon: (item: ReadonlyItemWithIcon) => T,
   whenRouted: (item: RoutedItem) => T,
   whenRoutedWithIcon: (item: RoutedItemWithIcon) => T
 ): (item: Item) => T {
   return item => {
-    switch (listType) {
+    switch (item.type) {
       case 'readonly':
-        return whenReadonly(item as ReadonlyItem)
+        return whenReadonly(item)
       case 'readonlyWithIcon':
-        return whenWithIcon(item as ReadonlyItemWithIcon)
+        return whenWithIcon(item)
       case 'routed':
-        return whenRouted(item as RoutedItem)
+        return whenRouted(item)
       case 'routedWithIcon':
-        return whenRoutedWithIcon(item as RoutedItemWithIcon)
+        return whenRoutedWithIcon(item)
     }
   }
-}
-
-function foldItemIcon<T>(
-  listType: ListType,
-  whenNotWithIcon: (item: ReadonlyItem | RoutedItem) => T,
-  whenWithIcon: (item: ReadonlyItemWithIcon | RoutedItemWithIcon) => T
-): (item: Item) => T {
-  return foldItem(
-    listType,
-    whenNotWithIcon,
-    whenWithIcon,
-    whenNotWithIcon,
-    whenWithIcon
-  )
-}
-
-function foldItemRouted<T>(
-  listType: ListType,
-  whenReadonly: (item: ReadonlyItem | ReadonlyItemWithIcon) => T,
-  whenRouted: (item: RoutedItem | RoutedItemWithIcon) => T
-): (item: Item) => T {
-  return foldItem(listType, whenReadonly, whenReadonly, whenRouted, whenRouted)
 }
 
 type Props = {
   heading: Option<LocalizedString>
   unwrapDescriptions?: boolean
-} & (
-  | {
-      type: 'readonly'
-      items: ReadonlyItem[]
-    }
-  | {
-      type: 'readonlyWithIcon'
-      iconsPosition: 'start' | 'end'
-      items: ReadonlyItemWithIcon[]
-    }
-  | {
-      type: 'routed'
-      items: RoutedItem[]
-      details?: boolean
-    }
-  | {
-      type: 'routedWithIcon'
-      items: RoutedItemWithIcon[]
-      details?: boolean
-    }
-)
+  items: Item[]
+}
 
-export const List: FC<Props> = ({
-  heading,
-  unwrapDescriptions = false,
-  items,
-  ...props
-}) => {
+export const List: FC<Props> = props => {
   const unwrap = pipe(
-    unwrapDescriptions,
+    !!props.unwrapDescriptions,
     boolean.fold(
       () => '',
       () => 'unwrap'
     )
   )
 
-  const iconsAtTheEndClassName =
-    props.type === 'readonlyWithIcon' && props.iconsPosition === 'end'
-      ? 'iconsAtTheEnd'
-      : ''
-
-  const routedClassName =
-    props.type === 'routed' || props.type === 'routedWithIcon' ? 'routed' : ''
-
-  const hasDetails =
-    (props.type === 'routed' || props.type === 'routedWithIcon') &&
-    props.details
-
-  const detailsClassName = hasDetails ? 'details' : ''
-
   return (
-    <div
-      className={composeClassName(
-        'List',
-        routedClassName,
-        unwrap,
-        iconsAtTheEndClassName,
-        detailsClassName
-      )}
-    >
+    <div className={composeClassName('List', unwrap)}>
       {pipe(
-        heading,
+        props.heading,
         option.map(heading => <h5 className="heading">{heading}</h5>),
         option.toNullable
       )}
       <ul>
-        {(items as Item[]).map(item => {
+        {props.items.map(item => {
           const disabledClassName = item.disabled ? 'disabled' : ''
+
+          const iconsAtTheEndClassName = pipe(
+            item,
+            foldItem(
+              constFalse,
+              ({ iconPosition }) => iconPosition === 'end',
+              constFalse,
+              ({ iconPosition }) => iconPosition === 'end'
+            ),
+            boolean.fold(
+              () => '',
+              () => 'iconsAtTheEnd'
+            )
+          )
+
+          const routedClassName = pipe(
+            item,
+            foldItem(constFalse, constFalse, constTrue, constTrue),
+            boolean.fold(
+              () => '',
+              () => 'routed'
+            )
+          )
+
+          const hasDetails = pipe(
+            item,
+            foldItem(
+              constFalse,
+              constFalse,
+              ({ details }) => !!details,
+              ({ details }) => !!details
+            )
+          )
+
+          const detailsClassName = pipe(
+            hasDetails,
+            boolean.fold(
+              () => '',
+              () => 'details'
+            )
+          )
+
+          const getAction = (item: RoutedItem | RoutedItemWithIcon) => {
+            return (e: MouseEvent) => {
+              e.preventDefault()
+
+              if (item.disabled) {
+                return
+              }
+
+              return item.action()
+            }
+          }
+
+          const getIcon = (item: ReadonlyItemWithIcon | RoutedItemWithIcon) => (
+            <Icon color={item.iconColor} src={item.icon} />
+          )
 
           return (
             <li
               key={item.key}
               onClick={pipe(
                 item,
-                foldItemRouted(
-                  props.type,
-                  constUndefined,
-                  ({ action }) => (e: MouseEvent) => {
-                    e.preventDefault()
-
-                    if (item.disabled) {
-                      return
-                    }
-
-                    return action()
-                  }
-                )
+                foldItem(constUndefined, constUndefined, getAction, getAction)
               )}
               className={composeClassName(
                 item.className || '',
-                disabledClassName
+                disabledClassName,
+                iconsAtTheEndClassName,
+                routedClassName,
+                detailsClassName
               )}
             >
               <div className="itemContentOuterWrapper">
                 <div className="itemContentWrapper">
-                  {pipe(
-                    item,
-                    foldItemIcon(
-                      props.type,
-                      constNull,
-                      ({ icon, iconColor = 'default' }) => (
-                        <Icon color={iconColor} src={icon} />
-                      )
-                    )
-                  )}
+                  {pipe(item, foldItem(constNull, getIcon, constNull, getIcon))}
                   <div className="itemContent">
                     {pipe(
                       item.label,
