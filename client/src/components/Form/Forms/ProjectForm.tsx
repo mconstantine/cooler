@@ -102,7 +102,7 @@ export const ProjectForm: FC<Props> = props => {
 
   return (
     <Form title={a18n`New Project`} submit={submit} formError={formError}>
-      <Input label={a18n`New Project`} {...fieldProps('name')} />
+      <Input label={a18n`Name`} {...fieldProps('name')} />
       <TextArea label={a18n`Description`} {...fieldProps('description')} />
       <AsyncSelect
         label={a18n`Client`}
