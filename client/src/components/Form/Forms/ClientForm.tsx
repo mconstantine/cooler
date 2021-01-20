@@ -21,7 +21,7 @@ import {
   toSelectState
 } from '../Input/Select/Select'
 import { commonErrors } from '../../../misc/commonErrors'
-import { constUndefined, constVoid, flow, pipe } from 'fp-ts/function'
+import { constUndefined, pipe } from 'fp-ts/function'
 import { option } from 'fp-ts'
 import { fiscalCodeLinter, vatNumberLinter } from '../../../misc/clientLinters'
 import { Input } from '../Input/Input/Input'
@@ -57,7 +57,7 @@ function foldFormType<T>(
 }
 
 export const ClientForm: FC<Props> = ({ onSubmit }) => {
-  const { fieldProps, submit, formError } = useForm(
+  const { fieldProps, submit, formError, values, setValues } = useForm(
     {
       initialValues: {
         type: 'BUSINESS' as FormType,
@@ -177,52 +177,57 @@ export const ClientForm: FC<Props> = ({ onSubmit }) => {
     }
   )
 
-  const { value: formType, onChange: setFormType } = fieldProps('type')
-
-  const addressCountryProps = fieldProps('address_country')
-  const addressProvinceProps = fieldProps('address_province')
-
-  const onCountryChange = (countryOption: SelectState<Country>) => {
-    addressCountryProps.onChange(countryOption)
-
+  const onCountryChange = (address_country: SelectState<Country>) => {
     pipe(
       sequenceS(option.option)({
-        country: getOptionValue(countryOption),
-        province: getOptionValue(addressProvinceProps.value)
+        country: getOptionValue(address_country),
+        province: getOptionValue(values.address_province)
       }),
-      option.fold(constVoid, ({ country, province }) => {
-        if (country === 'IT' && province === 'EE') {
-          addressProvinceProps.onChange(
-            toSelectState(ProvinceValues, option.some('AG'))
-          )
-        } else if (country !== 'IT' && province !== 'EE') {
-          addressProvinceProps.onChange(
-            toSelectState(ProvinceValues, option.some('EE'))
-          )
+      option.fold(
+        () => setValues({ address_country }),
+        ({ country, province }) => {
+          if (country === 'IT' && province === 'EE') {
+            setValues({
+              address_country,
+              address_province: toSelectState(ProvinceValues, option.some('AG'))
+            })
+          } else if (country !== 'IT' && province !== 'EE') {
+            setValues({
+              address_country,
+              address_province: toSelectState(ProvinceValues, option.some('EE'))
+            })
+          } else {
+            setValues({ address_country })
+          }
         }
-      })
+      )
     )
   }
 
-  const onProvinceChange = (provinceOption: SelectState<Province>) => {
-    addressProvinceProps.onChange(provinceOption)
-
+  const onProvinceChange = (address_province: SelectState<Province>) => {
     pipe(
       sequenceS(option.option)({
-        province: getOptionValue(provinceOption),
-        country: getOptionValue(addressCountryProps.value)
+        province: getOptionValue(address_province),
+        country: getOptionValue(values.address_country)
       }),
-      option.fold(constVoid, ({ province, country }) => {
-        if (province === 'EE' && country === 'IT') {
-          addressCountryProps.onChange(
-            toSelectState(CountryValues, option.some('AD'))
-          )
-        } else if (province !== 'EE' && country !== 'IT') {
-          addressCountryProps.onChange(
-            toSelectState(CountryValues, option.some('IT'))
-          )
+      option.fold(
+        () => setValues({ address_province }),
+        ({ province, country }) => {
+          if (province === 'EE' && country === 'IT') {
+            setValues({
+              address_province,
+              address_country: toSelectState(CountryValues, option.some('AD'))
+            })
+          } else if (province !== 'EE' && country !== 'IT') {
+            setValues({
+              address_province,
+              address_country: toSelectState(CountryValues, option.some('IT'))
+            })
+          } else {
+            setValues({ address_province })
+          }
         }
-      })
+      )
     )
   }
 
@@ -234,7 +239,7 @@ export const ClientForm: FC<Props> = ({ onSubmit }) => {
         options={FormTypeValues}
       />
       {pipe(
-        formType,
+        values.type,
         foldFormType(
           () => (
             <>
@@ -271,7 +276,7 @@ export const ClientForm: FC<Props> = ({ onSubmit }) => {
 
       <Select
         type="default"
-        {...addressCountryProps}
+        {...fieldProps('address_country')}
         label={a18n`Country`}
         options={CountryValues}
         codec={Country}
@@ -280,7 +285,7 @@ export const ClientForm: FC<Props> = ({ onSubmit }) => {
       />
       <Select
         type="default"
-        {...addressProvinceProps}
+        {...fieldProps('address_province')}
         label={a18n`Province`}
         options={ProvinceValues}
         codec={Province}

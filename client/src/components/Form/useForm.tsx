@@ -81,11 +81,10 @@ interface UseFormOutput<Values extends Record<string, unknown>> {
   fieldProps: <K extends keyof Values & string>(
     name: K
   ) => FieldProps<Values[K]>
+  values: Values
   formError: Option<LocalizedString>
   submit: TaskEither<unknown, unknown>
-  setValue: <K extends keyof Values & string>(
-    name: K
-  ) => (value: Values[K]) => void
+  setValues: (values: Partial<Values>) => void
 }
 
 interface FormState<Values> {
@@ -274,11 +273,15 @@ export function useForm<
     )
   }
 
-  const setValue: UseFormOutput<Values>['setValue'] = <
-    K extends keyof Values & string
-  >(
-    name: K
-  ) => (value: Values[K]) => {
+  const setValues: UseFormOutput<Values>['setValues'] = values =>
+    dispatch({
+      type: 'setValues',
+      values
+    })
+
+  const setValue = <K extends keyof Values & string>(name: K) => (
+    value: Values[K]
+  ) => {
     dispatch({
       type: 'setValues',
       values: ({
@@ -361,9 +364,10 @@ export function useForm<
   )
 
   return {
+    values,
     fieldProps,
     formError,
     submit,
-    setValue
+    setValues
   }
 }

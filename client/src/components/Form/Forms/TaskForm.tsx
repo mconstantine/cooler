@@ -70,7 +70,7 @@ function foldFormData<T>(
 }
 
 export const TaskForm: FC<Props> = props => {
-  const { fieldProps, submit, formError } = useForm(
+  const { fieldProps, submit, formError, values } = useForm(
     {
       initialValues: {
         shouldRepeat: false,
@@ -136,10 +136,6 @@ export const TaskForm: FC<Props> = props => {
     }
   )
 
-  const { value: shouldRepeat, onChange: setShouldRepeat } = fieldProps(
-    'shouldRepeat'
-  )
-
   return (
     <Form title={a18n`New Task`} formError={formError} submit={submit}>
       {pipe(
@@ -156,7 +152,7 @@ export const TaskForm: FC<Props> = props => {
       )}
       <Input label={a18n`Name`} {...fieldProps('name')} />
       {pipe(
-        shouldRepeat,
+        values.shouldRepeat,
         boolean.fold(
           () => (
             <TextArea
@@ -176,23 +172,16 @@ export const TaskForm: FC<Props> = props => {
         label={a18n`Starting at`}
         {...fieldProps('start_time')}
         mode={pipe(
-          shouldRepeat,
+          values.shouldRepeat,
           boolean.fold(
             () => 'datetime',
             () => 'time'
           )
         )}
       />
-      <Toggle
-        name="shouldRepeat"
-        label={a18n`Repeat`}
-        value={shouldRepeat}
-        onChange={setShouldRepeat}
-        error={option.none}
-        warning={option.none}
-      />
+      <Toggle label={a18n`Repeat`} {...fieldProps('shouldRepeat')} />
       {pipe(
-        shouldRepeat,
+        values.shouldRepeat,
         boolean.fold(constNull, () => (
           <>
             <DateTimePicker

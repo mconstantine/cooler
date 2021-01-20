@@ -63,14 +63,14 @@ interface Props {
 }
 
 export const LoginForm: FC<Props> = props => {
-  const { fieldProps, submit, formError } = useForm(
+  const { fieldProps, submit, formError, values, setValues } = useForm(
     {
       initialValues: {
         type: 'Login' as FormType,
-        name: 'John Doe',
-        email: 'john.doe@example.com',
-        password: 'password',
-        passwordConfirmation: 'password'
+        name: '',
+        email: '',
+        password: '',
+        passwordConfirmation: ''
       },
       validators: ({ type }) => ({
         name: pipe(
@@ -120,10 +120,8 @@ export const LoginForm: FC<Props> = props => {
     }
   )
 
-  const { value: formType, onChange: setFormType } = fieldProps('type')
-
   const title = pipe(
-    formType,
+    values.type,
     foldFormType(
       () => a18n`Register`,
       () => a18n`Login`
@@ -131,7 +129,7 @@ export const LoginForm: FC<Props> = props => {
   )
 
   const altTitle = pipe(
-    formType,
+    values.type,
     foldFormType(
       () => a18n`Login`,
       () => a18n`Register`
@@ -140,12 +138,12 @@ export const LoginForm: FC<Props> = props => {
 
   const additionalButtons: Array<ComponentProps<typeof Button>> = [
     pipe(
-      formType,
+      values.type,
       foldFormType(
         () => ({
           type: 'button',
           label: altTitle,
-          action: () => setFormType('Login'),
+          action: () => setValues({ type: 'Login' }),
           icon: option.none,
           color: 'primary',
           flat: true
@@ -153,7 +151,7 @@ export const LoginForm: FC<Props> = props => {
         () => ({
           type: 'button',
           label: altTitle,
-          action: () => setFormType('Register'),
+          action: () => setValues({ type: 'Register' }),
           icon: option.none,
           color: 'primary',
           flat: true
@@ -171,7 +169,7 @@ export const LoginForm: FC<Props> = props => {
       additionalButtons={additionalButtons}
     >
       {pipe(
-        formType,
+        values.type,
         foldFormType(
           () => (
             <Input
@@ -196,7 +194,7 @@ export const LoginForm: FC<Props> = props => {
         autoComplete="new-password"
       />
       {pipe(
-        formType,
+        values.type,
         foldFormType(
           () => (
             <Input

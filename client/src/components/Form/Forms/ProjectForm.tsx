@@ -42,7 +42,7 @@ interface Props {
 }
 
 export const ProjectForm: FC<Props> = props => {
-  const { fieldProps, submit, formError } = useForm(
+  const { fieldProps, submit, formError, values } = useForm(
     {
       initialValues: {
         name: '',
@@ -98,8 +98,6 @@ export const ProjectForm: FC<Props> = props => {
     }
   )
 
-  const cashed = fieldProps('cashed').value
-
   return (
     <Form title={a18n`New Project`} submit={submit} formError={formError}>
       <Input label={a18n`Name`} {...fieldProps('name')} />
@@ -115,7 +113,7 @@ export const ProjectForm: FC<Props> = props => {
       <Toggle label={a18n`Cashed`} {...fieldProps('cashed')} />
 
       {pipe(
-        cashed,
+        values.cashed,
         boolean.fold(constNull, () => (
           <>
             <DateTimePicker
