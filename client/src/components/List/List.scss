@@ -20,12 +20,45 @@ $list-max-width-details: $max-width-text + $list-icons-space-details;
   }
 
   li {
+    position: relative;
     width: 100%;
     max-width: $list-max-width;
     box-sizing: border-box;
     padding: 16px;
     margin-left: auto;
     margin-right: auto;
+
+    > * {
+      position: relative;
+    }
+
+    .itemProgressBar {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      background-color: rgba(#fff, 0.25);
+
+      &.primary {
+        background-color: $color-primary-light;
+      }
+
+      &.success {
+        background-color: $color-success-light;
+      }
+
+      &.warning {
+        background-color: $color-warning-light;
+      }
+
+      &.danger {
+        background-color: $color-error-light;
+      }
+    }
+
+    .itemProgressBar + .itemContentOuterWrapper .itemContent > * {
+      opacity: 1;
+    }
 
     &.disabled {
       opacity: $text-low-emphasis-amount;
@@ -43,8 +76,14 @@ $list-max-width-details: $max-width-text + $list-icons-space-details;
       flex-basis: 100%;
     }
 
-    .Icon {
+    .itemSideContent {
       margin-right: 16px;
+
+      .Label {
+        opacity: 1;
+        font-size: 1rem;
+        line-height: 1;
+      }
     }
 
     .routeArrow .Icon {
@@ -92,10 +131,10 @@ $list-max-width-details: $max-width-text + $list-icons-space-details;
     overflow: visible;
   }
 
-  li.iconsAtTheEnd .itemContentWrapper {
+  li.sideContentAtTheEnd .itemContentWrapper {
     justify-content: space-between;
 
-    .Icon {
+    .itemSideContent {
       order: 1;
       margin-right: 0;
       margin-left: 16px;
@@ -116,6 +155,26 @@ $list-max-width-details: $max-width-text + $list-icons-space-details;
 
   &:not(.disabled):active {
     background-color: rgba(#fff, $opacity-active);
+  }
+}
+
+.light .List li .itemProgressBar {
+  background-color: rgba(#000, 0.25);
+
+  &.primary {
+    background-color: $color-primary-dark;
+  }
+
+  &.success {
+    background-color: $color-success-dark;
+  }
+
+  &.warning {
+    background-color: $color-warning-dark;
+  }
+
+  &.danger {
+    background-color: $color-error-dark;
   }
 }
 

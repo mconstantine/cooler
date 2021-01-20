@@ -8,12 +8,19 @@ import {
 } from 'fp-ts/function'
 import { Option } from 'fp-ts/Option'
 import { FC, MouseEvent } from 'react'
-import { Color, LocalizedString } from '../../globalDomain'
+import {
+  Color,
+  LocalizedString,
+  Percentage,
+  PercentageFromString
+} from '../../globalDomain'
 import { composeClassName } from '../../misc/composeClassName'
 import { Icon } from '../Icon/Icon'
 import { Label } from '../Label/Label'
 import './List.scss'
 import { chevronForwardOutline } from 'ionicons/icons'
+
+type Position = 'start' | 'end'
 
 interface CommonItemProps {
   key: string | number
@@ -31,7 +38,7 @@ export interface ReadonlyItem extends CommonItemProps {
 export interface ReadonlyItemWithIcon extends CommonItemProps {
   type: 'readonlyWithIcon'
   icon: string
-  iconPosition: 'start' | 'end'
+  iconPosition: Position
   iconColor?: Color
 }
 
@@ -44,10 +51,17 @@ export interface RoutedItem extends CommonItemProps {
 export interface RoutedItemWithIcon extends CommonItemProps {
   type: 'routedWithIcon'
   icon: string
-  iconPosition: 'start' | 'end'
+  iconPosition: Position
   iconColor: Color
   details?: boolean
   action: () => unknown
+}
+
+export interface ValuedItem extends CommonItemProps {
+  type: 'valued'
+  value: LocalizedString
+  valueColor?: Color
+  progress: Option<Percentage>
 }
 
 export type Item =
@@ -55,12 +69,14 @@ export type Item =
   | ReadonlyItemWithIcon
   | RoutedItem
   | RoutedItemWithIcon
+  | ValuedItem
 
 function foldItem<T>(
   whenReadonly: (item: ReadonlyItem) => T,
   whenWithIcon: (item: ReadonlyItemWithIcon) => T,
   whenRouted: (item: RoutedItem) => T,
-  whenRoutedWithIcon: (item: RoutedItemWithIcon) => T
+  whenRoutedWithIcon: (item: RoutedItemWithIcon) => T,
+  whenValued: (item: ValuedItem) => T
 ): (item: Item) => T {
   return item => {
     switch (item.type) {
@@ -72,6 +88,8 @@ function foldItem<T>(
         return whenRouted(item)
       case 'routedWithIcon':
         return whenRoutedWithIcon(item)
+      case 'valued':
+        return whenValued(item)
     }
   }
 }
@@ -108,17 +126,18 @@ export const List: FC<Props> = props => {
               constFalse,
               ({ iconPosition }) => iconPosition === 'end',
               constFalse,
-              ({ iconPosition }) => iconPosition === 'end'
+              ({ iconPosition }) => iconPosition === 'end',
+              constTrue
             ),
             boolean.fold(
               () => '',
-              () => 'iconsAtTheEnd'
+              () => 'sideContentAtTheEnd'
             )
           )
 
           const routedClassName = pipe(
             item,
-            foldItem(constFalse, constFalse, constTrue, constTrue),
+            foldItem(constFalse, constFalse, constTrue, constTrue, constFalse),
             boolean.fold(
               () => '',
               () => 'routed'
@@ -131,7 +150,8 @@ export const List: FC<Props> = props => {
               constFalse,
               constFalse,
               ({ details }) => !!details,
-              ({ details }) => !!details
+              ({ details }) => !!details,
+              constFalse
             )
           )
 
@@ -155,8 +175,27 @@ export const List: FC<Props> = props => {
             }
           }
 
-          const getIcon = (item: ReadonlyItemWithIcon | RoutedItemWithIcon) => (
-            <Icon color={item.iconColor} src={item.icon} />
+          const renderIcon = (
+            item: ReadonlyItemWithIcon | RoutedItemWithIcon
+          ) => (
+            <div className="itemSideContent">
+              <Icon color={item.iconColor} src={item.icon} />
+            </div>
+          )
+
+          const renderValue = (item: ValuedItem) => (
+            <div className="itemSideContent">
+              <Label
+                content={item.value}
+                color={pipe(
+                  item.progress,
+                  option.fold(
+                    () => item.valueColor,
+                    () => 'default'
+                  )
+                )}
+              />
+            </div>
           )
 
           return (
@@ -164,7 +203,13 @@ export const List: FC<Props> = props => {
               key={item.key}
               onClick={pipe(
                 item,
-                foldItem(constUndefined, constUndefined, getAction, getAction)
+                foldItem(
+                  constUndefined,
+                  constUndefined,
+                  getAction,
+                  getAction,
+                  constUndefined
+                )
               )}
               className={composeClassName(
                 item.className || '',
@@ -174,9 +219,37 @@ export const List: FC<Props> = props => {
                 detailsClassName
               )}
             >
+              {pipe(
+                item,
+                foldItem(constNull, constNull, constNull, constNull, item =>
+                  pipe(
+                    item.progress,
+                    option.fold(constNull, progress => (
+                      <div
+                        className={composeClassName(
+                          'itemProgressBar',
+                          item.valueColor || ''
+                        )}
+                        style={{
+                          width: `${PercentageFromString.encode(progress)}%`
+                        }}
+                      />
+                    ))
+                  )
+                )
+              )}
               <div className="itemContentOuterWrapper">
                 <div className="itemContentWrapper">
-                  {pipe(item, foldItem(constNull, getIcon, constNull, getIcon))}
+                  {pipe(
+                    item,
+                    foldItem(
+                      constNull,
+                      renderIcon,
+                      constNull,
+                      renderIcon,
+                      renderValue
+                    )
+                  )}
                   <div className="itemContent">
                     {pipe(
                       item.label,

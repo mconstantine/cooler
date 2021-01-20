@@ -1,5 +1,7 @@
 import { Meta, Story } from '@storybook/react'
-import { option } from 'fp-ts'
+import { boolean, option } from 'fp-ts'
+import { pipe } from 'fp-ts/lib/pipeable'
+import { Option } from 'fp-ts/Option'
 import {
   batteryDead,
   checkmark,
@@ -11,6 +13,7 @@ import {
 import { unsafeLocalizedString } from '../a18n'
 import { Content } from '../components/Content/Content'
 import { List } from '../components/List/List'
+import { Percentage, unsafePercentage } from '../globalDomain'
 import { CoolerStory } from './CoolerStory'
 
 const description = unsafeLocalizedString(
@@ -21,6 +24,7 @@ interface Args {
   unwrapDescriptions: boolean
   details: boolean
   onClick: (input: any) => void
+  showProgress: boolean
 }
 
 export const ReadonlyList: Story<Args> = ({ unwrapDescriptions }) => {
@@ -403,11 +407,113 @@ export const RoutedListWithIcons: Story<Args> = ({
   )
 }
 
+export const ReadonlyListWithValues: Story<Args> = ({
+  unwrapDescriptions,
+  showProgress
+}) => {
+  function getProgress(n: number): Option<Percentage> {
+    return pipe(
+      showProgress,
+      boolean.fold(
+        () => option.none,
+        () => option.some(unsafePercentage(n))
+      )
+    )
+  }
+
+  return (
+    <CoolerStory>
+      <Content>
+        <List
+          heading={option.some(
+            unsafeLocalizedString('Read-only list with values at the start')
+          )}
+          unwrapDescriptions={unwrapDescriptions}
+          items={[
+            {
+              key: 0,
+              type: 'valued',
+              label: option.some(
+                unsafeLocalizedString('Item with value at the start')
+              ),
+              content: unsafeLocalizedString('Default color'),
+              description: option.none,
+              value: unsafeLocalizedString('20'),
+              progress: getProgress(0.2)
+            },
+            {
+              key: 1,
+              type: 'valued',
+              label: option.some(
+                unsafeLocalizedString('Item with value at the start')
+              ),
+              content: unsafeLocalizedString('Primary color'),
+              description: option.none,
+              value: unsafeLocalizedString('40'),
+              valueColor: 'primary',
+              progress: getProgress(0.4)
+            },
+            {
+              key: 2,
+              type: 'valued',
+              label: option.some(
+                unsafeLocalizedString('Item with value at the start')
+              ),
+              content: unsafeLocalizedString('Success color'),
+              description: option.none,
+              value: unsafeLocalizedString('60'),
+              valueColor: 'success',
+              progress: getProgress(0.6)
+            },
+            {
+              key: 3,
+              type: 'valued',
+              label: option.some(
+                unsafeLocalizedString('Item with value at the start')
+              ),
+              content: unsafeLocalizedString('Warning color'),
+              description: option.none,
+              value: unsafeLocalizedString('80'),
+              valueColor: 'warning',
+              progress: getProgress(0.8)
+            },
+            {
+              key: 4,
+              type: 'valued',
+              label: option.some(
+                unsafeLocalizedString('Item with value at the start')
+              ),
+              content: unsafeLocalizedString('Danger color'),
+              description: option.none,
+              value: unsafeLocalizedString('100'),
+              valueColor: 'danger',
+              progress: getProgress(1)
+            },
+            {
+              key: 5,
+              type: 'valued',
+              label: option.some(
+                unsafeLocalizedString('Item with value at the start')
+              ),
+              content: unsafeLocalizedString('Disabled'),
+              description: option.none,
+              value: unsafeLocalizedString('42'),
+              progress: getProgress(0.42),
+              disabled: true
+            }
+          ]}
+        />
+      </Content>
+    </CoolerStory>
+  )
+}
+
 const meta: Meta<Args> = {
   title: 'Cooler/List',
   args: {
     unwrapDescriptions: false,
-    details: true
+    details: true,
+    showProgress: false
   },
   argTypes: {
     onClick: {
