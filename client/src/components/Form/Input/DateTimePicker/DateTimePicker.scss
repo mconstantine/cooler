@@ -12,6 +12,8 @@
 }
 
 .DateTimePickerModal {
+  z-index: 1;
+
   .Panel > * + * {
     @include ss('margin-top', $spacing-medium-mobile, $spacing-medium-desktop);
   }
