@@ -1,5 +1,5 @@
 import { boolean, option, taskEither } from 'fp-ts'
-import { constNull, pipe } from 'fp-ts/function'
+import { constNull, constUndefined, pipe } from 'fp-ts/function'
 import { Option } from 'fp-ts/Option'
 import { TaskEither } from 'fp-ts/TaskEither'
 import { NonEmptyString } from 'io-ts-types'
@@ -28,14 +28,6 @@ interface FormData {
   name: NonEmptyString
   description: Option<NonEmptyString>
   client: PositiveInteger
-  cashedAt: Date
-  cashedBalance: NonNegativeNumber
-}
-
-interface ValidatedFormData {
-  name: NonEmptyString
-  description: Option<NonEmptyString>
-  client: PositiveInteger
   cashed: Option<{
     at: Date
     balance: NonNegativeNumber
@@ -46,69 +38,67 @@ interface Props {
   findClients: (
     input: string
   ) => TaskEither<LocalizedString, Record<PositiveInteger, LocalizedString>>
-  onSubmit: (data: ValidatedFormData) => TaskEither<LocalizedString, unknown>
+  onSubmit: (data: FormData) => TaskEither<LocalizedString, unknown>
 }
 
 export const ProjectForm: FC<Props> = props => {
-  const [cashed, setCashed] = useState(false)
-
-  const formValidator: validators.Validator<
-    FormData,
-    ValidatedFormData
-  > = input => {
-    return pipe(
-      cashed,
-      boolean.fold(
-        () => option.none,
-        () =>
-          option.some({
-            at: input.cashedAt,
-            balance: input.cashedBalance
-          })
-      ),
-      cashed => ({
-        name: input.name,
-        description: input.description,
-        client: input.client,
-        cashed
-      }),
-      taskEither.right
-    )
-  }
-
-  const { fieldProps, submit, formError } = useForm({
-    initialValues: {
-      name: '',
-      description: '',
-      client: toSelectState<PositiveInteger>({}, option.none),
-      cashedAt: new Date(),
-      cashedBalance: ''
-    },
-    validators: {
-      name: validators.nonBlankString(commonErrors.nonBlank),
-      description: validators.fromCodec<Option<NonEmptyString>>(
-        OptionFromEmptyString,
-        commonErrors.nonBlank
-      ),
-      client: validators.fromSelectState<PositiveInteger>(
-        a18n`Please choose a client`
-      ),
-      cashedBalance: pipe(
-        cashed,
-        boolean.fold(
-          () => validators.passThrough<string, NonNegativeNumber>(),
-          () =>
-            validators.fromCodec<NonNegativeNumber>(
+  const { fieldProps, submit, formError } = useForm(
+    {
+      initialValues: {
+        name: '',
+        description: '',
+        client: toSelectState<PositiveInteger>({}, option.none),
+        cashed: false,
+        cashedAt: new Date(),
+        cashedBalance: ''
+      },
+      validators: ({ cashed }) => ({
+        name: validators.nonBlankString(commonErrors.nonBlank),
+        description: validators.fromCodec(
+          OptionFromEmptyString,
+          commonErrors.nonBlank
+        ),
+        client: validators.fromSelectState(a18n`Please choose a client`),
+        cashedBalance: pipe(
+          cashed,
+          boolean.fold(constUndefined, () =>
+            validators.fromCodec(
               NonNegativeNumberFromString,
               commonErrors.moneyAmount
             )
+          )
         )
-      )
+      }),
+      linters: () => ({})
     },
-    linters: {},
-    formValidator,
-    onSubmit: props.onSubmit
-  })
+    {
+      formValidator: input => {
+        return pipe(
+          input.cashed,
+          boolean.fold(
+            () => option.none,
+            () =>
+              option.some({
+                at: input.cashedAt,
+                balance: input.cashedBalance
+              })
+          ),
+          cashed => ({
+            name: input.name,
+            description: input.description,
+            client: input.client,
+            cashed
+          }),
+          taskEither.right
+        )
+      }
+    },
+    {
+      onSubmit: data => props.onSubmit(data as FormData)
+    }
+  )
+
+  const cashed = fieldProps('cashed').value
 
   return (
     <Form title={a18n`New Project`} submit={submit} formError={formError}>
@@ -122,14 +112,7 @@ export const ProjectForm: FC<Props> = props => {
         codec={PositiveIntegerFromString}
       />
 
-      <Toggle
-        name="cashed"
-        label={a18n`Cashed`}
-        value={cashed}
-        onChange={setCashed}
-        error={option.none}
-        warning={option.none}
-      />
+      <Toggle label={a18n`Cashed`} {...fieldProps('cashed')} />
 
       {pipe(
         cashed,

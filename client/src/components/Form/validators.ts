@@ -1,5 +1,5 @@
 import { either, option, taskEither } from 'fp-ts'
-import { flow, pipe } from 'fp-ts/lib/function'
+import { flow, pipe, Predicate } from 'fp-ts/function'
 import { TaskEither } from 'fp-ts/TaskEither'
 import { NonEmptyString } from 'io-ts-types'
 import { LocalizedString } from '../../globalDomain'
@@ -10,9 +10,8 @@ import { getOptionValue, SelectState } from './Input/Select/Select'
 export type Validator<I, O = I> = (i: I) => TaskEither<LocalizedString, O>
 
 export type ValidatorOutput<
-  I,
-  V extends Validator<I, unknown>
-> = V extends Validator<I, infer O> ? O : never
+  V extends Validator<any, any>
+> = V extends Validator<any, infer O> ? O : never
 
 export function inSequence<I, O1, O2>(
   v1: Validator<I, O1>,
@@ -27,6 +26,13 @@ export function inSequence(
       (res, validator) => pipe(res, taskEither.chain(validator)),
       v1(input)
     )
+}
+
+export function fromPredicate<I>(
+  predicate: Predicate<I>,
+  errorMessage: LocalizedString
+): Validator<I> {
+  return taskEither.fromPredicate(predicate, () => errorMessage)
 }
 
 export function fromCodec<O = string, I = string>(

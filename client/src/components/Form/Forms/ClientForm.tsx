@@ -18,11 +18,10 @@ import {
   getOptionValue,
   Select,
   SelectState,
-  toSelectState,
-  useSelectState
+  toSelectState
 } from '../Input/Select/Select'
 import { commonErrors } from '../../../misc/commonErrors'
-import { constUndefined, constVoid, pipe } from 'fp-ts/function'
+import { constUndefined, constVoid, flow, pipe } from 'fp-ts/function'
 import { option } from 'fp-ts'
 import { fiscalCodeLinter, vatNumberLinter } from '../../../misc/clientLinters'
 import { Input } from '../Input/Input/Input'
@@ -57,129 +56,127 @@ function foldFormType<T>(
 }
 
 export const ClientForm: FC<Props> = ({ onSubmit }) => {
-  const [formTypeOption, setFormTypeOption] = useSelectState(
-    FormTypeValues,
-    option.some('BUSINESS')
-  )
-
-  const formType: FormType = pipe(
-    getOptionValue(formTypeOption),
-    option.getOrElse(() => 'BUSINESS')
-  )
-
-  const { fieldProps, submit, formError } = useForm({
-    initialValues: {
-      fiscal_code: '',
-      first_name: '',
-      last_name: '',
-      country_code: toSelectState<Country>(CountryValues, option.none),
-      vat_number: '',
-      business_name: '',
-      address_country: toSelectState<Country>(CountryValues, option.none),
-      address_province: toSelectState<Province>(ProvinceValues, option.none),
-      address_city: '',
-      address_zip: '',
-      address_street: '',
-      address_street_number: '',
-      address_email: ''
-    },
-    validators: {
-      fiscal_code: pipe(
-        formType,
-        foldFormType(
-          () =>
-            validators.inSequence(
-              validators.toUpperCase(),
-              validators.nonBlankString(commonErrors.nonBlank)
-            ),
-          constUndefined
-        )
-      ),
-      first_name: pipe(
-        formType,
-        foldFormType(
-          () => validators.nonBlankString(commonErrors.nonBlank),
-          constUndefined
-        )
-      ),
-      last_name: pipe(
-        formType,
-        foldFormType(
-          () => validators.nonBlankString(commonErrors.nonBlank),
-          constUndefined
-        )
-      ),
-      country_code: pipe(
-        formType,
-        foldFormType(constUndefined, () =>
-          validators.fromSelectState<Country>(a18n`This is not a valid country`)
-        )
-      ),
-      vat_number: pipe(
-        formType,
-        foldFormType(constUndefined, () =>
-          validators.nonBlankString(commonErrors.nonBlank)
-        )
-      ),
-      business_name: pipe(
-        formType,
-        foldFormType(constUndefined, () =>
-          validators.nonBlankString(commonErrors.nonBlank)
-        )
-      ),
-      address_country: validators.fromSelectState<Country>(
-        a18n`This is not a valid country`
-      ),
-      address_province: validators.fromSelectState<Province>(
-        a18n`This is not a valid province`
-      ),
-      address_city: validators.nonBlankString(commonErrors.nonBlank),
-      address_zip: validators.nonBlankString(commonErrors.nonBlank),
-      address_street: validators.nonBlankString(commonErrors.nonBlank),
-      address_street_number: validators.optionalString(),
-      address_email: validators.fromCodec<EmailString>(
-        EmailString,
-        commonErrors.invalidEmail
-      )
-    },
-    linters: {
-      fiscal_code: fiscalCodeLinter,
-      vat_number: vatNumberLinter
-    },
-    onSubmit: data =>
-      pipe(
-        { type: formType, ...data } as ClientCreationInput,
-        foldClientCreationInput<ClientCreationInput>(
-          input => ({
-            type: input.type,
-            fiscal_code: input.fiscal_code,
-            first_name: input.first_name,
-            last_name: input.last_name,
-            address_country: input.address_country,
-            address_province: input.address_province,
-            address_city: input.address_city,
-            address_zip: input.address_zip,
-            address_street: input.address_street,
-            address_street_number: input.address_street_number,
-            address_email: input.address_email
-          }),
-          input => ({
-            type: input.type,
-            country_code: input.country_code,
-            vat_number: input.vat_number,
-            business_name: input.business_name,
-            address_country: input.address_country,
-            address_province: input.address_province,
-            address_city: input.address_city,
-            address_zip: input.address_zip,
-            address_street: input.address_street,
-            address_street_number: input.address_street_number,
-            address_email: input.address_email
-          })
+  const { fieldProps, submit, formError } = useForm(
+    {
+      initialValues: {
+        type: 'BUSINESS' as FormType,
+        fiscal_code: '',
+        first_name: '',
+        last_name: '',
+        country_code: toSelectState<Country>(CountryValues, option.none),
+        vat_number: '',
+        business_name: '',
+        address_country: toSelectState<Country>(CountryValues, option.none),
+        address_province: toSelectState<Province>(ProvinceValues, option.none),
+        address_city: '',
+        address_zip: '',
+        address_street: '',
+        address_street_number: '',
+        address_email: ''
+      },
+      validators: ({ type }) => ({
+        fiscal_code: pipe(
+          type,
+          foldFormType(
+            () =>
+              validators.inSequence(
+                validators.toUpperCase(),
+                validators.nonBlankString(commonErrors.nonBlank)
+              ),
+            constUndefined
+          )
         ),
-        onSubmit
-      )
-  })
+        first_name: pipe(
+          type,
+          foldFormType(
+            () => validators.nonBlankString(commonErrors.nonBlank),
+            constUndefined
+          )
+        ),
+        last_name: pipe(
+          type,
+          foldFormType(
+            () => validators.nonBlankString(commonErrors.nonBlank),
+            constUndefined
+          )
+        ),
+        country_code: pipe(
+          type,
+          foldFormType(constUndefined, () =>
+            validators.fromSelectState<Country>(
+              a18n`This is not a valid country`
+            )
+          )
+        ),
+        vat_number: pipe(
+          type,
+          foldFormType(constUndefined, () =>
+            validators.nonBlankString(commonErrors.nonBlank)
+          )
+        ),
+        business_name: pipe(
+          type,
+          foldFormType(constUndefined, () =>
+            validators.nonBlankString(commonErrors.nonBlank)
+          )
+        ),
+        address_country: validators.fromSelectState<Country>(
+          a18n`This is not a valid country`
+        ),
+        address_province: validators.fromSelectState<Province>(
+          a18n`This is not a valid province`
+        ),
+        address_city: validators.nonBlankString(commonErrors.nonBlank),
+        address_zip: validators.nonBlankString(commonErrors.nonBlank),
+        address_street: validators.nonBlankString(commonErrors.nonBlank),
+        address_street_number: validators.optionalString(),
+        address_email: validators.fromCodec(
+          EmailString,
+          commonErrors.invalidEmail
+        )
+      }),
+      linters: () => ({
+        fiscal_code: fiscalCodeLinter,
+        vat_number: vatNumberLinter
+      })
+    },
+    {
+      onSubmit: data => {
+        const commonData = {
+          address_country: data.address_country,
+          address_province: data.address_province,
+          address_city: data.address_city,
+          address_zip: data.address_zip,
+          address_street: data.address_street,
+          address_street_number: data.address_street_number,
+          address_email: data.address_email
+        }
+
+        return pipe(
+          data as ClientCreationInput,
+          foldClientCreationInput<ClientCreationInput>(
+            input => ({
+              type: input.type,
+              ...commonData,
+              fiscal_code: input.fiscal_code,
+              first_name: input.first_name,
+              last_name: input.last_name
+            }),
+            input => ({
+              type: input.type,
+              ...commonData,
+              country_code: input.country_code,
+              vat_number: input.vat_number,
+              business_name: input.business_name
+            })
+          ),
+          onSubmit
+        )
+      }
+    }
+  )
+
+  const { value: formType, onChange: setFormType } = fieldProps('type')
 
   const addressCountryProps = fieldProps('address_country')
   const addressProvinceProps = fieldProps('address_province')
@@ -233,8 +230,8 @@ export const ClientForm: FC<Props> = ({ onSubmit }) => {
       <Select
         type="unsearchable"
         name="formType"
-        value={formTypeOption}
-        onChange={value => setFormTypeOption(value as any)}
+        value={toSelectState(FormTypeValues, option.some(formType))}
+        onChange={flow(getOptionValue, option.fold(constVoid, setFormType))}
         error={option.none}
         warning={option.none}
         label={a18n`Client type`}

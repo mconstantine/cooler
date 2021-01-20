@@ -4,15 +4,16 @@ import { TaskEither } from 'fp-ts/TaskEither'
 import { Content } from '../../components/Content/Content'
 import {
   LoginForm as LoginFormComponent,
-  SubmitData
+  FormData
 } from '../../components/Form/Forms/LoginForm'
 import { LocalizedString } from '../../globalDomain'
 import { CoolerStory } from '../CoolerStory'
 
 export const LoginForm: Story = ({ onRegister, onLogin }) => {
-  const onSubmit: (
-    data: SubmitData
-  ) => TaskEither<LocalizedString, unknown> = ({ type, ...data }) =>
+  const onSubmit: (data: FormData) => TaskEither<LocalizedString, unknown> = ({
+    type,
+    ...data
+  }) =>
     taskEither.rightIO(() => {
       switch (type) {
         case 'Register':

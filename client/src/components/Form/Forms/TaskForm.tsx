@@ -1,9 +1,9 @@
 import { boolean, option } from 'fp-ts'
-import { constNull, flow, pipe } from 'fp-ts/function'
+import { constNull, constUndefined, pipe } from 'fp-ts/function'
 import { TaskEither } from 'fp-ts/TaskEither'
 import { Option } from 'fp-ts/Option'
 import { NonEmptyString } from 'io-ts-types'
-import { FC, useState } from 'react'
+import { FC } from 'react'
 import { a18n } from '../../../a18n'
 import {
   LocalizedString,
@@ -34,10 +34,12 @@ interface CommonFormData {
 }
 
 interface SingleTaskFormData extends CommonFormData {
+  shouldRepeat: false
   description: Option<NonEmptyString>
 }
 
 interface TasksBatchFormData extends CommonFormData {
+  shouldRepeat: true
   repeat: NonNegativeInteger
   from: Date
   to: Date
@@ -54,77 +56,89 @@ interface Props {
   onSubmit: (data: FormData) => TaskEither<LocalizedString, unknown>
 }
 
-function foldFormDataWithState<T>(
-  shouldRepeat: boolean,
-  callback: (data: FormData) => T
-): (data: SingleTaskFormData & TasksBatchFormData) => T {
-  return data =>
-    pipe(
-      shouldRepeat,
-      boolean.fold(
-        () =>
-          callback({
-            name: data.name,
-            expectedWorkingHours: data.expectedWorkingHours,
-            hourlyCost: data.hourlyCost,
-            project: data.project,
-            start_time: data.start_time,
-            description: data.description
-          }),
-        () =>
-          callback({
-            name: data.name,
-            expectedWorkingHours: data.expectedWorkingHours,
-            hourlyCost: data.hourlyCost,
-            project: data.project,
-            start_time: data.start_time,
-            repeat: data.repeat,
-            from: data.from,
-            to: data.to
-          })
-      )
-    )
+function foldFormData<T>(
+  whenSingleTask: (data: SingleTaskFormData) => T,
+  whenTasksBatch: (data: TasksBatchFormData) => T
+): (data: FormData) => T {
+  return data => {
+    if (data.shouldRepeat) {
+      return whenTasksBatch(data)
+    } else {
+      return whenSingleTask(data)
+    }
+  }
 }
 
 export const TaskForm: FC<Props> = props => {
-  const [shouldRepeat, setShouldRepeat] = useState(false)
-
-  const { fieldProps, submit, formError } = useForm({
-    initialValues: {
-      project: toSelectState<PositiveInteger>({}, option.none),
-      name: '',
-      description: '',
-      expectedWorkingHours: '',
-      hourlyCost: '',
-      start_time: new Date(),
-      from: new Date(),
-      to: new Date(),
-      repeat: 0 as NonNegativeInteger
-    },
-    validators: {
-      project: validators.fromSelectState<PositiveInteger>(
-        a18n`Please choose a project`
-      ),
-      name: validators.nonBlankString(commonErrors.nonBlank),
-      description: pipe(
-        shouldRepeat,
-        boolean.fold(
-          () => validators.optionalString(),
-          () => validators.passThrough<string, Option<NonEmptyString>>()
+  const { fieldProps, submit, formError } = useForm(
+    {
+      initialValues: {
+        shouldRepeat: false,
+        project: toSelectState<PositiveInteger>({}, option.none),
+        name: '',
+        description: '',
+        expectedWorkingHours: '',
+        hourlyCost: '',
+        start_time: new Date(),
+        from: new Date(),
+        to: new Date(),
+        repeat: 0 as NonNegativeInteger
+      },
+      validators: ({ shouldRepeat }) => ({
+        project: validators.fromSelectState<PositiveInteger>(
+          a18n`Please choose a project`
+        ),
+        name: validators.nonBlankString(commonErrors.nonBlank),
+        description: pipe(
+          shouldRepeat,
+          boolean.fold(() => validators.optionalString(), constUndefined)
+        ),
+        expectedWorkingHours: validators.fromCodec<NonNegativeNumber>(
+          NonNegativeNumberFromString,
+          a18n`Expecting working hours should be a non negative number`
+        ),
+        hourlyCost: validators.fromCodec<NonNegativeNumber>(
+          NonNegativeNumberFromString,
+          a18n`Hourly cost should be a non negative number`
         )
-      ),
-      expectedWorkingHours: validators.fromCodec<NonNegativeNumber>(
-        NonNegativeNumberFromString,
-        a18n`Expecting working hours should be a non negative number`
-      ),
-      hourlyCost: validators.fromCodec<NonNegativeNumber>(
-        NonNegativeNumberFromString,
-        a18n`Hourly cost should be a non negative number`
-      )
+      }),
+      linters: () => ({})
     },
-    linters: {},
-    onSubmit: flow(foldFormDataWithState(shouldRepeat, props.onSubmit))
-  })
+    {
+      onSubmit: data =>
+        pipe(
+          data as FormData,
+          foldFormData(
+            data =>
+              props.onSubmit({
+                shouldRepeat: false,
+                name: data.name,
+                expectedWorkingHours: data.expectedWorkingHours,
+                hourlyCost: data.hourlyCost,
+                project: data.project,
+                start_time: data.start_time,
+                description: data.description
+              }),
+            data =>
+              props.onSubmit({
+                shouldRepeat: true,
+                name: data.name,
+                expectedWorkingHours: data.expectedWorkingHours,
+                hourlyCost: data.hourlyCost,
+                project: data.project,
+                start_time: data.start_time,
+                repeat: data.repeat,
+                from: data.from,
+                to: data.to
+              })
+          )
+        )
+    }
+  )
+
+  const { value: shouldRepeat, onChange: setShouldRepeat } = fieldProps(
+    'shouldRepeat'
+  )
 
   return (
     <Form title={a18n`New Task`} formError={formError} submit={submit}>

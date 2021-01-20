@@ -1,8 +1,8 @@
-import { option, taskEither } from 'fp-ts'
-import { constUndefined, pipe } from 'fp-ts/function'
+import { option } from 'fp-ts'
+import { constNull, constUndefined, identity, pipe } from 'fp-ts/function'
 import { TaskEither } from 'fp-ts/TaskEither'
 import { NonEmptyString } from 'io-ts-types'
-import { ComponentProps, FC, useState } from 'react'
+import { ComponentProps, FC } from 'react'
 import { a18n } from '../../../a18n'
 import { EmailString, LocalizedString } from '../../../globalDomain'
 import { commonErrors } from '../../../misc/commonErrors'
@@ -42,85 +42,85 @@ interface LoginData {
   password: NonEmptyString
 }
 
-export type SubmitData =
-  | Omit<RegistrationData, 'passwordConfirmation'>
-  | LoginData
+export type FormData = RegistrationData | LoginData
 
-interface Props {
-  onSubmit: (data: SubmitData) => TaskEither<LocalizedString, unknown>
+function foldFormData<T>(
+  whenRegister: (data: RegistrationData) => T,
+  whenLogin: (data: LoginData) => T
+): (data: FormData) => T {
+  return data => {
+    switch (data.type) {
+      case 'Register':
+        return whenRegister(data)
+      case 'Login':
+        return whenLogin(data)
+    }
+  }
 }
 
-interface ValidatedData {
-  name: NonEmptyString | string
-  email: EmailString
-  password: NonEmptyString
-  passwordConfirmation: NonEmptyString | string
+interface Props {
+  onSubmit: (data: FormData) => TaskEither<LocalizedString, unknown>
 }
 
 export const LoginForm: FC<Props> = props => {
-  const [formType, setFormType] = useState<FormType>('Login')
-
-  const formValidator: validators.Validator<ValidatedData> | undefined = pipe(
-    formType,
-    foldFormType(
-      () =>
-        taskEither.fromPredicate(
-          values => values.password === values.passwordConfirmation,
-          () => a18n`The passwords don't match`
+  const { fieldProps, submit, formError } = useForm(
+    {
+      initialValues: {
+        type: 'Login' as FormType,
+        name: 'John Doe',
+        email: 'john.doe@example.com',
+        password: 'password',
+        passwordConfirmation: 'password'
+      },
+      validators: ({ type }) => ({
+        name: pipe(
+          type,
+          foldFormType(
+            () => validators.nonBlankString(commonErrors.nonBlank),
+            constUndefined
+          )
         ),
-      constUndefined
-    )
+        email: validators.fromCodec(EmailString, commonErrors.invalidEmail),
+        password: validators.nonBlankString(commonErrors.nonBlank),
+        passwordConfirmation: pipe(
+          type,
+          foldFormType(
+            () => validators.nonBlankString(commonErrors.nonBlank),
+            constUndefined
+          )
+        )
+      }),
+      linters: () => ({})
+    },
+    {
+      formValidator: data =>
+        pipe(
+          data as FormData,
+          foldFormData(
+            validators.fromPredicate(
+              ({ password, passwordConfirmation }) =>
+                password === passwordConfirmation,
+              a18n`The passwords don't match`
+            ),
+            validators.passThrough<FormData>()
+          )
+        )
+    },
+    {
+      onSubmit: data =>
+        pipe(
+          data,
+          foldFormData<FormData>(identity, data => ({
+            type: 'Login',
+            email: data.email,
+            password: data.password
+          })),
+          props.onSubmit
+        )
+    }
   )
 
-  const { fieldProps, submit, formError } = useForm({
-    initialValues: {
-      name: 'John Doe',
-      email: 'john.doe@example.com',
-      password: 'password',
-      passwordConfirmation: 'password'
-    },
-    validators: {
-      name: pipe(
-        formType,
-        foldFormType(
-          () => validators.nonBlankString(commonErrors.nonBlank),
-          constUndefined
-        )
-      ),
-      email: validators.fromCodec<EmailString>(
-        EmailString,
-        commonErrors.invalidEmail
-      ),
-      password: validators.nonBlankString(commonErrors.nonBlank),
-      passwordConfirmation: pipe(
-        formType,
-        foldFormType(
-          () => validators.nonBlankString(commonErrors.nonBlank),
-          constUndefined
-        )
-      )
-    },
-    linters: {},
-    formValidator,
-    onSubmit: ({ name, email, password }) =>
-      pipe(
-        formType,
-        foldFormType<SubmitData>(
-          () => ({
-            type: 'Register',
-            name: name as NonEmptyString,
-            email,
-            password
-          }),
-          () => ({
-            type: 'Login',
-            email,
-            password
-          })
-        ),
-        props.onSubmit
-      )
-  })
+  const { value: formType, onChange: setFormType } = fieldProps('type')
 
   const title = pipe(
     formType,
@@ -180,7 +180,7 @@ export const LoginForm: FC<Props> = props => {
               autoComplete="name"
             />
           ),
-          () => null
+          constNull
         )
       )}
       <Input
@@ -206,7 +206,7 @@ export const LoginForm: FC<Props> = props => {
               autoComplete="off"
             />
           ),
-          () => null
+          constNull
         )
       )}
     </Form>
