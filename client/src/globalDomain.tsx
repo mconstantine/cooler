@@ -28,6 +28,10 @@ export const EmailString = t.brand(
 )
 export type EmailString = t.TypeOf<typeof EmailString>
 
+export function unsafeEmailString(s: string): EmailString {
+  return s as EmailString
+}
+
 export const Color = t.keyof(
   {
     default: true,

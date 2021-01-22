@@ -6,15 +6,22 @@ import './Panel.scss'
 interface Props {
   title?: LocalizedString
   framed?: boolean
+  className?: string
 }
 
-export const Panel: FC<Props> = ({ title, framed, children }) => {
-  const framedClassName = framed ? 'framed' : ''
+export const Panel: FC<Props> = props => {
+  const framedClassName = props.framed ? 'framed' : ''
 
   return (
-    <div className={composeClassName('Panel', framedClassName)}>
-      {title ? <h3>{title}</h3> : null}
-      {children}
+    <div
+      className={composeClassName(
+        'Panel',
+        props.className || '',
+        framedClassName
+      )}
+    >
+      {props.title ? <h3>{props.title}</h3> : null}
+      {props.children}
     </div>
   )
 }
