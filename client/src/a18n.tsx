@@ -58,3 +58,42 @@ export const localizedMonthNames = {
   10: november as LocalizedString,
   11: december as LocalizedString
 }
+
+export function formatDate(
+  date: Date,
+  options: Intl.DateTimeFormatOptions = {}
+) {
+  return date.toLocaleDateString(a18n.getLocale(), {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    ...options
+  })
+}
+
+export function formatTime(
+  date: Date,
+  options: Intl.DateTimeFormatOptions = {}
+) {
+  return date.toLocaleTimeString(a18n.getLocale(), {
+    hour: 'numeric',
+    minute: 'numeric',
+    ...options
+  })
+}
+
+export function formatDateTime(
+  date: Date,
+  options: Intl.DateTimeFormatOptions = {}
+) {
+  return date.toLocaleDateString(a18n.getLocale(), {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: 'numeric',
+    ...options
+  })
+}
