@@ -4,7 +4,7 @@ import { sequenceS } from 'fp-ts/Apply'
 import { TaskEither } from 'fp-ts/TaskEither'
 import { NonEmptyString } from 'io-ts-types'
 import { FC, useState } from 'react'
-import { a18n } from '../../../a18n'
+import { a18n, formatDateTime } from '../../../a18n'
 import { EmailString, LocalizedString } from '../../../globalDomain'
 import { commonErrors } from '../../../misc/commonErrors'
 import { Form } from '../../Form/Form'
@@ -18,6 +18,8 @@ import { skull } from 'ionicons/icons'
 interface UserData {
   name: LocalizedString
   email: EmailString
+  created_at: Date
+  updated_at: Date
 }
 
 interface UserUpdate extends UserData {
@@ -40,7 +42,9 @@ export const UserData: FC<Props> = props => {
         name: props.user.name as string,
         email: props.user.email as string,
         newPassword: '',
-        passwordConfirmation: ''
+        passwordConfirmation: '',
+        created_at: props.user.created_at,
+        updated_at: props.user.updated_at
       },
       validators: () => ({
         name: validators.fromCodec(NonEmptyString, commonErrors.nonBlank),
@@ -55,7 +59,9 @@ export const UserData: FC<Props> = props => {
         const defaultData = {
           name: (data.name as string) as LocalizedString,
           email: data.email,
-          newPassword: option.none
+          newPassword: option.none,
+          created_at: data.created_at,
+          updated_at: data.updated_at
         }
 
         return pipe(
@@ -109,6 +115,16 @@ export const UserData: FC<Props> = props => {
                 name: 'email',
                 label: a18n`E-mail address`,
                 value: props.user.email
+              },
+              {
+                name: 'created_at',
+                label: a18n`Created at`,
+                value: formatDateTime(props.user.created_at)
+              },
+              {
+                name: 'updated_at',
+                label: a18n`Last updated at`,
+                value: formatDateTime(props.user.updated_at)
               }
             ] as ReadonlyItem<string>[]
           }

@@ -10,7 +10,9 @@ import { CoolerStory } from '../../CoolerStory'
 export const _UserData: Story = ({ onDeleteProfile, onLogout }) => {
   const [state, setState] = useState({
     name: unsafeLocalizedString('John Doe'),
-    email: unsafeEmailString('john.doe@example.com')
+    email: unsafeEmailString('john.doe@example.com'),
+    created_at: new Date(2020, 11, 25),
+    updated_at: new Date(2021, 0, 1)
   })
 
   return (
@@ -18,7 +20,14 @@ export const _UserData: Story = ({ onDeleteProfile, onLogout }) => {
       <Content>
         <UserData
           user={state}
-          onDataChange={data => taskEither.fromIO(() => setState(data))}
+          onDataChange={data =>
+            taskEither.fromIO(() =>
+              setState({
+                ...data,
+                updated_at: new Date()
+              })
+            )
+          }
           onDeleteProfile={taskEither.fromIO(onDeleteProfile)}
           onLogout={taskEither.fromIO(onLogout)}
         />
