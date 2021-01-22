@@ -85,7 +85,10 @@ export const UserData: FC<Props> = props => {
       }
     },
     {
-      onSubmit: data => props.onDataChange(data)
+      onSubmit: flow(
+        props.onDataChange,
+        taskEither.chain(() => taskEither.fromIO(() => setIsEditing(false)))
+      )
     }
   )
 
