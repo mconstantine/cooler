@@ -3,7 +3,13 @@ import { Either } from 'fp-ts/Either'
 import { constNull, constVoid, flow, pipe } from 'fp-ts/function'
 import { Option } from 'fp-ts/Option'
 import { FC, KeyboardEvent, useEffect, useMemo, useRef, useState } from 'react'
-import { a18n, localizedMonthNames } from '../../../../a18n'
+import {
+  a18n,
+  formatDate,
+  formatDateTime,
+  formatTime,
+  localizedMonthNames
+} from '../../../../a18n'
 import {
   LocalizedString,
   NonNegativeIntegerFromString
@@ -24,11 +30,11 @@ import { getOptionValue, useSelectState } from '../Select/Select'
 
 interface Props extends FieldProps<Date> {
   label: LocalizedString
-  mode?: DateTimePickerOption
+  mode?: DateTimePickerMode
   disabled?: boolean
 }
 
-const DateTimePickerOptions = t.keyof(
+const DateTimePickerMode = t.keyof(
   {
     date: true,
     time: true,
@@ -36,26 +42,36 @@ const DateTimePickerOptions = t.keyof(
   },
   'DateTimePickerOptions'
 )
-type DateTimePickerOption = t.TypeOf<typeof DateTimePickerOptions>
-
-const DateTimePickerMode = t.keyof(
-  {
-    DATE: true,
-    TIME: true
-  },
-  'DateTimePickerMode'
-)
-type DateTimePickerMode = t.TypeOf<typeof DateTimePickerMode>
+export type DateTimePickerMode = t.TypeOf<typeof DateTimePickerMode>
 
 function foldDateTimePickerMode<T>(
   whenDate: () => T,
-  whenTime: () => T
+  whenTime: () => T,
+  whenDateTime: () => T
 ): (mode: DateTimePickerMode) => T {
   return mode => {
     switch (mode) {
-      case 'DATE':
+      case 'date':
         return whenDate()
-      case 'TIME':
+      case 'time':
+        return whenTime()
+      case 'datetime':
+        return whenDateTime()
+    }
+  }
+}
+
+type DateTimePickerView = 'date' | 'time'
+
+function foldDateTimePickerView<T>(
+  whenDate: () => T,
+  whenTime: () => T
+): (view: DateTimePickerView) => T {
+  return view => {
+    switch (view) {
+      case 'date':
+        return whenDate()
+      case 'time':
         return whenTime()
     }
   }
@@ -162,8 +178,8 @@ export const DateTimePicker: FC<Props> = ({ mode = 'datetime', ...props }) => {
     option.some(props.value.getMonth())
   )
 
-  const [currentMode, setCurrentMode] = useState<DateTimePickerMode>(
-    mode === 'time' ? 'TIME' : 'DATE'
+  const [currentView, setCurrentView] = useState<DateTimePickerView>(
+    mode === 'time' ? 'time' : 'date'
   )
 
   const [hours, setHours] = useState(
@@ -182,7 +198,6 @@ export const DateTimePicker: FC<Props> = ({ mode = 'datetime', ...props }) => {
 
   const isPickingDate = mode === 'date' || mode === 'datetime'
   const isPickingTime = mode === 'time' || mode === 'datetime'
-  const isPickingDateTime = mode === 'datetime'
 
   const yearValidation = useMemo(() => validateYear(year), [year])
   const yearError: Option<LocalizedString> = pipe(
@@ -228,13 +243,13 @@ export const DateTimePicker: FC<Props> = ({ mode = 'datetime', ...props }) => {
     initialValueRef.current = props.value
     onChange(props.value, true)
     setIsOpen(false)
-    setCurrentMode('DATE')
+    setCurrentView('date')
   }
 
   const cancel = () => {
     onChange(initialValueRef.current, false)
     setIsOpen(false)
-    setCurrentMode('DATE')
+    setCurrentView('time')
   }
 
   const onTimeInputKeyUp = (e: KeyboardEvent) => {
@@ -246,8 +261,8 @@ export const DateTimePicker: FC<Props> = ({ mode = 'datetime', ...props }) => {
   useEffect(() => {
     if (isOpen) {
       pipe(
-        currentMode,
-        foldDateTimePickerMode(
+        currentView,
+        foldDateTimePickerView(
           () => {
             yearInputRef.current?.focus()
             yearInputRef.current?.select()
@@ -259,7 +274,7 @@ export const DateTimePicker: FC<Props> = ({ mode = 'datetime', ...props }) => {
         )
       )
     }
-  }, [isOpen, currentMode])
+  }, [isOpen, currentView])
 
   useEffect(() => {
     if (either.isRight(hoursValidation) && hours.length === 2) {
@@ -275,29 +290,19 @@ export const DateTimePicker: FC<Props> = ({ mode = 'datetime', ...props }) => {
     }
   }, [year, yearValidation])
 
-  const options: Partial<Intl.DateTimeFormatOptions> = {
-    ...(isPickingDate
-      ? {
-          weekday: 'short',
-          day: 'numeric',
-          month: 'short',
-          year: 'numeric'
-        }
-      : {}),
-    ...(isPickingTime
-      ? {
-          hour: 'numeric',
-          minute: 'numeric'
-        }
-      : {})
-  }
-
   return (
     <div className="DateTimePicker">
       <Input
         {...props}
         className="DateTimePickerInput"
-        value={props.value.toLocaleString(a18n.getLocale(), options)}
+        value={pipe(
+          mode,
+          foldDateTimePickerMode(
+            () => formatDate(props.value),
+            () => formatTime(props.value),
+            () => formatDateTime(props.value)
+          )
+        )}
         onChange={constVoid}
         readOnly
         onFocus={() => !props.disabled && setIsOpen(true)}
@@ -310,18 +315,18 @@ export const DateTimePicker: FC<Props> = ({ mode = 'datetime', ...props }) => {
         framed
       >
         {pipe(
-          isPickingDateTime,
+          isPickingDate && isPickingTime,
           boolean.fold(constNull, () => (
             <Buttons>
               <Button
                 type="button"
                 label={a18n`Date`}
                 icon={option.some(calendar)}
-                action={() => setCurrentMode('DATE')}
+                action={() => setCurrentView('date')}
                 flat
                 color={pipe(
-                  currentMode,
-                  foldDateTimePickerMode(
+                  currentView,
+                  foldDateTimePickerView(
                     () => 'primary',
                     () => 'default'
                   )
@@ -331,11 +336,11 @@ export const DateTimePicker: FC<Props> = ({ mode = 'datetime', ...props }) => {
                 type="button"
                 label={a18n`Time`}
                 icon={option.some(time)}
-                action={() => setCurrentMode('TIME')}
+                action={() => setCurrentView('time')}
                 flat
                 color={pipe(
-                  currentMode,
-                  foldDateTimePickerMode(
+                  currentView,
+                  foldDateTimePickerView(
                     () => 'default',
                     () => 'primary'
                   )
@@ -345,8 +350,8 @@ export const DateTimePicker: FC<Props> = ({ mode = 'datetime', ...props }) => {
           ))
         )}
         {pipe(
-          currentMode,
-          foldDateTimePickerMode(
+          currentView,
+          foldDateTimePickerView(
             () => (
               <>
                 <Input
@@ -404,7 +409,7 @@ export const DateTimePicker: FC<Props> = ({ mode = 'datetime', ...props }) => {
                     onChange(date, true)
 
                     if (mode === 'datetime') {
-                      setCurrentMode('TIME')
+                      setCurrentView('time')
                     }
                   }}
                   disabled={
