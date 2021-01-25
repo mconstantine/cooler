@@ -82,6 +82,7 @@ interface UseFormOutput<Values extends Record<string, unknown>> {
     name: K
   ) => FieldProps<Values[K]>
   values: Values
+  errors: Record<keyof Values, Option<LocalizedString>>
   formError: Option<LocalizedString>
   submit: TaskEither<unknown, unknown>
   setValues: (values: Partial<Values>) => void
@@ -366,6 +367,7 @@ export function useForm<
   return {
     values,
     fieldProps,
+    errors,
     formError,
     submit,
     setValues
