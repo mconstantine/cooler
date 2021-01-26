@@ -1,6 +1,6 @@
 import { MutableRefObject, RefObject, useEffect, useRef } from 'react'
 
-export type ReactRef<T> =
+type ReactRef<T> =
   | ((instance: T | null) => void)
   | MutableRefObject<T | null>
   | null

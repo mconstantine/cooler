@@ -1,5 +1,6 @@
 import originalA18n, { LocaleResource } from 'a18n'
-import { LocalizedString } from './globalDomain'
+import { pipe } from 'fp-ts/function'
+import { LocalizedString, Month } from './globalDomain'
 
 interface A18n {
   (text: string): LocalizedString
@@ -44,7 +45,7 @@ const november = date.toLocaleDateString(undefined, { month: 'long' })
 date.setMonth(11)
 const december = date.toLocaleDateString(undefined, { month: 'long' })
 
-export const localizedMonthNames = {
+export const localizedMonthNames: Record<Month, LocalizedString> = {
   0: january as LocalizedString,
   1: february as LocalizedString,
   2: march as LocalizedString,
@@ -96,4 +97,22 @@ export function formatDateTime(
     minute: 'numeric',
     ...options
   })
+}
+
+export function formatNumber(
+  n: number,
+  formatDecimals = false
+): LocalizedString {
+  return (formatDecimals || n % 1 !== 0
+    ? n.toFixed(2)
+    : n.toString()) as LocalizedString
+}
+
+export function formatMoneyAmount(moneyAmount: number): LocalizedString {
+  return pipe(
+    moneyAmount,
+    n => formatNumber(Math.abs(n), true),
+    s => (moneyAmount >= 0 ? `€${s}` : `-€${s}`),
+    unsafeLocalizedString
+  )
 }

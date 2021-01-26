@@ -11,6 +11,7 @@ import {
 import './CounterSelect.scss'
 import { constVoid, flow, pipe } from 'fp-ts/function'
 import { composeClassName } from '../../../../misc/composeClassName'
+import { forwardRef, PropsWithoutRef, Ref, RefAttributes } from 'react'
 
 interface Props<T extends string | number | symbol>
   extends Omit<UnsearchableSelectProps<T>, 'type'> {
@@ -18,78 +19,86 @@ interface Props<T extends string | number | symbol>
   onForward: (currentValue: T) => T
 }
 
-export function CounterSelect<T extends number>({
-  className = '',
-  ...props
-}: Props<T>) {
-  const disabled =
-    option.isNone(getOptionValue(props.value)) ||
-    option.isSome(props.error) ||
-    props.disabled
+type CounterSelect = <T extends number>(
+  props: PropsWithoutRef<Props<T>> & RefAttributes<HTMLInputElement>
+) => JSX.Element
 
-  const onBack = () => {
-    const keys = Object.keys(props.options)
+// @ts-ignore
+export const CounterSelect: CounterSelect = forwardRef(
+  <T extends number>(
+    { className = '', ...props }: Props<T>,
+    ref: Ref<HTMLInputElement>
+  ) => {
+    const disabled =
+      option.isNone(getOptionValue(props.value)) ||
+      option.isSome(props.error) ||
+      props.disabled
 
-    pipe(
-      getOptionValue(props.value),
-      option.map(flow(props.onBack, props.codec.encode)),
-      option.map(
-        flow(
-          option.fromPredicate(nextKey => keys.includes(nextKey)),
-          option.getOrElse(() => keys[keys.length - 1])
-        )
-      ),
-      option.chain(flow(props.codec.decode, option.fromEither)),
-      option.map(
-        value => [option.some(value), props.options[value]] as SelectState<T>
-      ),
-      option.fold(constVoid, props.onChange)
+    const onBack = () => {
+      const keys = Object.keys(props.options)
+
+      pipe(
+        getOptionValue(props.value),
+        option.map(flow(props.onBack, props.codec.encode)),
+        option.map(
+          flow(
+            option.fromPredicate(nextKey => keys.includes(nextKey)),
+            option.getOrElse(() => keys[keys.length - 1])
+          )
+        ),
+        option.chain(flow(props.codec.decode, option.fromEither)),
+        option.map(
+          value => [option.some(value), props.options[value]] as SelectState<T>
+        ),
+        option.fold(constVoid, props.onChange)
+      )
+    }
+
+    const onForward = () => {
+      const keys = Object.keys(props.options)
+
+      pipe(
+        getOptionValue(props.value),
+        option.map(flow(props.onForward, props.codec.encode)),
+        option.map(
+          flow(
+            option.fromPredicate(nextKey => keys.includes(nextKey)),
+            option.getOrElse(() => keys[0])
+          )
+        ),
+        option.chain(flow(props.codec.decode, option.fromEither)),
+        option.map(
+          value => [option.some(value), props.options[value]] as SelectState<T>
+        ),
+        option.fold(constVoid, props.onChange)
+      )
+    }
+
+    return (
+      <Select
+        type="async"
+        {...props}
+        className={composeClassName('CounterSelect', className)}
+        onQueryChange={constVoid}
+        emptyPlaceholder={'' as LocalizedString}
+        isLoading={false}
+        ref={ref}
+      >
+        <Button
+          className="back"
+          type="iconButton"
+          icon={chevronBack}
+          action={onBack}
+          disabled={disabled}
+        />
+        <Button
+          className="forward"
+          type="iconButton"
+          icon={chevronForward}
+          action={onForward}
+          disabled={disabled}
+        />
+      </Select>
     )
   }
-
-  const onForward = () => {
-    const keys = Object.keys(props.options)
-
-    pipe(
-      getOptionValue(props.value),
-      option.map(flow(props.onForward, props.codec.encode)),
-      option.map(
-        flow(
-          option.fromPredicate(nextKey => keys.includes(nextKey)),
-          option.getOrElse(() => keys[0])
-        )
-      ),
-      option.chain(flow(props.codec.decode, option.fromEither)),
-      option.map(
-        value => [option.some(value), props.options[value]] as SelectState<T>
-      ),
-      option.fold(constVoid, props.onChange)
-    )
-  }
-
-  return (
-    <Select
-      type="async"
-      {...props}
-      className={composeClassName('CounterSelect', className)}
-      onQueryChange={constVoid}
-      emptyPlaceholder={'' as LocalizedString}
-      isLoading={false}
-    >
-      <Button
-        className="back"
-        type="iconButton"
-        icon={chevronBack}
-        action={onBack}
-        disabled={disabled}
-      />
-      <Button
-        className="forward"
-        type="iconButton"
-        icon={chevronForward}
-        action={onForward}
-        disabled={disabled}
-      />
-    </Select>
-  )
-}
+)
