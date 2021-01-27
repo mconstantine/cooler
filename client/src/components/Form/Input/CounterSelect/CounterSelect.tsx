@@ -1,6 +1,6 @@
-import { option } from 'fp-ts'
+import { boolean, option } from 'fp-ts'
 import { chevronBack, chevronForward } from 'ionicons/icons'
-import { LocalizedString } from '../../../../globalDomain'
+import { Color, LocalizedString } from '../../../../globalDomain'
 import { Button } from '../../../Button/Button/Button'
 import {
   Select,
@@ -11,7 +11,13 @@ import {
 import './CounterSelect.scss'
 import { constVoid, flow, pipe } from 'fp-ts/function'
 import { composeClassName } from '../../../../misc/composeClassName'
-import { forwardRef, PropsWithoutRef, Ref, RefAttributes } from 'react'
+import {
+  forwardRef,
+  PropsWithoutRef,
+  Ref,
+  RefAttributes,
+  useState
+} from 'react'
 
 interface Props<T extends string | number | symbol>
   extends Omit<UnsearchableSelectProps<T>, 'type'> {
@@ -29,6 +35,8 @@ export const CounterSelect: CounterSelect = forwardRef(
     { className = '', ...props }: Props<T>,
     ref: Ref<HTMLInputElement>
   ) => {
+    const [isFocus, setIsFocus] = useState(false)
+
     const disabled =
       option.isNone(getOptionValue(props.value)) ||
       option.isSome(props.error) ||
@@ -74,6 +82,28 @@ export const CounterSelect: CounterSelect = forwardRef(
       )
     }
 
+    const color: Color = pipe(
+      props.error,
+      option.fold(
+        () =>
+          pipe(
+            props.warning,
+            option.fold(
+              () =>
+                pipe(
+                  isFocus,
+                  boolean.fold(
+                    () => 'default',
+                    () => 'primary'
+                  )
+                ),
+              () => 'warning'
+            )
+          ),
+        () => 'danger'
+      )
+    )
+
     return (
       <Select
         type="async"
@@ -82,6 +112,8 @@ export const CounterSelect: CounterSelect = forwardRef(
         onQueryChange={constVoid}
         emptyPlaceholder={'' as LocalizedString}
         isLoading={false}
+        onFocus={() => setIsFocus(true)}
+        onBlur={() => setIsFocus(false)}
         ref={ref}
       >
         <Button
@@ -90,6 +122,7 @@ export const CounterSelect: CounterSelect = forwardRef(
           icon={chevronBack}
           action={onBack}
           disabled={disabled}
+          color={color}
         />
         <Button
           className="forward"
@@ -97,6 +130,7 @@ export const CounterSelect: CounterSelect = forwardRef(
           icon={chevronForward}
           action={onForward}
           disabled={disabled}
+          color={color}
         />
       </Select>
     )

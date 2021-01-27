@@ -208,6 +208,7 @@ export const Select: Select = forwardRef(
     const onBlur = useCallback(
       (e?: FocusEvent) => {
         setHighlightedItem(option.none)
+        e && onBlurProp?.(e)
 
         if (record.size(options) === 1) {
           const [[value, label]] = Object.entries(options) as [
@@ -224,7 +225,6 @@ export const Select: Select = forwardRef(
         }
 
         window.setTimeout(() => {
-          e && onBlurProp?.(e)
           setIsOpen(false)
         }, 150)
       },
