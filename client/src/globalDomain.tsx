@@ -199,6 +199,10 @@ export function unsafePercentage(n: number): Percentage {
 }
 
 export function computePercentage(whole: number, fraction: number): Percentage {
+  if (whole === 0) {
+    return unsafePercentage(0)
+  }
+
   return unsafePercentage(fraction / whole)
 }
 

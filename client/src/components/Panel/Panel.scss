@@ -12,6 +12,10 @@
     @include ss('padding', $spacing-medium-mobile, $spacing-medium-desktop);
   }
 
+  > h3 {
+    margin-bottom: 32px;
+  }
+
   > *:first-child {
     margin-top: 0;
   }

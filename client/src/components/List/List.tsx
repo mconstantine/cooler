@@ -21,6 +21,21 @@ import './List.scss'
 import { chevronForwardOutline } from 'ionicons/icons'
 
 type Position = 'start' | 'end'
+type Size = 'default' | 'small'
+
+function foldSize<T>(
+  whenDefault: () => T,
+  whenSmall: () => T
+): (size: Size) => T {
+  return size => {
+    switch (size) {
+      case 'default':
+        return whenDefault()
+      case 'small':
+        return whenSmall()
+    }
+  }
+}
 
 interface CommonItemProps {
   key: string | number
@@ -29,6 +44,7 @@ interface CommonItemProps {
   description: Option<LocalizedString>
   disabled?: boolean
   className?: string
+  size?: Size
 }
 
 export interface ReadonlyItem extends CommonItemProps {
@@ -163,6 +179,8 @@ export const List: FC<Props> = props => {
             )
           )
 
+          const sizeClassName = item.size || 'default'
+
           const getAction = (item: RoutedItem | RoutedItemWithIcon) => {
             return (e: MouseEvent) => {
               e.preventDefault()
@@ -216,7 +234,8 @@ export const List: FC<Props> = props => {
                 disabledClassName,
                 iconsAtTheEndClassName,
                 routedClassName,
-                detailsClassName
+                detailsClassName,
+                sizeClassName
               )}
             >
               {pipe(
@@ -256,7 +275,13 @@ export const List: FC<Props> = props => {
                       option.map(label => <Label content={label} />),
                       option.toNullable
                     )}
-                    <h6 className="content">{item.content}</h6>
+                    {pipe(
+                      item.size || 'default',
+                      foldSize(
+                        () => <h6 className="content">{item.content}</h6>,
+                        () => <Label content={item.content} />
+                      )
+                    )}
                     {pipe(
                       item.description,
                       option.map(description => (

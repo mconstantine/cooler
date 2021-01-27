@@ -6,11 +6,15 @@ $list-max-width: $max-width-text + $list-icons-space;
 $list-max-width-details: $max-width-text + $list-icons-space-details;
 
 .List {
+  margin-top: 16px;
+
   .heading {
-    margin-bottom: 32px;
+    margin-top: 32px;
+    margin-bottom: 16px;
     max-width: $list-max-width;
     margin-left: auto;
     margin-right: auto;
+    color: $color-primary-dark;
   }
 
   ul {
@@ -27,6 +31,11 @@ $list-max-width-details: $max-width-text + $list-icons-space-details;
     padding: 16px;
     margin-left: auto;
     margin-right: auto;
+
+    &.small {
+      padding-top: 12px;
+      padding-bottom: 12px;
+    }
 
     > * {
       position: relative;
@@ -81,8 +90,11 @@ $list-max-width-details: $max-width-text + $list-icons-space-details;
 
       .Label {
         opacity: 1;
-        font-size: 1rem;
         line-height: 1;
+      }
+
+      .Label.default {
+        font-size: 1rem;
       }
     }
 
@@ -92,7 +104,7 @@ $list-max-width-details: $max-width-text + $list-icons-space-details;
 
     .Label {
       margin-top: 0;
-      margin-bottom: 8px;
+      margin-bottom: 0;
     }
 
     .content {
@@ -158,6 +170,10 @@ $list-max-width-details: $max-width-text + $list-icons-space-details;
   }
 }
 
+.light .List .heading {
+  color: $color-primary-light;
+}
+
 .light .List li .itemProgressBar {
   background-color: rgba(#000, 0.25);
 
@@ -186,8 +202,4 @@ $list-max-width-details: $max-width-text + $list-icons-space-details;
   &:not(.disabled):active {
     background-color: rgba(#000, $opacity-active);
   }
-}
-
-.List + .List {
-  @include ss('padding-top', $spacing-large-mobile, $spacing-large-desktop);
 }
