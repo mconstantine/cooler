@@ -1,5 +1,5 @@
 import { option, taskEither } from 'fp-ts'
-import { pipe } from 'fp-ts/function'
+import { constNull, pipe } from 'fp-ts/function'
 import { Option } from 'fp-ts/Option'
 import { TaskEither } from 'fp-ts/TaskEither'
 import { alert, send } from 'ionicons/icons'
@@ -18,7 +18,7 @@ import './Form.scss'
 
 interface Props {
   title: LocalizedString
-  submit: TaskEither<unknown, unknown>
+  submit: TaskEither<LocalizedString, unknown>
   submitLabel?: LocalizedString
   submitIcon?: string
   formError: Option<LocalizedString>
@@ -32,15 +32,23 @@ export const Form: FC<Props> = ({
   ...props
 }) => {
   const [loadingState, setLoadingState] = useState<LoadingState>('default')
+  const [submitError, setSubmitError] = useState<Option<LocalizedString>>(
+    option.none
+  )
 
   const onSubmit = (e: FormEvent) => {
     e.preventDefault()
+
     setLoadingState('loading')
+    setSubmitError(option.none)
 
     pipe(
       props.submit,
       taskEither.bimap(
-        () => setLoadingState('error'),
+        error => {
+          setSubmitError(option.some(error))
+          setLoadingState('error')
+        },
         () => setLoadingState(() => 'success')
       )
     )()
@@ -65,10 +73,16 @@ export const Form: FC<Props> = ({
         <div className="actions">
           {pipe(
             props.formError,
-            option.fold(
-              () => null,
-              error => <Label icon={alert} color="danger" content={error} />
-            )
+            option.fold(constNull, error => (
+              <Label icon={alert} color="danger" content={error} />
+            ))
+          )}
+
+          {pipe(
+            submitError,
+            option.fold(constNull, error => (
+              <Label icon={alert} color="danger" content={error} />
+            ))
           )}
 
           <Buttons spacing="spread">

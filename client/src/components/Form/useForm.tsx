@@ -56,7 +56,7 @@ type UseFormInput<
       values: FormValidator extends undefined
         ? ValidatedFields<Values, Validators>
         : ValidatorOutput<NonNullable<FormValidator>>
-    ) => TaskEither<unknown, unknown>
+    ) => TaskEither<LocalizedString, unknown>
   }
 ]
 
@@ -73,7 +73,7 @@ type UseFormInputNoFormValidator<
   {
     onSubmit: (
       values: ValidatedFields<Values, Validators>
-    ) => TaskEither<unknown, unknown>
+    ) => TaskEither<LocalizedString, unknown>
   }
 ]
 
@@ -84,7 +84,7 @@ interface UseFormOutput<Values extends Record<string, unknown>> {
   values: Values
   errors: Record<keyof Values, Option<LocalizedString>>
   formError: Option<LocalizedString>
-  submit: TaskEither<unknown, unknown>
+  submit: TaskEither<LocalizedString, unknown>
   setValues: (values: Partial<Values>) => void
 }
 
