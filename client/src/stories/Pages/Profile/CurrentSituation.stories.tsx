@@ -1,21 +1,28 @@
 import { Meta, Story } from '@storybook/react'
-import { task, taskEither } from 'fp-ts'
+import { boolean, task, taskEither } from 'fp-ts'
 import { pipe } from 'fp-ts/function'
+import { TaskEither } from 'fp-ts/TaskEither'
 import { useState } from 'react'
 import { unsafeLocalizedString } from '../../../a18n'
 import { Content } from '../../../components/Content/Content'
-import { CurrentSituation } from '../../../components/Pages/Profile/CurrentSituation'
+import { CurrentSituation as CurrentSituationComponent } from '../../../components/Pages/Profile/CurrentSituation'
 import { Tax } from '../../../entities/Tax'
 import {
+  LocalizedString,
   unsafeNonNegativeNumber,
   unsafePercentage
 } from '../../../globalDomain'
 import { CoolerStory } from '../../CoolerStory'
 
-export const _CurrentSituation: Story = () => {
+interface Args {
+  shouldFail: boolean
+}
+
+export const CurrentSituation: Story<Args> = props => {
   const [since, setSince] = useState(new Date(2021, 0, 1))
   const to = new Date(2021, 0, 31)
   const pastDays = Math.round((to.getTime() - since.getTime()) / 86400000)
+
   const expectedWorkingHours = unsafeNonNegativeNumber(
     Math.max(pastDays * 8, 0)
   )
@@ -36,18 +43,31 @@ export const _CurrentSituation: Story = () => {
     }
   ]
 
+  const onSinceDateChange = (since: Date): TaskEither<LocalizedString, void> =>
+    pipe(
+      props.shouldFail,
+      boolean.fold(
+        (): TaskEither<LocalizedString, void> =>
+          pipe(
+            task.fromIO(() => setSince(since)),
+            task.delay(500),
+            taskEither.rightTask
+          ),
+        (): TaskEither<LocalizedString, void> =>
+          pipe(
+            task.fromIO(() => unsafeLocalizedString("I'm an error!")),
+            task.delay(500),
+            taskEither.leftTask
+          )
+      )
+    )
+
   return (
     <CoolerStory>
       <Content>
-        <CurrentSituation
+        <CurrentSituationComponent
           since={since}
-          onSinceDateChange={since =>
-            pipe(
-              task.fromIO(() => setSince(since)),
-              task.delay(500),
-              taskEither.rightTask
-            )
-          }
+          onSinceDateChange={onSinceDateChange}
           data={{
             expectedWorkingHours,
             actualWorkingHours,
@@ -61,8 +81,18 @@ export const _CurrentSituation: Story = () => {
   )
 }
 
-const meta: Meta = {
-  title: 'Cooler/Pages/Profile/Current Situation'
+const meta: Meta<Args> = {
+  title: 'Cooler/Pages/Profile/Current Situation',
+  args: {
+    shouldFail: false
+  },
+  argTypes: {
+    shouldFail: {
+      name: 'Should fail',
+      control: 'boolean',
+      description: 'Set this to true and change date to make the change fail'
+    }
+  }
 }
 
 export default meta

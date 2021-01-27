@@ -1,5 +1,6 @@
 import { option, taskEither } from 'fp-ts'
 import { pipe } from 'fp-ts/function'
+import { Option } from 'fp-ts/Option'
 import { TaskEither } from 'fp-ts/TaskEither'
 import { FC, useState } from 'react'
 import { a18n, formatMoneyAmount, formatNumber } from '../../../a18n'
@@ -13,6 +14,7 @@ import {
 import { DateTimePicker } from '../../Form/Input/DateTimePicker/DateTimePicker'
 import { List, ValuedItem } from '../../List/List'
 import { Panel } from '../../Panel/Panel'
+import { getNetValue } from './utils'
 
 interface Props {
   since: Date
@@ -27,19 +29,13 @@ interface Props {
 }
 
 export const CurrentSituation: FC<Props> = props => {
-  const [isSinceChanging, setIsSinceChanging] = useState(false)
+  const [isSinceDateChanging, setIsDateSinceChanging] = useState(false)
+  const [error, setError] = useState<Option<LocalizedString>>(option.none)
 
   const progress = computePercentage(
     props.data.expectedWorkingHours,
     props.data.actualWorkingHours
   )
-
-  const cumulativeTaxes = props.data.taxes.reduce(
-    (res, { value }) => res * (1 - value),
-    1
-  )
-  const getNetValue = (grossValue: number): number =>
-    grossValue * cumulativeTaxes
 
   const renderTaxItem = (
     commonKey: string,
@@ -63,24 +59,31 @@ export const CurrentSituation: FC<Props> = props => {
 
   return (
     <Panel title={a18n`Current situation`} framed>
+      <p>{a18n`Information about the amount of time you expect to work VS how much you already did, as well as the amount of money you will earn, since a given date`}</p>
+
       <DateTimePicker
         name="since"
         mode="date"
         label={a18n`Since`}
         value={props.since}
         onChange={since => {
-          setIsSinceChanging(true)
+          setError(option.none)
+          setIsDateSinceChanging(true)
 
           pipe(
             props.onSinceDateChange(since),
-            taskEither.chain(() =>
-              taskEither.fromIO(() => setIsSinceChanging(false))
+            taskEither.bimap(
+              error => {
+                setError(option.some(error))
+                setIsDateSinceChanging(false)
+              },
+              () => setIsDateSinceChanging(false)
             )
           )()
         }}
-        error={option.none}
+        error={error}
         warning={option.none}
-        disabled={isSinceChanging}
+        disabled={isSinceDateChanging}
       />
       <List
         heading={option.some(a18n`Time`)}
@@ -132,7 +135,7 @@ export const CurrentSituation: FC<Props> = props => {
             key: 'grossBudget',
             type: 'valued',
             label: option.none,
-            content: a18n`Budget (gross)`,
+            content: a18n`Gross budget`,
             description: option.none,
             value: formatMoneyAmount(props.data.budget),
             progress: option.none
@@ -144,16 +147,18 @@ export const CurrentSituation: FC<Props> = props => {
             key: 'netBudget',
             type: 'valued',
             label: option.none,
-            content: a18n`Budget (net)`,
+            content: a18n`Net budget`,
             description: option.none,
-            value: formatMoneyAmount(getNetValue(props.data.budget)),
+            value: formatMoneyAmount(
+              getNetValue(props.data.budget, props.data.taxes)
+            ),
             progress: option.none
           },
           {
             key: 'grossBalance',
             type: 'valued',
             label: option.none,
-            content: a18n`Balance (gross)`,
+            content: a18n`Gross balance`,
             description: option.none,
             value: formatMoneyAmount(props.data.balance),
             progress: option.none
@@ -165,9 +170,11 @@ export const CurrentSituation: FC<Props> = props => {
             key: 'netBalance',
             type: 'valued',
             label: option.none,
-            content: a18n`Balance (net)`,
+            content: a18n`Net balance`,
             description: option.none,
-            value: formatMoneyAmount(getNetValue(props.data.balance)),
+            value: formatMoneyAmount(
+              getNetValue(props.data.balance, props.data.taxes)
+            ),
             progress: option.none
           }
         ]}

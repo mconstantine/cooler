@@ -9,11 +9,12 @@ import { EmailString, LocalizedString } from '../../../globalDomain'
 import { commonErrors } from '../../../misc/commonErrors'
 import { Form } from '../../Form/Form'
 import { Input } from '../../Form/Input/Input/Input'
-import { ReadonlyForm, ReadonlyItem } from '../../Form/ReadonlyForm'
 import { useForm } from '../../Form/useForm'
 import * as validators from '../../Form/validators'
 import { Option } from 'fp-ts/Option'
 import { skull } from 'ionicons/icons'
+import { Panel } from '../../Panel/Panel'
+import { List } from '../../List/List'
 
 interface UserData {
   name: LocalizedString
@@ -102,57 +103,41 @@ export const UserData: FC<Props> = props => {
     isEditing,
     boolean.fold(
       () => (
-        <ReadonlyForm
-          title={a18n`Your data`}
-          items={
-            [
+        <Panel title={a18n`Your data`}>
+          <List
+            heading={option.none}
+            items={[
               {
-                name: 'name',
-                label: a18n`Name`,
-                value: props.user.name
+                type: 'readonly',
+                key: 'name',
+                label: option.some(a18n`Name`),
+                content: props.user.name,
+                description: option.none
               },
               {
-                name: 'email',
-                label: a18n`E-mail address`,
-                value: props.user.email
+                type: 'readonly',
+                key: 'email',
+                label: option.some(a18n`E-mail address`),
+                content: (props.user.email as unknown) as LocalizedString,
+                description: option.none
               },
               {
-                name: 'created_at',
-                label: a18n`Created at`,
-                value: formatDateTime(props.user.created_at)
+                type: 'readonly',
+                key: 'created_at',
+                label: option.some(a18n`Created at`),
+                content: formatDateTime(props.user.created_at),
+                description: option.none
               },
               {
-                name: 'updated_at',
-                label: a18n`Last updated at`,
-                value: formatDateTime(props.user.updated_at)
+                type: 'readonly',
+                key: 'updated_at',
+                label: option.some(a18n`Last updated at`),
+                content: formatDateTime(props.user.updated_at),
+                description: option.none
               }
-            ] as ReadonlyItem<string>[]
-          }
-          buttons={[
-            {
-              type: 'button',
-              label: a18n`Edit`,
-              icon: option.none,
-              action: () => setIsEditing(true),
-              color: 'primary'
-            },
-            {
-              type: 'button',
-              label: a18n`Logout`,
-              icon: option.none,
-              action: props.onLogout,
-              flat: true
-            },
-            {
-              type: 'loading',
-              label: a18n`Delete my account`,
-              icon: skull,
-              action: props.onDeleteProfile,
-              color: 'danger',
-              flat: true
-            }
-          ]}
-        />
+            ]}
+          />
+        </Panel>
       ),
       () => (
         <Form
