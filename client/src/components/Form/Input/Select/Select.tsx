@@ -236,10 +236,17 @@ export const Select: Select = forwardRef(
       option.fold(
         () =>
           pipe(
-            isOpen,
-            boolean.fold(
-              () => 'default',
-              () => 'primary'
+            props.warning,
+            option.fold(
+              () =>
+                pipe(
+                  isOpen,
+                  boolean.fold(
+                    () => 'default',
+                    () => 'primary'
+                  )
+                ),
+              () => 'warning'
             )
           ),
         () => 'danger'
