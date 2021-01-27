@@ -63,31 +63,31 @@ export const localizedMonthNames: Record<Month, LocalizedString> = {
 export function formatDate(
   date: Date,
   options: Intl.DateTimeFormatOptions = {}
-) {
+): LocalizedString {
   return date.toLocaleDateString(a18n.getLocale(), {
     weekday: 'short',
     day: 'numeric',
     month: 'short',
     year: 'numeric',
     ...options
-  })
+  }) as LocalizedString
 }
 
 export function formatTime(
   date: Date,
   options: Intl.DateTimeFormatOptions = {}
-) {
+): LocalizedString {
   return date.toLocaleTimeString(a18n.getLocale(), {
     hour: 'numeric',
     minute: 'numeric',
     ...options
-  })
+  }) as LocalizedString
 }
 
 export function formatDateTime(
   date: Date,
   options: Intl.DateTimeFormatOptions = {}
-) {
+): LocalizedString {
   return date.toLocaleDateString(a18n.getLocale(), {
     weekday: 'short',
     day: 'numeric',
@@ -96,7 +96,7 @@ export function formatDateTime(
     hour: 'numeric',
     minute: 'numeric',
     ...options
-  })
+  }) as LocalizedString
 }
 
 export function formatNumber(
