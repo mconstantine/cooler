@@ -265,6 +265,7 @@ export const DateTimePicker: FC<Props> = ({ mode = 'datetime', ...props }) => {
           foldDateTimePickerView(
             () => (
               <DatePickerForm
+                inputName={props.name}
                 latestValidDate={props.value}
                 yearFieldProps={fieldProps('year')}
                 monthFieldProps={fieldProps('month')}
@@ -275,6 +276,7 @@ export const DateTimePicker: FC<Props> = ({ mode = 'datetime', ...props }) => {
             ),
             () => (
               <TimePickerForm
+                inputName={props.name}
                 hoursFieldProps={fieldProps('hours')}
                 minutesFieldProps={fieldProps('minutes')}
                 onConfirm={confirm}

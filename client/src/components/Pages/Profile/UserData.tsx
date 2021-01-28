@@ -12,9 +12,12 @@ import { Input } from '../../Form/Input/Input/Input'
 import { useForm } from '../../Form/useForm'
 import * as validators from '../../Form/validators'
 import { Option } from 'fp-ts/Option'
-import { skull } from 'ionicons/icons'
 import { Panel } from '../../Panel/Panel'
 import { List } from '../../List/List'
+import { Buttons } from '../../Button/Buttons/Buttons'
+import { Button } from '../../Button/Button/Button'
+import { LoadingButton } from '../../Button/LoadingButton/LoadingButton'
+import { skull } from 'ionicons/icons'
 
 interface UserData {
   name: LocalizedString
@@ -103,7 +106,7 @@ export const UserData: FC<Props> = props => {
     isEditing,
     boolean.fold(
       () => (
-        <Panel title={a18n`Your data`}>
+        <Panel title={a18n`Your data`} framed>
           <List
             heading={option.none}
             items={[
@@ -137,6 +140,30 @@ export const UserData: FC<Props> = props => {
               }
             ]}
           />
+          <Buttons spacing="spread">
+            <Button
+              type="button"
+              color="primary"
+              label={a18n`Edit`}
+              action={() => setIsEditing(true)}
+              icon={option.none}
+            />
+            <Button
+              type="button"
+              label={a18n`Logout`}
+              action={props.onLogout}
+              icon={option.none}
+              flat
+            />
+            <LoadingButton
+              type="button"
+              label={a18n`Delete profile`}
+              color="danger"
+              flat
+              action={props.onDeleteProfile}
+              icon={skull}
+            />
+          </Buttons>
         </Panel>
       ),
       () => (

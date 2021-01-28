@@ -9,13 +9,14 @@ import { Input } from '../Input/Input'
 import { leadZero, validateHours } from './utils'
 
 interface Props {
+  inputName: string
   hoursFieldProps: FieldProps<string>
   minutesFieldProps: FieldProps<string>
   onConfirm: () => unknown
 }
 
 export const TimePickerForm = forwardRef(
-  (props: Props, ref: Ref<HTMLInputElement>) => {
+  (props: Props, ref?: Ref<HTMLInputElement>) => {
     const minutesInputRef = useRef<HTMLInputElement>(null)
 
     const onHoursChange = (value: string) => {
@@ -55,6 +56,8 @@ export const TimePickerForm = forwardRef(
           ref={ref}
           label={a18n`Hours`}
           {...props.hoursFieldProps}
+          id={props.inputName + props.hoursFieldProps.name}
+          name={props.inputName + props.hoursFieldProps.name}
           onChange={onHoursChange}
           onKeyUp={onInputKeyUp}
           onBlur={() =>
@@ -68,6 +71,8 @@ export const TimePickerForm = forwardRef(
           ref={minutesInputRef}
           label={a18n`Minutes`}
           {...props.minutesFieldProps}
+          id={props.inputName + props.minutesFieldProps.name}
+          name={props.inputName + props.minutesFieldProps.name}
           onKeyUp={onInputKeyUp}
           onBlur={() =>
             props.minutesFieldProps.onChange(

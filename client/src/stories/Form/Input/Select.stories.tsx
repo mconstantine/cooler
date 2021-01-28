@@ -2,143 +2,202 @@ import { Meta, Story } from '@storybook/react'
 import { unsafeLocalizedString } from '../../../a18n'
 import { Content } from '../../../components/Content/Content'
 import {
-  getOptionValue,
   Select as SelectComponent,
   useSelectState
 } from '../../../components/Form/Input/Select/Select'
 import { CoolerStory } from '../../CoolerStory'
 import { Province, ProvinceValues } from '../../../entities/Client'
 import { useState } from 'react'
-import { option, record, task, taskEither } from 'fp-ts'
+import { either, option, record, task, taskEither } from 'fp-ts'
 import { pipe } from 'fp-ts/function'
 import { Option } from 'fp-ts/Option'
 import { LocalizedString } from '../../../globalDomain'
 import { Panel } from '../../../components/Panel/Panel'
-import * as t from 'io-ts'
+import { NonEmptyString } from 'io-ts-types'
 
-const ColorValues = {
-  r: unsafeLocalizedString('Red'),
-  g: unsafeLocalizedString('Green'),
-  b: unsafeLocalizedString('Blue'),
-  c: unsafeLocalizedString('Cyan'),
-  m: unsafeLocalizedString('Magenta'),
-  y: unsafeLocalizedString('Yellow')
+type SelectType = 'default' | 'unsearchable' | 'async'
+
+function foldSelectType<T>(
+  whenDefault: () => T,
+  whenUnsearchable: () => T,
+  whenAsync: () => T
+): (type: SelectType) => T {
+  return type => {
+    switch (type) {
+      case 'default':
+        return whenDefault()
+      case 'unsearchable':
+        return whenUnsearchable()
+      case 'async':
+        return whenAsync()
+    }
+  }
 }
-const Color = t.keyof(ColorValues)
-type Color = t.TypeOf<typeof Color>
 
-const ContinentValues = {
-  africa: unsafeLocalizedString('Africa'),
-  america: unsafeLocalizedString('America'),
-  asia: unsafeLocalizedString('Asia'),
-  europe: unsafeLocalizedString('Europe'),
-  oceania: unsafeLocalizedString('Oceania')
+interface Args {
+  type: SelectType
+  label: LocalizedString
+  emptyPlaceholder: LocalizedString
+  error: LocalizedString
+  warning: LocalizedString
+  disabled: boolean
 }
-const Continent = t.keyof(ContinentValues)
-type Continent = t.TypeOf<typeof Continent>
 
-export const Select: Story = () => {
+const SelectTemplate: Story<Args> = props => {
   const [province, setProvince] = useSelectState<Province>(
     ProvinceValues,
-    option.some('MI')
+    option.none
   )
 
-  const [color, setColor] = useSelectState<Color>(ColorValues, option.some('r'))
+  const [filteredProvinces, setFilteredProvinces] = useState<
+    Partial<typeof ProvinceValues>
+  >(ProvinceValues)
 
-  const [continent, setContinent] = useSelectState<Continent>(
-    ContinentValues,
-    option.some('africa')
-  )
+  const [isLoadingProvinces, setIsLoadingProvinces] = useState(false)
 
-  const [continents, setContinents] = useState<Partial<typeof ContinentValues>>(
-    ContinentValues
-  )
-
-  const [isLoadingContinents, setIsLoadingContinents] = useState(false)
-
-  const provinceError: Option<LocalizedString> = pipe(
-    getOptionValue(province),
-    option.fold(
-      () => option.some(unsafeLocalizedString('Not a province')),
-      () => option.none
-    )
-  )
-
-  const continentError: Option<LocalizedString> = pipe(
-    getOptionValue(continent),
-    option.fold(
-      () => option.some(unsafeLocalizedString('Not a continent')),
-      () => option.none
-    )
-  )
-
-  const findContinent = (input: string) => {
-    setIsLoadingContinents(true)
+  const findProvince = (input: string) => {
+    setIsLoadingProvinces(true)
 
     const regex = new RegExp(input, 'i')
 
     return pipe(
-      ContinentValues,
+      ProvinceValues,
       record.filter(value => regex.test(value)),
       options => task.fromIO(() => options),
       task.delay(1000),
       taskEither.rightTask,
       taskEither.chain(options =>
         taskEither.fromIO(() => {
-          setIsLoadingContinents(false)
-          setContinents(options)
+          setIsLoadingProvinces(false)
+          setFilteredProvinces(options)
         })
       )
     )()
   }
 
+  const error: Option<LocalizedString> = pipe(
+    props.error,
+    NonEmptyString.decode,
+    either.fold(
+      () => option.none,
+      () => option.some(props.error)
+    )
+  )
+
+  const warning: Option<LocalizedString> = pipe(
+    props.warning,
+    NonEmptyString.decode,
+    either.fold(
+      () => option.none,
+      () => option.some(props.warning)
+    )
+  )
+
   return (
     <CoolerStory>
       <Content>
         <Panel framed>
-          <SelectComponent
-            type="default"
-            name="province"
-            label={unsafeLocalizedString('Province (default)')}
-            value={province}
-            options={ProvinceValues}
-            onChange={setProvince}
-            error={provinceError}
-            warning={option.none}
-            emptyPlaceholder={unsafeLocalizedString('No province found')}
-            codec={Province}
-          />
-
-          <SelectComponent
-            type="unsearchable"
-            name="color"
-            label={unsafeLocalizedString('Color (unsearchable)')}
-            value={color}
-            options={ColorValues}
-            onChange={setColor}
-            error={option.none}
-            warning={option.none}
-            codec={Color}
-          />
-
-          <SelectComponent
-            type="async"
-            name="continent"
-            label={unsafeLocalizedString('Continent (async)')}
-            value={continent}
-            options={continents}
-            onChange={setContinent}
-            error={continentError}
-            warning={option.none}
-            onQueryChange={findContinent}
-            emptyPlaceholder={unsafeLocalizedString('No continents found')}
-            isLoading={isLoadingContinents}
-            codec={Continent}
-          />
+          {pipe(
+            props.type,
+            foldSelectType(
+              () => (
+                <SelectComponent
+                  type="default"
+                  name="province"
+                  label={props.label}
+                  value={province}
+                  options={ProvinceValues}
+                  onChange={setProvince}
+                  error={error}
+                  warning={warning}
+                  emptyPlaceholder={props.emptyPlaceholder}
+                  codec={Province}
+                  disabled={props.disabled}
+                />
+              ),
+              () => (
+                <SelectComponent
+                  type="unsearchable"
+                  name="unsearchable"
+                  label={props.label}
+                  value={province}
+                  options={ProvinceValues}
+                  onChange={setProvince}
+                  error={error}
+                  warning={error}
+                  codec={Province}
+                  disabled={props.disabled}
+                />
+              ),
+              () => (
+                <SelectComponent
+                  type="async"
+                  name="async"
+                  label={props.label}
+                  value={province}
+                  options={filteredProvinces}
+                  onChange={setProvince}
+                  error={error}
+                  warning={warning}
+                  onQueryChange={findProvince}
+                  emptyPlaceholder={props.emptyPlaceholder}
+                  isLoading={isLoadingProvinces}
+                  codec={Province}
+                  disabled={props.disabled}
+                />
+              )
+            )
+          )}
         </Panel>
       </Content>
     </CoolerStory>
   )
+}
+
+export const Select = SelectTemplate.bind({})
+
+Select.args = {
+  type: 'default',
+  label: unsafeLocalizedString('Label'),
+  emptyPlaceholder: unsafeLocalizedString('Nothing found!'),
+  error: unsafeLocalizedString(''),
+  warning: unsafeLocalizedString(''),
+  disabled: false
+}
+
+Select.argTypes = {
+  type: {
+    name: 'Type',
+    control: {
+      type: 'select',
+      options: {
+        Default: 'default',
+        Unsearchable: 'unsearchable',
+        Asynchronous: 'async'
+      } as Record<string, SelectType>
+    }
+  },
+  label: {
+    name: 'Label',
+    control: 'text'
+  },
+  emptyPlaceholder: {
+    name: 'Empty Placeholder',
+    control: 'text',
+    description: 'The text to be displayed when a search finds nothing'
+  },
+  error: {
+    name: 'Error',
+    control: 'text'
+  },
+  warning: {
+    name: 'Warning',
+    control: 'text'
+  },
+  disabled: {
+    name: 'Disabled',
+    control: 'boolean'
+  }
 }
 
 const meta: Meta = {

@@ -22,7 +22,7 @@ interface Args {
   disabled: boolean
 }
 
-export const WeekdayRepetition: Story<Args> = props => {
+const WeekdayRepetitionTemplate: Story<Args> = props => {
   const [state, setState] = useState(unsafeNonNegativeInteger(0x0000000))
 
   return (
@@ -59,28 +59,36 @@ export const WeekdayRepetition: Story<Args> = props => {
   )
 }
 
-const meta: Meta<Args> = {
-  title: 'Cooler/Form/Inputs/Weekday Repetition',
-  args: {
-    error: unsafeLocalizedString(''),
-    warning: unsafeLocalizedString(''),
-    color: 'default',
-    disabled: false
+export const WeekdayRepetition = WeekdayRepetitionTemplate.bind({})
+
+WeekdayRepetition.args = {
+  error: unsafeLocalizedString(''),
+  warning: unsafeLocalizedString(''),
+  color: 'default',
+  disabled: false
+}
+
+WeekdayRepetition.argTypes = {
+  error: {
+    name: 'Error',
+    control: 'text'
   },
-  argTypes: {
-    error: {
-      control: 'text'
-    },
-    warning: {
-      control: 'text'
-    },
-    color: {
-      control: colorControl
-    },
-    disabled: {
-      control: 'boolean'
-    }
+  warning: {
+    name: 'Warning',
+    control: 'text'
+  },
+  color: {
+    name: 'Color',
+    control: colorControl
+  },
+  disabled: {
+    name: 'Disabled',
+    control: 'boolean'
   }
+}
+
+const meta: Meta<Args> = {
+  title: 'Cooler/Form/Inputs/Weekday Repetition'
 }
 
 export default meta

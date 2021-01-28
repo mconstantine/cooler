@@ -11,18 +11,24 @@ export interface ButtonArgs {
 
 export const buttonArgTypes = {
   label: {
+    name: 'Label',
     control: 'text'
   },
   icon: {
-    control: 'boolean'
+    name: 'Icon',
+    control: 'boolean',
+    description: 'Whether to show an icon or not'
   },
   color: {
+    name: 'Color',
     control: colorControl
   },
   flat: {
+    name: 'Flat style',
     control: 'boolean'
   },
   disabled: {
+    name: 'Disabled',
     control: 'boolean'
   }
 }

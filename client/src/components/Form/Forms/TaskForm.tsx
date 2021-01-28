@@ -33,19 +33,19 @@ interface CommonFormData {
   start_time: Date
 }
 
-interface SingleTaskFormData extends CommonFormData {
+export interface SingleTaskFormData extends CommonFormData {
   shouldRepeat: false
   description: Option<NonEmptyString>
 }
 
-interface TasksBatchFormData extends CommonFormData {
+export interface TasksBatchFormData extends CommonFormData {
   shouldRepeat: true
   repeat: NonNegativeInteger
   from: Date
   to: Date
 }
 
-type FormData = SingleTaskFormData | TasksBatchFormData
+export type FormData = SingleTaskFormData | TasksBatchFormData
 
 interface Props {
   findProjects: Option<
@@ -56,7 +56,7 @@ interface Props {
   onSubmit: (data: FormData) => TaskEither<LocalizedString, unknown>
 }
 
-function foldFormData<T>(
+export function foldFormData<T>(
   whenSingleTask: (data: SingleTaskFormData) => T,
   whenTasksBatch: (data: TasksBatchFormData) => T
 ): (data: FormData) => T {

@@ -1,10 +1,13 @@
 import { Meta, Story } from '@storybook/react'
-import { task, taskEither } from 'fp-ts'
+import { boolean, task, taskEither } from 'fp-ts'
 import { pipe } from 'fp-ts/function'
 import { TaskEither } from 'fp-ts/TaskEither'
 import { unsafeLocalizedString } from '../../a18n'
 import { Content } from '../../components/Content/Content'
-import { TimesheetForm as TimesheetFormComponent } from '../../components/Form/Forms/TimesheetForm'
+import {
+  TimesheetForm as TimesheetFormComponent,
+  FormData
+} from '../../components/Form/Forms/TimesheetForm'
 import {
   LocalizedString,
   PositiveInteger,
@@ -46,26 +49,50 @@ const findProjects = (
   )
 }
 
-export const TimesheetForm: Story = ({ onSubmit }) => {
+interface Args {
+  shouldFail: boolean
+  onSubmit: (data: FormData) => void
+}
+
+const TimesheetFormTemplate: Story<Args> = props => {
+  const onSubmit = (data: FormData) =>
+    pipe(
+      props.shouldFail,
+      boolean.fold(
+        () => taskEither.rightIO(() => props.onSubmit(data)),
+        () => taskEither.left(unsafeLocalizedString("I'm an error!"))
+      )
+    )
+
   return (
     <CoolerStory>
       <Content>
         <TimesheetFormComponent
           findProjects={findProjects}
-          onSubmit={data => taskEither.fromIO(() => onSubmit(data))}
+          onSubmit={onSubmit}
         />
       </Content>
     </CoolerStory>
   )
 }
 
+export const TimesheetForm = TimesheetFormTemplate.bind({})
+
+TimesheetForm.args = {
+  shouldFail: false
+}
+
+TimesheetForm.argTypes = {
+  shouldFail: {
+    name: 'Should fail',
+    control: 'boolean',
+    description: 'Set this to true to make the form submission fail'
+  },
+  onSubmit: { action: 'submit' }
+}
+
 const meta: Meta = {
-  title: 'Cooler/Form/Timesheet Form',
-  argTypes: {
-    onSubmit: {
-      action: 'submit'
-    }
-  }
+  title: 'Cooler/Form/Timesheet Form'
 }
 
 export default meta

@@ -18,7 +18,7 @@ interface Args {
   shouldFail: boolean
 }
 
-export const CurrentSituation: Story<Args> = props => {
+const CurrentSituationTemplate: Story<Args> = props => {
   const [since, setSince] = useState(new Date(2021, 0, 1))
   const to = new Date(2021, 0, 31)
   const pastDays = Math.round((to.getTime() - since.getTime()) / 86400000)
@@ -81,18 +81,22 @@ export const CurrentSituation: Story<Args> = props => {
   )
 }
 
-const meta: Meta<Args> = {
-  title: 'Cooler/Pages/Profile/Current Situation',
-  args: {
-    shouldFail: false
-  },
-  argTypes: {
-    shouldFail: {
-      name: 'Should fail',
-      control: 'boolean',
-      description: 'Set this to true and change date to make the change fail'
-    }
+export const CurrentSituation = CurrentSituationTemplate.bind({})
+
+CurrentSituation.args = {
+  shouldFail: false
+}
+
+CurrentSituation.argTypes = {
+  shouldFail: {
+    name: 'Should fail',
+    control: 'boolean',
+    description: 'Set this to true and change date to make the change fail'
   }
+}
+
+const meta: Meta<Args> = {
+  title: 'Cooler/Pages/Profile/Current Situation'
 }
 
 export default meta

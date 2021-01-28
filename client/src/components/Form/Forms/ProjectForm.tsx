@@ -24,7 +24,7 @@ import * as validators from '../validators'
 import { Input } from '../Input/Input/Input'
 import { AsyncSelect } from '../Input/AsyncSelect'
 
-interface FormData {
+export interface FormData {
   name: NonEmptyString
   description: Option<NonEmptyString>
   client: PositiveInteger

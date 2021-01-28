@@ -1,13 +1,26 @@
 import { Meta, Story } from '@storybook/react'
-import { taskEither } from 'fp-ts'
+import { boolean, taskEither } from 'fp-ts'
+import { pipe } from 'fp-ts/function'
+import { unsafeLocalizedString } from '../../a18n'
 import { Content } from '../../components/Content/Content'
 import { ClientForm as ClientFormComponent } from '../../components/Form/Forms/ClientForm'
 import { ClientCreationInput } from '../../entities/Client'
 import { CoolerStory } from '../CoolerStory'
 
-export const ClientForm: Story = ({ onSubmit: logSubmission }) => {
+interface Args {
+  shouldFail: boolean
+  onSubmit: (data: ClientCreationInput) => void
+}
+
+const ClientFormTemplate: Story<Args> = props => {
   const onSubmit = (data: ClientCreationInput) =>
-    taskEither.rightIO(() => logSubmission(data))
+    pipe(
+      props.shouldFail,
+      boolean.fold(
+        () => taskEither.rightIO(() => props.onSubmit(data)),
+        () => taskEither.left(unsafeLocalizedString("I'm an error!"))
+      )
+    )
 
   return (
     <CoolerStory>
@@ -18,11 +31,23 @@ export const ClientForm: Story = ({ onSubmit: logSubmission }) => {
   )
 }
 
+export const ClientForm = ClientFormTemplate.bind({})
+
+ClientForm.args = {
+  shouldFail: false
+}
+
+ClientForm.argTypes = {
+  shouldFail: {
+    name: 'Should fail',
+    control: 'boolean',
+    description: 'Set this to true to make the form submission fail'
+  },
+  onSubmit: { action: 'submit' }
+}
+
 const meta: Meta = {
-  title: 'Cooler/Form/Client Form',
-  argTypes: {
-    onSubmit: { action: 'submit' }
-  }
+  title: 'Cooler/Form/Client Form'
 }
 
 export default meta

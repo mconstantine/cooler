@@ -37,7 +37,7 @@ const failure = pipe(
   task.delay(2000)
 )
 
-export const LoadingButton: Story<Args> = props => {
+const LoadingButtonTemplate: Story<Args> = props => {
   return (
     <CoolerStory>
       <Content>
@@ -61,25 +61,35 @@ export const LoadingButton: Story<Args> = props => {
   )
 }
 
-const meta: Meta<Args> = {
-  title: 'Cooler/Buttons/Loading Button',
-  argTypes: {
-    ...buttonArgTypes,
-    icon: { control: null },
-    result: {
-      control: {
-        type: 'select',
-        options: ['Success', 'Error']
-      }
-    }
+export const LoadingButton = LoadingButtonTemplate.bind({})
+
+LoadingButton.args = {
+  label: unsafeLocalizedString('Loading button'),
+  color: 'default',
+  flat: false,
+  disabled: false,
+  result: 'Success'
+}
+
+LoadingButton.argTypes = {
+  ...buttonArgTypes,
+  icon: {
+    ...buttonArgTypes.icon,
+    control: null
   },
-  args: {
-    label: unsafeLocalizedString('Loading button'),
-    color: 'default',
-    flat: false,
-    disabled: false,
-    result: 'Success'
+  result: {
+    name: 'Result',
+    control: {
+      type: 'select',
+      options: ['Success', 'Error']
+    },
+    description:
+      'Whether the button should be in a successful or error state after loading'
   }
+}
+
+const meta: Meta<Args> = {
+  title: 'Cooler/Buttons/Loading Button'
 }
 
 export default meta

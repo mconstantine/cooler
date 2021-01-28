@@ -28,7 +28,7 @@ function foldFormType<T>(
   }
 }
 
-interface RegistrationData {
+export interface RegistrationData {
   type: 'Register'
   name: NonEmptyString
   email: EmailString
@@ -36,7 +36,7 @@ interface RegistrationData {
   passwordConfirmation: NonEmptyString
 }
 
-interface LoginData {
+export interface LoginData {
   type: 'Login'
   email: EmailString
   password: NonEmptyString
@@ -44,7 +44,7 @@ interface LoginData {
 
 export type FormData = RegistrationData | LoginData
 
-function foldFormData<T>(
+export function foldFormData<T>(
   whenRegister: (data: RegistrationData) => T,
   whenLogin: (data: LoginData) => T
 ): (data: FormData) => T {

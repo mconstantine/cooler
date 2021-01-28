@@ -98,8 +98,7 @@ export const Mix: Story = () => (
 )
 
 const meta: Meta = {
-  title: 'Cooler/Typography',
-  component: Headings
+  title: 'Cooler/Typography'
 }
 
 export default meta

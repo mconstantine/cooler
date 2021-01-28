@@ -10,7 +10,7 @@ interface Args {
   size: Size
 }
 
-export const Loading: Story<Args> = props => {
+const LoadingTemplate: Story<Args> = props => {
   return (
     <CoolerStory>
       <Content>
@@ -20,20 +20,24 @@ export const Loading: Story<Args> = props => {
   )
 }
 
-const meta: Meta<Args> = {
-  title: 'Cooler/Loading',
-  args: {
-    color: 'default',
-    size: 'medium'
+export const Loading = LoadingTemplate.bind({})
+
+Loading.args = {
+  color: 'default',
+  size: 'medium'
+}
+
+Loading.argTypes = {
+  color: {
+    control: colorControl
   },
-  argTypes: {
-    color: {
-      control: colorControl
-    },
-    size: {
-      control: sizeControl
-    }
+  size: {
+    control: sizeControl
   }
+}
+
+const meta: Meta<Args> = {
+  title: 'Cooler/Loading'
 }
 
 export default meta

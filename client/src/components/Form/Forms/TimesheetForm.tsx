@@ -44,7 +44,7 @@ function foldTimePeriod<T>(
   }
 }
 
-interface FormData {
+export interface FormData {
   timePeriod: TimePeriod
   project: PositiveInteger
   since: Date

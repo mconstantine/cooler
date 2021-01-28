@@ -18,7 +18,7 @@ interface Args {
   shouldFail: boolean
 }
 
-export const CashedAmount: Story<Args> = props => {
+const CashedAmountTemplate: Story<Args> = props => {
   const [since, setSince] = useState(new Date(2021, 0, 1))
 
   const cashedBalance = unsafeNonNegativeNumber(
@@ -76,18 +76,22 @@ export const CashedAmount: Story<Args> = props => {
   )
 }
 
-const meta: Meta<Args> = {
-  title: 'Cooler/Pages/Profile/Cashed Amount',
-  args: {
-    shouldFail: false
-  },
-  argTypes: {
-    shouldFail: {
-      name: 'Should fail',
-      control: 'boolean',
-      description: 'Set this to true and change date to make the change fail'
-    }
+export const CashedAmount = CashedAmountTemplate.bind({})
+
+CashedAmount.args = {
+  shouldFail: false
+}
+
+CashedAmount.argTypes = {
+  shouldFail: {
+    name: 'Should fail',
+    control: 'boolean',
+    description: 'Set this to true and change date to make the change fail'
   }
+}
+
+const meta: Meta<Args> = {
+  title: 'Cooler/Pages/Profile/Cashed Amount'
 }
 
 export default meta

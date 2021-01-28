@@ -9,7 +9,7 @@ import { Content } from '../../components/Content/Content'
 import { CoolerStory } from '../CoolerStory'
 import { ButtonArgs, buttonArgTypes } from './args'
 
-export const Button: Story<ButtonArgs> = props => {
+const ButtonTemplate: Story<ButtonArgs> = props => {
   return (
     <CoolerStory>
       <Content>
@@ -33,6 +33,8 @@ export const Button: Story<ButtonArgs> = props => {
   )
 }
 
+export const Button = ButtonTemplate.bind({})
+
 Button.args = {
   label: unsafeLocalizedString('Button'),
   icon: false,
@@ -42,34 +44,6 @@ Button.args = {
 }
 
 Button.argTypes = buttonArgTypes
-
-export const IconOnlyButton: Story<
-  Omit<ButtonArgs, 'label' | 'icon' | 'flat'>
-> = props => {
-  return (
-    <CoolerStory>
-      <Content>
-        <ButtonComponent
-          type="iconButton"
-          icon={star}
-          action={constVoid}
-          color={props.color}
-          disabled={props.disabled}
-        />
-      </Content>
-    </CoolerStory>
-  )
-}
-
-IconOnlyButton.args = {
-  color: 'default',
-  disabled: false
-}
-
-IconOnlyButton.argTypes = {
-  color: buttonArgTypes.color,
-  disabled: buttonArgTypes.disabled
-}
 
 const meta: Meta = {
   title: 'Cooler/Buttons/Button'

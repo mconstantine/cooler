@@ -3,11 +3,11 @@ import { taskEither } from 'fp-ts'
 import { useState } from 'react'
 import { unsafeLocalizedString } from '../../../a18n'
 import { Content } from '../../../components/Content/Content'
-import { UserData } from '../../../components/Pages/Profile/UserData'
+import { UserData as UserDataComponent } from '../../../components/Pages/Profile/UserData'
 import { unsafeEmailString } from '../../../globalDomain'
 import { CoolerStory } from '../../CoolerStory'
 
-export const _UserData: Story = ({ onDeleteProfile, onLogout }) => {
+const UserDataTemplate: Story = ({ onDeleteProfile, onLogout }) => {
   const [state, setState] = useState({
     name: unsafeLocalizedString('John Doe'),
     email: unsafeEmailString('john.doe@example.com'),
@@ -18,7 +18,7 @@ export const _UserData: Story = ({ onDeleteProfile, onLogout }) => {
   return (
     <CoolerStory>
       <Content>
-        <UserData
+        <UserDataComponent
           user={state}
           onDataChange={data =>
             taskEither.fromIO(() =>
@@ -36,16 +36,19 @@ export const _UserData: Story = ({ onDeleteProfile, onLogout }) => {
   )
 }
 
-const meta: Meta = {
-  title: 'Cooler/Pages/Profile/User Data',
-  argTypes: {
-    onDeleteProfile: {
-      action: 'profile deleted'
-    },
-    onLogout: {
-      action: 'logout'
-    }
+export const UserData = UserDataTemplate.bind({})
+
+UserData.argTypes = {
+  onDeleteProfile: {
+    action: 'profile deleted'
+  },
+  onLogout: {
+    action: 'logout'
   }
+}
+
+const meta: Meta = {
+  title: 'Cooler/Pages/Profile/User Data'
 }
 
 export default meta

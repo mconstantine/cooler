@@ -9,7 +9,11 @@ import { Modal as ModalComponent } from '../components/Modal/Modal'
 import { Separator } from '../components/Separator/Separator'
 import { CoolerStory } from './CoolerStory'
 
-export const Modal: Story = ({ onChooseItem }) => {
+interface Args {
+  onChooseItem: (index: number) => void
+}
+
+const ModalTemplate: Story<Args> = props => {
   const [isModalOpen, setIsModalOpen] = useState(false)
 
   return (
@@ -20,15 +24,15 @@ export const Modal: Story = ({ onChooseItem }) => {
           onClose={() => setIsModalOpen(false)}
         >
           <List
-            type="routed"
             heading={option.none}
             items={new Array(30).fill(null).map((_, index) => ({
               key: index,
+              type: 'routed',
               label: option.none,
               content: unsafeLocalizedString('Some list item'),
               description: option.none,
               action: () => {
-                onChooseItem(`Item ${index + 1}`)
+                props.onChooseItem(index)
                 setIsModalOpen(false)
               }
             }))}
@@ -88,13 +92,16 @@ export const Modal: Story = ({ onChooseItem }) => {
   )
 }
 
-const meta: Meta = {
-  title: 'Cooler/Modal',
-  argTypes: {
-    onChooseItem: {
-      action: 'item chosen'
-    }
+export const Modal = ModalTemplate.bind({})
+
+Modal.argTypes = {
+  onChooseItem: {
+    action: 'item chosen'
   }
+}
+
+const meta: Meta = {
+  title: 'Cooler/Modal'
 }
 
 export default meta

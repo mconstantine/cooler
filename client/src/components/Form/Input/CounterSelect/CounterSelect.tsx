@@ -33,7 +33,7 @@ type CounterSelect = <T extends number>(
 export const CounterSelect: CounterSelect = forwardRef(
   <T extends number>(
     { className = '', ...props }: Props<T>,
-    ref: Ref<HTMLInputElement>
+    ref?: Ref<HTMLInputElement>
   ) => {
     const [isFocus, setIsFocus] = useState(false)
 

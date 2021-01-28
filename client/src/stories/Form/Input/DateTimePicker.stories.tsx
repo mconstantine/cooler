@@ -18,9 +18,10 @@ interface Args {
   mode: DateTimePickerMode
   error: string
   warning: string
+  disabled: boolean
 }
 
-export const DateTimePicker: Story<Args> = props => {
+const DateTimePickerTemplate: Story<Args> = props => {
   const [date, setDate] = useState(new Date(2021, 0, 1, 12))
 
   return (
@@ -45,6 +46,7 @@ export const DateTimePicker: Story<Args> = props => {
               option.fromEither,
               option.map(unsafeLocalizedString)
             )}
+            disabled={props.disabled}
           />
         </Panel>
       </Content>
@@ -52,29 +54,48 @@ export const DateTimePicker: Story<Args> = props => {
   )
 }
 
-const meta: Meta<Args> = {
-  title: 'Cooler/Form/Inputs/Date Time Picker',
-  args: {
-    label: unsafeLocalizedString('Date and time'),
-    mode: 'datetime',
-    error: '',
-    warning: ''
+export const DateTimePicker = DateTimePickerTemplate.bind({})
+
+DateTimePicker.args = {
+  label: unsafeLocalizedString('Label'),
+  mode: 'datetime',
+  error: '',
+  warning: '',
+  disabled: false
+}
+
+DateTimePicker.argTypes = {
+  label: {
+    name: 'Label',
+    control: 'text'
   },
-  argTypes: {
-    mode: {
-      control: {
-        type: 'select',
-        label: 'text',
-        options: {
-          Date: 'date',
-          Time: 'time',
-          Both: 'datetime'
-        },
-        error: 'text',
-        warning: 'text'
+  mode: {
+    name: 'Mode',
+    control: {
+      type: 'select',
+      options: {
+        Date: 'date',
+        Time: 'time',
+        'Date and time': 'datetime'
       }
     }
+  },
+  error: {
+    name: 'Error',
+    control: 'text'
+  },
+  warning: {
+    name: 'Warning',
+    control: 'text'
+  },
+  disabled: {
+    name: 'Disabled',
+    control: 'boolean'
   }
+}
+
+const meta: Meta<Args> = {
+  title: 'Cooler/Form/Inputs/Date Time Picker'
 }
 
 export default meta

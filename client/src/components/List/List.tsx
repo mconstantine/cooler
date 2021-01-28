@@ -67,7 +67,6 @@ export interface RoutedItem extends CommonItemProps {
 export interface RoutedItemWithIcon extends CommonItemProps {
   type: 'routedWithIcon'
   icon: string
-  iconPosition: Position
   iconColor: Color
   details?: boolean
   action: () => unknown
@@ -142,7 +141,7 @@ export const List: FC<Props> = props => {
               constFalse,
               ({ iconPosition }) => iconPosition === 'end',
               constFalse,
-              ({ iconPosition }) => iconPosition === 'end',
+              constFalse,
               constTrue
             ),
             boolean.fold(
@@ -197,7 +196,21 @@ export const List: FC<Props> = props => {
             item: ReadonlyItemWithIcon | RoutedItemWithIcon
           ) => (
             <div className="itemSideContent">
-              <Icon color={item.iconColor} src={item.icon} />
+              <Icon
+                color={item.iconColor}
+                src={item.icon}
+                size={pipe(
+                  item.size,
+                  option.fromNullable,
+                  option.fold(
+                    () => 'large',
+                    foldSize(
+                      () => 'large',
+                      () => 'small'
+                    )
+                  )
+                )}
+              />
             </div>
           )
 

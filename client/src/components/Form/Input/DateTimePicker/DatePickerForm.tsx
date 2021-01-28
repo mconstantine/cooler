@@ -11,6 +11,7 @@ import { DaysGrid } from './DaysGrid'
 import { validateDay, validateYear } from './utils'
 
 interface Props {
+  inputName: string
   latestValidDate: Date
   yearFieldProps: FieldProps<string>
   monthFieldProps: FieldProps<SelectState<Month>>
@@ -89,6 +90,8 @@ export const DatePickerForm = forwardRef(
           ref={ref}
           label={a18n`Year`}
           {...props.yearFieldProps}
+          id={props.inputName + props.yearFieldProps.name}
+          name={props.inputName + props.yearFieldProps.name}
           className="DateTimePickerYear"
           onChange={onYearChange}
         />
@@ -97,6 +100,7 @@ export const DatePickerForm = forwardRef(
           ref={monthInputRef}
           label={a18n`Month`}
           {...props.monthFieldProps}
+          name={props.inputName + props.monthFieldProps.name}
           onBack={onMonthBack}
           onForward={onMonthForward}
           options={localizedMonthNames}
