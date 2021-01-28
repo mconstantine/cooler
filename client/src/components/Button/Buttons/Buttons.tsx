@@ -5,37 +5,46 @@ import { Button } from '../Button/Button'
 import './Buttons.scss'
 
 type Spacing = 'start' | 'spread'
+type ButtonElement = ReactElement<ComponentProps<typeof Button>>
 
-interface Props {
-  children: Array<ReactElement<ComponentProps<typeof Button>>>
-  spacing?: Spacing
+interface ButtonsRowProps {
+  spacing?: 'start'
+  children: ButtonElement | ButtonElement[]
 }
 
-function foldSpacing<T>(
-  whenStart: () => T,
-  whenSpread: () => T
-): (spacing: Spacing) => T {
-  return spacing => {
-    switch (spacing) {
+interface SpreadButtonsProps {
+  spacing: 'spread'
+  children: ButtonElement[]
+}
+
+type Props = ButtonsRowProps | SpreadButtonsProps
+
+function foldProps<T>(
+  whenStart: (props: ButtonsRowProps) => T,
+  whenSpread: (props: SpreadButtonsProps) => T
+): (props: Props) => T {
+  return props => {
+    switch (props.spacing) {
+      case undefined:
       case 'start':
-        return whenStart()
+        return whenStart(props)
       case 'spread':
-        return whenSpread()
+        return whenSpread(props)
     }
   }
 }
 
-export const Buttons: FC<Props> = ({ children, spacing = 'start' }) => {
+export const Buttons: FC<Props> = props => {
   return (
-    <div className={composeClassName('Buttons', spacing)}>
+    <div className={composeClassName('Buttons', props.spacing || 'start')}>
       {pipe(
-        spacing,
-        foldSpacing<any>(
-          () => children,
-          () => (
+        props,
+        foldProps<any>(
+          props => props.children,
+          props => (
             <>
-              <div>{children[0]}</div>
-              <div>{children.slice(1)}</div>
+              <div>{props.children[0]}</div>
+              <div>{props.children.slice(1)}</div>
             </>
           )
         )
