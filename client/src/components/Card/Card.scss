@@ -1,0 +1,12 @@
+.Card {
+  > .Label {
+    margin-left: 16px;
+  }
+
+  .Buttons {
+    justify-content: flex-end;
+    padding-bottom: 8px;
+    margin-right: 8px;
+    margin-top: 0;
+  }
+}
