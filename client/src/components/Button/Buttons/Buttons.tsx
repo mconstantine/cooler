@@ -4,7 +4,6 @@ import { composeClassName } from '../../../misc/composeClassName'
 import { Button } from '../Button/Button'
 import './Buttons.scss'
 
-type Spacing = 'start' | 'spread'
 type ButtonElement = ReactElement<ComponentProps<typeof Button>>
 
 interface ButtonsRowProps {
