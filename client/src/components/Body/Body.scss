@@ -25,6 +25,18 @@
   &.danger {
     color: $color-error-dark;
   }
+
+  &.high {
+    opacity: $text-high-emphasis-amount;
+  }
+
+  &.medium {
+    opacity: $text-medium-emphasis-amount;
+  }
+
+  &.low {
+    opacity: $text-low-emphasis-amount;
+  }
 }
 
 .light .Body {
