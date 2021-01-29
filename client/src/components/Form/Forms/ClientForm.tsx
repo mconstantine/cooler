@@ -27,6 +27,7 @@ import { fiscalCodeLinter, vatNumberLinter } from '../../../misc/clientLinters'
 import { Input } from '../Input/Input/Input'
 import { sequenceS } from 'fp-ts/Apply'
 import { SimpleSelect } from '../Input/SimpleSelect'
+import { Heading } from '../../Heading/Heading'
 
 interface Props {
   onSubmit: (
@@ -272,7 +273,7 @@ export const ClientForm: FC<Props> = ({ onSubmit }) => {
         )
       )}
 
-      <h5>Address</h5>
+      <Heading size={24}>{a18n`Address`}</Heading>
 
       <Select
         type="default"

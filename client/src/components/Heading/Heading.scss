@@ -1,0 +1,87 @@
+@import '../../variables';
+
+.Heading {
+  line-height: 1;
+  margin-top: 0;
+  margin-bottom: 0;
+
+  &.primary {
+    color: mix($color-primary-dark, #fff, 40);
+  }
+
+  &.success {
+    color: mix($color-success-dark, #fff, 40);
+  }
+
+  &.warning {
+    color: mix($color-warning-dark, #fff, 40);
+  }
+
+  &.danger {
+    color: mix($color-error-dark, #fff, 40);
+  }
+}
+
+h1.Heading,
+h2.Heading,
+h3.Heading {
+  font-weight: $font-weight-light;
+}
+
+h4.Heading,
+h5.Heading,
+h6.Heading {
+  font-weight: $font-weight-regular;
+}
+
+h1.Heading {
+  @include ss('font-size', 32px, 40px);
+  margin-bottom: 20px;
+}
+
+h2.Heading {
+  @include ss('font-size', 28px, 36px);
+  margin-bottom: 14px;
+}
+
+h3.Heading {
+  @include ss('font-size', 24px, 32px);
+  margin-bottom: 13px;
+}
+
+h4.Heading {
+  @include ss('font-size', 22px, 27px);
+  margin-bottom: 9px;
+}
+
+h5.Heading {
+  @include ss('font-size', 20px, 24px);
+  margin-bottom: 8px;
+}
+
+h6.Heading {
+  @include ss('font-size', 18px, 21px);
+  margin-bottom: 4px;
+}
+
+.light {
+  color: #000;
+
+  .Heading {
+    &.primary {
+      color: mix($color-primary-light, #000, 60);
+    }
+
+    &.success {
+      color: mix($color-success-light, #000, 60);
+    }
+
+    &.warning {
+      color: mix($color-warning-light, #000, 60);
+    }
+
+    &.danger {
+      color: mix($color-error-light, #000, 60);
+    }
+  }
+}

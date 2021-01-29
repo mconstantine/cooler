@@ -1,6 +1,7 @@
 import { FC } from 'react'
 import { LocalizedString } from '../../globalDomain'
 import { composeClassName } from '../../misc/composeClassName'
+import { Heading } from '../Heading/Heading'
 import './Panel.scss'
 
 interface Props {
@@ -20,7 +21,7 @@ export const Panel: FC<Props> = props => {
         framedClassName
       )}
     >
-      {props.title ? <h3>{props.title}</h3> : null}
+      {props.title ? <Heading size={32}>{props.title}</Heading> : null}
       {props.children}
     </div>
   )

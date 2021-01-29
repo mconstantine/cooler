@@ -1,6 +1,15 @@
 @import '../../variables';
 
 .Body {
+  margin-bottom: 32px;
+  font-weight: $font-weight-medium;
+  line-height: $line-height-body;
+  max-width: 90vw;
+
+  @include media($max-width-text) {
+    max-width: $max-width-text;
+  }
+
   &.primary {
     color: $color-primary-dark;
   }

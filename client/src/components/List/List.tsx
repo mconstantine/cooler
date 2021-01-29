@@ -19,6 +19,7 @@ import { Icon } from '../Icon/Icon'
 import { Label } from '../Label/Label'
 import './List.scss'
 import { chevronForwardOutline } from 'ionicons/icons'
+import { Heading } from '../Heading/Heading'
 
 type Position = 'start' | 'end'
 type Size = 'default' | 'small'
@@ -128,7 +129,11 @@ export const List: FC<Props> = props => {
     <div className={composeClassName('List', unwrap)}>
       {pipe(
         props.heading,
-        option.map(heading => <h5 className="heading">{heading}</h5>),
+        option.map(heading => (
+          <Heading size={24} className="heading">
+            {heading}
+          </Heading>
+        )),
         option.toNullable
       )}
       <ul>
@@ -291,7 +296,11 @@ export const List: FC<Props> = props => {
                     {pipe(
                       item.size || 'default',
                       foldSize(
-                        () => <h6 className="content">{item.content}</h6>,
+                        () => (
+                          <Heading size={21} className="content">
+                            {item.content}
+                          </Heading>
+                        ),
                         () => <Label content={item.content} />
                       )
                     )}
