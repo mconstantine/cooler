@@ -1,5 +1,6 @@
 import { Meta, Story } from '@storybook/react'
 import { unsafeLocalizedString } from '../a18n'
+import { Body } from '../components/Body/Body'
 import { Content } from '../components/Content/Content'
 import { Panel as PanelComponent } from '../components/Panel/Panel'
 import { LocalizedString } from '../globalDomain'
@@ -14,12 +15,11 @@ const PanelTemplate: Story<Args> = props => (
   <CoolerStory>
     <Content>
       <PanelComponent title={props.title} framed={props.framed}>
-        <p>
-          Lorem ipsum dolor sit amet consectetur, adipisicing elit. Veritatis,
-          eos omnis iure ex ab optio amet provident voluptates id dicta
-          consequatur aliquid? Magni, enim repudiandae iste tempora cum
-          pariatur.
-        </p>
+        <Body>
+          {unsafeLocalizedString(
+            'Lorem ipsum dolor sit amet consectetur, adipisicing elit. Veritatis, eos omnis iure ex ab optio amet provident voluptates id dicta consequatur aliquid? Magni, enim repudiandae iste tempora cum pariatur.'
+          )}
+        </Body>
       </PanelComponent>
     </Content>
   </CoolerStory>

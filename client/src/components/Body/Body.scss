@@ -1,0 +1,37 @@
+@import '../../variables';
+
+.Body {
+  &.primary {
+    color: $color-primary-dark;
+  }
+
+  &.success {
+    color: $color-success-dark;
+  }
+
+  &.warning {
+    color: $color-warning-dark;
+  }
+
+  &.danger {
+    color: $color-error-dark;
+  }
+}
+
+.light .Body {
+  &.primary {
+    color: $color-primary-light;
+  }
+
+  &.success {
+    color: $color-success-light;
+  }
+
+  &.warning {
+    color: $color-warning-light;
+  }
+
+  &.danger {
+    color: $color-error-light;
+  }
+}
