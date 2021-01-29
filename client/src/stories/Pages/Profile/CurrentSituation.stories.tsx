@@ -10,7 +10,8 @@ import { Tax } from '../../../entities/Tax'
 import {
   LocalizedString,
   unsafeNonNegativeNumber,
-  unsafePercentage
+  unsafePercentage,
+  unsafePositiveInteger
 } from '../../../globalDomain'
 import { CoolerStory } from '../../CoolerStory'
 
@@ -34,10 +35,12 @@ const CurrentSituationTemplate: Story<Args> = props => {
 
   const taxes: Tax[] = [
     {
+      id: unsafePositiveInteger(0),
       label: unsafeLocalizedString('Some tax'),
       value: unsafePercentage(0.2572)
     },
     {
+      id: unsafePositiveInteger(1),
       label: unsafeLocalizedString('Some other tax'),
       value: unsafePercentage(0.1005)
     }
