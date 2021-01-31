@@ -46,7 +46,7 @@ export const UserData: FC<Props> = props => {
     isEditing,
     boolean.fold(
       () => (
-        <Panel title={a18n`Your data`} framed>
+        <Panel title={a18n`Your data`} framed action={option.none}>
           <List
             heading={option.none}
             items={[

@@ -130,7 +130,7 @@ export const List: FC<Props> = props => {
       {pipe(
         props.heading,
         option.map(heading => (
-          <Heading size={24} className="heading">
+          <Heading size={24} className="heading" action={option.none}>
             {heading}
           </Heading>
         )),
@@ -297,7 +297,11 @@ export const List: FC<Props> = props => {
                       item.size || 'default',
                       foldSize(
                         () => (
-                          <Heading size={21} className="content">
+                          <Heading
+                            size={21}
+                            className="content"
+                            action={option.none}
+                          >
                             {item.content}
                           </Heading>
                         ),

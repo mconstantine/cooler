@@ -2,7 +2,7 @@ import { IO } from 'fp-ts/IO'
 import { TaskEither } from 'fp-ts/TaskEither'
 import { Option } from 'fp-ts/Option'
 import { FC, useState } from 'react'
-import { LocalizedString } from '../../globalDomain'
+import { Color, LocalizedString } from '../../globalDomain'
 import { Panel } from '../Panel/Panel'
 import { List } from '../List/List'
 import { option, taskEither } from 'fp-ts'
@@ -18,6 +18,7 @@ interface SyncAction {
   type: 'sync'
   label: LocalizedString
   action: IO<void>
+  color?: Color
 }
 
 interface AsyncAction {
@@ -25,6 +26,7 @@ interface AsyncAction {
   label: LocalizedString
   action: TaskEither<LocalizedString, unknown>
   icon: string
+  color?: Color
 }
 
 type Action = SyncAction | AsyncAction
@@ -55,7 +57,7 @@ export const Card: FC<Props> = props => {
   const [error, setError] = useState<Option<LocalizedString>>(option.none)
 
   return (
-    <Panel className="Card">
+    <Panel className="Card" action={option.none}>
       <List
         heading={option.none}
         unwrapDescriptions={props.unwrapDescription}
@@ -85,6 +87,7 @@ export const Card: FC<Props> = props => {
                 label={action.label}
                 action={action.action}
                 icon={option.none}
+                color={action.color}
                 flat
               />
             ),
@@ -99,6 +102,7 @@ export const Card: FC<Props> = props => {
                   taskEither.bimap(flow(option.some, setError), constVoid)
                 )}
                 icon={action.icon}
+                color={action.color}
                 flat
               />
             )

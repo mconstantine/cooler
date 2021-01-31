@@ -1,4 +1,7 @@
 import { Meta, Story } from '@storybook/react'
+import { option } from 'fp-ts'
+import { constVoid, pipe } from 'fp-ts/function'
+import { NonEmptyString } from 'io-ts-types'
 import { unsafeLocalizedString } from '../a18n'
 import { Body } from '../components/Body/Body'
 import { Content } from '../components/Content/Content'
@@ -6,20 +9,34 @@ import {
   Heading as HeadingComponent,
   HeadingSize
 } from '../components/Heading/Heading'
-import { Color } from '../globalDomain'
+import { Color, LocalizedString } from '../globalDomain'
 import { colorControl } from './args'
 import { CoolerStory } from './CoolerStory'
 
 interface Args {
   size: HeadingSize
   color: Color
+  actionLabel: LocalizedString
 }
 
 const HeadingTemplate: Story<Args> = props => {
   return (
     <CoolerStory>
       <Content>
-        <HeadingComponent size={props.size} color={props.color}>
+        <HeadingComponent
+          size={props.size}
+          color={props.color}
+          action={pipe(
+            props.actionLabel,
+            NonEmptyString.decode,
+            option.fromEither,
+            option.map(label => ({
+              type: 'sync',
+              label: unsafeLocalizedString(label),
+              action: constVoid
+            }))
+          )}
+        >
           {unsafeLocalizedString('Lorem ipsum dolor sit amet.')}
         </HeadingComponent>
         <Body color={props.color}>
@@ -36,7 +53,8 @@ export const Heading = HeadingTemplate.bind({})
 
 Heading.args = {
   size: 40,
-  color: 'default'
+  color: 'default',
+  actionLabel: unsafeLocalizedString('Action')
 }
 
 Heading.argTypes = {
@@ -57,6 +75,10 @@ Heading.argTypes = {
   color: {
     name: 'Color',
     control: colorControl
+  },
+  actionLabel: {
+    name: 'Action label',
+    control: 'text'
   }
 }
 

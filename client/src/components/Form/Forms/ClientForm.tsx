@@ -273,7 +273,7 @@ export const ClientForm: FC<Props> = ({ onSubmit }) => {
         )
       )}
 
-      <Heading size={24}>{a18n`Address`}</Heading>
+      <Heading size={24} action={option.none}>{a18n`Address`}</Heading>
 
       <Select
         type="default"

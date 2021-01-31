@@ -58,7 +58,7 @@ export const CurrentSituation: FC<Props> = props => {
   }
 
   return (
-    <Panel title={a18n`Current situation`} framed>
+    <Panel title={a18n`Current situation`} framed action={option.none}>
       <p>{a18n`Information about the amount of time you expect to work VS how much you already did, as well as the amount of money you will earn, since a given date`}</p>
 
       <DateTimePicker

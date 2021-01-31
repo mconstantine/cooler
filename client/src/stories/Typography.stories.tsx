@@ -1,4 +1,5 @@
 import { Meta, Story } from '@storybook/react'
+import { option } from 'fp-ts'
 import { unsafeLocalizedString } from '../a18n'
 import { Body } from '../components/Body/Body'
 import { Content } from '../components/Content/Content'
@@ -9,33 +10,33 @@ import { CoolerStory } from './CoolerStory'
 export const Headings: Story = () => (
   <CoolerStory>
     <Content>
-      <Panel framed>
-        <Heading size={40}>
+      <Panel framed action={option.none}>
+        <Heading size={40} action={option.none}>
           {unsafeLocalizedString('Lorem ipsum, dolor sit amet')}
         </Heading>
       </Panel>
-      <Panel framed>
-        <Heading size={36}>
+      <Panel framed action={option.none}>
+        <Heading size={36} action={option.none}>
           {unsafeLocalizedString('Lorem ipsum, dolor sit amet')}
         </Heading>
       </Panel>
-      <Panel framed>
-        <Heading size={32}>
+      <Panel framed action={option.none}>
+        <Heading size={32} action={option.none}>
           {unsafeLocalizedString('Lorem ipsum, dolor sit amet')}
         </Heading>
       </Panel>
-      <Panel framed>
-        <Heading size={27}>
+      <Panel framed action={option.none}>
+        <Heading size={27} action={option.none}>
           {unsafeLocalizedString('Lorem ipsum, dolor sit amet')}
         </Heading>
       </Panel>
-      <Panel framed>
-        <Heading size={24}>
+      <Panel framed action={option.none}>
+        <Heading size={24} action={option.none}>
           {unsafeLocalizedString('Lorem ipsum, dolor sit amet')}
         </Heading>
       </Panel>
-      <Panel framed>
-        <Heading size={21}>
+      <Panel framed action={option.none}>
+        <Heading size={21} action={option.none}>
           {unsafeLocalizedString('Lorem ipsum, dolor sit amet')}
         </Heading>
       </Panel>
@@ -46,7 +47,7 @@ export const Headings: Story = () => (
 export const Mix: Story = () => (
   <CoolerStory>
     <Content>
-      <Heading size={40}>
+      <Heading size={40} action={option.none}>
         {unsafeLocalizedString('Lorem ipsum, dolor sit amet')}
       </Heading>
       <Body>
@@ -55,7 +56,7 @@ export const Mix: Story = () => (
         )}
       </Body>
 
-      <Heading size={36}>
+      <Heading size={36} action={option.none}>
         {unsafeLocalizedString('Lorem ipsum, dolor sit amet')}
       </Heading>
       <Body>
@@ -64,7 +65,7 @@ export const Mix: Story = () => (
         )}
       </Body>
 
-      <Heading size={32}>
+      <Heading size={32} action={option.none}>
         {unsafeLocalizedString('Lorem ipsum, dolor sit amet')}
       </Heading>
       <Body>
@@ -73,7 +74,7 @@ export const Mix: Story = () => (
         )}
       </Body>
 
-      <Heading size={27}>
+      <Heading size={27} action={option.none}>
         {unsafeLocalizedString('Lorem ipsum, dolor sit amet')}
       </Heading>
       <Body>
@@ -82,7 +83,7 @@ export const Mix: Story = () => (
         )}
       </Body>
 
-      <Heading size={24}>
+      <Heading size={24} action={option.none}>
         {unsafeLocalizedString('Lorem ipsum, dolor sit amet')}
       </Heading>
       <Body>
@@ -91,7 +92,7 @@ export const Mix: Story = () => (
         )}
       </Body>
 
-      <Heading size={21}>
+      <Heading size={21} action={option.none}>
         {unsafeLocalizedString('Lorem ipsum, dolor sit amet')}
       </Heading>
       <Body>
@@ -100,24 +101,24 @@ export const Mix: Story = () => (
         )}
       </Body>
 
-      <Heading size={40}>
+      <Heading size={40} action={option.none}>
         {unsafeLocalizedString('Lorem ipsum, dolor sit amet')}
       </Heading>
-      <Heading size={36}>
+      <Heading size={36} action={option.none}>
         {unsafeLocalizedString('Lorem ipsum, dolor sit amet')}
       </Heading>
       <p></p>
-      <Heading size={32}>
+      <Heading size={32} action={option.none}>
         {unsafeLocalizedString('Lorem ipsum, dolor sit amet')}
       </Heading>
-      <Heading size={27}>
+      <Heading size={27} action={option.none}>
         {unsafeLocalizedString('Lorem ipsum, dolor sit amet')}
       </Heading>
       <p></p>
-      <Heading size={24}>
+      <Heading size={24} action={option.none}>
         {unsafeLocalizedString('Lorem ipsum, dolor sit amet')}
       </Heading>
-      <Heading size={21}>
+      <Heading size={21} action={option.none}>
         {unsafeLocalizedString('Lorem ipsum, dolor sit amet')}
       </Heading>
     </Content>

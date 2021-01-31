@@ -1,21 +1,19 @@
 import { Meta, Story } from '@storybook/react'
-import { boolean, taskEither } from 'fp-ts'
+import { boolean, option, taskEither } from 'fp-ts'
 import { pipe } from 'fp-ts/function'
 import { unsafeLocalizedString } from '../../a18n'
 import { Content } from '../../components/Content/Content'
-import {
-  FormData,
-  TaxForm as TaxFormComponent
-} from '../../components/Form/Forms/TaxForm'
+import { TaxForm as TaxFormComponent } from '../../components/Form/Forms/TaxForm'
+import { TaxCreationInput } from '../../entities/Tax'
 import { CoolerStory } from '../CoolerStory'
 
 interface Args {
   shouldFail: boolean
-  onSubmit: (data: FormData) => void
+  onSubmit: (data: TaxCreationInput) => void
 }
 
 const TaxFormTemplate: Story<Args> = props => {
-  const onSubmit = (data: FormData) =>
+  const onSubmit = (data: TaxCreationInput) =>
     pipe(
       props.shouldFail,
       boolean.fold(
@@ -27,7 +25,11 @@ const TaxFormTemplate: Story<Args> = props => {
   return (
     <CoolerStory>
       <Content>
-        <TaxFormComponent onSubmit={onSubmit} />
+        <TaxFormComponent
+          tax={option.none}
+          onSubmit={onSubmit}
+          onCancel={option.none}
+        />
       </Content>
     </CoolerStory>
   )

@@ -45,7 +45,7 @@ export const CashedAmount: FC<Props> = props => {
   }
 
   return (
-    <Panel title={a18n`Cashed amount`} framed>
+    <Panel title={a18n`Cashed amount`} framed action={option.none}>
       <p>{a18n`The amount of oney you cashed since a given date`}</p>
 
       <DateTimePicker

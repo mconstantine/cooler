@@ -196,7 +196,7 @@ export function ConnectionList<T>(props: Props<T>) {
   )
 
   return (
-    <Panel title={props.title} framed>
+    <Panel title={props.title} framed action={option.none}>
       <Input
         type="text"
         name="search"

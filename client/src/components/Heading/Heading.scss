@@ -1,9 +1,13 @@
 @import '../../variables';
 
 .Heading {
+  max-width: $max-width-text;
   line-height: 1;
   margin-top: 0;
   margin-bottom: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 
   &.primary {
     color: mix($color-primary-dark, #fff, 40);

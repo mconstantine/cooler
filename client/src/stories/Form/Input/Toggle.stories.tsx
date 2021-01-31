@@ -23,7 +23,7 @@ const ToggleTemplate: Story<Args> = props => {
   return (
     <CoolerStory>
       <Content>
-        <Panel framed>
+        <Panel framed action={option.none}>
           <ToggleComponent
             label={props.label}
             name="toggle"

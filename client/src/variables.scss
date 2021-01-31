@@ -46,6 +46,11 @@ $transition-fast: 150ms;
 $transition-medium: 300ms;
 $transition-slow: 500ms;
 
+$list-icons-space: $icon-size-large + 48px;
+$list-icons-space-details: $icon-size-large + $icon-size-medium + 48px;
+$list-max-width: $max-width-text + $list-icons-space;
+$list-max-width-details: $max-width-text + $list-icons-space-details;
+
 @mixin label {
   font-size: 14px;
   letter-spacing: 1px;

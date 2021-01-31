@@ -96,7 +96,7 @@ const SelectTemplate: Story<Args> = props => {
   return (
     <CoolerStory>
       <Content>
-        <Panel framed>
+        <Panel framed action={option.none}>
           {pipe(
             props.type,
             foldSelectType(

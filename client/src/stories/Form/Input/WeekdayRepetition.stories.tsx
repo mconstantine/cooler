@@ -28,7 +28,7 @@ const WeekdayRepetitionTemplate: Story<Args> = props => {
   return (
     <CoolerStory>
       <Content>
-        <Panel framed>
+        <Panel framed action={option.none}>
           <WeekdayRepetitionComponent
             name="weekdayRepetition"
             label={a18n`Repeat on`}

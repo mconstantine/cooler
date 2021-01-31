@@ -2,6 +2,7 @@
 
 .Content {
   width: 90vw;
+  // max-width: $max-width-text;
   margin-left: auto;
   margin-right: auto;
   @include ss('padding-top', $spacing-large-mobile, $spacing-large-desktop);

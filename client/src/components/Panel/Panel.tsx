@@ -1,13 +1,15 @@
+import { Option } from 'fp-ts/Option'
 import { FC } from 'react'
 import { LocalizedString } from '../../globalDomain'
 import { composeClassName } from '../../misc/composeClassName'
-import { Heading } from '../Heading/Heading'
+import { HeadingAction, Heading } from '../Heading/Heading'
 import './Panel.scss'
 
 interface Props {
   title?: LocalizedString
   framed?: boolean
   className?: string
+  action: Option<HeadingAction>
 }
 
 export const Panel: FC<Props> = props => {
@@ -21,7 +23,11 @@ export const Panel: FC<Props> = props => {
         framedClassName
       )}
     >
-      {props.title ? <Heading size={32}>{props.title}</Heading> : null}
+      {props.title ? (
+        <Heading size={32} action={props.action}>
+          {props.title}
+        </Heading>
+      ) : null}
       {props.children}
     </div>
   )

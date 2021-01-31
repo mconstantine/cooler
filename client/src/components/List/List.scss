@@ -1,10 +1,5 @@
 @import '../../variables';
 
-$list-icons-space: $icon-size-large + 48px;
-$list-icons-space-details: $icon-size-large + $icon-size-medium + 48px;
-$list-max-width: $max-width-text + $list-icons-space;
-$list-max-width-details: $max-width-text + $list-icons-space-details;
-
 .List {
   margin-top: 16px;
 

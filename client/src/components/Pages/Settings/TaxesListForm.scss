@@ -1,0 +1,16 @@
+@import '../../../variables';
+
+.TaxesListForm {
+  max-width: $max-width-text + 2 * $spacing-medium-desktop;
+  margin-left: auto;
+  margin-right: auto;
+
+  .Heading {
+    max-width: $max-width-text + 2 * $spacing-medium-desktop;
+    margin-bottom: 32px;
+  }
+
+  * + .Heading {
+    margin-top: 32px;
+  }
+}

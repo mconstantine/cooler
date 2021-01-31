@@ -25,7 +25,7 @@ const TextAreaTemplate: Story<Args> = props => {
   return (
     <CoolerStory>
       <Content>
-        <Panel framed>
+        <Panel framed action={option.none}>
           <TextAreaComponent
             name="default"
             label={props.label}

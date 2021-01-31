@@ -1,3 +1,4 @@
+import { option } from 'fp-ts'
 import { FC, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { composeClassName } from '../../misc/composeClassName'
@@ -11,12 +12,7 @@ interface Props {
   className?: string
 }
 
-export const Modal: FC<Props> = ({
-  className = '',
-  isOpen,
-  onClose,
-  ...props
-}) => {
+export const Modal: FC<Props> = ({ isOpen, onClose, ...props }) => {
   const openClassName = isOpen ? 'open' : ''
 
   useEffect(() => {
@@ -38,9 +34,18 @@ export const Modal: FC<Props> = ({
   }, [isOpen, onClose])
 
   return createPortal(
-    <div className={composeClassName('Modal', className, openClassName)}>
+    <div
+      className={composeClassName(
+        'Modal',
+        props.className || '',
+        openClassName
+      )}
+    >
       <div className="dim" onClick={onClose} />
-      <Panel framed={props.framed}>{props.children}</Panel>
+
+      <Panel framed={props.framed} action={option.none}>
+        {props.children}
+      </Panel>
     </div>,
     document.body
   )
