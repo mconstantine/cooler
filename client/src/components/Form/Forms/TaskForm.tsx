@@ -2,7 +2,6 @@ import { boolean, option } from 'fp-ts'
 import { constNull, constUndefined, pipe } from 'fp-ts/function'
 import { TaskEither } from 'fp-ts/TaskEither'
 import { Option } from 'fp-ts/Option'
-import { NonEmptyString } from 'io-ts-types'
 import { FC } from 'react'
 import { a18n } from '../../../a18n'
 import {
@@ -24,36 +23,32 @@ import { useForm } from '../useForm'
 import * as validators from '../validators'
 import { toSelectState } from '../Input/Select/Select'
 import { AsyncSelect } from '../Input/AsyncSelect'
+import {
+  Task,
+  TaskCreationInput,
+  TasksBatchCreationInput
+} from '../../../entities/Task'
 
-interface CommonFormData {
-  name: NonEmptyString
-  expectedWorkingHours: NonNegativeNumber
-  hourlyCost: NonNegativeNumber
-  project: PositiveInteger
-  start_time: Date
-}
-
-export interface SingleTaskFormData extends CommonFormData {
-  shouldRepeat: false
-  description: Option<NonEmptyString>
-}
-
-export interface TasksBatchFormData extends CommonFormData {
+export interface SingleTaskFormData extends TaskCreationInput {
   shouldRepeat: true
-  repeat: NonNegativeInteger
-  from: Date
-  to: Date
+}
+
+export interface TasksBatchFormData extends TasksBatchCreationInput {
+  shouldRepeat: false
 }
 
 export type FormData = SingleTaskFormData | TasksBatchFormData
 
 interface Props {
+  task: Option<Task>
   findProjects: Option<
     (
       input: string
     ) => TaskEither<LocalizedString, Record<PositiveInteger, LocalizedString>>
   >
-  onSubmit: (data: FormData) => TaskEither<LocalizedString, unknown>
+  onSubmit: (
+    data: TaskCreationInput | TasksBatchCreationInput
+  ) => TaskEither<LocalizedString, unknown>
 }
 
 export function foldFormData<T>(
@@ -62,9 +57,9 @@ export function foldFormData<T>(
 ): (data: FormData) => T {
   return data => {
     if (data.shouldRepeat) {
-      return whenTasksBatch(data)
+      return whenTasksBatch((data as unknown) as TasksBatchFormData)
     } else {
-      return whenSingleTask(data)
+      return whenSingleTask((data as unknown) as SingleTaskFormData)
     }
   }
 }
@@ -72,18 +67,35 @@ export function foldFormData<T>(
 export const TaskForm: FC<Props> = props => {
   const { fieldProps, submit, formError, values } = useForm(
     {
-      initialValues: {
-        shouldRepeat: false,
-        project: toSelectState<PositiveInteger>({}, option.none),
-        name: '',
-        description: '',
-        expectedWorkingHours: '',
-        hourlyCost: '',
-        start_time: new Date(),
-        from: new Date(),
-        to: new Date(),
-        repeat: 0 as NonNegativeInteger
-      },
+      initialValues: pipe(
+        props.task,
+        option.map(task => ({
+          ...task,
+          description: pipe(
+            task.description,
+            option.getOrElse(() => '')
+          ),
+          expectedWorkingHours: task.expectedWorkingHours.toString(10),
+          hourlyCost: task.hourlyCost.toString(10),
+          shouldRepeat: false,
+          project: toSelectState({}, option.some(task.project)),
+          from: task.start_time,
+          to: task.start_time,
+          repeat: 0 as NonNegativeInteger
+        })),
+        option.getOrElse(() => ({
+          shouldRepeat: false,
+          project: toSelectState<PositiveInteger>({}, option.none),
+          name: '',
+          description: '',
+          expectedWorkingHours: '',
+          hourlyCost: '',
+          start_time: new Date(),
+          from: new Date(),
+          to: new Date(),
+          repeat: 0 as NonNegativeInteger
+        }))
+      ),
       validators: ({ shouldRepeat }) => ({
         project: validators.fromSelectState<PositiveInteger>(
           a18n`Please choose a project`
@@ -111,7 +123,6 @@ export const TaskForm: FC<Props> = props => {
           foldFormData(
             data =>
               props.onSubmit({
-                shouldRepeat: false,
                 name: data.name,
                 expectedWorkingHours: data.expectedWorkingHours,
                 hourlyCost: data.hourlyCost,
@@ -121,7 +132,6 @@ export const TaskForm: FC<Props> = props => {
               }),
             data =>
               props.onSubmit({
-                shouldRepeat: true,
                 name: data.name,
                 expectedWorkingHours: data.expectedWorkingHours,
                 hourlyCost: data.hourlyCost,

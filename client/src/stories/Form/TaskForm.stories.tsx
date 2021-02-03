@@ -4,10 +4,12 @@ import { pipe } from 'fp-ts/function'
 import { TaskEither } from 'fp-ts/TaskEither'
 import { unsafeLocalizedString } from '../../a18n'
 import { Content } from '../../components/Content/Content'
+import { TaskForm as TaskFormComponent } from '../../components/Form/Forms/TaskForm'
 import {
-  TaskForm as TaskFormComponent,
-  FormData
-} from '../../components/Form/Forms/TaskForm'
+  isSingleTaskCreationInput,
+  TaskCreationInput,
+  TasksBatchCreationInput
+} from '../../entities/Task'
 import {
   LocalizedString,
   PositiveInteger,
@@ -51,15 +53,21 @@ const findProjects = (
 
 interface Args {
   shouldFail: boolean
-  onSubmit: (data: FormData) => void
+  onSingleTaskSubmit: (data: TaskCreationInput) => void
+  onTasksBatchSubmit: (data: TasksBatchCreationInput) => void
 }
 
 const TaskFormTemplate: Story<Args> = props => {
-  const onSubmit = (data: FormData) =>
+  const onSubmit = (data: TaskCreationInput | TasksBatchCreationInput) =>
     pipe(
       props.shouldFail,
       boolean.fold(
-        () => taskEither.rightIO(() => props.onSubmit(data)),
+        () =>
+          taskEither.rightIO(() =>
+            isSingleTaskCreationInput(data)
+              ? props.onSingleTaskSubmit(data)
+              : props.onTasksBatchSubmit(data)
+          ),
         () => taskEither.left(unsafeLocalizedString("I'm an error!"))
       )
     )
@@ -68,6 +76,7 @@ const TaskFormTemplate: Story<Args> = props => {
     <CoolerStory>
       <Content>
         <TaskFormComponent
+          task={option.none}
           findProjects={option.some(findProjects)}
           onSubmit={onSubmit}
         />
@@ -88,7 +97,8 @@ TaskForm.argTypes = {
     control: 'boolean',
     description: 'Set this to true to make the form submission fail'
   },
-  onSubmit: { action: 'submit' }
+  onSingleTaskSubmit: { action: 'submit single task' },
+  onTasksBatchSubmit: { action: 'submit tasks batch' }
 }
 
 const meta: Meta = {
