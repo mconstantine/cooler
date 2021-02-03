@@ -1,7 +1,11 @@
 import * as t from 'io-ts'
-import { NonEmptyString, optionFromNullable } from 'io-ts-types'
+import {
+  DateFromISOString,
+  NonEmptyString,
+  optionFromNullable
+} from 'io-ts-types'
 import { unsafeLocalizedString } from '../a18n'
-import { EmailString } from '../globalDomain'
+import { EmailString, PositiveInteger } from '../globalDomain'
 
 export const ProvinceValues = {
   AG: unsafeLocalizedString('Agrigento'),
@@ -441,6 +445,44 @@ export function foldClientCreationInput<T>(
         return whenPrivate(input)
       case 'BUSINESS':
         return whenBusiness(input)
+    }
+  }
+}
+
+const ClientData = t.type(
+  {
+    id: PositiveInteger,
+    created_at: DateFromISOString,
+    updated_at: DateFromISOString
+  },
+  'ClientData'
+)
+
+const PrivateClient = t.intersection(
+  [PrivateClientCreationInput, ClientData],
+  'PrivateClient'
+)
+type PrivateClient = t.TypeOf<typeof PrivateClient>
+
+const BusinessClient = t.intersection(
+  [BusinessClientCreationInput, ClientData],
+  'BusinessClient'
+)
+type BusinessClient = t.TypeOf<typeof BusinessClient>
+
+export const Client = t.union([PrivateClient, BusinessClient], 'Client')
+export type Client = t.TypeOf<typeof Client>
+
+export function foldClient<T>(
+  whenPrivate: (client: PrivateClient) => T,
+  whenBusiness: (client: BusinessClient) => T
+): (client: Client) => T {
+  return client => {
+    switch (client.type) {
+      case 'PRIVATE':
+        return whenPrivate(client)
+      case 'BUSINESS':
+        return whenBusiness(client)
     }
   }
 }

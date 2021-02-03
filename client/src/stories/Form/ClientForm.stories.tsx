@@ -1,5 +1,5 @@
 import { Meta, Story } from '@storybook/react'
-import { boolean, taskEither } from 'fp-ts'
+import { boolean, option, taskEither } from 'fp-ts'
 import { pipe } from 'fp-ts/function'
 import { unsafeLocalizedString } from '../../a18n'
 import { Content } from '../../components/Content/Content'
@@ -25,7 +25,7 @@ const ClientFormTemplate: Story<Args> = props => {
   return (
     <CoolerStory>
       <Content>
-        <ClientFormComponent onSubmit={onSubmit} />
+        <ClientFormComponent client={option.none} onSubmit={onSubmit} />
       </Content>
     </CoolerStory>
   )

@@ -6,7 +6,9 @@ import {
   CountryValues,
   Province,
   ProvinceValues,
-  foldClientCreationInput
+  foldClientCreationInput,
+  Client,
+  foldClient
 } from '../../../entities/Client'
 import { EmailString, LocalizedString } from '../../../globalDomain'
 import * as t from 'io-ts'
@@ -28,8 +30,10 @@ import { Input } from '../Input/Input/Input'
 import { sequenceS } from 'fp-ts/Apply'
 import { SimpleSelect } from '../Input/SimpleSelect'
 import { Heading } from '../../Heading/Heading'
+import { Option } from 'fp-ts/Option'
 
 interface Props {
+  client: Option<Client>
   onSubmit: (
     client: ClientCreationInput
   ) => TaskEither<LocalizedString, unknown>
@@ -57,25 +61,93 @@ function foldFormType<T>(
   }
 }
 
-export const ClientForm: FC<Props> = ({ onSubmit }) => {
+export const ClientForm: FC<Props> = props => {
   const { fieldProps, submit, formError, values, setValues } = useForm(
     {
-      initialValues: {
-        type: 'BUSINESS' as FormType,
-        fiscal_code: '',
-        first_name: '',
-        last_name: '',
-        country_code: toSelectState<Country>(CountryValues, option.none),
-        vat_number: '',
-        business_name: '',
-        address_country: toSelectState<Country>(CountryValues, option.none),
-        address_province: toSelectState<Province>(ProvinceValues, option.none),
-        address_city: '',
-        address_zip: '',
-        address_street: '',
-        address_street_number: '',
-        address_email: ''
-      },
+      initialValues: pipe(
+        props.client,
+        option.fold(
+          () => ({
+            type: 'BUSINESS' as FormType,
+            fiscal_code: '',
+            first_name: '',
+            last_name: '',
+            country_code: toSelectState<Country>(CountryValues, option.none),
+            vat_number: '',
+            business_name: '',
+            address_country: toSelectState<Country>(CountryValues, option.none),
+            address_province: toSelectState<Province>(
+              ProvinceValues,
+              option.none
+            ),
+            address_city: '',
+            address_zip: '',
+            address_street: '',
+            address_street_number: '',
+            address_email: ''
+          }),
+          client => ({
+            ...client,
+            fiscal_code: pipe(
+              client,
+              foldClient(
+                client => client.fiscal_code,
+                () => ''
+              )
+            ),
+            first_name: pipe(
+              client,
+              foldClient(
+                client => client.first_name,
+                () => ''
+              )
+            ),
+            last_name: pipe(
+              client,
+              foldClient(
+                client => client.last_name,
+                () => ''
+              )
+            ),
+            country_code: toSelectState(
+              CountryValues,
+              pipe(
+                client,
+                foldClient(
+                  () => option.none,
+                  client => option.some(client.country_code)
+                )
+              )
+            ),
+            vat_number: pipe(
+              client,
+              foldClient(
+                () => '',
+                client => client.vat_number
+              )
+            ),
+            business_name: pipe(
+              client,
+              foldClient(
+                () => '',
+                client => client.business_name
+              )
+            ),
+            address_country: toSelectState(
+              CountryValues,
+              option.some(client.address_country)
+            ),
+            address_province: toSelectState(
+              ProvinceValues,
+              option.some(client.address_province)
+            ),
+            address_street_number: pipe(
+              client.address_street_number,
+              option.getOrElse(() => '')
+            )
+          })
+        )
+      ),
       validators: ({ type }) => ({
         fiscal_code: pipe(
           type,
@@ -172,7 +244,7 @@ export const ClientForm: FC<Props> = ({ onSubmit }) => {
               business_name: input.business_name
             })
           ),
-          onSubmit
+          props.onSubmit
         )
       }
     }
