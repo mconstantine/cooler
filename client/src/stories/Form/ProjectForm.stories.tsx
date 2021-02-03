@@ -1,13 +1,11 @@
 import { Meta, Story } from '@storybook/react'
-import { boolean, task, taskEither } from 'fp-ts'
+import { boolean, option, task, taskEither } from 'fp-ts'
 import { pipe } from 'fp-ts/function'
 import { TaskEither } from 'fp-ts/TaskEither'
 import { unsafeLocalizedString } from '../../a18n'
 import { Content } from '../../components/Content/Content'
-import {
-  ProjectForm as ProjectFormComponent,
-  FormData
-} from '../../components/Form/Forms/ProjectForm'
+import { ProjectForm as ProjectFormComponent } from '../../components/Form/Forms/ProjectForm'
+import { ProjectCreationInput } from '../../entities/Project'
 import {
   LocalizedString,
   PositiveInteger,
@@ -51,11 +49,11 @@ const findClients = (
 
 interface Args {
   shouldFail: boolean
-  onSubmit: (data: FormData) => void
+  onSubmit: (data: ProjectCreationInput) => void
 }
 
 const ProjectFormTemplate: Story<Args> = props => {
-  const onSubmit = (data: FormData) =>
+  const onSubmit = (data: ProjectCreationInput) =>
     pipe(
       props.shouldFail,
       boolean.fold(
@@ -67,7 +65,11 @@ const ProjectFormTemplate: Story<Args> = props => {
   return (
     <CoolerStory>
       <Content>
-        <ProjectFormComponent findClients={findClients} onSubmit={onSubmit} />
+        <ProjectFormComponent
+          project={option.none}
+          findClients={findClients}
+          onSubmit={onSubmit}
+        />
       </Content>
     </CoolerStory>
   )

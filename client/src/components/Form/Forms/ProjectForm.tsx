@@ -2,12 +2,10 @@ import { boolean, option, taskEither } from 'fp-ts'
 import { constNull, constUndefined, pipe } from 'fp-ts/function'
 import { Option } from 'fp-ts/Option'
 import { TaskEither } from 'fp-ts/TaskEither'
-import { NonEmptyString } from 'io-ts-types'
 import { FC } from 'react'
 import { a18n } from '../../../a18n'
 import {
   LocalizedString,
-  NonNegativeNumber,
   NonNegativeNumberFromString,
   OptionFromEmptyString,
   PositiveInteger,
@@ -23,35 +21,49 @@ import { useForm } from '../useForm'
 import * as validators from '../validators'
 import { Input } from '../Input/Input/Input'
 import { AsyncSelect } from '../Input/AsyncSelect'
-
-export interface FormData {
-  name: NonEmptyString
-  description: Option<NonEmptyString>
-  client: PositiveInteger
-  cashed: Option<{
-    at: Date
-    balance: NonNegativeNumber
-  }>
-}
+import { Project, ProjectCreationInput } from '../../../entities/Project'
 
 interface Props {
+  project: Option<Project>
   findClients: (
     input: string
   ) => TaskEither<LocalizedString, Record<PositiveInteger, LocalizedString>>
-  onSubmit: (data: FormData) => TaskEither<LocalizedString, unknown>
+  onSubmit: (data: ProjectCreationInput) => TaskEither<LocalizedString, unknown>
 }
 
 export const ProjectForm: FC<Props> = props => {
   const { fieldProps, submit, formError, values } = useForm(
     {
-      initialValues: {
-        name: '',
-        description: '',
-        client: toSelectState<PositiveInteger>({}, option.none),
-        cashed: false,
-        cashedAt: new Date(),
-        cashedBalance: ''
-      },
+      initialValues: pipe(
+        props.project,
+        option.map(project => ({
+          ...project,
+          description: pipe(
+            project.description,
+            option.getOrElse(() => '')
+          ),
+          client: toSelectState({}, option.some(project.client)),
+          cashed: option.isSome(project.cashed),
+          cashedAt: pipe(
+            project.cashed,
+            option.map(({ at }) => at),
+            option.getOrElse(() => new Date())
+          ),
+          cashedBalance: pipe(
+            project.cashed,
+            option.map(({ balance }) => balance.toString(10)),
+            option.getOrElse(() => '')
+          )
+        })),
+        option.getOrElse(() => ({
+          name: '',
+          description: '',
+          client: toSelectState<PositiveInteger>({}, option.none),
+          cashed: false,
+          cashedAt: new Date(),
+          cashedBalance: ''
+        }))
+      ),
       validators: ({ cashed }) => ({
         name: validators.nonBlankString(commonErrors.nonBlank),
         description: validators.fromCodec(
@@ -94,7 +106,7 @@ export const ProjectForm: FC<Props> = props => {
       }
     },
     {
-      onSubmit: data => props.onSubmit(data as FormData)
+      onSubmit: data => props.onSubmit(data as ProjectCreationInput)
     }
   )
 
