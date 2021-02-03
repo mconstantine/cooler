@@ -39,7 +39,7 @@ export interface TasksBatchFormData extends TasksBatchCreationInput {
 
 export type FormData = SingleTaskFormData | TasksBatchFormData
 
-interface Props {
+interface CommonProps {
   task: Option<Task>
   findProjects: Option<
     (
@@ -49,6 +49,30 @@ interface Props {
   onSubmit: (
     data: TaskCreationInput | TasksBatchCreationInput
   ) => TaskEither<LocalizedString, unknown>
+}
+
+interface AddModeProps extends CommonProps {
+  mode: 'add'
+}
+
+interface EditModeProps extends CommonProps {
+  mode: 'edit'
+}
+
+type Props = AddModeProps | EditModeProps
+
+function foldFormMode<T>(
+  whenAdd: (props: AddModeProps) => T,
+  whenEdit: (props: EditModeProps) => T
+): (props: Props) => T {
+  return props => {
+    switch (props.mode) {
+      case 'add':
+        return whenAdd(props)
+      case 'edit':
+        return whenEdit(props)
+    }
+  }
 }
 
 export function foldFormData<T>(
@@ -189,7 +213,13 @@ export const TaskForm: FC<Props> = props => {
           )
         )}
       />
-      <Toggle label={a18n`Repeat`} {...fieldProps('shouldRepeat')} />
+      {pipe(
+        props,
+        foldFormMode(
+          () => <Toggle label={a18n`Repeat`} {...fieldProps('shouldRepeat')} />,
+          constNull
+        )
+      )}
       {pipe(
         values.shouldRepeat,
         boolean.fold(constNull, () => (

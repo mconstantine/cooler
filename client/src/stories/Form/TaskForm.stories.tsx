@@ -76,6 +76,7 @@ const TaskFormTemplate: Story<Args> = props => {
     <CoolerStory>
       <Content>
         <TaskFormComponent
+          mode="add"
           task={option.none}
           findProjects={option.some(findProjects)}
           onSubmit={onSubmit}
