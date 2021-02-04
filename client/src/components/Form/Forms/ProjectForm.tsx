@@ -42,7 +42,7 @@ export const ProjectForm: FC<Props> = props => {
             project.description,
             option.getOrElse(() => '')
           ),
-          client: toSelectState({}, option.some(project.client)),
+          client: toSelectState({}, option.some(project.client.id)),
           cashed: option.isSome(project.cashed),
           cashedAt: pipe(
             project.cashed,

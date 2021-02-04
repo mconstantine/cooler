@@ -99,6 +99,32 @@ export function formatDateTime(
   }) as LocalizedString
 }
 
+function leadZero(n: number): string {
+  return (n >= 0 && n < 10 ? '0' : '') + n
+}
+
+export function formatDuration(
+  durationMs: number,
+  showSeconds = false
+): LocalizedString {
+  const hours = Math.floor(durationMs / 3600000)
+
+  const minutes = showSeconds
+    ? Math.floor((durationMs - hours * 3600000) / 60000)
+    : Math.ceil((durationMs - hours * 3600000) / 60000)
+
+  const secondsString = showSeconds
+    ? ':' +
+      leadZero(
+        Math.ceil((durationMs - hours * 3600000 - minutes * 60000) / 1000)
+      )
+    : ''
+
+  return unsafeLocalizedString(
+    `${leadZero(hours)}:${leadZero(minutes)}${secondsString}`
+  )
+}
+
 export function formatNumber(
   n: number,
   formatDecimals = false

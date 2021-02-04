@@ -73,16 +73,16 @@ export const Form: FC<Props> = ({
         <div className="actions">
           {pipe(
             props.formError,
-            option.fold(constNull, error => (
-              <Label icon={alert} color="danger" content={error} />
-            ))
-          )}
-
-          {pipe(
-            submitError,
-            option.fold(constNull, error => (
-              <Label icon={alert} color="danger" content={error} />
-            ))
+            option.fold(
+              () =>
+                pipe(
+                  submitError,
+                  option.fold(constNull, error => (
+                    <Label icon={alert} color="danger" content={error} />
+                  ))
+                ),
+              error => <Label icon={alert} color="danger" content={error} />
+            )
           )}
 
           <Buttons spacing="spread">

@@ -9,6 +9,7 @@ import {
   optionFromNullable
 } from 'io-ts-types'
 import { NonNegativeNumber, PositiveInteger } from '../globalDomain'
+import { Client } from './Client'
 
 const CashData = t.type({
   at: DateFromISOString,
@@ -21,13 +22,13 @@ const ProjectInput = t.type(
     id: PositiveInteger,
     name: NonEmptyString,
     description: optionFromNullable(NonEmptyString),
-    client: PositiveInteger,
+    client: Client,
     cashed_at: optionFromNullable(DateFromISOString),
     cashed_balance: optionFromNullable(NonNegativeNumber),
     created_at: DateFromISOString,
     updated_at: DateFromISOString
   },
-  'ProjectFromAPI'
+  'ProjectInput'
 )
 type ProjectInput = t.TypeOf<typeof ProjectInput>
 
@@ -36,12 +37,12 @@ export const Project = t.type(
     id: PositiveInteger,
     name: NonEmptyString,
     description: optionFromNullable(NonEmptyString),
-    client: PositiveInteger,
+    client: Client,
     cashed: optionCodec(CashData),
     created_at: DateFromISOString,
     updated_at: DateFromISOString
   },
-  'ProjectFromAPI'
+  'Project'
 )
 export type Project = t.TypeOf<typeof Project>
 

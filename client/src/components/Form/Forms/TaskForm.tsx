@@ -102,7 +102,7 @@ export const TaskForm: FC<Props> = props => {
           expectedWorkingHours: task.expectedWorkingHours.toString(10),
           hourlyCost: task.hourlyCost.toString(10),
           shouldRepeat: false,
-          project: toSelectState({}, option.some(task.project)),
+          project: toSelectState({}, option.some(task.project.id)),
           from: task.start_time,
           to: task.start_time,
           repeat: 0 as NonNegativeInteger

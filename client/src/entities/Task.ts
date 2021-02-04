@@ -9,6 +9,7 @@ import {
   NonNegativeNumber,
   PositiveInteger
 } from '../globalDomain'
+import { Project } from './Project'
 
 export const Task = t.type(
   {
@@ -17,7 +18,7 @@ export const Task = t.type(
     description: optionFromNullable(NonEmptyString),
     expectedWorkingHours: NonNegativeNumber,
     hourlyCost: NonNegativeNumber,
-    project: PositiveInteger,
+    project: Project,
     start_time: DateFromISOString,
     created_at: DateFromISOString,
     updated_at: DateFromISOString
