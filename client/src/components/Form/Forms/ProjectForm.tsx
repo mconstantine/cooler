@@ -22,6 +22,7 @@ import * as validators from '../validators'
 import { Input } from '../Input/Input/Input'
 import { AsyncSelect } from '../Input/AsyncSelect'
 import { Project, ProjectCreationInput } from '../../../entities/Project'
+import { IO } from 'fp-ts/IO'
 
 interface Props {
   project: Option<Project>
@@ -29,6 +30,7 @@ interface Props {
     input: string
   ) => TaskEither<LocalizedString, Record<PositiveInteger, LocalizedString>>
   onSubmit: (data: ProjectCreationInput) => TaskEither<LocalizedString, unknown>
+  onCancel: IO<void>
 }
 
 export const ProjectForm: FC<Props> = props => {
@@ -42,7 +44,12 @@ export const ProjectForm: FC<Props> = props => {
             project.description,
             option.getOrElse(() => '')
           ),
-          client: toSelectState({}, option.some(project.client.id)),
+          client: toSelectState(
+            {
+              [project.client.id]: project.client.name
+            },
+            option.some(project.client.id)
+          ),
           cashed: option.isSome(project.cashed),
           cashedAt: pipe(
             project.cashed,
@@ -111,7 +118,25 @@ export const ProjectForm: FC<Props> = props => {
   )
 
   return (
-    <Form title={a18n`New Project`} submit={submit} formError={formError}>
+    <Form
+      title={pipe(
+        props.project,
+        option.fold(
+          () => a18n`New Project`,
+          project => project.name
+        )
+      )}
+      submit={submit}
+      formError={formError}
+      additionalButtons={[
+        {
+          type: 'button',
+          label: a18n`Cancel`,
+          icon: option.none,
+          action: props.onCancel
+        }
+      ]}
+    >
       <Input label={a18n`Name`} {...fieldProps('name')} />
       <TextArea label={a18n`Description`} {...fieldProps('description')} />
       <AsyncSelect

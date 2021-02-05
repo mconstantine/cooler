@@ -13,6 +13,7 @@ import { Button } from '../../Button/Button/Button'
 import { LoadingButton } from '../../Button/LoadingButton/LoadingButton'
 import { skull } from 'ionicons/icons'
 import { UserForm } from '../../Form/Forms/UserForm'
+import { useDialog } from '../../../effects/useDialog'
 
 interface UserData {
   name: LocalizedString
@@ -41,6 +42,12 @@ export const UserData: FC<Props> = props => {
   )
 
   const onCancel = () => setIsEditing(false)
+
+  const [Dialog, deleteProfile] = useDialog(() => props.onDeleteProfile, {
+    title: () => a18n`Are you sure you want to delete your account?`,
+    message: () =>
+      a18n`All your data, clients, projects, tasks and sessions will be deleted!`
+  })
 
   return pipe(
     isEditing,
@@ -100,10 +107,11 @@ export const UserData: FC<Props> = props => {
               label={a18n`Delete profile`}
               color="danger"
               flat
-              action={props.onDeleteProfile}
+              action={deleteProfile(null)}
               icon={skull}
             />
           </Buttons>
+          <Dialog />
         </Panel>
       ),
       () => (

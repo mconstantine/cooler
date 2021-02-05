@@ -103,12 +103,16 @@
       margin-top: 0;
     }
 
-    .content {
+    .Body {
+      margin-top: 0;
       margin-bottom: 0;
+      font-size: 21px;
+      font-weight: $font-weight-regular;
+      @include ss('font-size', 18px, 21px);
     }
 
     .description {
-      margin-top: 8px;
+      margin-top: 4px;
       margin-bottom: 0;
       opacity: $text-medium-emphasis-amount;
       white-space: nowrap;

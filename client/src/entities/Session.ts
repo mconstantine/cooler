@@ -1,7 +1,14 @@
 import * as t from 'io-ts'
 import { DateFromISOString, optionFromNullable } from 'io-ts-types'
-import { PositiveInteger } from '../globalDomain'
-import { Task } from './Task'
+import { LocalizedString, PositiveInteger } from '../globalDomain'
+
+const Task = t.type(
+  {
+    id: PositiveInteger,
+    name: LocalizedString
+  },
+  'Task'
+)
 
 export const Session = t.type(
   {

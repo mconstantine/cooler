@@ -20,6 +20,7 @@ import { Label } from '../Label/Label'
 import './List.scss'
 import { chevronForwardOutline } from 'ionicons/icons'
 import { Heading } from '../Heading/Heading'
+import { Body } from '../Body/Body'
 
 type Position = 'start' | 'end'
 type Size = 'default' | 'small'
@@ -296,15 +297,7 @@ export const List: FC<Props> = props => {
                     {pipe(
                       item.size || 'default',
                       foldSize(
-                        () => (
-                          <Heading
-                            size={21}
-                            className="content"
-                            action={option.none}
-                          >
-                            {item.content}
-                          </Heading>
-                        ),
+                        () => <Body>{item.content}</Body>,
                         () => <Label content={item.content} />
                       )
                     )}

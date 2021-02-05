@@ -1,6 +1,7 @@
 import { Meta, Story } from '@storybook/react'
 import { boolean, option, task, taskEither } from 'fp-ts'
 import { pipe } from 'fp-ts/function'
+import { IO } from 'fp-ts/IO'
 import { TaskEither } from 'fp-ts/TaskEither'
 import { unsafeLocalizedString } from '../../a18n'
 import { Content } from '../../components/Content/Content'
@@ -50,6 +51,7 @@ const findClients = (
 interface Args {
   shouldFail: boolean
   onSubmit: (data: ProjectCreationInput) => void
+  onCancel: IO<void>
 }
 
 const ProjectFormTemplate: Story<Args> = props => {
@@ -69,6 +71,7 @@ const ProjectFormTemplate: Story<Args> = props => {
           project={option.none}
           findClients={findClients}
           onSubmit={onSubmit}
+          onCancel={props.onCancel}
         />
       </Content>
     </CoolerStory>
@@ -87,7 +90,8 @@ ProjectForm.argTypes = {
     control: 'boolean',
     description: 'Set this to true to make the form submission fail'
   },
-  onSubmit: { action: 'submit' }
+  onSubmit: { action: 'submit' },
+  onCancel: { action: 'cancel' }
 }
 
 const meta: Meta = {

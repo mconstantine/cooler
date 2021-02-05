@@ -5,17 +5,22 @@ import {
   optionFromNullable
 } from 'io-ts-types'
 import {
+  LocalizedString,
   NonNegativeInteger,
   NonNegativeNumber,
   PositiveInteger
 } from '../globalDomain'
-import { Project } from './Project'
+
+const Project = t.type({
+  id: PositiveInteger,
+  name: LocalizedString
+})
 
 export const Task = t.type(
   {
     id: PositiveInteger,
-    name: NonEmptyString,
-    description: optionFromNullable(NonEmptyString),
+    name: LocalizedString,
+    description: optionFromNullable(LocalizedString),
     expectedWorkingHours: NonNegativeNumber,
     hourlyCost: NonNegativeNumber,
     project: Project,
@@ -29,8 +34,8 @@ export type Task = t.TypeOf<typeof Task>
 
 export const TaskCreationInput = t.type(
   {
-    name: NonEmptyString,
-    description: optionFromNullable(NonEmptyString),
+    name: LocalizedString,
+    description: optionFromNullable(LocalizedString),
     expectedWorkingHours: NonNegativeNumber,
     hourlyCost: NonNegativeNumber,
     project: PositiveInteger,
@@ -42,7 +47,7 @@ export type TaskCreationInput = t.TypeOf<typeof TaskCreationInput>
 
 export const TasksBatchCreationInput = t.type(
   {
-    name: NonEmptyString,
+    name: LocalizedString,
     expectedWorkingHours: NonNegativeNumber,
     hourlyCost: NonNegativeNumber,
     project: PositiveInteger,

@@ -6,6 +6,7 @@ import { LocalizedString } from '../../globalDomain'
 import * as t from 'io-ts'
 import { Option } from 'fp-ts/Option'
 import { getOptionValue, SelectState } from './Input/Select/Select'
+import { unsafeLocalizedString } from '../../a18n'
 
 export type Validator<I, O = I> = (i: I) => TaskEither<LocalizedString, O>
 
@@ -52,8 +53,14 @@ export function toUpperCase(): Validator<string, string> {
 
 export function nonBlankString(
   errorMessage: LocalizedString
-): Validator<string, NonEmptyString> {
-  return flow(s => s.trim(), fromCodec(NonEmptyString, errorMessage))
+): Validator<string, NonEmptyString & LocalizedString> {
+  return flow(
+    s => s.trim(),
+    fromCodec(NonEmptyString, errorMessage),
+    taskEither.map(
+      s => unsafeLocalizedString(s) as NonEmptyString & LocalizedString
+    )
+  )
 }
 
 export function optionalString(): Validator<string, Option<NonEmptyString>> {

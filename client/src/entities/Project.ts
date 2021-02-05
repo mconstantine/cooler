@@ -4,12 +4,14 @@ import { sequenceS } from 'fp-ts/Apply'
 import * as t from 'io-ts'
 import {
   DateFromISOString,
-  NonEmptyString,
   option as optionCodec,
   optionFromNullable
 } from 'io-ts-types'
-import { NonNegativeNumber, PositiveInteger } from '../globalDomain'
-import { Client } from './Client'
+import {
+  LocalizedString,
+  NonNegativeNumber,
+  PositiveInteger
+} from '../globalDomain'
 
 const CashData = t.type({
   at: DateFromISOString,
@@ -17,11 +19,19 @@ const CashData = t.type({
 })
 type CashData = t.TypeOf<typeof CashData>
 
+const Client = t.type(
+  {
+    id: PositiveInteger,
+    name: LocalizedString
+  },
+  'Client'
+)
+
 const ProjectInput = t.type(
   {
     id: PositiveInteger,
-    name: NonEmptyString,
-    description: optionFromNullable(NonEmptyString),
+    name: LocalizedString,
+    description: optionFromNullable(LocalizedString),
     client: Client,
     cashed_at: optionFromNullable(DateFromISOString),
     cashed_balance: optionFromNullable(NonNegativeNumber),
@@ -35,8 +45,8 @@ type ProjectInput = t.TypeOf<typeof ProjectInput>
 export const Project = t.type(
   {
     id: PositiveInteger,
-    name: NonEmptyString,
-    description: optionFromNullable(NonEmptyString),
+    name: LocalizedString,
+    description: optionFromNullable(LocalizedString),
     client: Client,
     cashed: optionCodec(CashData),
     created_at: DateFromISOString,
@@ -87,8 +97,8 @@ export const ProjectFromAPI: t.Type<
 
 export const ProjectCreationInput = t.type(
   {
-    name: NonEmptyString,
-    description: optionCodec(NonEmptyString),
+    name: LocalizedString,
+    description: optionCodec(LocalizedString),
     client: PositiveInteger,
     cashed: optionCodec(CashData)
   },
@@ -98,8 +108,8 @@ export type ProjectCreationInput = t.TypeOf<typeof ProjectCreationInput>
 
 const ProjectCreationOutput = t.type(
   {
-    name: NonEmptyString,
-    description: optionCodec(NonEmptyString),
+    name: LocalizedString,
+    description: optionCodec(LocalizedString),
     client: PositiveInteger,
     cashed_at: optionFromNullable(DateFromISOString),
     cashed_balance: optionFromNullable(NonNegativeNumber)

@@ -8,6 +8,7 @@ export type TextEmphasis = 'full' | 'high' | 'medium' | 'low'
 interface Props {
   color?: Color
   emphasis?: TextEmphasis
+  className?: string
   children: LocalizedString
 }
 
@@ -16,7 +17,14 @@ export const Body: FC<Props> = props => {
   const emphasis = props.emphasis || 'full'
 
   return (
-    <p className={composeClassName('Body', color, emphasis)}>
+    <p
+      className={composeClassName(
+        'Body',
+        color,
+        emphasis,
+        props.className || ''
+      )}
+    >
       {props.children}
     </p>
   )
