@@ -6,14 +6,9 @@ import { useState } from 'react'
 import { unsafeLocalizedString } from '../../../a18n'
 import { Content } from '../../../components/Content/Content'
 import { CurrentSituation as CurrentSituationComponent } from '../../../components/Pages/Profile/CurrentSituation'
-import { Tax } from '../../../entities/Tax'
-import {
-  LocalizedString,
-  unsafeNonNegativeNumber,
-  unsafePercentage,
-  unsafePositiveInteger
-} from '../../../globalDomain'
+import { LocalizedString, unsafeNonNegativeNumber } from '../../../globalDomain'
 import { CoolerStory } from '../../CoolerStory'
+import { fakeTaxes } from '../../utils'
 
 interface Args {
   shouldFail: boolean
@@ -32,19 +27,6 @@ const CurrentSituationTemplate: Story<Args> = props => {
   )
   const budget = unsafeNonNegativeNumber(expectedWorkingHours * 15)
   const balance = unsafeNonNegativeNumber(actualWorkingHours * 15)
-
-  const taxes: Tax[] = [
-    {
-      id: unsafePositiveInteger(0),
-      label: unsafeLocalizedString('Some tax'),
-      value: unsafePercentage(0.2572)
-    },
-    {
-      id: unsafePositiveInteger(1),
-      label: unsafeLocalizedString('Some other tax'),
-      value: unsafePercentage(0.1005)
-    }
-  ]
 
   const onSinceDateChange = (since: Date): TaskEither<LocalizedString, void> =>
     pipe(
@@ -76,7 +58,7 @@ const CurrentSituationTemplate: Story<Args> = props => {
             actualWorkingHours,
             budget,
             balance,
-            taxes
+            taxes: fakeTaxes
           }}
         />
       </Content>

@@ -3,10 +3,12 @@ import { pipe } from 'fp-ts/function'
 import { TaskEither } from 'fp-ts/TaskEither'
 import { unsafeLocalizedString } from '../a18n'
 import { Project } from '../entities/Project'
+import { Tax } from '../entities/Tax'
 import {
   LocalizedString,
   PositiveInteger,
   unsafeNonNegativeNumber,
+  unsafePercentage,
   unsafePositiveInteger
 } from '../globalDomain'
 
@@ -92,7 +94,11 @@ export const fakeProject: Project = {
     balance: unsafeNonNegativeNumber(1500)
   }),
   created_at: new Date(2020, 8, 20, 9, 30),
-  updated_at: new Date(2021, 0, 1, 15, 45)
+  updated_at: new Date(2021, 0, 1, 15, 45),
+  expectedWorkingHours: unsafeNonNegativeNumber(100),
+  actualWorkingHours: unsafeNonNegativeNumber(98),
+  budget: unsafeNonNegativeNumber(1500),
+  balance: unsafeNonNegativeNumber(1470)
 }
 
 interface FakeTask {
@@ -128,3 +134,16 @@ export const findTasks = (
     taskEither.rightTask
   )
 }
+
+export const fakeTaxes: Tax[] = [
+  {
+    id: unsafePositiveInteger(0),
+    label: unsafeLocalizedString('Some tax'),
+    value: unsafePercentage(0.2572)
+  },
+  {
+    id: unsafePositiveInteger(1),
+    label: unsafeLocalizedString('Some other tax'),
+    value: unsafePercentage(0.1005)
+  }
+]

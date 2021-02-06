@@ -9,7 +9,7 @@ import { LocalizedString, NonNegativeNumber } from '../../../globalDomain'
 import { DateTimePicker } from '../../Form/Input/DateTimePicker/DateTimePicker'
 import { List, ValuedItem } from '../../List/List'
 import { Panel } from '../../Panel/Panel'
-import { getNetValue } from './utils'
+import { getNetValue } from '../utils'
 
 interface Props {
   data: {

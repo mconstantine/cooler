@@ -1,38 +1,28 @@
-import { option, taskEither } from 'fp-ts'
-import { pipe } from 'fp-ts/function'
-import { Option } from 'fp-ts/Option'
-import { TaskEither } from 'fp-ts/TaskEither'
-import { FC, useState } from 'react'
+import { option } from 'fp-ts'
+import { FC } from 'react'
 import { a18n, formatDuration, formatMoneyAmount } from '../../../a18n'
 import { Tax } from '../../../entities/Tax'
 import {
   computePercentage,
   formatPercentarge,
-  LocalizedString,
   NonNegativeNumber
 } from '../../../globalDomain'
 import { Body } from '../../Body/Body'
-import { DateTimePicker } from '../../Form/Input/DateTimePicker/DateTimePicker'
 import { List, ValuedItem } from '../../List/List'
 import { Panel } from '../../Panel/Panel'
 import { getNetValue } from '../utils'
 
 interface Props {
-  since: Date
   data: {
     expectedWorkingHours: NonNegativeNumber
     actualWorkingHours: NonNegativeNumber
     budget: NonNegativeNumber
     balance: NonNegativeNumber
-    taxes: Tax[]
   }
-  onSinceDateChange: (date: Date) => TaskEither<LocalizedString, unknown>
+  taxes: Tax[]
 }
 
-export const CurrentSituation: FC<Props> = props => {
-  const [isSinceDateChanging, setIsDateSinceChanging] = useState(false)
-  const [error, setError] = useState<Option<LocalizedString>>(option.none)
-
+export const ProjectProgress: FC<Props> = props => {
   const progress = computePercentage(
     props.data.expectedWorkingHours,
     props.data.actualWorkingHours
@@ -59,128 +49,105 @@ export const CurrentSituation: FC<Props> = props => {
   }
 
   return (
-    <Panel title={a18n`Current situation`} framed action={option.none}>
+    <Panel title={a18n`Overall progress`} framed action={option.none}>
       <Body>
-        {a18n`Information about the amount of time you expect to work VS how much you already did, as well as the amount of money you will earn, since a given date`}
+        {a18n`Information about the amount of time you expect to work VS how much you already did, as well as the amount of money you will earn for this project`}
       </Body>
 
-      <DateTimePicker
-        name="since"
-        mode="date"
-        label={a18n`Since`}
-        value={props.since}
-        onChange={since => {
-          setError(option.none)
-          setIsDateSinceChanging(true)
-
-          pipe(
-            props.onSinceDateChange(since),
-            taskEither.bimap(
-              error => {
-                setError(option.some(error))
-                setIsDateSinceChanging(false)
-              },
-              () => setIsDateSinceChanging(false)
-            )
-          )()
-        }}
-        error={error}
-        warning={option.none}
-        disabled={isSinceDateChanging}
-      />
       <List
         heading={option.some(a18n`Time`)}
         items={[
           {
-            key: 'expectingWorkingHours',
+            key: 'expectedWorkingHours',
             type: 'valued',
+            progress: option.none,
             label: option.none,
-            content: a18n`Expected working hours`,
             description: option.none,
-            value: formatDuration(props.data.expectedWorkingHours * 3600000),
-            progress: option.none
+            content: a18n`Expected working hours`,
+            value: formatDuration(props.data.expectedWorkingHours * 3600000)
           },
           {
             key: 'actualWorkingHours',
             type: 'valued',
+            progress: option.none,
             label: option.none,
-            content: a18n`Actual working hours`,
             description: option.none,
-            value: formatDuration(props.data.actualWorkingHours * 3600000),
-            progress: option.none
+            content: a18n`Actual working hours`,
+            value: formatDuration(props.data.actualWorkingHours * 3600000)
           },
           {
             key: 'remainingTime',
             type: 'valued',
+            progress: option.none,
             label: option.none,
-            content: a18n`Remaining time (hours)`,
             description: option.none,
+            content: a18n`Remaining time (hours)`,
             value: formatDuration(
               (props.data.expectedWorkingHours -
                 props.data.actualWorkingHours) *
                 3600000
-            ),
-            progress: option.none
+            )
           },
           {
             key: 'progress',
             type: 'valued',
+            progress: option.some(progress),
             label: option.none,
-            content: a18n`Progress`,
             description: option.none,
-            value: formatPercentarge(progress),
-            progress: option.some(progress)
+            content: a18n`Progress`,
+            value: formatPercentarge(progress)
           }
         ]}
       />
+
       <List
         heading={option.some(a18n`Money`)}
         items={[
           {
             key: 'grossBudget',
             type: 'valued',
+            progress: option.none,
             label: option.none,
-            content: a18n`Gross budget`,
             description: option.none,
-            value: formatMoneyAmount(props.data.budget),
-            progress: option.none
+            content: a18n`Gross budget`,
+            value: formatMoneyAmount(props.data.budget)
           },
-          ...props.data.taxes.map(tax =>
-            renderTaxItem('budget', props.data.budget, tax)
+          ...props.taxes.map(tax =>
+            renderTaxItem('grossBudget', props.data.budget, tax)
           ),
           {
             key: 'netBudget',
             type: 'valued',
+            progress: option.none,
             label: option.none,
-            content: a18n`Net budget`,
             description: option.none,
+            content: a18n`Net budget`,
             value: formatMoneyAmount(
-              getNetValue(props.data.budget, props.data.taxes)
-            ),
-            progress: option.none
+              getNetValue(props.data.budget, props.taxes)
+            )
           },
           {
             key: 'grossBalance',
             type: 'valued',
+            progress: option.none,
             label: option.none,
-            content: a18n`Gross balance`,
             description: option.none,
-            value: formatMoneyAmount(props.data.balance),
-            progress: option.none
+            content: a18n`Gross balance`,
+            value: formatMoneyAmount(props.data.balance)
           },
-          ...props.data.taxes.map(tax =>
-            renderTaxItem('balance', props.data.balance, tax)
+          ...props.taxes.map(tax =>
+            renderTaxItem('grossBalance', props.data.budget, tax)
           ),
           {
             key: 'netBalance',
             type: 'valued',
+            progress: option.none,
             label: option.none,
-            content: a18n`Net balance`,
             description: option.none,
+            content: a18n`Net balance`,
             value: formatMoneyAmount(
-              getNetValue(props.data.balance, props.data.taxes)
-            ),
-            progress: option.none
+              getNetValue(props.data.balance, props.taxes)
+            )
           }
         ]}
       />

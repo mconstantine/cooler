@@ -17,7 +17,7 @@ const CashData = t.type({
   at: DateFromISOString,
   balance: NonNegativeNumber
 })
-type CashData = t.TypeOf<typeof CashData>
+export type CashData = t.TypeOf<typeof CashData>
 
 const Client = t.type(
   {
@@ -36,7 +36,11 @@ const ProjectInput = t.type(
     cashed_at: optionFromNullable(DateFromISOString),
     cashed_balance: optionFromNullable(NonNegativeNumber),
     created_at: DateFromISOString,
-    updated_at: DateFromISOString
+    updated_at: DateFromISOString,
+    expectedWorkingHours: NonNegativeNumber,
+    actualWorkingHours: NonNegativeNumber,
+    budget: NonNegativeNumber,
+    balance: NonNegativeNumber
   },
   'ProjectInput'
 )
@@ -50,7 +54,11 @@ export const Project = t.type(
     client: Client,
     cashed: optionCodec(CashData),
     created_at: DateFromISOString,
-    updated_at: DateFromISOString
+    updated_at: DateFromISOString,
+    expectedWorkingHours: NonNegativeNumber,
+    actualWorkingHours: NonNegativeNumber,
+    budget: NonNegativeNumber,
+    balance: NonNegativeNumber
   },
   'Project'
 )

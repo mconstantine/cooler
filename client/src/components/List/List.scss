@@ -34,6 +34,26 @@
       padding-bottom: 12px;
     }
 
+    &.withProgress {
+      border: 1px solid #fff;
+
+      &.primary {
+        border-color: $color-primary-dark;
+      }
+
+      &.success {
+        border-color: $color-success-dark;
+      }
+
+      &.warning {
+        border-color: $color-warning-dark;
+      }
+
+      &.danger {
+        border-color: $color-error-dark;
+      }
+    }
+
     > * {
       position: relative;
     }
@@ -191,6 +211,26 @@
 
   &.danger {
     background-color: $color-error-dark;
+  }
+}
+
+.light .List li.withProgress {
+  border-color: #000;
+
+  &.primary {
+    border-color: $color-primary-light;
+  }
+
+  &.success {
+    border-color: $color-success-light;
+  }
+
+  &.warning {
+    border-color: $color-warning-light;
+  }
+
+  &.danger {
+    border-color: $color-error-light;
   }
 }
 

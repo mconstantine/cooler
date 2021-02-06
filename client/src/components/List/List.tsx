@@ -184,6 +184,24 @@ export const List: FC<Props> = props => {
             )
           )
 
+          const progressClassName = pipe(
+            item,
+            foldItem(
+              () => '',
+              () => '',
+              () => '',
+              () => '',
+              item =>
+                pipe(
+                  item.progress,
+                  option.fold(
+                    () => '',
+                    () => `withProgress ${item.valueColor}`
+                  )
+                )
+            )
+          )
+
           const sizeClassName = item.size || 'default'
 
           const getAction = (item: RoutedItem | RoutedItemWithIcon) => {
@@ -254,7 +272,8 @@ export const List: FC<Props> = props => {
                 iconsAtTheEndClassName,
                 routedClassName,
                 detailsClassName,
-                sizeClassName
+                sizeClassName,
+                progressClassName
               )}
             >
               {pipe(
