@@ -7,6 +7,7 @@ import { TaskEither } from 'fp-ts/TaskEither'
 import { NonEmptyString } from 'io-ts-types'
 import { FC } from 'react'
 import { a18n } from '../../../a18n'
+import { User } from '../../../entities/User'
 import { EmailString, LocalizedString } from '../../../globalDomain'
 import { commonErrors } from '../../../misc/commonErrors'
 import { Form } from '../Form'
@@ -14,19 +15,12 @@ import { Input } from '../Input/Input/Input'
 import { useForm } from '../useForm'
 import * as validators from '../validators'
 
-interface UserData {
-  name: LocalizedString
-  email: EmailString
-  created_at: Date
-  updated_at: Date
-}
-
-interface UserUpdate extends UserData {
+interface UserUpdate extends Omit<User, 'taxes'> {
   newPassword: Option<NonEmptyString>
 }
 
 interface Props {
-  user: UserData
+  user: User
   onSubmit: (data: UserUpdate) => TaskEither<LocalizedString, unknown>
   onCancel: IO<void>
 }

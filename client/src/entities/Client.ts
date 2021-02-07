@@ -6,6 +6,7 @@ import {
 } from 'io-ts-types'
 import { unsafeLocalizedString } from '../a18n'
 import { EmailString, PositiveInteger } from '../globalDomain'
+import { User } from './User'
 
 export const ProvinceValues = {
   AG: unsafeLocalizedString('Agrigento'),
@@ -453,7 +454,8 @@ const ClientData = t.type(
   {
     id: PositiveInteger,
     created_at: DateFromISOString,
-    updated_at: DateFromISOString
+    updated_at: DateFromISOString,
+    user: User
   },
   'ClientData'
 )
