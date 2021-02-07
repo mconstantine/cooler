@@ -1,4 +1,5 @@
-import { option } from 'fp-ts'
+import { boolean, option } from 'fp-ts'
+import { pipe } from 'fp-ts/function'
 import { FC } from 'react'
 import { a18n, formatDuration, formatMoneyAmount } from '../../../a18n'
 import { Tax } from '../../../entities/Tax'
@@ -20,6 +21,7 @@ interface Props {
     balance: NonNegativeNumber
   }
   taxes: Tax[]
+  isProjectCashed: boolean
 }
 
 export const ProjectProgress: FC<Props> = props => {
@@ -28,30 +30,13 @@ export const ProjectProgress: FC<Props> = props => {
     props.data.actualWorkingHours
   )
 
-  const renderTaxItem = (
-    commonKey: string,
-    initialValue: number,
-    tax: Tax
-  ): ValuedItem => {
-    const taxedFraction = -(initialValue * tax.value)
-
-    return {
-      key: `${commonKey}${tax.label}`,
-      type: 'valued',
-      label: option.none,
-      content: tax.label,
-      description: option.none,
-      value: formatMoneyAmount(taxedFraction),
-      progress: option.none,
-      valueColor: 'danger',
-      size: 'small'
-    }
-  }
+  const remainingTime =
+    (props.data.expectedWorkingHours - props.data.actualWorkingHours) * 3600000
 
   return (
     <Panel title={a18n`Overall progress`} framed action={option.none}>
       <Body>
-        {a18n`Information about the amount of time you expect to work VS how much you already did, as well as the amount of money you will earn for this project`}
+        {a18n`Information about the amount of time you expect to work VS how much you already did, as well as the amount of money you will earn for this project (if it is not cashed)`}
       </Body>
 
       <List
@@ -82,11 +67,7 @@ export const ProjectProgress: FC<Props> = props => {
             label: option.none,
             description: option.none,
             content: a18n`Remaining time (hours)`,
-            value: formatDuration(
-              (props.data.expectedWorkingHours -
-                props.data.actualWorkingHours) *
-                3600000
-            )
+            value: formatDuration(remainingTime)
           },
           {
             key: 'progress',
@@ -100,57 +81,87 @@ export const ProjectProgress: FC<Props> = props => {
         ]}
       />
 
-      <List
-        heading={option.some(a18n`Money`)}
-        items={[
-          {
-            key: 'grossBudget',
-            type: 'valued',
-            progress: option.none,
-            label: option.none,
-            description: option.none,
-            content: a18n`Gross budget`,
-            value: formatMoneyAmount(props.data.budget)
-          },
-          ...props.taxes.map(tax =>
-            renderTaxItem('grossBudget', props.data.budget, tax)
-          ),
-          {
-            key: 'netBudget',
-            type: 'valued',
-            progress: option.none,
-            label: option.none,
-            description: option.none,
-            content: a18n`Net budget`,
-            value: formatMoneyAmount(
-              getNetValue(props.data.budget, props.taxes)
+      {pipe(
+        props.isProjectCashed,
+        boolean.fold(
+          () => {
+            const renderTaxItem = (
+              commonKey: string,
+              initialValue: number,
+              tax: Tax
+            ): ValuedItem => {
+              const taxedFraction = -(initialValue * tax.value)
+
+              return {
+                key: `${commonKey}${tax.label}`,
+                type: 'valued',
+                label: option.none,
+                content: tax.label,
+                description: option.none,
+                value: formatMoneyAmount(taxedFraction),
+                progress: option.none,
+                valueColor: 'danger',
+                size: 'small'
+              }
+            }
+
+            return (
+              <List
+                heading={option.some(a18n`Money`)}
+                items={[
+                  {
+                    key: 'grossBudget',
+                    type: 'valued',
+                    progress: option.none,
+                    label: option.none,
+                    description: option.none,
+                    content: a18n`Gross budget`,
+                    value: formatMoneyAmount(props.data.budget)
+                  },
+                  ...props.taxes.map(tax =>
+                    renderTaxItem('grossBudget', props.data.budget, tax)
+                  ),
+                  {
+                    key: 'netBudget',
+                    type: 'valued',
+                    progress: option.none,
+                    label: option.none,
+                    description: option.none,
+                    content: a18n`Net budget`,
+                    value: formatMoneyAmount(
+                      getNetValue(props.data.budget, props.taxes)
+                    )
+                  },
+                  {
+                    key: 'grossBalance',
+                    type: 'valued',
+                    progress: option.none,
+                    label: option.none,
+                    description: option.none,
+                    content: a18n`Gross balance`,
+                    value: formatMoneyAmount(props.data.balance)
+                  },
+                  ...props.taxes.map(tax =>
+                    renderTaxItem('grossBalance', props.data.budget, tax)
+                  ),
+                  {
+                    key: 'netBalance',
+                    type: 'valued',
+                    progress: option.none,
+                    label: option.none,
+                    description: option.none,
+                    content: a18n`Net balance`,
+                    value: formatMoneyAmount(
+                      getNetValue(props.data.balance, props.taxes)
+                    )
+                  }
+                ]}
+              />
             )
           },
-          {
-            key: 'grossBalance',
-            type: 'valued',
-            progress: option.none,
-            label: option.none,
-            description: option.none,
-            content: a18n`Gross balance`,
-            value: formatMoneyAmount(props.data.balance)
-          },
-          ...props.taxes.map(tax =>
-            renderTaxItem('grossBalance', props.data.budget, tax)
-          ),
-          {
-            key: 'netBalance',
-            type: 'valued',
-            progress: option.none,
-            label: option.none,
-            description: option.none,
-            content: a18n`Net balance`,
-            value: formatMoneyAmount(
-              getNetValue(props.data.balance, props.taxes)
-            )
-          }
-        ]}
-      />
+          () => null
+        )
+      )}
     </Panel>
   )
 }

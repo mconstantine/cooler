@@ -1,17 +1,19 @@
 import { Meta, Story } from '@storybook/react'
 import { task, taskEither } from 'fp-ts'
 import { pipe } from 'fp-ts/function'
+import { Reader } from 'fp-ts/Reader'
 import { ReaderTaskEither } from 'fp-ts/ReaderTaskEither'
 import { useState } from 'react'
 import { Content } from '../../../components/Content/Content'
 import { ProjectData as ProjectDataComponent } from '../../../components/Pages/Project/ProjectData'
 import { Project, ProjectCreationInput } from '../../../entities/Project'
-import { LocalizedString } from '../../../globalDomain'
+import { LocalizedString, PositiveInteger } from '../../../globalDomain'
 import { CoolerStory } from '../../CoolerStory'
 import { fakeProject, fakeClients, findClients } from '../../utils'
 
 interface Args {
-  onDelete: (project: Project) => unknown
+  onDelete: Reader<Project, unknown>
+  showClient: Reader<PositiveInteger, unknown>
 }
 
 const ProjectDataTemplate: Story<Args> = props => {
@@ -41,6 +43,7 @@ const ProjectDataTemplate: Story<Args> = props => {
           findClients={findClients}
           onChange={onProjectChange}
           onDelete={onDelete}
+          showClient={props.showClient}
         />
       </Content>
     </CoolerStory>
@@ -54,6 +57,9 @@ ProjectData.args = {}
 ProjectData.argTypes = {
   onDelete: {
     action: 'onDelete'
+  },
+  showClient: {
+    action: 'showClient'
   }
 }
 

@@ -1,5 +1,5 @@
 import { Meta, Story } from '@storybook/react'
-import { boolean, taskEither } from 'fp-ts'
+import { boolean, option, taskEither } from 'fp-ts'
 import { pipe } from 'fp-ts/function'
 import { IO } from 'fp-ts/IO'
 import { unsafeLocalizedString } from '../../a18n'
@@ -29,7 +29,9 @@ const ProjectCashDataFormTemplate: Story<Args> = props => {
     <CoolerStory>
       <Content>
         <ProjectCashDataFormComponent
-          data={fakeProject}
+          data={option.none}
+          budget={fakeProject.budget}
+          balance={fakeProject.balance}
           onSubmit={onSubmit}
           onCancel={props.onCancel}
         />

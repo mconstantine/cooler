@@ -1,14 +1,10 @@
 import { boolean, option, readerTaskEither } from 'fp-ts'
 import { pipe } from 'fp-ts/function'
+import { Reader } from 'fp-ts/Reader'
 import { ReaderTaskEither } from 'fp-ts/ReaderTaskEither'
 import { skull } from 'ionicons/icons'
 import { FC, useState } from 'react'
-import {
-  a18n,
-  formatDate,
-  formatDateTime,
-  formatMoneyAmount
-} from '../../../a18n'
+import { a18n, formatDateTime } from '../../../a18n'
 import { useDialog } from '../../../effects/useDialog'
 import { Project, ProjectCreationInput } from '../../../entities/Project'
 import { LocalizedString, PositiveInteger } from '../../../globalDomain'
@@ -28,6 +24,7 @@ interface Props {
     LocalizedString,
     Record<PositiveInteger, LocalizedString>
   >
+  showClient: Reader<PositiveInteger, unknown>
 }
 
 export const ProjectData: FC<Props> = props => {
@@ -70,29 +67,12 @@ export const ProjectData: FC<Props> = props => {
                 )
               ),
               {
-                type: 'readonly',
+                type: 'routed',
                 key: 'client',
                 label: option.some(a18n`Client`),
                 content: props.project.client.name,
-                description: option.none
-              },
-              {
-                type: 'readonly',
-                key: 'cashed',
-                label: option.some(a18n`Cashed`),
-                content: pipe(
-                  props.project.cashed,
-                  option.fold(
-                    () => a18n`No`,
-                    cashed => {
-                      const balance = formatMoneyAmount(cashed.balance)
-                      const date = formatDate(cashed.at)
-
-                      return a18n`${balance} on ${date}`
-                    }
-                  )
-                ),
-                description: option.none
+                description: option.none,
+                action: () => props.showClient(props.project.client.id)
               },
               {
                 type: 'readonly',

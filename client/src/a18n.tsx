@@ -107,21 +107,22 @@ export function formatDuration(
   durationMs: number,
   showSeconds = false
 ): LocalizedString {
-  const hours = Math.floor(durationMs / 3600000)
+  const duration = Math.abs(durationMs)
+  const hours = Math.floor(duration / 3600000)
 
   const minutes = showSeconds
-    ? Math.floor((durationMs - hours * 3600000) / 60000)
-    : Math.ceil((durationMs - hours * 3600000) / 60000)
+    ? Math.floor((duration - hours * 3600000) / 60000)
+    : Math.ceil((duration - hours * 3600000) / 60000)
 
   const secondsString = showSeconds
     ? ':' +
-      leadZero(
-        Math.ceil((durationMs - hours * 3600000 - minutes * 60000) / 1000)
-      )
+      leadZero(Math.ceil((duration - hours * 3600000 - minutes * 60000) / 1000))
     : ''
 
+  const sign = durationMs < 0 ? '-' : ''
+
   return unsafeLocalizedString(
-    `${leadZero(hours)}:${leadZero(minutes)}${secondsString}`
+    `${sign}${leadZero(hours)}:${leadZero(minutes)}${secondsString}`
   )
 }
 

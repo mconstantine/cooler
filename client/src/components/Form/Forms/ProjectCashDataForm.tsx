@@ -17,9 +17,12 @@ import { DateTimePicker } from '../Input/DateTimePicker/DateTimePicker'
 import { Input } from '../Input/Input/Input'
 import { pipe } from 'fp-ts/function'
 import { option } from 'fp-ts'
+import { Option } from 'fp-ts/Option'
 
 interface Props {
-  data: Pick<Project, 'budget' | 'balance'>
+  data: Option<CashData>
+  budget: Project['budget']
+  balance: Project['balance']
   onSubmit: ReaderTaskEither<CashData, LocalizedString, unknown>
   onCancel: IO<void>
 }
@@ -53,9 +56,31 @@ export const ProjectCashDataForm: FC<Props> = props => {
   const { fieldProps, formError, submit, values, setValues } = useForm(
     {
       initialValues: {
-        type: 'balance' as CashBalanceType,
-        at: new Date(),
-        balance: props.data.balance.toString(10)
+        type: pipe(
+          props.data,
+          option.fold<CashData, CashBalanceType>(
+            () => 'balance',
+            data => {
+              if (data.balance === props.budget) {
+                return 'budget'
+              } else if (data.balance === props.balance) {
+                return 'balance'
+              } else {
+                return 'custom'
+              }
+            }
+          )
+        ),
+        at: pipe(
+          props.data,
+          option.map(data => data.at),
+          option.getOrElse(() => new Date())
+        ),
+        balance: pipe(
+          props.data,
+          option.map(data => data.balance.toString(10)),
+          option.getOrElse(() => props.balance.toString(10))
+        )
       },
       validators: () => ({
         balance: validators.fromCodec(
@@ -76,8 +101,8 @@ export const ProjectCashDataForm: FC<Props> = props => {
       balance: pipe(
         type,
         foldCashBalanceType(
-          () => props.data.budget.toString(10),
-          () => props.data.balance.toString(10),
+          () => props.budget.toString(10),
+          () => props.balance.toString(10),
           () => values.balance
         )
       )
