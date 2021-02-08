@@ -33,7 +33,8 @@ const HeadingTemplate: Story<Args> = props => {
             option.map(label => ({
               type: 'sync',
               label: unsafeLocalizedString(label),
-              action: constVoid
+              action: constVoid,
+              icon: option.none
             }))
           )}
         >

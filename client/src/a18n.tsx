@@ -99,7 +99,7 @@ export function formatDateTime(
   }) as LocalizedString
 }
 
-function leadZero(n: number): string {
+export function leadZero(n: number): string {
   return (n >= 0 && n < 10 ? '0' : '') + n
 }
 

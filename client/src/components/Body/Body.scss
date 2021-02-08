@@ -10,6 +10,10 @@
     max-width: $max-width-text;
   }
 
+  &.clickable {
+    cursor: pointer;
+  }
+
   &.primary {
     color: $color-primary-dark;
   }

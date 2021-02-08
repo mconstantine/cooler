@@ -55,6 +55,13 @@ interface SyncAction {
   color?: Color
 }
 
+interface IconAction {
+  type: 'icon'
+  icon: string
+  action: IO<void>
+  color?: Color
+}
+
 interface AsyncAction {
   type: 'async'
   label: LocalizedString
@@ -63,16 +70,19 @@ interface AsyncAction {
   color?: Color
 }
 
-export type HeadingAction = SyncAction | AsyncAction
+export type HeadingAction = SyncAction | IconAction | AsyncAction
 
 function foldHeadingAction<T>(
   whenSync: (action: SyncAction) => T,
+  whenIcon: (action: IconAction) => T,
   whenAsync: (action: AsyncAction) => T
 ): (action: HeadingAction) => T {
   return action => {
     switch (action.type) {
       case 'sync':
         return whenSync(action)
+      case 'icon':
+        return whenIcon(action)
       case 'async':
         return whenAsync(action)
     }
@@ -99,6 +109,14 @@ export const Heading: FC<Props> = props => {
           <Button
             type="button"
             label={action.label}
+            icon={action.icon}
+            color={action.color}
+            action={action.action}
+          />
+        ),
+        action => (
+          <Button
+            type="iconButton"
             icon={action.icon}
             color={action.color}
             action={action.action}
