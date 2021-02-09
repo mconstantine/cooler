@@ -33,6 +33,7 @@ import { Modal } from '../../Modal/Modal'
 import { Heading } from '../../Heading/Heading'
 import { List } from '../../List/List'
 import { close } from 'ionicons/icons'
+import { IO } from 'fp-ts/IO'
 
 export interface SingleTaskFormData extends TaskCreationInput {
   shouldRepeat: true
@@ -51,17 +52,17 @@ interface CommonProps {
       input: string
     ) => TaskEither<LocalizedString, Record<PositiveInteger, LocalizedString>>
   >
-  onSubmit: (
-    data: TaskCreationInput | TasksBatchCreationInput
-  ) => TaskEither<LocalizedString, unknown>
+  onCancel: IO<void>
 }
 
 interface AddModeProps extends CommonProps {
   mode: 'add'
+  onSubmit: (data: FormData) => TaskEither<LocalizedString, unknown>
 }
 
 interface EditModeProps extends CommonProps {
   mode: 'edit'
+  onSubmit: (data: SingleTaskFormData) => TaskEither<LocalizedString, unknown>
 }
 
 type Props = AddModeProps | EditModeProps
@@ -107,7 +108,12 @@ export const TaskForm: FC<Props> = props => {
           expectedWorkingHours: task.expectedWorkingHours.toString(10),
           hourlyCost: task.hourlyCost.toString(10),
           shouldRepeat: false,
-          project: toSelectState({}, option.some(task.project.id)),
+          project: toSelectState(
+            {
+              [task.project.id]: task.project.name
+            },
+            option.some(task.project.id)
+          ),
           from: task.start_time,
           to: task.start_time,
           repeat: 0 as NonNegativeInteger
@@ -148,35 +154,29 @@ export const TaskForm: FC<Props> = props => {
     {
       onSubmit: data =>
         pipe(
-          data as FormData,
-          foldFormData(
-            data =>
-              props.onSubmit({
-                name: data.name,
-                expectedWorkingHours: data.expectedWorkingHours,
-                hourlyCost: data.hourlyCost,
-                project: data.project,
-                start_time: data.start_time,
-                description: data.description
-              }),
-            data =>
-              props.onSubmit({
-                name: data.name,
-                expectedWorkingHours: data.expectedWorkingHours,
-                hourlyCost: data.hourlyCost,
-                project: data.project,
-                start_time: data.start_time,
-                repeat: data.repeat,
-                from: data.from,
-                to: data.to
-              })
+          props,
+          foldFormMode(
+            props => props.onSubmit(data as FormData),
+            props => props.onSubmit(data as SingleTaskFormData)
           )
         )
     }
   )
 
   return (
-    <Form title={a18n`New Task`} formError={formError} submit={submit}>
+    <Form
+      title={a18n`New Task`}
+      formError={formError}
+      submit={submit}
+      additionalButtons={[
+        {
+          type: 'button',
+          label: a18n`Cancel`,
+          action: props.onCancel,
+          icon: option.none
+        }
+      ]}
+    >
       {pipe(
         props.findProjects,
         option.fold(constNull, findProjects => (

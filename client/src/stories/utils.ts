@@ -3,6 +3,7 @@ import { pipe } from 'fp-ts/function'
 import { TaskEither } from 'fp-ts/TaskEither'
 import { unsafeLocalizedString } from '../a18n'
 import { Project } from '../entities/Project'
+import { Task } from '../entities/Task'
 import { Tax } from '../entities/Tax'
 import {
   LocalizedString,
@@ -133,6 +134,22 @@ export const findTasks = (
     task.delay(500),
     taskEither.rightTask
   )
+}
+
+export const fakeTask: Task = {
+  id: unsafePositiveInteger(2),
+  name: unsafeLocalizedString('Some Task'),
+  description: option.some(
+    unsafeLocalizedString(
+      'Lorem ipsum dolor sit amet consectetur adipisicing elit. Iusto ad consequatur provident praesentium quasi vel nostrum. Rem non molestiae animi fugiat, voluptas rerum quia facilis.'
+    )
+  ),
+  expectedWorkingHours: unsafeNonNegativeNumber(8),
+  hourlyCost: unsafeNonNegativeNumber(15),
+  start_time: new Date(2020, 8, 20, 9, 30),
+  project: fakeProjects[0],
+  created_at: new Date(2020, 8, 20, 9, 30),
+  updated_at: new Date(2021, 0, 1, 15, 45)
 }
 
 export const fakeTaxes: Tax[] = [

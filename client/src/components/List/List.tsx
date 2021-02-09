@@ -21,6 +21,7 @@ import './List.scss'
 import { chevronForwardOutline } from 'ionicons/icons'
 import { Heading } from '../Heading/Heading'
 import { Body } from '../Body/Body'
+import { IO } from 'fp-ts/IO'
 
 type Position = 'start' | 'end'
 type Size = 'default' | 'small'
@@ -63,7 +64,7 @@ export interface ReadonlyItemWithIcon extends CommonItemProps {
 export interface RoutedItem extends CommonItemProps {
   type: 'routed'
   details?: boolean
-  action: () => unknown
+  action: IO<unknown>
 }
 
 export interface RoutedItemWithIcon extends CommonItemProps {
@@ -71,7 +72,7 @@ export interface RoutedItemWithIcon extends CommonItemProps {
   icon: string
   iconColor: Color
   details?: boolean
-  action: () => unknown
+  action: IO<unknown>
 }
 
 export interface ValuedItem extends CommonItemProps {
