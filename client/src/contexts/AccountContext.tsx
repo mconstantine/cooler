@@ -97,12 +97,12 @@ function reducer(state: Account, action: Action): Account {
 }
 
 interface AccountContext {
-  state: Account
+  account: Account
   dispatch: Reader<Action, void>
 }
 
 const AccountContext = createContext<AccountContext>({
-  state: {
+  account: {
     type: 'anonymous'
   },
   dispatch: constVoid
@@ -124,7 +124,7 @@ export const AccountProvider: FC = props => {
   }, [state, writeStorage])
 
   return (
-    <AccountContext.Provider value={{ state, dispatch }}>
+    <AccountContext.Provider value={{ account: state, dispatch }}>
       {props.children}
     </AccountContext.Provider>
   )

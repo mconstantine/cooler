@@ -1,5 +1,6 @@
 import { either, option } from 'fp-ts'
 import { identity, pipe } from 'fp-ts/function'
+import { Either } from 'fp-ts/Either'
 import { Option } from 'fp-ts/Option'
 import { Account } from '../contexts/AccountContext'
 import { Theme } from '../contexts/ThemeContext'
@@ -17,7 +18,7 @@ function storageValueToString<K extends keyof StorageMap>(
     case 'theme':
       return value as Theme
     case 'account':
-      return JSON.stringify(Account.encode(value as Account))
+      return pipe(value as Account, Account.encode, JSON.stringify)
     default:
       throw new Error(`Called writeStorage with unknown key "${key}"`)
   }
@@ -34,8 +35,8 @@ function stringToStorageValue<K extends keyof StorageMap>(
       >
     case 'account':
       return pipe(
-        either.tryCatch(() => JSON.parse(value), identity),
-        either.map(Account.decode),
+        either.tryCatch(() => JSON.parse(value), identity) as Either<any, any>,
+        either.chain(Account.decode),
         option.fromEither
       ) as Option<StorageMap[K]>
     default:
