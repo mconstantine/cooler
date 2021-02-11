@@ -3,7 +3,6 @@ import { ThemeProvider } from './contexts/ThemeContext'
 import { Cooler } from './components/Cooler/Cooler'
 import { foldLocation, Router } from './components/Router'
 import { LoadingBlock } from './components/Loading/LoadingBlock'
-import './App.scss'
 
 const ProfilePage = lazy(() => import('./components/Pages/Profile/ProfilePage'))
 const ClientsPage = lazy(() => import('./components/Pages/Client/ClientsPage'))

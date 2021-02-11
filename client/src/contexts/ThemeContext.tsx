@@ -41,6 +41,8 @@ export const ThemeProvider: FC = props => {
   )
 
   useEffect(() => {
+    window.document.body.classList.remove('dark', 'light')
+    window.document.body.classList.add(theme)
     writeStorage('theme', theme)
   }, [theme, writeStorage])
 
