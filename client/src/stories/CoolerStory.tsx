@@ -1,10 +1,23 @@
-import { FC } from 'react'
+import { FC, useEffect } from 'react'
 import { useDarkMode } from 'storybook-dark-mode'
+import { ThemeProvider, useTheme } from '../components/contexts/ThemeContext'
 import { Cooler } from '../components/Cooler/Cooler'
 
-export const CoolerStory: FC = ({ children }) => {
+const CoolerStoryThemeConsumer: FC = props => {
   const isDarkMode = useDarkMode()
-  const theme = isDarkMode ? 'dark' : 'light'
+  const { setTheme } = useTheme()
 
-  return <Cooler theme={theme}>{children}</Cooler>
+  useEffect(() => {
+    setTheme(isDarkMode ? 'dark' : 'light')
+  }, [isDarkMode, setTheme])
+
+  return <Cooler>{props.children}</Cooler>
+}
+
+export const CoolerStory: FC = props => {
+  return (
+    <ThemeProvider>
+      <CoolerStoryThemeConsumer>{props.children}</CoolerStoryThemeConsumer>
+    </ThemeProvider>
+  )
 }

@@ -1,0 +1,13 @@
+@import '../../variables';
+
+.Menu {
+  background-color: $color-grey-soft-dark;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  @include ss('padding', $spacing-medium-mobile, $spacing-medium-desktop);
+}
+
+.light .Menu {
+  background-color: $color-grey-soft-light;
+}
