@@ -1,6 +1,6 @@
 import { FC, useEffect } from 'react'
 import { useDarkMode } from 'storybook-dark-mode'
-import { ThemeProvider, useTheme } from '../components/contexts/ThemeContext'
+import { ThemeProvider, useTheme } from '../contexts/ThemeContext'
 import { Cooler } from '../components/Cooler/Cooler'
 
 const CoolerStoryThemeConsumer: FC = props => {

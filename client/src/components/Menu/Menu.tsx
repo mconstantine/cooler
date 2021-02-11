@@ -5,7 +5,7 @@ import { FC } from 'react'
 import { a18n } from '../../a18n'
 import { Button } from '../Button/Button/Button'
 import { Buttons } from '../Button/Buttons/Buttons'
-import { foldTheme, useTheme } from '../contexts/ThemeContext'
+import { foldTheme, useTheme } from '../../contexts/ThemeContext'
 import './Menu.scss'
 
 interface Props {}

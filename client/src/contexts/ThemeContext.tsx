@@ -1,8 +1,10 @@
-import { constVoid } from 'fp-ts/lib/function'
+import { option } from 'fp-ts'
+import { constVoid, pipe } from 'fp-ts/function'
 import { Reader } from 'fp-ts/Reader'
-import { createContext, FC, useContext, useState } from 'react'
+import { createContext, FC, useContext, useEffect, useState } from 'react'
+import { useStorage } from '../effects/useStorage'
 
-type Theme = 'light' | 'dark'
+export type Theme = 'light' | 'dark'
 
 export function foldTheme<T>(
   whenLight: () => T,
@@ -29,7 +31,18 @@ const ThemeContext = createContext<ThemeContext>({
 })
 
 export const ThemeProvider: FC = props => {
-  const [theme, setTheme] = useState<Theme>('dark')
+  const { readStorage, writeStorage } = useStorage()
+
+  const [theme, setTheme] = useState<Theme>(
+    pipe(
+      readStorage('theme'),
+      option.getOrElse<Theme>(() => 'dark')
+    )
+  )
+
+  useEffect(() => {
+    writeStorage('theme', theme)
+  }, [theme])
 
   return (
     <ThemeContext.Provider value={{ theme, setTheme }}>

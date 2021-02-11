@@ -1,5 +1,5 @@
 import { FC } from 'react'
-import { ThemeProvider } from './components/contexts/ThemeContext'
+import { ThemeProvider } from './contexts/ThemeContext'
 import { Cooler } from './components/Cooler/Cooler'
 import { Menu } from './components/Menu/Menu'
 

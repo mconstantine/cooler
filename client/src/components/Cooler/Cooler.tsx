@@ -1,6 +1,6 @@
 import { FC } from 'react'
 import '../../index.scss'
-import { useTheme } from '../contexts/ThemeContext'
+import { useTheme } from '../../contexts/ThemeContext'
 
 interface Props {}
 
