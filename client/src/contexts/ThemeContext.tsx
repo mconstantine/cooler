@@ -42,7 +42,7 @@ export const ThemeProvider: FC = props => {
 
   useEffect(() => {
     writeStorage('theme', theme)
-  }, [theme])
+  }, [theme, writeStorage])
 
   return (
     <ThemeContext.Provider value={{ theme, setTheme }}>

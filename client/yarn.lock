@@ -7098,6 +7098,11 @@ forwarded@~0.1.2:
   resolved "https://registry.yarnpkg.com/forwarded/-/forwarded-0.1.2.tgz#98c23dab1175657b8c0573e8ceccd91b0ff18c84"
   integrity sha1-mMI9qxF1ZXuMBXPozszZGw/xjIQ=
 
+fp-ts-routing@^0.5.4:
+  version "0.5.4"
+  resolved "https://registry.yarnpkg.com/fp-ts-routing/-/fp-ts-routing-0.5.4.tgz#5bcffcd4701a5cc50dc7c936f7e6eda923e8e3d0"
+  integrity sha512-M/gWge52Kk/8RkOblFMu4k6Ddljx9JCLOsSclurra+RJDnY4i/eUT74nEHRT0X/kzn6zsKQa5rCvUmcO7L8wuw==
+
 fp-ts@^2.9.1:
   version "2.9.3"
   resolved "https://registry.yarnpkg.com/fp-ts/-/fp-ts-2.9.3.tgz#419b9103018ddf7c785acf2b3fecb2662afab5af"
