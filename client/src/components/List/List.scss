@@ -36,6 +36,7 @@
 
     &.withProgress {
       border: 1px solid #fff;
+      border-radius: $border-radius-medium;
 
       &.primary {
         border-color: $color-primary-dark;

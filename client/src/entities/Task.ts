@@ -22,6 +22,7 @@ export const Task = t.type(
     name: LocalizedString,
     description: optionFromNullable(LocalizedString),
     expectedWorkingHours: NonNegativeNumber,
+    actualWorkingHours: NonNegativeNumber,
     hourlyCost: NonNegativeNumber,
     project: Project,
     start_time: DateFromISOString,

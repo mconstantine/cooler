@@ -145,6 +145,7 @@ export const fakeTask: Task = {
     )
   ),
   expectedWorkingHours: unsafeNonNegativeNumber(8),
+  actualWorkingHours: unsafeNonNegativeNumber(6),
   hourlyCost: unsafeNonNegativeNumber(15),
   start_time: new Date(2020, 8, 20, 9, 30),
   project: fakeProjects[0],
