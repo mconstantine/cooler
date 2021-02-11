@@ -3,8 +3,16 @@ import { constVoid, pipe } from 'fp-ts/function'
 import { Reader } from 'fp-ts/Reader'
 import { createContext, FC, useContext, useEffect, useState } from 'react'
 import { useStorage } from '../effects/useStorage'
+import * as t from 'io-ts'
 
-export type Theme = 'light' | 'dark'
+export const Theme = t.keyof(
+  {
+    light: true,
+    dark: true
+  },
+  'Theme'
+)
+export type Theme = t.TypeOf<typeof Theme>
 
 export function foldTheme<T>(
   whenLight: () => T,

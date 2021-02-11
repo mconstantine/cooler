@@ -1,10 +1,12 @@
-import { option } from 'fp-ts'
-import { pipe } from 'fp-ts/function'
+import { either, option } from 'fp-ts'
+import { identity, pipe } from 'fp-ts/function'
 import { Option } from 'fp-ts/Option'
+import { Account } from '../contexts/AccountContext'
 import { Theme } from '../contexts/ThemeContext'
 
 interface StorageMap {
   theme: Theme
+  account: Account
 }
 
 function storageValueToString<K extends keyof StorageMap>(
@@ -13,7 +15,9 @@ function storageValueToString<K extends keyof StorageMap>(
 ): string {
   switch (key) {
     case 'theme':
-      return value
+      return value as Theme
+    case 'account':
+      return JSON.stringify(Account.encode(value as Account))
     default:
       throw new Error(`Called writeStorage with unknown key "${key}"`)
   }
@@ -22,10 +26,18 @@ function storageValueToString<K extends keyof StorageMap>(
 function stringToStorageValue<K extends keyof StorageMap>(
   key: K,
   value: string
-): StorageMap[K] {
+): Option<StorageMap[K]> {
   switch (key) {
     case 'theme':
-      return value as Theme
+      return pipe(Theme.decode(value), option.fromEither) as Option<
+        StorageMap[K]
+      >
+    case 'account':
+      return pipe(
+        either.tryCatch(() => JSON.parse(value), identity),
+        either.map(Account.decode),
+        option.fromEither
+      ) as Option<StorageMap[K]>
     default:
       throw new Error(`Called readStorage with unknown key "${key}"`)
   }
@@ -45,7 +57,7 @@ function getStorageValue<K extends keyof StorageMap>(
   return pipe(
     window.localStorage.getItem(key),
     option.fromNullable,
-    option.map(value => stringToStorageValue(key, value))
+    option.chain(value => stringToStorageValue(key, value))
   )
 }
 
