@@ -4,15 +4,18 @@ import { useState } from 'react'
 import { unsafeLocalizedString } from '../../../a18n'
 import { Content } from '../../../components/Content/Content'
 import { UserData as UserDataComponent } from '../../../components/Pages/Profile/UserData'
+import { User } from '../../../entities/User'
 import { unsafeEmailString } from '../../../globalDomain'
 import { CoolerStory } from '../../CoolerStory'
+import { fakeTaxes } from '../../utils'
 
 const UserDataTemplate: Story = ({ onDeleteProfile, onLogout }) => {
-  const [state, setState] = useState({
+  const [state, setState] = useState<User>({
     name: unsafeLocalizedString('John Doe'),
     email: unsafeEmailString('john.doe@example.com'),
     created_at: new Date(2020, 11, 25),
-    updated_at: new Date(2021, 0, 1)
+    updated_at: new Date(2021, 0, 1),
+    taxes: fakeTaxes
   })
 
   return (
@@ -22,10 +25,11 @@ const UserDataTemplate: Story = ({ onDeleteProfile, onLogout }) => {
           user={state}
           onDataChange={data =>
             taskEither.fromIO(() =>
-              setState({
+              setState(user => ({
+                ...user,
                 ...data,
                 updated_at: new Date()
-              })
+              }))
             )
           }
           onDeleteProfile={taskEither.fromIO(onDeleteProfile)}

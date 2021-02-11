@@ -1,6 +1,6 @@
 import { Meta, Story } from '@storybook/react'
 import { boolean, option, taskEither } from 'fp-ts'
-import { pipe } from 'fp-ts/function'
+import { constVoid, pipe } from 'fp-ts/function'
 import { unsafeLocalizedString } from '../../a18n'
 import { Content } from '../../components/Content/Content'
 import { TaskForm as TaskFormComponent } from '../../components/Form/Forms/TaskForm'
@@ -41,6 +41,7 @@ const TaskFormTemplate: Story<Args> = props => {
           task={option.none}
           findProjects={option.some(findProjects)}
           onSubmit={onSubmit}
+          onCancel={constVoid}
         />
       </Content>
     </CoolerStory>

@@ -158,7 +158,7 @@ function isValidFiscalCode(fiscalCode: string): boolean {
   return lastChar === checkChar
 }
 
-export const fiscalCodeLinter: Linter = input =>
+export const fiscalCodeLinter: Linter<string> = input =>
   pipe(
     isValidFiscalCode(input),
     boolean.fold(
@@ -200,7 +200,7 @@ function isValidVATNumber(input: string) {
   return c === parseInt(input[10])
 }
 
-export const vatNumberLinter: Linter = input =>
+export const vatNumberLinter: Linter<string> = input =>
   pipe(
     isValidVATNumber(input),
     boolean.fold(

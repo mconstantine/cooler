@@ -4,7 +4,7 @@ import { TaskEither } from 'fp-ts/TaskEither'
 import { NonEmptyString } from 'io-ts-types'
 import { FC, useState } from 'react'
 import { a18n, formatDateTime } from '../../../a18n'
-import { EmailString, LocalizedString } from '../../../globalDomain'
+import { LocalizedString } from '../../../globalDomain'
 import { Option } from 'fp-ts/Option'
 import { Panel } from '../../Panel/Panel'
 import { List } from '../../List/List'
@@ -14,20 +14,15 @@ import { LoadingButton } from '../../Button/LoadingButton/LoadingButton'
 import { skull } from 'ionicons/icons'
 import { UserForm } from '../../Form/Forms/UserForm'
 import { useDialog } from '../../../effects/useDialog'
+import { User } from '../../../entities/User'
 
-interface UserData {
-  name: LocalizedString
-  email: EmailString
-  created_at: Date
-  updated_at: Date
-}
-
-interface UserUpdate extends UserData {
+interface UserUpdate
+  extends Pick<User, 'name' | 'email' | 'created_at' | 'updated_at'> {
   newPassword: Option<NonEmptyString>
 }
 
 interface Props {
-  user: UserData
+  user: User
   onDataChange: (data: UserUpdate) => TaskEither<LocalizedString, unknown>
   onLogout: () => void
   onDeleteProfile: TaskEither<LocalizedString, unknown>

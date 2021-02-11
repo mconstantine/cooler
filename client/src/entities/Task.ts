@@ -1,9 +1,5 @@
 import * as t from 'io-ts'
-import {
-  DateFromISOString,
-  NonEmptyString,
-  optionFromNullable
-} from 'io-ts-types'
+import { DateFromISOString, optionFromNullable } from 'io-ts-types'
 import {
   LocalizedString,
   NonNegativeInteger,
