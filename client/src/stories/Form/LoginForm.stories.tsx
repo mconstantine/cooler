@@ -5,16 +5,12 @@ import { unsafeLocalizedString } from '../../a18n'
 import { Content } from '../../components/Content/Content'
 import {
   LoginForm as LoginFormComponent,
-  FormData,
-  RegistrationData,
-  LoginData,
-  foldFormData
+  FormData
 } from '../../components/Form/Forms/LoginForm'
 import { CoolerStory } from '../CoolerStory'
 
 interface Args {
-  onRegister: (data: RegistrationData) => void
-  onLogin: (data: LoginData) => void
+  onLogin: (data: FormData) => void
   shouldFail: boolean
 }
 
@@ -23,10 +19,7 @@ const LoginFormTemplate: Story<Args> = props => {
     pipe(
       props.shouldFail,
       boolean.fold(
-        () =>
-          taskEither.rightIO(() =>
-            pipe(data, foldFormData(props.onRegister, props.onLogin))
-          ),
+        () => taskEither.rightIO(() => props.onLogin(data)),
         () => taskEither.left(unsafeLocalizedString("I'm an error!"))
       )
     )
@@ -52,7 +45,6 @@ LoginForm.argTypes = {
     control: 'boolean',
     description: 'Set this to true to make the form submission fail'
   },
-  onRegister: { action: 'registered' },
   onLogin: { action: 'logged in' }
 }
 
