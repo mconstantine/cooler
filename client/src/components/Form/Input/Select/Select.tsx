@@ -4,7 +4,6 @@ import {
   constTrue,
   constUndefined,
   constVoid,
-  flow,
   identity,
   pipe
 } from 'fp-ts/function'
@@ -268,36 +267,32 @@ export const Select: Select = forwardRef(
           const items = Object.keys(options)
 
           setHighlightedItem(
-            flow(
-              option.fold(
-                () => pipe(items[0], option.fromNullable),
-                highlightedItem =>
-                  pipe(
-                    items,
-                    array.findIndex(key => key === highlightedItem),
-                    option.map(n => n + 1),
-                    option.map(n => items[n]),
-                    option.map(key => key || items[0])
-                  )
-              )
+            option.fold(
+              () => pipe(items[0], option.fromNullable),
+              highlightedItem =>
+                pipe(
+                  items,
+                  array.findIndex(key => key === highlightedItem),
+                  option.map(n => n + 1),
+                  option.map(n => items[n]),
+                  option.map(key => key || items[0])
+                )
             )
           )
         } else if (e.code === 'ArrowUp') {
           const items = Object.keys(options)
 
           setHighlightedItem(
-            flow(
-              option.fold(
-                () => pipe(items[items.length - 1], option.fromNullable),
-                highlightedItem =>
-                  pipe(
-                    items,
-                    array.findIndex(key => key === highlightedItem),
-                    option.map(n => n - 1),
-                    option.map(n => items[n]),
-                    option.map(key => key || items[items.length - 1])
-                  )
-              )
+            option.fold(
+              () => pipe(items[items.length - 1], option.fromNullable),
+              highlightedItem =>
+                pipe(
+                  items,
+                  array.findIndex(key => key === highlightedItem),
+                  option.map(n => n - 1),
+                  option.map(n => items[n]),
+                  option.map(key => key || items[items.length - 1])
+                )
             )
           )
         }

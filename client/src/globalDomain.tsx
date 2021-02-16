@@ -225,7 +225,7 @@ export const OptionFromEmptyString: t.Type<
     NonEmptyString.decode,
     either.fold(() => t.success(option.none), flow(option.some, t.success))
   ),
-  flow(option.fold(() => '', identity))
+  option.fold(() => '', identity)
 )
 
 function NumberHigherThan<T extends number>(

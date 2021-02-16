@@ -1,8 +1,11 @@
 import { end, format, lit, parse, Route, zero } from 'fp-ts-routing'
 import { Reader } from 'fp-ts/Reader'
 import { IO } from 'fp-ts/IO'
-import { createContext, FC, useContext, useEffect, useState } from 'react'
+import { createContext, FC, lazy, useContext, useEffect, useState } from 'react'
 import { constVoid, pipe } from 'fp-ts/function'
+import { foldAccount, useAccount } from '../contexts/AccountContext'
+
+const LoginPage = lazy(() => import('./Pages/Login/LoginPage'))
 
 interface Home {
   readonly _tag: 'Home'
@@ -102,6 +105,7 @@ const LocationContext = createContext<LocationContext>({
 
 export const Router: FC<Props> = props => {
   const [location, setLocation] = useState<Location>(parseCurrentPath())
+  const { account } = useAccount()
 
   useEffect(() => {
     const onRouteChange = () => {
@@ -117,7 +121,13 @@ export const Router: FC<Props> = props => {
 
   return (
     <LocationContext.Provider value={{ location, setLocation }}>
-      {props.render(location)}
+      {pipe(
+        account,
+        foldAccount(
+          () => <LoginPage />,
+          () => props.render(location)
+        )
+      )}
     </LocationContext.Provider>
   )
 }
