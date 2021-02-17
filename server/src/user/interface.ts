@@ -1,5 +1,9 @@
 import * as t from 'io-ts'
-import { DateFromISOString, NonEmptyString } from 'io-ts-types'
+import {
+  DateFromISOString,
+  NonEmptyString,
+  optionFromNullable
+} from 'io-ts-types'
 import { DateFromSQLDate, EmailString, PositiveInteger } from '../misc/Types'
 
 export const User = t.type(
@@ -98,7 +102,7 @@ export const UserUpdateInput = t.partial(
   {
     name: NonEmptyString,
     email: EmailString,
-    password: NonEmptyString
+    password: optionFromNullable(NonEmptyString)
   },
   'UserUpdateInput'
 )

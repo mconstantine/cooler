@@ -16,7 +16,7 @@ import { removeUndefined } from '../misc/removeUndefined'
 import { NonEmptyString } from 'io-ts-types'
 import { Option } from 'fp-ts/Option'
 import { boolean, option, taskEither } from 'fp-ts'
-import { constUndefined, pipe } from 'fp-ts/function'
+import { pipe } from 'fp-ts/function'
 import { coolerError, PositiveInteger } from '../misc/Types'
 import { TaskEither } from 'fp-ts/TaskEither'
 import {
@@ -184,11 +184,12 @@ export function updateUser(
       const args: UserUpdateInput = removeUndefined({
         name,
         email,
-        password: pipe(
-          password,
-          option.fromNullable,
-          option.fold(constUndefined, p => hashSync(p, 10) as NonEmptyString)
-        )
+        password: option.isSome(password || option.none)
+          ? pipe(
+              password as option.Some<NonEmptyString>,
+              option.map(p => hashSync(p, 10) as NonEmptyString)
+            )
+          : undefined
       })
 
       return updateDatabaseUser(user.id, args)
