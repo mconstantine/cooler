@@ -8,7 +8,8 @@ import { Body } from '../components/Body/Body'
 import { Content } from '../components/Content/Content'
 import { HeadingAction } from '../components/Heading/Heading'
 import { Panel as PanelComponent } from '../components/Panel/Panel'
-import { LocalizedString } from '../globalDomain'
+import { Color, LocalizedString } from '../globalDomain'
+import { colorControl } from './args'
 import { CoolerStory } from './CoolerStory'
 
 interface Args {
@@ -16,6 +17,7 @@ interface Args {
   framed: boolean
   actionLabel: LocalizedString
   actionIcon: boolean
+  color: Color
 }
 
 const PanelTemplate: Story<Args> = props => (
@@ -24,6 +26,7 @@ const PanelTemplate: Story<Args> = props => (
       <PanelComponent
         title={props.title}
         framed={props.framed}
+        color={props.color}
         action={option.some(
           pipe(
             props.actionLabel,
@@ -67,7 +70,8 @@ Panel.args = {
   title: unsafeLocalizedString('Title'),
   framed: true,
   actionLabel: unsafeLocalizedString('Action'),
-  actionIcon: true
+  actionIcon: true,
+  color: 'default'
 }
 
 Panel.argTypes = {
@@ -86,6 +90,10 @@ Panel.argTypes = {
   actionIcon: {
     name: 'Action icon',
     control: 'boolean'
+  },
+  color: {
+    name: 'Color',
+    control: colorControl
   }
 }
 

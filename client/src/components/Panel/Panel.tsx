@@ -1,6 +1,6 @@
 import { Option } from 'fp-ts/Option'
 import { FC } from 'react'
-import { LocalizedString } from '../../globalDomain'
+import { Color, LocalizedString } from '../../globalDomain'
 import { composeClassName } from '../../misc/composeClassName'
 import { HeadingAction, Heading } from '../Heading/Heading'
 import './Panel.scss'
@@ -10,17 +10,20 @@ interface Props {
   framed?: boolean
   className?: string
   action: Option<HeadingAction>
+  color?: Color
 }
 
 export const Panel: FC<Props> = props => {
   const framedClassName = props.framed ? 'framed' : ''
+  const colorClassName = props.color || 'default'
 
   return (
     <div
       className={composeClassName(
         'Panel',
         props.className || '',
-        framedClassName
+        framedClassName,
+        colorClassName
       )}
     >
       {props.title ? (
