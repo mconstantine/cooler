@@ -60,11 +60,25 @@ export const localizedMonthNames: Record<Month, LocalizedString> = {
   11: december as LocalizedString
 }
 
+function addTimezone(date: Date): Date {
+  return new Date(
+    Date.UTC(
+      date.getFullYear(),
+      date.getMonth(),
+      date.getDate(),
+      date.getHours(),
+      date.getMinutes(),
+      date.getSeconds(),
+      date.getMilliseconds()
+    )
+  )
+}
+
 export function formatDate(
   date: Date,
   options: Intl.DateTimeFormatOptions = {}
 ): LocalizedString {
-  return date.toLocaleDateString(a18n.getLocale(), {
+  return addTimezone(date).toLocaleDateString(a18n.getLocale(), {
     weekday: 'short',
     day: 'numeric',
     month: 'short',
@@ -77,7 +91,7 @@ export function formatTime(
   date: Date,
   options: Intl.DateTimeFormatOptions = {}
 ): LocalizedString {
-  return date.toLocaleTimeString(a18n.getLocale(), {
+  return addTimezone(date).toLocaleTimeString(a18n.getLocale(), {
     hour: 'numeric',
     minute: 'numeric',
     ...options
@@ -88,7 +102,7 @@ export function formatDateTime(
   date: Date,
   options: Intl.DateTimeFormatOptions = {}
 ): LocalizedString {
-  return date.toLocaleDateString(a18n.getLocale(), {
+  return addTimezone(date).toLocaleDateString(a18n.getLocale(), {
     weekday: 'short',
     day: 'numeric',
     month: 'short',
