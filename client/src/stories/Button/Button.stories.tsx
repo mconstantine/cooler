@@ -1,7 +1,6 @@
 import { Meta, Story } from '@storybook/react'
 import { boolean, option } from 'fp-ts'
-import { constVoid } from 'fp-ts/function'
-import { pipe } from 'fp-ts/lib/pipeable'
+import { constVoid, pipe } from 'fp-ts/function'
 import { star } from 'ionicons/icons'
 import { unsafeLocalizedString } from '../../a18n'
 import { Button as ButtonComponent } from '../../components/Button/Button/Button'

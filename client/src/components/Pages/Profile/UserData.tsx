@@ -15,16 +15,18 @@ import { skull } from 'ionicons/icons'
 import { UserForm } from '../../Form/Forms/UserForm'
 import { useDialog } from '../../../effects/useDialog'
 import { User } from '../../../entities/User'
+import { ReaderTaskEither } from 'fp-ts/ReaderTaskEither'
+import { IO } from 'fp-ts/IO'
 
-interface UserUpdate
+export interface UserUpdate
   extends Pick<User, 'name' | 'email' | 'created_at' | 'updated_at'> {
   newPassword: Option<NonEmptyString>
 }
 
 interface Props {
   user: User
-  onDataChange: (data: UserUpdate) => TaskEither<LocalizedString, unknown>
-  onLogout: () => void
+  onDataChange: ReaderTaskEither<UserUpdate, LocalizedString, unknown>
+  onLogout: IO<void>
   onDeleteProfile: TaskEither<LocalizedString, unknown>
 }
 

@@ -1,6 +1,6 @@
 import { Meta, Story } from '@storybook/react'
 import { array, boolean, task, taskEither } from 'fp-ts'
-import { flow, pipe } from 'fp-ts/function'
+import { pipe } from 'fp-ts/function'
 import { ReaderTaskEither } from 'fp-ts/ReaderTaskEither'
 import { useState } from 'react'
 import { unsafeLocalizedString } from '../../../a18n'
@@ -44,14 +44,12 @@ const TaxesListFormTemplate: Story<Args> = props => {
 
   const updateTax = (target: Tax) => {
     setTaxes(
-      flow(
-        array.map(tax =>
-          pipe(
-            eqTax.equals(tax, target),
-            boolean.fold(
-              () => tax,
-              () => target
-            )
+      array.map(tax =>
+        pipe(
+          eqTax.equals(tax, target),
+          boolean.fold(
+            () => tax,
+            () => target
           )
         )
       )

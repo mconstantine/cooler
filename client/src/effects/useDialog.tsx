@@ -114,6 +114,7 @@ export function useDialog<I, E, O>(
         input
       })
 
+      // eslint-disable-next-line
       resolution.current = option.some(result => {
         resolution.current = option.none
 

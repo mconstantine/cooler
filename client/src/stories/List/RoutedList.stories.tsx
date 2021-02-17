@@ -1,6 +1,6 @@
 import { Meta, Story } from '@storybook/react'
 import { boolean, either, option } from 'fp-ts'
-import { pipe } from 'fp-ts/lib/pipeable'
+import { pipe } from 'fp-ts/function'
 import { NonEmptyString } from 'io-ts-types'
 import { Content } from '../../components/Content/Content'
 import { List } from '../../components/List/List'

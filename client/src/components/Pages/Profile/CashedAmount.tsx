@@ -1,5 +1,5 @@
 import { option, taskEither } from 'fp-ts'
-import { pipe } from 'fp-ts/lib/function'
+import { pipe } from 'fp-ts/function'
 import { Option } from 'fp-ts/Option'
 import { TaskEither } from 'fp-ts/TaskEither'
 import { FC, useState } from 'react'

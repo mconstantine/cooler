@@ -10,7 +10,7 @@ import { Buttons } from '../Button/Buttons/Buttons'
 import { Button } from '../Button/Button/Button'
 import { LoadingButton } from '../Button/LoadingButton/LoadingButton'
 import './Card.scss'
-import { constNull, constVoid, flow, pipe } from 'fp-ts/lib/function'
+import { constNull, constVoid, flow, pipe } from 'fp-ts/function'
 import { Label } from '../Label/Label'
 import { skull } from 'ionicons/icons'
 

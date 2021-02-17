@@ -1,6 +1,6 @@
 import { Meta, Story } from '@storybook/react'
 import { option } from 'fp-ts'
-import { pipe } from 'fp-ts/lib/pipeable'
+import { pipe } from 'fp-ts/function'
 import { NonEmptyString } from 'io-ts-types'
 import { useState } from 'react'
 import { unsafeLocalizedString } from '../../../a18n'
