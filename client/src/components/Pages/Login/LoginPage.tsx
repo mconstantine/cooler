@@ -6,6 +6,7 @@ import { useMutation } from '../../../effects/useMutation'
 import { LocalizedString } from '../../../globalDomain'
 import { commonErrors } from '../../../misc/commonErrors'
 import { getGraphQLError } from '../../../misc/getGraphQLError'
+import { Content } from '../../Content/Content'
 import { FormData, LoginForm } from '../../Form/Forms/LoginForm'
 import {
   loginMutation,
@@ -37,5 +38,9 @@ export default function LoginPage() {
     )
   )
 
-  return <LoginForm onSubmit={onSubmit} />
+  return (
+    <Content>
+      <LoginForm onSubmit={onSubmit} />
+    </Content>
+  )
 }

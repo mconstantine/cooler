@@ -15,8 +15,8 @@ import { Input } from '../Input/Input/Input'
 import { useForm } from '../useForm'
 import * as validators from '../validators'
 
-interface UserUpdate extends Omit<User, 'taxes'> {
-  newPassword: Option<NonEmptyString>
+export interface UserUpdate extends Pick<User, 'name' | 'email'> {
+  password: Option<NonEmptyString>
 }
 
 interface Props {
@@ -31,7 +31,7 @@ export const UserForm: FC<Props> = props => {
       initialValues: {
         name: props.user.name as string,
         email: props.user.email as string,
-        newPassword: '',
+        password: '',
         passwordConfirmation: '',
         created_at: props.user.created_at,
         updated_at: props.user.updated_at
@@ -39,7 +39,7 @@ export const UserForm: FC<Props> = props => {
       validators: () => ({
         name: validators.fromCodec(NonEmptyString, commonErrors.nonBlank),
         email: validators.fromCodec(EmailString, commonErrors.invalidEmail),
-        newPassword: validators.optionalString(),
+        password: validators.optionalString(),
         passwordConfirmation: validators.optionalString()
       }),
       linters: () => ({})
@@ -48,22 +48,19 @@ export const UserForm: FC<Props> = props => {
       formValidator: data => {
         const defaultData = {
           name: (data.name as string) as LocalizedString,
-          email: data.email,
-          newPassword: option.none,
-          created_at: data.created_at,
-          updated_at: data.updated_at
+          email: data.email
         }
 
         return pipe(
           sequenceS(option.option)({
-            password: data.newPassword,
+            password: data.password,
             passwordConfirmation: data.passwordConfirmation
           }),
           option.fold(
             () =>
               taskEither.right({
                 ...defaultData,
-                newPassword: option.none
+                password: option.none
               }),
             flow(
               taskEither.fromPredicate(
@@ -73,7 +70,7 @@ export const UserForm: FC<Props> = props => {
               ),
               taskEither.map(({ password }) => ({
                 ...defaultData,
-                newPassword: option.some(password)
+                password: option.some(password)
               }))
             )
           )
@@ -110,7 +107,7 @@ export const UserForm: FC<Props> = props => {
       <Input
         type="password"
         label={a18n`New password`}
-        {...fieldProps('newPassword')}
+        {...fieldProps('password')}
         autoComplete="new-password"
       />
       <Input

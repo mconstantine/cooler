@@ -18,9 +18,8 @@ import { User } from '../../../entities/User'
 import { ReaderTaskEither } from 'fp-ts/ReaderTaskEither'
 import { IO } from 'fp-ts/IO'
 
-export interface UserUpdate
-  extends Pick<User, 'name' | 'email' | 'created_at' | 'updated_at'> {
-  newPassword: Option<NonEmptyString>
+export interface UserUpdate extends Pick<User, 'name' | 'email'> {
+  password: Option<NonEmptyString>
 }
 
 interface Props {

@@ -4,9 +4,13 @@ import { Cooler } from './components/Cooler/Cooler'
 import { foldLocation, Router } from './components/Router'
 import { LoadingBlock } from './components/Loading/LoadingBlock'
 import { AccountProvider } from './contexts/AccountContext'
-import { ApolloClient, ApolloProvider, InMemoryCache } from '@apollo/client'
+import { ApolloProvider } from '@apollo/client'
+import { useApolloClient } from './effects/useApolloClient'
 
-const ProfilePage = lazy(() => import('./components/Pages/Profile/ProfilePage'))
+const ProfilePage = lazy(
+  () => import('./components/Pages/Profile/ProfilePage/ProfilePage')
+)
+
 const ClientsPage = lazy(() => import('./components/Pages/Client/ClientsPage'))
 
 const ProjectsPage = lazy(
@@ -16,10 +20,7 @@ const ProjectsPage = lazy(
 interface Props {}
 
 export const App: FC<Props> = () => {
-  const client = new ApolloClient({
-    uri: process.env.REACT_APP_API_URL,
-    cache: new InMemoryCache()
-  })
+  const client = useApolloClient()
 
   return (
     <ThemeProvider>

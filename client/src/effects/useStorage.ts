@@ -62,14 +62,20 @@ function getStorageValue<K extends keyof StorageMap>(
   )
 }
 
+function clearStorageValue<K extends keyof StorageMap>(key: K): void {
+  return window.localStorage.removeItem(key)
+}
+
 interface UseStorageOutput {
   writeStorage: typeof setStorageValue
   readStorage: typeof getStorageValue
+  clearStorage: typeof clearStorageValue
 }
 
 export function useStorage(): UseStorageOutput {
   return {
     writeStorage: setStorageValue,
-    readStorage: getStorageValue
+    readStorage: getStorageValue,
+    clearStorage: clearStorageValue
   }
 }
