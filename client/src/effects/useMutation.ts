@@ -5,7 +5,7 @@ import {
   FetchResult,
   MutationFunctionOptions,
   MutationHookOptions,
-  MutationResult,
+  MutationResult as ApolloMutationResult,
   MutationTuple,
   MutationUpdaterFn,
   useMutation as useApolloMutation
@@ -16,7 +16,6 @@ import { TaskEither } from 'fp-ts/TaskEither'
 import { Option } from 'fp-ts/Option'
 import * as t from 'io-ts'
 import { reportDecodeErrors } from '../misc/reportDecodeErrors'
-import { LocalizedString } from '../globalDomain'
 
 interface TypedMutationHookOptions<Vars, EncodedVars, Output, EncodedOutput>
   extends Omit<
@@ -148,11 +147,6 @@ function encodeMutationFunctionOptions<
   })
 }
 
-// interface TypedFetchResult<Output, EncodedOutput>
-//   extends Omit<FetchResult<EncodedOutput>, 'data'> {
-//   data: Option<Output>
-// }
-
 function decodeFetchResult<Output, EncodedOutput>(
   outputCodec: t.Type<Output, EncodedOutput>
 ): (result: FetchResult<EncodedOutput>) => Option<Output> {
@@ -160,35 +154,59 @@ function decodeFetchResult<Output, EncodedOutput>(
     pipe(result.data, outputCodec.decode, reportDecodeErrors, option.fromEither)
 }
 
+interface IdleMutationResult<EncodedOutput>
+  extends Omit<
+    ApolloMutationResult<EncodedOutput>,
+    'data' | 'error' | 'loading'
+  > {
+  state: 'idle'
+  data: Option<never>
+}
+
 interface LoadingMutationResult<EncodedOutput>
-  extends Omit<MutationResult<EncodedOutput>, 'data' | 'error' | 'loading'> {
+  extends Omit<
+    ApolloMutationResult<EncodedOutput>,
+    'data' | 'error' | 'loading'
+  > {
   state: 'loading'
+  data: Option<never>
 }
 
 interface SuccessMutationResult<Output, EncodedOutput>
-  extends Omit<MutationResult<EncodedOutput>, 'data' | 'error' | 'loading'> {
+  extends Omit<
+    ApolloMutationResult<EncodedOutput>,
+    'data' | 'error' | 'loading'
+  > {
   state: 'success'
   data: Option<Output>
 }
 
 interface ErrorMutationResult<EncodedOutput>
-  extends Omit<MutationResult<EncodedOutput>, 'data' | 'error' | 'loading'> {
+  extends Omit<
+    ApolloMutationResult<EncodedOutput>,
+    'data' | 'error' | 'loading'
+  > {
   state: 'error'
-  error: LocalizedString
+  error: ApolloError
+  data: Option<never>
 }
 
-type TypedMutationResult<Output, EncodedOutput> =
+export type MutationResult<Output, EncodedOutput> =
+  | IdleMutationResult<EncodedOutput>
   | LoadingMutationResult<EncodedOutput>
   | SuccessMutationResult<Output, EncodedOutput>
   | ErrorMutationResult<EncodedOutput>
 
 export function foldMutationResult<Output, EncodedOutput, T>(
+  whenIdle: (result: IdleMutationResult<EncodedOutput>) => T,
   whenLoading: (result: LoadingMutationResult<EncodedOutput>) => T,
   whenError: (result: ErrorMutationResult<EncodedOutput>) => T,
   whenSuccess: (result: SuccessMutationResult<Output, EncodedOutput>) => T
-): (result: TypedMutationResult<Output, EncodedOutput>) => T {
+): (result: MutationResult<Output, EncodedOutput>) => T {
   return result => {
     switch (result.state) {
+      case 'idle':
+        return whenIdle(result)
       case 'loading':
         return whenLoading(result)
       case 'error':
@@ -202,19 +220,27 @@ export function foldMutationResult<Output, EncodedOutput, T>(
 function decodeMutationResult<Output, EncodedOutput>(
   outputCodec: t.Type<Output, EncodedOutput>
 ): (
-  result: MutationResult<EncodedOutput>
-) => TypedMutationResult<Output, EncodedOutput> {
+  result: ApolloMutationResult<EncodedOutput>
+) => MutationResult<Output, EncodedOutput> {
   return result => {
-    if (result.loading) {
+    if (!result.called) {
+      return {
+        state: 'idle',
+        ...result,
+        data: option.none
+      }
+    } else if (result.loading) {
       return {
         state: 'loading',
-        ...result
+        ...result,
+        data: option.none
       }
     } else if (result.error) {
       return {
         state: 'error',
         ...result,
-        error: result.error.message as LocalizedString
+        error: result.error,
+        data: option.none
       }
     } else {
       return {
@@ -239,7 +265,7 @@ type TypedMutationTuple<Vars, EncodedVars, Output, EncodedOutput> = [
       EncodedOutput
     >
   ) => TaskEither<ApolloError, Option<Output>>,
-  TypedMutationResult<Output, EncodedOutput>
+  MutationResult<Output, EncodedOutput>
 ]
 
 function decodeMutationTuple<Vars, EncodedVars, Output, EncodedOutput>(
@@ -266,22 +292,39 @@ function decodeMutationTuple<Vars, EncodedVars, Output, EncodedOutput>(
   }
 }
 
-export function useMutation<Vars, EncodedVars, Output, EncodedOutput>(
+interface Mutation<Vars, EncodedVars, Output, EncodedOutput> {
+  mutation: DocumentNode
+  varsCodec: t.Type<Vars, EncodedVars>
+  outputCodec: t.Type<Output, EncodedOutput>
+}
+
+export function createMutation<Vars, EncodedVars, Output, EncodedOutput>(
   mutation: DocumentNode,
-  options: Option<
-    TypedMutationHookOptions<Vars, EncodedVars, Output, EncodedOutput>
-  >,
   varsCodec: t.Type<Vars, EncodedVars>,
   outputCodec: t.Type<Output, EncodedOutput>
+): Mutation<Vars, EncodedVars, Output, EncodedOutput> {
+  return { mutation, varsCodec, outputCodec }
+}
+
+export function useMutation<Vars, EncodedVars, Output, EncodedOutput>(
+  mutation: Mutation<Vars, EncodedVars, Output, EncodedOutput>,
+  options: Option<
+    TypedMutationHookOptions<Vars, EncodedVars, Output, EncodedOutput>
+  >
 ): TypedMutationTuple<Vars, EncodedVars, Output, EncodedOutput> {
   const tuple = useApolloMutation(
-    mutation,
+    mutation.mutation,
     pipe(
       options,
-      option.map(encodeMutationHookOptions(varsCodec, outputCodec)),
+      option.map(
+        encodeMutationHookOptions(mutation.varsCodec, mutation.outputCodec)
+      ),
       option.toUndefined
     )
   )
 
-  return pipe(tuple, decodeMutationTuple(varsCodec, outputCodec))
+  return pipe(
+    tuple,
+    decodeMutationTuple(mutation.varsCodec, mutation.outputCodec)
+  )
 }

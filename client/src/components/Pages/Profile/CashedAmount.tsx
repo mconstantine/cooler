@@ -13,10 +13,10 @@ import { getNetValue } from '../utils'
 
 interface Props {
   data: {
-    since: Date
     cashedBalance: NonNegativeNumber
     taxes: Tax[]
   }
+  since: Date
   onSinceDateChange: (since: Date) => TaskEither<LocalizedString, unknown>
 }
 
@@ -46,13 +46,13 @@ export const CashedAmount: FC<Props> = props => {
 
   return (
     <Panel title={a18n`Cashed amount`} framed action={option.none}>
-      <p>{a18n`The amount of oney you cashed since a given date`}</p>
+      <p>{a18n`The amount of money you cashed since a given date`}</p>
 
       <DateTimePicker
         name="since"
         mode="date"
         label={a18n`Since`}
-        value={props.data.since}
+        value={props.since}
         onChange={since => {
           setError(option.none)
           setIsSinceDateChanging(true)

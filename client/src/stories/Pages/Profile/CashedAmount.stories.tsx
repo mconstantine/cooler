@@ -50,10 +50,10 @@ const CashedAmountTemplate: Story<Args> = props => {
       <Content>
         <CashedAmountComponent
           data={{
-            since,
             cashedBalance,
             taxes: fakeTaxes
           }}
+          since={since}
           onSinceDateChange={onSinceDateChange}
         />
       </Content>

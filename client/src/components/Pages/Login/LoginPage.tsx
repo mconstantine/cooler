@@ -8,21 +8,11 @@ import { commonErrors } from '../../../misc/commonErrors'
 import { getGraphQLError } from '../../../misc/getGraphQLError'
 import { Content } from '../../Content/Content'
 import { FormData, LoginForm } from '../../Form/Forms/LoginForm'
-import {
-  loginMutation,
-  LoginMutationInput,
-  LoginMutationOutput
-} from './domain'
+import { loginMutation } from './domain'
 
 export default function LoginPage() {
   const { dispatch } = useAccount()
-
-  const [login] = useMutation(
-    loginMutation,
-    option.none,
-    LoginMutationInput,
-    LoginMutationOutput
-  )
+  const [login] = useMutation(loginMutation, option.none)
 
   const onSubmit: ReaderTaskEither<FormData, LocalizedString, void> = flow(
     variables => login({ variables }),

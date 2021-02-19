@@ -33,6 +33,7 @@ import { Input } from '../Input/Input'
 import { Loading } from '../../../Loading/Loading'
 import './Select.scss'
 import * as t from 'io-ts'
+import { Reader } from 'fp-ts/Reader'
 
 type Index = string | number | symbol
 
@@ -75,8 +76,8 @@ interface CommonSelectProps<T extends Index>
   extends FieldProps<SelectState<T>> {
   label: LocalizedString
   className?: string
-  onFocus?: (e: FocusEvent) => void
-  onBlur?: (e: FocusEvent) => void
+  onFocus?: Reader<FocusEvent, void>
+  onBlur?: Reader<FocusEvent, void>
   disabled?: boolean
   children?: ReactNode
   codec: t.Type<T, string, unknown>
@@ -99,7 +100,7 @@ export interface AsyncSelectProps<T extends Index>
   extends CommonSelectProps<T> {
   type: 'async'
   emptyPlaceholder: LocalizedString
-  onQueryChange: (query: string) => void
+  onQueryChange: Reader<string, void>
   isLoading: boolean
   options: Partial<Record<T, LocalizedString>>
 }
