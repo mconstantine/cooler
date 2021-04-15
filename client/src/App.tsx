@@ -4,6 +4,7 @@ import { Cooler } from './components/Cooler/Cooler'
 import { foldLocation, Router } from './components/Router'
 import { LoadingBlock } from './components/Loading/LoadingBlock'
 import { AccountProvider } from './contexts/AccountContext'
+import { GraphQLProvider } from './contexts/GraphQLContext'
 
 const ProfilePage = lazy(
   () => import('./components/Pages/Profile/ProfilePage/ProfilePage')
@@ -22,16 +23,18 @@ export const App: FC<Props> = () => {
     <ThemeProvider>
       <Cooler>
         <AccountProvider>
-          <Suspense fallback={<LoadingBlock />}>
-            <Router
-              render={foldLocation({
-                Home: () => <ProfilePage />,
-                Clients: () => <ClientsPage />,
-                Projects: () => <ProjectsPage />,
-                Profile: () => <ProfilePage />
-              })}
-            />
-          </Suspense>
+          <GraphQLProvider>
+            <Suspense fallback={<LoadingBlock />}>
+              <Router
+                render={foldLocation({
+                  Home: () => <ProfilePage />,
+                  Clients: () => <ClientsPage />,
+                  Projects: () => <ProjectsPage />,
+                  Profile: () => <ProfilePage />
+                })}
+              />
+            </Suspense>
+          </GraphQLProvider>
         </AccountProvider>
       </Cooler>
     </ThemeProvider>

@@ -2,8 +2,8 @@ import { taskEither } from 'fp-ts'
 import { pipe } from 'fp-ts/function'
 import { Reader } from 'fp-ts/Reader'
 import { useCallback, useEffect, useState } from 'react'
-import { useAccount } from '../contexts/AccountContext'
-import { ApiError, GraphQLQuery, sendGraphQLCall } from '../misc/graphql'
+import { ApiError, GraphQLQuery } from '../misc/graphql'
+import { useGraphQL } from '../contexts/GraphQLContext'
 
 interface LoadingQuery {
   type: 'loading'
@@ -50,7 +50,7 @@ export function useQuery<I, II, O, OO>(
   query: GraphQLQuery<I, II, O, OO>,
   variables: I
 ): [Query<O>, Reader<I, void>] {
-  const accountContext = useAccount()
+  const { sendGraphQLCall } = useGraphQL()
 
   if (!query.query.loc) {
     throw new Error('Called useQuery with a query witout source')
@@ -67,7 +67,7 @@ export function useQuery<I, II, O, OO>(
       })
 
       pipe(
-        sendGraphQLCall(accountContext, query, currentVariables || variables),
+        sendGraphQLCall(query, currentVariables || variables),
         taskEither.bimap(
           error =>
             setState({
@@ -82,7 +82,7 @@ export function useQuery<I, II, O, OO>(
         )
       )()
     },
-    [accountContext, query, variables]
+    [sendGraphQLCall, query, variables]
   )
 
   useEffect(() => {
