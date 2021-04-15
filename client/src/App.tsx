@@ -4,8 +4,6 @@ import { Cooler } from './components/Cooler/Cooler'
 import { foldLocation, Router } from './components/Router'
 import { LoadingBlock } from './components/Loading/LoadingBlock'
 import { AccountProvider } from './contexts/AccountContext'
-import { ApolloProvider } from '@apollo/client'
-import { useApolloClient } from './effects/useApolloClient'
 
 const ProfilePage = lazy(
   () => import('./components/Pages/Profile/ProfilePage/ProfilePage')
@@ -20,25 +18,21 @@ const ProjectsPage = lazy(
 interface Props {}
 
 export const App: FC<Props> = () => {
-  const client = useApolloClient()
-
   return (
     <ThemeProvider>
       <Cooler>
-        <ApolloProvider client={client}>
-          <AccountProvider>
-            <Suspense fallback={<LoadingBlock />}>
-              <Router
-                render={foldLocation({
-                  Home: () => <ProfilePage />,
-                  Clients: () => <ClientsPage />,
-                  Projects: () => <ProjectsPage />,
-                  Profile: () => <ProfilePage />
-                })}
-              />
-            </Suspense>
-          </AccountProvider>
-        </ApolloProvider>
+        <AccountProvider>
+          <Suspense fallback={<LoadingBlock />}>
+            <Router
+              render={foldLocation({
+                Home: () => <ProfilePage />,
+                Clients: () => <ClientsPage />,
+                Projects: () => <ProjectsPage />,
+                Profile: () => <ProfilePage />
+              })}
+            />
+          </Suspense>
+        </AccountProvider>
       </Cooler>
     </ThemeProvider>
   )
