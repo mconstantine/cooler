@@ -2,19 +2,19 @@ import { gql } from 'apollo-server-express'
 
 export default gql`
   type SessionEdge implements Edge {
-    cursor: String!
-    node: Session!
+    cursor: String
+    node: Session
   }
 
   type SessionConnection implements Connection {
-    pageInfo: PageInfo!
-    edges: [SessionEdge]!
-    totalCount: Int!
+    pageInfo: PageInfo
+    edges: [SessionEdge]
+    totalCount: Int
   }
 
   type Session implements Node {
-    id: Int!
-    start_time: Date!
+    id: Int
+    start_time: Date
     end_time: Date
     task: Task
   }
@@ -47,19 +47,19 @@ export default gql`
       before: String
       after: String
       orderBy: String
-    ): SessionConnection!
+    ): SessionConnection
   }
 
   # extend type Subscription {
-  #   startedSession(project: Int, task: Int): Session!
-  #   stoppedSession(project: Int, task: Int): Session!
+  #   startedSession(project: Int, task: Int): Session
+  #   stoppedSession(project: Int, task: Int): Session
   # }
 
   extend type User {
-    expectedWorkingHours(since: Date): Int!
-    actualWorkingHours(since: Date): Float!
-    budget(since: Date): Float!
-    balance(since: Date): Float!
+    expectedWorkingHours(since: Date): Int
+    actualWorkingHours(since: Date): Float
+    budget(since: Date): Float
+    balance(since: Date): Float
   }
 
   extend type Task {
@@ -70,16 +70,16 @@ export default gql`
       after: String
       orderBy: String
     ): SessionConnection
-    actualWorkingHours: Float!
-    budget: Float!
-    balance: Float!
+    actualWorkingHours: Float
+    budget: Float
+    balance: Float
   }
 
   extend type Project {
-    expectedWorkingHours: Int!
-    actualWorkingHours: Float!
-    budget: Float!
-    balance: Float!
+    expectedWorkingHours: Int
+    actualWorkingHours: Float
+    budget: Float
+    balance: Float
   }
 
   extend type User {

@@ -2,25 +2,25 @@ import { gql } from 'apollo-server-express'
 
 export default gql`
   type ProjectEdge implements Edge {
-    cursor: String!
-    node: Project!
+    cursor: String
+    node: Project
   }
 
   type ProjectConnection implements Connection {
-    pageInfo: PageInfo!
-    edges: [ProjectEdge]!
-    totalCount: Int!
+    pageInfo: PageInfo
+    edges: [ProjectEdge]
+    totalCount: Int
   }
 
   type Project implements TrackedNode & Node {
-    id: Int!
-    name: String!
+    id: Int
+    name: String
     description: String
-    created_at: Date!
-    updated_at: Date!
+    created_at: Date
+    updated_at: Date
     cashed_at: Date
     cashed_balance: Float
-    client: Client!
+    client: Client
   }
 
   input ProjectCreationInput {
@@ -44,8 +44,8 @@ export default gql`
       before: String
       after: String
       orderBy: String
-    ): ProjectConnection!
-    cashedBalance(since: Date): Float!
+    ): ProjectConnection
+    cashedBalance(since: Date): Float
   }
 
   extend type Client {
@@ -55,13 +55,13 @@ export default gql`
       before: String
       after: String
       orderBy: String
-    ): ProjectConnection!
+    ): ProjectConnection
   }
 
   extend type Mutation {
-    createProject(project: ProjectCreationInput!): Project!
-    updateProject(id: Int!, project: ProjectUpdateInput!): Project!
-    deleteProject(id: Int!): Project!
+    createProject(project: ProjectCreationInput!): Project
+    updateProject(id: Int!, project: ProjectUpdateInput!): Project
+    deleteProject(id: Int!): Project
   }
 
   extend type Query {
@@ -73,10 +73,10 @@ export default gql`
       before: String
       after: String
       orderBy: String
-    ): ProjectConnection!
+    ): ProjectConnection
   }
 
   # extend type Subscription {
-  #   createdProject(client: Int): Project!
+  #   createdProject(client: Int): Project
   # }
 `

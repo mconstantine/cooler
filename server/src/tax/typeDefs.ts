@@ -2,21 +2,21 @@ import { gql } from 'apollo-server-express'
 
 export default gql`
   type TaxEdge implements Edge {
-    cursor: String!
-    node: Tax!
+    cursor: String
+    node: Tax
   }
 
   type TaxConnection implements Connection {
-    pageInfo: PageInfo!
-    edges: [TaxEdge]!
-    totalCount: Int!
+    pageInfo: PageInfo
+    edges: [TaxEdge]
+    totalCount: Int
   }
 
   type Tax implements Node {
-    id: Int!
-    label: String!
-    value: Float!
-    user: User!
+    id: Int
+    label: String
+    value: Float
+    user: User
   }
 
   input TaxCreationInput {
@@ -43,11 +43,11 @@ export default gql`
       before: String
       after: String
       orderBy: String
-    ): TaxConnection!
+    ): TaxConnection
   }
 
   # extend type Subscription {
-  #   createdTax: Tax!
+  #   createdTax: Tax
   # }
 
   extend type User {
@@ -57,6 +57,6 @@ export default gql`
       before: String
       after: String
       orderBy: String
-    ): TaxConnection!
+    ): TaxConnection
   }
 `

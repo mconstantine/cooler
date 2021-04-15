@@ -2,26 +2,26 @@ import { gql } from 'apollo-server-express'
 
 export default gql`
   type TaskEdge implements Edge {
-    cursor: String!
-    node: Task!
+    cursor: String
+    node: Task
   }
 
   type TaskConnection implements Connection {
-    pageInfo: PageInfo!
-    edges: [TaskEdge]!
-    totalCount: Int!
+    pageInfo: PageInfo
+    edges: [TaskEdge]
+    totalCount: Int
   }
 
   type Task implements TrackedNode & Node {
-    id: Int!
-    name: String!
+    id: Int
+    name: String
     description: String
-    expectedWorkingHours: Int!
-    hourlyCost: Float!
-    start_time: Date!
-    created_at: Date!
-    updated_at: Date!
-    project: Project!
+    expectedWorkingHours: Int
+    hourlyCost: Float
+    start_time: Date
+    created_at: Date
+    updated_at: Date
+    project: Project
   }
 
   input TaskCreationInput {
@@ -62,7 +62,7 @@ export default gql`
       orderBy: String
       from: Date
       to: Date
-    ): TaskConnection!
+    ): TaskConnection
   }
 
   extend type Project {
@@ -72,14 +72,14 @@ export default gql`
       before: String
       after: String
       orderBy: String
-    ): TaskConnection!
+    ): TaskConnection
   }
 
   extend type Mutation {
-    createTask(task: TaskCreationInput!): Task!
-    createTasksBatch(input: TasksBatchCreationInput): Project!
-    updateTask(id: Int!, task: TaskUpdateInput!): Task!
-    deleteTask(id: Int!): Task!
+    createTask(task: TaskCreationInput!): Task
+    createTasksBatch(input: TasksBatchCreationInput): Project
+    updateTask(id: Int!, task: TaskUpdateInput!): Task
+    deleteTask(id: Int!): Task
   }
 
   extend type Query {
@@ -91,10 +91,10 @@ export default gql`
       before: String
       after: String
       orderBy: String
-    ): TaskConnection!
+    ): TaskConnection
   }
 
   # extend type Subscription {
-  #   createdTask(project: Int, from: Date, to: Date): Task!
+  #   createdTask(project: Int, from: Date, to: Date): Task
   # }
 `

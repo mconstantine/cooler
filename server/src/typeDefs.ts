@@ -10,31 +10,31 @@ const defaultTypeDefs = gql`
   scalar Date
 
   type PageInfo {
-    startCursor: String!
-    endCursor: String!
-    hasNextPage: Boolean!
-    hasPreviousPage: Boolean!
+    startCursor: String
+    endCursor: String
+    hasNextPage: Boolean
+    hasPreviousPage: Boolean
   }
 
   interface Node {
-    id: Int!
+    id: Int
   }
 
   interface TrackedNode implements Node {
-    id: Int!
-    created_at: Date!
-    updated_at: Date!
+    id: Int
+    created_at: Date
+    updated_at: Date
   }
 
   interface Edge {
-    cursor: String!
-    node: Node!
+    cursor: String
+    node: Node
   }
 
   interface Connection {
-    pageInfo: PageInfo!
-    edges: [Edge]!
-    totalCount: Int!
+    pageInfo: PageInfo
+    edges: [Edge]
+    totalCount: Int
   }
 
   type Query {
