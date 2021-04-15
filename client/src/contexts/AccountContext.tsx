@@ -96,7 +96,7 @@ function reducer(state: Account, action: Action): Account {
   }
 }
 
-interface AccountContext {
+export interface AccountContext {
   account: Account
   dispatch: Reader<Action, void>
 }

@@ -5,9 +5,12 @@ import * as t from 'io-ts'
 import { NonEmptyString, optionFromNullable } from 'io-ts-types'
 import { LocalizedString, NonNegativeInteger } from '../globalDomain'
 import { IO } from 'fp-ts/IO'
-import { Lazy, pipe } from 'fp-ts/function'
-import { nonEmptyArray, option } from 'fp-ts'
+import { flow, Lazy, pipe } from 'fp-ts/function'
+import { either, nonEmptyArray, option, taskEither } from 'fp-ts'
 import { commonErrors } from './commonErrors'
+import { AccountContext, foldAccount } from '../contexts/AccountContext'
+import { reportDecodeErrors } from './reportDecodeErrors'
+import { TaskEither } from 'fp-ts/TaskEither'
 
 export const Edge = <T extends t.Mixed>(T: T) =>
   t.type(
@@ -180,4 +183,73 @@ export function makeMutation<I, II, O, OO>(
     type: 'mutation',
     ...query
   }
+}
+
+export function sendGraphQLCall<I, II, O, OO>(
+  { account, dispatch }: AccountContext,
+  query: GraphQLCall<I, II, O, OO>,
+  variables: I
+): TaskEither<ApiError, O> {
+  return pipe(
+    taskEither.tryCatch(
+      () =>
+        window.fetch(process.env.REACT_APP_API_URL!, {
+          method: 'POST',
+          headers: {
+            ...{ 'Content-Type': 'application/json' },
+            ...pipe(
+              account,
+              foldAccount(
+                () => ({}),
+                ({ accessToken }) => ({
+                  Authorization: `Bearer ${accessToken}`
+                })
+              )
+            )
+          },
+          body: JSON.stringify({
+            query: query.query.loc!.source.body,
+            variables: query.inputCodec.encode(variables)
+          })
+        }),
+      () => unexpectedApiError
+    ),
+    taskEither.chain(response =>
+      taskEither.tryCatch(
+        () => response.json(),
+        () => unexpectedApiError
+      )
+    ),
+    taskEither.chain(response => {
+      if (response.errors) {
+        return pipe(
+          RawApiErrors.decode(response),
+          reportDecodeErrors,
+          either.fold(
+            () => taskEither.left(unexpectedApiError),
+            flow(extractApiError, error => {
+              if (error.code === 'COOLER_403') {
+                // TODO: try refreshing the token
+                dispatch({ type: 'logout' })
+              }
+
+              return taskEither.left(error)
+            })
+          )
+        )
+      } else if (response.data) {
+        return taskEither.right(response.data)
+      } else {
+        return taskEither.left(unexpectedApiError)
+      }
+    }),
+    taskEither.chain(
+      flow(
+        query.outputCodec.decode,
+        reportDecodeErrors,
+        taskEither.fromEither,
+        taskEither.mapLeft(() => unexpectedApiError)
+      )
+    )
+  )
 }

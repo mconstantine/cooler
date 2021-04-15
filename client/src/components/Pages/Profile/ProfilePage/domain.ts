@@ -11,7 +11,7 @@ import {
   Percentage,
   PositiveInteger
 } from '../../../../globalDomain'
-import { Connection } from '../../../../misc/graphql'
+import { Connection, makeMutation, makeQuery } from '../../../../misc/graphql'
 
 const Tax = t.type({
   id: PositiveInteger,
@@ -19,7 +19,7 @@ const Tax = t.type({
   value: Percentage
 })
 
-export const ProfileQueryOutput = t.type(
+const ProfileQueryOutput = t.type(
   {
     me: t.type({
       id: PositiveInteger,
@@ -33,34 +33,38 @@ export const ProfileQueryOutput = t.type(
   'ProfileQueryOutput'
 )
 
-export const profileQuery = gql`
-  query me {
-    me {
-      id
-      name
-      email
-      created_at
-      updated_at
-      taxes {
-        pageInfo {
-          startCursor
-          endCursor
-          hasNextPage
-          hasPreviousPage
-        }
-        totalCount
-        edges {
-          cursor
-          node {
-            id
-            label
-            value
+export const profileQuery = makeQuery({
+  query: gql`
+    query me {
+      me {
+        id
+        name
+        email
+        created_at
+        updated_at
+        taxes {
+          pageInfo {
+            startCursor
+            endCursor
+            hasNextPage
+            hasPreviousPage
+          }
+          totalCount
+          edges {
+            cursor
+            node {
+              id
+              label
+              value
+            }
           }
         }
       }
     }
-  }
-`
+  `,
+  inputCodec: t.void,
+  outputCodec: ProfileQueryOutput
+})
 
 const UserUpdateInput = t.type(
   {
@@ -71,14 +75,14 @@ const UserUpdateInput = t.type(
   'UserUpdate'
 )
 
-export const UpdateProfileMutationInput = t.type(
+const UpdateProfileMutationInput = t.type(
   {
     user: UserUpdateInput
   },
   'UpdateProfileInput'
 )
 
-export const UpdateProfileMutationOutput = t.type(
+const UpdateProfileMutationOutput = t.type(
   {
     updateMe: t.type({
       id: PositiveInteger,
@@ -90,21 +94,29 @@ export const UpdateProfileMutationOutput = t.type(
   'UpdateProfileOutput'
 )
 
-export const updateProfileMutation = gql`
-  mutation updateProfile($user: UserUpdateInput!) {
-    updateMe(user: $user) {
-      id
-      name
-      email
-      updated_at
+export const updateProfileMutation = makeMutation({
+  query: gql`
+    mutation updateProfile($user: UserUpdateInput!) {
+      updateMe(user: $user) {
+        id
+        name
+        email
+        updated_at
+      }
     }
-  }
-`
+  `,
+  inputCodec: UpdateProfileMutationInput,
+  outputCodec: UpdateProfileMutationOutput
+})
 
-export const deleteProfileMutation = gql`
-  mutation deleteMe {
-    deleteMe {
-      id
+export const deleteProfileMutation = makeMutation({
+  query: gql`
+    mutation deleteMe {
+      deleteMe {
+        id
+      }
     }
-  }
-`
+  `,
+  inputCodec: t.void,
+  outputCodec: t.unknown
+})
