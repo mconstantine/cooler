@@ -1,38 +1,34 @@
-import { gql } from '@apollo/client'
-import * as t from 'io-ts'
-import { DateFromISOString, NonEmptyString } from 'io-ts-types'
-import { createMutation } from '../../../effects/useMutation'
-import { EmailString } from '../../../globalDomain'
+// import * as t from 'io-ts'
+// import { DateFromISOString, NonEmptyString } from 'io-ts-types'
+// import { EmailString } from '../../../globalDomain'
 
-const LoginMutationInput = t.type(
-  {
-    email: EmailString,
-    password: NonEmptyString
-  },
-  'LoginMutationInput'
-)
+import gql from 'graphql-tag'
 
-const LoginMutationOutput = t.type(
-  {
-    loginUser: t.type({
-      accessToken: NonEmptyString,
-      refreshToken: NonEmptyString,
-      expiration: DateFromISOString
-    })
-  },
-  'LoginMutationOutput'
-)
+// const LoginMutationInput = t.type(
+//   {
+//     email: EmailString,
+//     password: NonEmptyString
+//   },
+//   'LoginMutationInput'
+// )
 
-export const loginMutation = createMutation(
-  gql`
-    mutation login($email: String!, $password: String!) {
-      loginUser(user: { email: $email, password: $password }) {
-        accessToken
-        refreshToken
-        expiration
-      }
+// const LoginMutationOutput = t.type(
+//   {
+//     loginUser: t.type({
+//       accessToken: NonEmptyString,
+//       refreshToken: NonEmptyString,
+//       expiration: DateFromISOString
+//     })
+//   },
+//   'LoginMutationOutput'
+// )
+
+export const loginMutation = gql`
+  mutation login($email: String!, $password: String!) {
+    loginUser(email: $email, password: $password) {
+      accessToken
+      refreshToken
+      expiration
     }
-  `,
-  LoginMutationInput,
-  LoginMutationOutput
-)
+  }
+`

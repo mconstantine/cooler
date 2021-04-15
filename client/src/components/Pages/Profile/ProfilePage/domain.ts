@@ -1,4 +1,4 @@
-import { gql } from '@apollo/client'
+import gql from 'graphql-tag'
 import * as t from 'io-ts'
 import {
   DateFromISOString,
