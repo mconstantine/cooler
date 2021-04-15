@@ -26,6 +26,7 @@
     "test": "jest --config jest-unit.config.ts",
     "test-api": "jest --config jest-api.config.ts --runInBand",
     "start": "ts-node-dev --respawn --transpile-only src/index.ts",
+    "start:compile": "ts-node-dev --respawn src/index.ts",
     "build": "tsc",
     "fillDatabase": "ts-node-dev bin/fill-database.ts",
     "extractTranslations": "a18n extract src ./public/locales --locales en, it && ts-node-dev bin/extractTranslations.ts",
