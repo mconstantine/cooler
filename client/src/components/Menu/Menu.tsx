@@ -7,13 +7,21 @@ import { Button } from '../Button/Button/Button'
 import { Buttons } from '../Button/Buttons/Buttons'
 import { foldTheme, useTheme } from '../../contexts/ThemeContext'
 import './Menu.scss'
-import { clients, profile, projects, useRouter } from '../Router'
+import {
+  clientsRoute,
+  homeRoute,
+  isClientsRoute,
+  isHomeRoute,
+  isProjectsRoute,
+  projectsRoute,
+  useRouter
+} from '../Router'
 
 interface Props {}
 
 export const Menu: FC<Props> = () => {
   const { theme, setTheme } = useTheme()
-  const { setRoute } = useRouter()
+  const { route, setRoute } = useRouter()
 
   const switchTheme = () =>
     setTheme(
@@ -44,22 +52,25 @@ export const Menu: FC<Props> = () => {
           type="button"
           label={a18n`Clients`}
           icon={option.none}
-          action={() => setRoute(clients())}
+          action={() => setRoute(clientsRoute())}
           flat
+          active={isClientsRoute(route)}
         />
         <Button
           type="button"
           label={a18n`Projects`}
           icon={option.none}
-          action={() => setRoute(projects())}
+          action={() => setRoute(projectsRoute())}
           flat
+          active={isProjectsRoute(route)}
         />
         <Button
           type="button"
           label={a18n`Profile`}
           icon={option.none}
-          action={() => setRoute(profile())}
+          action={() => setRoute(homeRoute())}
           flat
+          active={isHomeRoute(route)}
         />
       </Buttons>
     </div>

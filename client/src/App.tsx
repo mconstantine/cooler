@@ -29,8 +29,7 @@ export const App: FC<Props> = () => {
                 render={foldLocation({
                   Home: () => <ProfilePage />,
                   Clients: () => <ClientsPage />,
-                  Projects: () => <ProjectsPage />,
-                  Profile: () => <ProfilePage />
+                  Projects: () => <ProjectsPage />
                 })}
               />
             </Suspense>

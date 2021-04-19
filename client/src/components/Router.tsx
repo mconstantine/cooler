@@ -1,6 +1,5 @@
 import { end, format, lit, parse, Route, zero } from 'fp-ts-routing'
 import { Reader } from 'fp-ts/Reader'
-import { IO } from 'fp-ts/IO'
 import { createContext, FC, lazy, useContext, useEffect, useState } from 'react'
 import { constVoid, pipe } from 'fp-ts/function'
 import { foldAccount, useAccount } from '../contexts/AccountContext'
@@ -19,34 +18,36 @@ interface Projects {
   readonly _tag: 'Projects'
 }
 
-interface Profile {
-  readonly _tag: 'Profile'
-}
+export type Location = Home | Clients | Projects
 
-export type Location = Home | Clients | Projects | Profile
-
-export function home(): Home {
+export function homeRoute(): Home {
   return {
     _tag: 'Home'
   }
 }
 
-export function clients(): Clients {
+export function clientsRoute(): Clients {
   return {
     _tag: 'Clients'
   }
 }
 
-export function projects(): Projects {
+export function projectsRoute(): Projects {
   return {
     _tag: 'Projects'
   }
 }
 
-export function profile(): Profile {
-  return {
-    _tag: 'Profile'
-  }
+export function isHomeRoute(location: Location): boolean {
+  return location._tag === 'Home'
+}
+
+export function isClientsRoute(location: Location): boolean {
+  return location._tag === 'Clients'
+}
+
+export function isProjectsRoute(location: Location): boolean {
+  return location._tag === 'Projects'
 }
 
 export function foldLocation<T>(
@@ -62,20 +63,18 @@ export function foldLocation<T>(
 const homeMatch = end
 const clientsMatch = lit('clients').then(end)
 const projectsMatch = lit('projects').then(end)
-const profileMatch = lit('profile').then(end)
 
 const router = zero<Location>()
-  .alt(homeMatch.parser.map(home))
-  .alt(clientsMatch.parser.map(clients))
-  .alt(projectsMatch.parser.map(projects))
-  .alt(profileMatch.parser.map(profile))
+  .alt(homeMatch.parser.map(homeRoute))
+  .alt(clientsMatch.parser.map(clientsRoute))
+  .alt(projectsMatch.parser.map(projectsRoute))
 
 interface Props {
   render: (location: Location) => JSX.Element
 }
 
 function parseCurrentPath() {
-  return parse(router, Route.parse(window.location.pathname), home())
+  return parse(router, Route.parse(window.location.pathname), homeRoute())
 }
 
 function formatLocation(location: Location): string {
@@ -85,8 +84,7 @@ function formatLocation(location: Location): string {
       foldLocation({
         Home: () => homeMatch.formatter,
         Clients: () => clientsMatch.formatter,
-        Projects: () => projectsMatch.formatter,
-        Profile: () => profileMatch.formatter
+        Projects: () => projectsMatch.formatter
       })
     ),
     location
@@ -99,7 +97,7 @@ interface LocationContext {
 }
 
 const LocationContext = createContext<LocationContext>({
-  location: home(),
+  location: homeRoute(),
   setLocation: constVoid
 })
 
@@ -133,13 +131,12 @@ export const Router: FC<Props> = props => {
 }
 
 interface UseRouterOutput {
-  getRoute: IO<Location>
+  route: Location
   setRoute: Reader<Location, void>
 }
 
 export function useRouter(): UseRouterOutput {
   const { location, setLocation } = useContext(LocationContext)
-  const getRoute = () => location
 
   const setRoute = (location: Location) => {
     setLocation(location)
@@ -147,7 +144,7 @@ export function useRouter(): UseRouterOutput {
   }
 
   return {
-    getRoute,
+    route: location,
     setRoute
   }
 }
