@@ -3,6 +3,7 @@ import { constVoid, pipe } from 'fp-ts/function'
 import { IO } from 'fp-ts/IO'
 import { ReaderTaskEither } from 'fp-ts/ReaderTaskEither'
 import { TaskEither } from 'fp-ts/TaskEither'
+import { useMemo, useState } from 'react'
 import { useAccount } from '../../../../contexts/AccountContext'
 import { useMutation } from '../../../../effects/useMutation'
 import { foldQuery, useQuery } from '../../../../effects/useQuery'
@@ -12,6 +13,8 @@ import { Content } from '../../../Content/Content'
 import { ErrorPanel } from '../../../ErrorPanel'
 import { LoadingBlock } from '../../../Loading/LoadingBlock'
 import { Menu } from '../../../Menu/Menu'
+import { CashedAmount } from '../CashedAmount'
+import { CurrentSituation } from '../CurrentSituation'
 import { UserData, UserUpdate } from '../UserData'
 import {
   deleteProfileMutation,
@@ -21,9 +24,16 @@ import {
 
 export default function ProfilePage() {
   const { dispatch } = useAccount()
-  const [profile, , update] = useQuery(profileQuery)
   const updateProfile = useMutation(updateProfileMutation)
   const deleteProfile = useMutation(deleteProfileMutation)
+
+  const [since, setSince] = useState(() => {
+    const now = new Date()
+    return new Date(now.getFullYear(), now.getMonth())
+  })
+
+  const input = useMemo(() => ({ since }), [since])
+  const [profile, , update] = useQuery(profileQuery, input)
 
   const onDataChange: ReaderTaskEither<
     UserUpdate,
@@ -66,17 +76,34 @@ export default function ProfilePage() {
           foldQuery(
             () => <LoadingBlock />,
             error => <ErrorPanel error={error.message} />,
-            data => (
-              <UserData
-                user={{
-                  ...data.me,
-                  taxes: getConnectionNodes(data.me.taxes)
-                }}
-                onDataChange={onDataChange}
-                onLogout={onLogout}
-                onDeleteProfile={onDeleteProfile}
-              />
-            )
+            data => {
+              const taxes = getConnectionNodes(data.me.taxes)
+
+              return (
+                <>
+                  <UserData
+                    user={{ ...data.me, taxes }}
+                    onDataChange={onDataChange}
+                    onLogout={onLogout}
+                    onDeleteProfile={onDeleteProfile}
+                  />
+                  <CurrentSituation
+                    data={{ ...data.me, taxes }}
+                    since={since}
+                    onSinceDateChange={since =>
+                      taskEither.fromIO(() => setSince(since))
+                    }
+                  />
+                  <CashedAmount
+                    data={{ ...data.me, taxes }}
+                    since={since}
+                    onSinceDateChange={since =>
+                      taskEither.fromIO(() => setSince(since))
+                    }
+                  />
+                </>
+              )
+            }
           )
         )}
       </Content>

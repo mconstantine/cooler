@@ -8,6 +8,7 @@ import {
 import {
   EmailString,
   LocalizedString,
+  NonNegativeNumber,
   Percentage,
   PositiveInteger
 } from '../../../../globalDomain'
@@ -19,6 +20,13 @@ const Tax = t.type({
   value: Percentage
 })
 
+const ProfileQueryInput = t.type(
+  {
+    since: DateFromISOString
+  },
+  'ProfileQueryInput'
+)
+
 const ProfileQueryOutput = t.type(
   {
     me: t.type({
@@ -27,6 +35,11 @@ const ProfileQueryOutput = t.type(
       email: EmailString,
       created_at: DateFromISOString,
       updated_at: DateFromISOString,
+      expectedWorkingHours: NonNegativeNumber,
+      actualWorkingHours: NonNegativeNumber,
+      budget: NonNegativeNumber,
+      balance: NonNegativeNumber,
+      cashedBalance: NonNegativeNumber,
       taxes: Connection(Tax)
     })
   },
@@ -35,13 +48,18 @@ const ProfileQueryOutput = t.type(
 
 export const profileQuery = makeQuery({
   query: gql`
-    query me {
+    query me($since: Date!) {
       me {
         id
         name
         email
         created_at
         updated_at
+        expectedWorkingHours(since: $since)
+        actualWorkingHours(since: $since)
+        budget(since: $since)
+        balance(since: $since)
+        cashedBalance(since: $since)
         taxes {
           pageInfo {
             startCursor
@@ -62,7 +80,7 @@ export const profileQuery = makeQuery({
       }
     }
   `,
-  inputCodec: t.void,
+  inputCodec: ProfileQueryInput,
   outputCodec: ProfileQueryOutput
 })
 

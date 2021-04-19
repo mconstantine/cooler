@@ -59,14 +59,14 @@ export function useQuery<I, II, O, OO>(
   const { sendGraphQLCall } = useGraphQL()
   const [state, setState] = useState<Query<O>>({ type: 'loading' })
 
-  const refresh: Reader<I | undefined, void> = useCallback(
-    currentVariables => {
+  const refresh: Reader<I, void> = useCallback(
+    variables => {
       setState({
         type: 'loading'
       })
 
       pipe(
-        sendGraphQLCall(query, currentVariables || variables),
+        sendGraphQLCall(query, variables),
         taskEither.bimap(
           error =>
             setState({
@@ -81,7 +81,7 @@ export function useQuery<I, II, O, OO>(
         )
       )()
     },
-    [sendGraphQLCall, query, variables]
+    [sendGraphQLCall, query]
   )
 
   const update: Reader<O, void> = newData =>
@@ -92,7 +92,7 @@ export function useQuery<I, II, O, OO>(
 
   useEffect(() => {
     refresh(variables)
-  }, [variables, refresh])
+  }, [refresh, variables])
 
   return [state, refresh, update]
 }
