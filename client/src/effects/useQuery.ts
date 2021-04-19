@@ -38,18 +38,20 @@ export function foldQuery<O, T>(
   }
 }
 
+type UseQueryOutput<I, O> = [Query<O>, Reader<I, void>, Reader<O, void>]
+
 export function useQuery<I, II, O, OO>(
   query: GraphQLQuery<I, II, O, OO>,
   variables: I
-): [Query<O>, Reader<I, void>]
+): UseQueryOutput<I, O>
 export function useQuery<II, O, OO>(
   query: GraphQLQuery<void, II, O, OO>,
   variables: void
-): [Query<O>, Reader<void, void>]
+): UseQueryOutput<void, O>
 export function useQuery<I, II, O, OO>(
   query: GraphQLQuery<I, II, O, OO>,
   variables: I
-): [Query<O>, Reader<I, void>] {
+): UseQueryOutput<I, O> {
   if (!query.query.loc) {
     throw new Error('Called useQuery with a query witout source')
   }
@@ -82,9 +84,15 @@ export function useQuery<I, II, O, OO>(
     [sendGraphQLCall, query, variables]
   )
 
+  const update: Reader<O, void> = newData =>
+    setState({
+      type: 'success',
+      data: newData
+    })
+
   useEffect(() => {
     refresh(variables)
   }, [variables, refresh])
 
-  return [state, refresh]
+  return [state, refresh, update]
 }

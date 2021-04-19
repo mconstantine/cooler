@@ -1,5 +1,5 @@
 import { taskEither } from 'fp-ts'
-import { pipe } from 'fp-ts/function'
+import { constVoid, pipe } from 'fp-ts/function'
 import { IO } from 'fp-ts/IO'
 import { ReaderTaskEither } from 'fp-ts/ReaderTaskEither'
 import { TaskEither } from 'fp-ts/TaskEither'
@@ -21,7 +21,7 @@ import {
 
 export default function ProfilePage() {
   const { dispatch } = useAccount()
-  const [profile] = useQuery(profileQuery)
+  const [profile, , update] = useQuery(profileQuery)
   const updateProfile = useMutation(updateProfileMutation)
   const deleteProfile = useMutation(deleteProfileMutation)
 
@@ -32,6 +32,21 @@ export default function ProfilePage() {
   > = user =>
     pipe(
       updateProfile({ user }),
+      taskEither.chain(({ updateMe }) =>
+        taskEither.fromIO(() =>
+          pipe(
+            profile,
+            foldQuery(constVoid, constVoid, ({ me }) =>
+              update({
+                me: {
+                  ...me,
+                  ...updateMe
+                }
+              })
+            )
+          )
+        )
+      ),
       taskEither.mapLeft(error => error.message)
     )
 
