@@ -50,17 +50,14 @@ export function useQuery<I, II, O, OO>(
   query: GraphQLQuery<I, II, O, OO>,
   variables: I
 ): [Query<O>, Reader<I, void>] {
-  const { sendGraphQLCall } = useGraphQL()
-
   if (!query.query.loc) {
     throw new Error('Called useQuery with a query witout source')
   }
 
-  const [state, setState] = useState<Query<O>>({
-    type: 'loading'
-  })
+  const { sendGraphQLCall } = useGraphQL()
+  const [state, setState] = useState<Query<O>>({ type: 'loading' })
 
-  const executeQuery: Reader<I | undefined, void> = useCallback(
+  const refresh: Reader<I | undefined, void> = useCallback(
     currentVariables => {
       setState({
         type: 'loading'
@@ -86,8 +83,8 @@ export function useQuery<I, II, O, OO>(
   )
 
   useEffect(() => {
-    executeQuery(variables)
-  }, [variables, executeQuery])
+    refresh(variables)
+  }, [variables, refresh])
 
-  return [state, executeQuery]
+  return [state, refresh]
 }
