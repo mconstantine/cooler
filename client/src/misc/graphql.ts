@@ -3,10 +3,16 @@ import { Option } from 'fp-ts/Option'
 import { DocumentNode } from 'graphql'
 import * as t from 'io-ts'
 import { NonEmptyString, optionFromNullable } from 'io-ts-types'
-import { LocalizedString, NonNegativeInteger } from '../globalDomain'
+import {
+  LocalizedString,
+  NonNegativeInteger,
+  PositiveInteger,
+  unsafeNonEmptyString,
+  unsafeNonNegativeInteger
+} from '../globalDomain'
 import { IO } from 'fp-ts/IO'
 import { Lazy, pipe } from 'fp-ts/function'
-import { nonEmptyArray, option } from 'fp-ts'
+import { boolean, nonEmptyArray, option } from 'fp-ts'
 import { commonErrors } from './commonErrors'
 
 export const Edge = <T extends t.Mixed>(T: T) =>
@@ -52,6 +58,53 @@ export interface Connection<T> {
 
 export function getConnectionNodes<T>(connection: Connection<T>): T[] {
   return connection.edges.map(edge => edge.node)
+}
+
+export function addToConnection<T extends { id: PositiveInteger }>(
+  connection: Connection<T>,
+  newNode: T
+): Connection<T> {
+  return {
+    ...connection,
+    totalCount: unsafeNonNegativeInteger(connection.totalCount + 1),
+    edges: [
+      {
+        cursor: unsafeNonEmptyString(newNode.id.toString()),
+        node: newNode
+      },
+      ...connection.edges
+    ]
+  }
+}
+
+export function updateConnection<T extends { id: PositiveInteger }>(
+  connection: Connection<T>,
+  updatedNode: T
+): Connection<T> {
+  return {
+    ...connection,
+    edges: connection.edges.map(edge => ({
+      ...edge,
+      node: pipe(
+        edge.node.id === updatedNode.id,
+        boolean.fold(
+          () => edge.node,
+          () => updatedNode
+        )
+      )
+    }))
+  }
+}
+
+export function deleteFromConnection<T extends { id: PositiveInteger }>(
+  connection: Connection<T>,
+  deletedNode: T
+): Connection<T> {
+  return {
+    ...connection,
+    totalCount: unsafeNonNegativeInteger(connection.totalCount - 1),
+    edges: connection.edges.filter(({ node }) => node.id !== deletedNode.id)
+  }
 }
 
 const CoolerErrorCode = t.keyof(

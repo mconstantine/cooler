@@ -5,6 +5,7 @@ import {
   NonEmptyString,
   optionFromNullable
 } from 'io-ts-types'
+import { TaxCreationInput, TaxUpdateInput } from '../../../../entities/Tax'
 import {
   EmailString,
   LocalizedString,
@@ -26,6 +27,7 @@ const ProfileQueryInput = t.type(
   },
   'ProfileQueryInput'
 )
+export type ProfileQueryInput = t.TypeOf<typeof ProfileQueryInput>
 
 const ProfileQueryOutput = t.type(
   {
@@ -45,6 +47,7 @@ const ProfileQueryOutput = t.type(
   },
   'ProfileQueryOutput'
 )
+export type ProfileQueryOutput = t.TypeOf<typeof ProfileQueryOutput>
 
 export const profileQuery = makeQuery({
   query: gql`
@@ -137,4 +140,89 @@ export const deleteProfileMutation = makeMutation({
   `,
   inputCodec: t.void,
   outputCodec: t.unknown
+})
+
+const CreateTaxInput = t.type(
+  {
+    tax: TaxCreationInput
+  },
+  'CreateTaxInput'
+)
+
+const CreateTaxOutput = t.type(
+  {
+    createTax: Tax
+  },
+  'CreateTaxOutput'
+)
+
+export const createTaxMutation = makeMutation({
+  query: gql`
+    mutation createTax($tax: TaxCreationInput!) {
+      createTax(tax: $tax) {
+        id
+        label
+        value
+      }
+    }
+  `,
+  inputCodec: CreateTaxInput,
+  outputCodec: CreateTaxOutput
+})
+
+const UpdateTaxInput = t.type(
+  {
+    id: PositiveInteger,
+    tax: TaxUpdateInput
+  },
+  'UpdateTaxInput'
+)
+
+const UpdateTaxOutput = t.type(
+  {
+    updateTax: Tax
+  },
+  'UpdateTaxOutput'
+)
+
+export const updateTaxMutation = makeMutation({
+  query: gql`
+    mutation updateTax($id: Int!, $tax: TaxUpdateInput!) {
+      updateTax(id: $id, tax: $tax) {
+        id
+        label
+        value
+      }
+    }
+  `,
+  inputCodec: UpdateTaxInput,
+  outputCodec: UpdateTaxOutput
+})
+
+const DeleteTaxInput = t.type(
+  {
+    id: PositiveInteger
+  },
+  'DeleteTaxInput'
+)
+
+const DeleteTaxOutput = t.type(
+  {
+    deleteTax: Tax
+  },
+  'DeleteTaxOutput'
+)
+
+export const deleteTaxMutation = makeMutation({
+  query: gql`
+    mutation deleteTax($id: Int!) {
+      deleteTax(id: $id) {
+        id
+        label
+        value
+      }
+    }
+  `,
+  inputCodec: DeleteTaxInput,
+  outputCodec: DeleteTaxOutput
 })

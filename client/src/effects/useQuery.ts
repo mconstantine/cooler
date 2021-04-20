@@ -1,5 +1,5 @@
 import { taskEither } from 'fp-ts'
-import { pipe } from 'fp-ts/function'
+import { constVoid, pipe } from 'fp-ts/function'
 import { Reader } from 'fp-ts/Reader'
 import { useCallback, useEffect, useState } from 'react'
 import { ApiError, GraphQLQuery } from '../misc/graphql'
@@ -38,7 +38,15 @@ export function foldQuery<O, T>(
   }
 }
 
-type UseQueryOutput<I, O> = [Query<O>, Reader<I, void>, Reader<O, void>]
+interface UpdateQueryFn<O> {
+  (updateFn: (currentData: O) => O): void
+}
+
+export interface UseQueryOutput<I, O> {
+  query: Query<O>
+  refresh: Reader<I, void>
+  update: UpdateQueryFn<O>
+}
 
 export function useQuery<I, II, O, OO>(
   query: GraphQLQuery<I, II, O, OO>,
@@ -84,15 +92,20 @@ export function useQuery<I, II, O, OO>(
     [sendGraphQLCall, query]
   )
 
-  const update: Reader<O, void> = newData =>
-    setState({
-      type: 'success',
-      data: newData
-    })
+  const update: UpdateQueryFn<O> = updateFn =>
+    pipe(
+      state,
+      foldQuery(constVoid, constVoid, currentData =>
+        setState({
+          type: 'success',
+          data: updateFn(currentData)
+        })
+      )
+    )
 
   useEffect(() => {
     refresh(variables)
   }, [refresh, variables])
 
-  return [state, refresh, update]
+  return { query: state, refresh, update }
 }

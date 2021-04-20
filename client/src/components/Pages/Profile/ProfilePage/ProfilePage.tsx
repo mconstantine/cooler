@@ -1,30 +1,17 @@
-import { option, taskEither } from 'fp-ts'
-import { constVoid, pipe } from 'fp-ts/function'
+import { option } from 'fp-ts'
+import { pipe } from 'fp-ts/function'
 import { IO } from 'fp-ts/IO'
 import { Reader } from 'fp-ts/Reader'
-import { ReaderTaskEither } from 'fp-ts/ReaderTaskEither'
-import { TaskEither } from 'fp-ts/TaskEither'
-import { settings } from 'ionicons/icons'
-import { useMemo, useState } from 'react'
+import { person, settings } from 'ionicons/icons'
+import { useState } from 'react'
 import { a18n } from '../../../../a18n'
-import { useAccount } from '../../../../contexts/AccountContext'
-import { useMutation } from '../../../../effects/useMutation'
-import { foldQuery, useQuery } from '../../../../effects/useQuery'
-import { LocalizedString } from '../../../../globalDomain'
-import { getConnectionNodes } from '../../../../misc/graphql'
+import { useQuery } from '../../../../effects/useQuery'
 import { Content } from '../../../Content/Content'
-import { ErrorPanel } from '../../../ErrorPanel'
 import { Heading } from '../../../Heading/Heading'
-import { LoadingBlock } from '../../../Loading/LoadingBlock'
 import { Menu } from '../../../Menu/Menu'
-import { CashedAmount } from '../CashedAmount'
-import { CurrentSituation } from '../CurrentSituation'
-import { UserData, UserUpdate } from '../UserData'
-import {
-  deleteProfileMutation,
-  profileQuery,
-  updateProfileMutation
-} from './domain'
+import { profileQuery, ProfileQueryInput } from './domain'
+import { Profile } from './Profile'
+import { Settings } from './Settings'
 
 type View = 'Profile' | 'Settings'
 
@@ -33,50 +20,13 @@ function foldView<T>(matches: { [k in View]: IO<T> }): Reader<View, T> {
 }
 
 export default function ProfilePage() {
-  const { dispatch } = useAccount()
-  const updateProfile = useMutation(updateProfileMutation)
-  const deleteProfile = useMutation(deleteProfileMutation)
   const [view, setView] = useState<View>('Profile')
-
-  const [since, setSince] = useState(() => {
+  const [queryInput, setQueryInput] = useState<ProfileQueryInput>(() => {
     const now = new Date()
-    return new Date(now.getFullYear(), now.getMonth())
+    return { since: new Date(now.getFullYear(), now.getMonth()) }
   })
 
-  const input = useMemo(() => ({ since }), [since])
-  const [profile, , update] = useQuery(profileQuery, input)
-
-  const onDataChange: ReaderTaskEither<
-    UserUpdate,
-    LocalizedString,
-    unknown
-  > = user =>
-    pipe(
-      updateProfile({ user }),
-      taskEither.chain(({ updateMe }) =>
-        taskEither.fromIO(() =>
-          pipe(
-            profile,
-            foldQuery(constVoid, constVoid, ({ me }) =>
-              update({
-                me: {
-                  ...me,
-                  ...updateMe
-                }
-              })
-            )
-          )
-        )
-      ),
-      taskEither.mapLeft(error => error.message)
-    )
-
-  const onLogout: IO<void> = () => dispatch({ type: 'logout' })
-
-  const onDeleteProfile: TaskEither<LocalizedString, unknown> = pipe(
-    deleteProfile(),
-    taskEither.mapLeft(error => error.message)
-  )
+  const query = useQuery(profileQuery, queryInput)
 
   return (
     <div className="ProfilePage">
@@ -98,44 +48,29 @@ export default function ProfilePage() {
                 >
                   {a18n`Profile`}
                 </Heading>
-                {pipe(
-                  profile,
-                  foldQuery(
-                    () => <LoadingBlock />,
-                    error => <ErrorPanel error={error.message} />,
-                    data => {
-                      const taxes = getConnectionNodes(data.me.taxes)
-
-                      return (
-                        <>
-                          <UserData
-                            user={{ ...data.me, taxes }}
-                            onDataChange={onDataChange}
-                            onLogout={onLogout}
-                            onDeleteProfile={onDeleteProfile}
-                          />
-                          <CurrentSituation
-                            data={{ ...data.me, taxes }}
-                            since={since}
-                            onSinceDateChange={since =>
-                              taskEither.fromIO(() => setSince(since))
-                            }
-                          />
-                          <CashedAmount
-                            data={{ ...data.me, taxes }}
-                            since={since}
-                            onSinceDateChange={since =>
-                              taskEither.fromIO(() => setSince(since))
-                            }
-                          />
-                        </>
-                      )
-                    }
-                  )
-                )}
+                <Profile
+                  query={query}
+                  queryInput={queryInput}
+                  onQueryInputChange={setQueryInput}
+                />
               </>
             ),
-            Settings: () => null // TODO: settings page here
+            Settings: () => (
+              <>
+                <Heading
+                  size={40}
+                  action={option.some({
+                    type: 'sync',
+                    label: a18n`Profile`,
+                    icon: option.some(person),
+                    action: () => setView('Profile')
+                  })}
+                >
+                  {a18n`Settings`}
+                </Heading>
+                <Settings query={query} />
+              </>
+            )
           })
         )}
       </Content>

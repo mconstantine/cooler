@@ -2,7 +2,7 @@ import { FC } from 'react'
 import './Heading.scss'
 import * as t from 'io-ts'
 import { Color, LocalizedString } from '../../globalDomain'
-import { constNull, pipe } from 'fp-ts/function'
+import { constFalse, constNull, constTrue, pipe } from 'fp-ts/function'
 import { composeClassName } from '../../misc/composeClassName'
 import { Option } from 'fp-ts/Option'
 import { TaskEither } from 'fp-ts/TaskEither'
@@ -100,6 +100,18 @@ interface Props {
 export const Heading: FC<Props> = props => {
   const color = props.color || 'default'
 
+  const isActionFlat = pipe(
+    props.size,
+    foldHeadingSize(
+      constFalse,
+      constFalse,
+      constFalse,
+      constTrue,
+      constTrue,
+      constTrue
+    )
+  )
+
   const action = pipe(
     props.action,
     option.fold(
@@ -112,6 +124,7 @@ export const Heading: FC<Props> = props => {
             icon={action.icon}
             color={action.color}
             action={action.action}
+            flat={isActionFlat}
           />
         ),
         action => (
@@ -129,6 +142,7 @@ export const Heading: FC<Props> = props => {
             icon={action.icon}
             color={action.color}
             action={action.action}
+            flat={isActionFlat}
           />
         )
       )

@@ -5,7 +5,7 @@ import { ReaderTaskEither } from 'fp-ts/ReaderTaskEither'
 import { useState } from 'react'
 import { unsafeLocalizedString } from '../../../a18n'
 import { Content } from '../../../components/Content/Content'
-import { TaxesListForm as TaxesListFormComponent } from '../../../components/Pages/Settings/TaxesListForm'
+import { TaxesListForm as TaxesListFormComponent } from '../../../components/Pages/Profile/ProfilePage/TaxesListForm'
 import { eqTax, Tax, TaxCreationInput } from '../../../entities/Tax'
 import {
   LocalizedString,

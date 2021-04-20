@@ -4,14 +4,14 @@ import { Option } from 'fp-ts/Option'
 import { ReaderTaskEither } from 'fp-ts/ReaderTaskEither'
 import { add, trash } from 'ionicons/icons'
 import { FC, Reducer, useReducer } from 'react'
-import { a18n } from '../../../a18n'
-import { useDialog } from '../../../effects/useDialog'
-import { Tax, TaxCreationInput } from '../../../entities/Tax'
-import { formatPercentarge, LocalizedString } from '../../../globalDomain'
-import { Card } from '../../Card/Card'
-import { TaxForm } from '../../Form/Forms/TaxForm'
-import { Heading, HeadingAction } from '../../Heading/Heading'
-import { Modal } from '../../Modal/Modal'
+import { a18n } from '../../../../a18n'
+import { useDialog } from '../../../../effects/useDialog'
+import { Tax, TaxCreationInput } from '../../../../entities/Tax'
+import { formatPercentarge, LocalizedString } from '../../../../globalDomain'
+import { Card } from '../../../Card/Card'
+import { TaxForm } from '../../../Form/Forms/TaxForm'
+import { Heading, HeadingAction } from '../../../Heading/Heading'
+import { Modal } from '../../../Modal/Modal'
 import './TaxesListForm.scss'
 
 interface Props {
@@ -146,7 +146,7 @@ export const TaxesListForm: FC<Props> = props => {
 
   return (
     <div className="TaxesListForm">
-      <Heading size={36} action={headingAction}>{a18n`Taxes`}</Heading>
+      <Heading size={27} action={headingAction}>{a18n`Taxes`}</Heading>
       {props.taxes.map(tax => (
         <Card
           key={tax.id}

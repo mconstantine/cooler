@@ -16,12 +16,21 @@ export type Tax = t.TypeOf<typeof Tax>
 export const TaxCreationInput = t.type(
   {
     label: NonEmptyString,
-    value: Percentage,
-    user: PositiveInteger
+    value: Percentage
   },
   'TaxCreationInput'
 )
 export type TaxCreationInput = t.TypeOf<typeof TaxCreationInput>
+
+export const DatabaseTaxCreationInput = t.type(
+  {
+    label: NonEmptyString,
+    value: Percentage,
+    user: PositiveInteger
+  },
+  'DatabaseTaxCreationInput'
+)
+export type DatabaseTaxCreationInput = t.TypeOf<typeof DatabaseTaxCreationInput>
 
 export const TaxUpdateInput = t.partial(
   {

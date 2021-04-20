@@ -13,13 +13,15 @@ export const Tax = t.type(
 )
 export type Tax = t.TypeOf<typeof Tax>
 
-export const TaxCreationInput = t.type(
-  {
-    label: LocalizedString,
-    value: Percentage
-  },
-  'TaxCreationInput'
-)
+const TaxInput = {
+  label: LocalizedString,
+  value: Percentage
+}
+
+export const TaxCreationInput = t.type(TaxInput, 'TaxCreationInput')
 export type TaxCreationInput = t.TypeOf<typeof TaxCreationInput>
+
+export const TaxUpdateInput = t.partial(TaxInput, 'TaxUpdateInput')
+export type TaxUpdateInput = t.TypeOf<typeof TaxUpdateInput>
 
 export const eqTax: Eq<Tax> = eq.fromEquals((t1, t2) => t1.id === t2.id)

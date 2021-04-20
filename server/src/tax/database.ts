@@ -4,7 +4,7 @@ import { TaskEither } from 'fp-ts/TaskEither'
 import SQL from 'sql-template-strings'
 import { dbGet, insert, remove, update } from '../misc/dbUtils'
 import { PositiveInteger } from '../misc/Types'
-import { Tax, TaxCreationInput, TaxUpdateInput } from './interface'
+import { DatabaseTaxCreationInput, Tax, TaxUpdateInput } from './interface'
 
 export function getTaxById(
   id: PositiveInteger
@@ -13,9 +13,9 @@ export function getTaxById(
 }
 
 export function insertTax(
-  tax: TaxCreationInput
+  tax: DatabaseTaxCreationInput
 ): TaskEither<ApolloError, PositiveInteger> {
-  return insert('tax', tax, TaxCreationInput)
+  return insert('tax', tax, DatabaseTaxCreationInput)
 }
 
 export function updateTax(
