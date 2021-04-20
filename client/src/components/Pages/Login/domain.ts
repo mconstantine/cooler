@@ -26,7 +26,7 @@ const LoginMutationOutput = t.type(
 
 export const loginMutation = makeMutation({
   query: gql`
-    mutation($email: String!, $password: String!) {
+    mutation loginUser($email: String!, $password: String!) {
       loginUser(user: { email: $email, password: $password }) {
         accessToken
         refreshToken

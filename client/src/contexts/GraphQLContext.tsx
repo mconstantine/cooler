@@ -11,6 +11,7 @@ import {
   RawApiErrors,
   extractApiError
 } from '../misc/graphql'
+import { OperationDefinitionNode } from 'graphql'
 
 interface GraphQLContext {
   sendGraphQLCall: <I, II, O, OO>(
@@ -33,8 +34,24 @@ export const GraphQLProvider: FC = props => {
     ): TaskEither<ApiError, O> => {
       return pipe(
         taskEither.tryCatch(
-          () =>
-            window.fetch(process.env.REACT_APP_API_URL!, {
+          () => {
+            if (!call.query.loc) {
+              throw new Error('sendGraphQLCall: found a query without source')
+            }
+
+            const definition = call.query.definitions.find(
+              ({ kind }) => kind === 'OperationDefinition'
+            ) as OperationDefinitionNode | undefined
+
+            if (!definition) {
+              throw new Error(
+                'sendGraphQLCall: found a query with no operation definitions'
+              )
+            }
+
+            const operationName = definition.name?.value ?? null
+
+            return window.fetch(process.env.REACT_APP_API_URL!, {
               method: 'POST',
               headers: {
                 ...{ 'Content-Type': 'application/json' },
@@ -49,10 +66,12 @@ export const GraphQLProvider: FC = props => {
                 )
               },
               body: JSON.stringify({
-                query: call.query.loc!.source.body,
+                operationName,
+                query: call.query.loc.source.body,
                 variables: call.inputCodec.encode(variables)
               })
-            }),
+            })
+          },
           () => unexpectedApiError
         ),
         taskEither.chain(response =>
