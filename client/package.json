@@ -66,6 +66,7 @@
     "@storybook/node-logger": "^6.2.8",
     "@storybook/preset-create-react-app": "^3.1.7",
     "@storybook/react": "^6.2.8",
+    "cypress": "^7.1.0",
     "eslint-plugin-fp-ts": "^0.2.1",
     "fp-ts": "^2.9.1",
     "prettier": "^2.2.1",
