@@ -3,7 +3,7 @@ import { FC } from 'react'
 import { a18n } from '../../../../a18n'
 import { LocalizedString } from '../../../../globalDomain'
 import { Button } from '../../../Button/Button/Button'
-import { Label } from '../../../Label/Label'
+import { Banner } from '../../../Banner/Banner'
 import './DaysGrid.scss'
 
 interface Props {
@@ -45,7 +45,7 @@ export const DaysGrid: FC<Props> = ({
   return (
     <div className="DaysGrid">
       {weekDayLabels.map(s => (
-        <Label key={s} content={s} />
+        <Banner key={s} content={s} />
       ))}
       {days.map(day => (
         <Button

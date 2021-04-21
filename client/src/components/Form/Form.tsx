@@ -12,7 +12,7 @@ import {
   ControlledLoadingButton,
   LoadingState
 } from '../Button/LoadingButton/ControlledLoadingButton'
-import { Label } from '../Label/Label'
+import { Banner } from '../Banner/Banner'
 import { Panel } from '../Panel/Panel'
 import './Form.scss'
 
@@ -78,10 +78,10 @@ export const Form: FC<Props> = ({
                 pipe(
                   submitError,
                   option.fold(constNull, error => (
-                    <Label icon={alert} color="danger" content={error} />
+                    <Banner icon={alert} color="danger" content={error} />
                   ))
                 ),
-              error => <Label icon={alert} color="danger" content={error} />
+              error => <Banner icon={alert} color="danger" content={error} />
             )
           )}
 

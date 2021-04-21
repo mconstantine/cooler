@@ -4,7 +4,7 @@ import { alert, warning as warningIcon } from 'ionicons/icons'
 import { forwardRef, InputHTMLAttributes, useState } from 'react'
 import { LocalizedString } from '../../../../globalDomain'
 import { composeClassName } from '../../../../misc/composeClassName'
-import { Label } from '../../../Label/Label'
+import { Banner } from '../../../Banner/Banner'
 import { FieldProps } from '../../useForm'
 import TextareaAutosize from 'react-autosize-textarea'
 import './TextArea.scss'
@@ -77,7 +77,7 @@ export const TextArea = forwardRef<HTMLTextAreaElement, Props>(
                   () => null,
                   warning => (
                     <div className="warning">
-                      <Label
+                      <Banner
                         content={warning}
                         color="warning"
                         icon={warningIcon}
@@ -88,7 +88,7 @@ export const TextArea = forwardRef<HTMLTextAreaElement, Props>(
               ),
             error => (
               <div className="error">
-                <Label content={error} color="danger" icon={alert} />
+                <Banner content={error} color="danger" icon={alert} />
               </div>
             )
           )

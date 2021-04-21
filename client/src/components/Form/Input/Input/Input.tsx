@@ -4,7 +4,7 @@ import { alert, warning as warningIcon } from 'ionicons/icons'
 import { forwardRef, InputHTMLAttributes, useState } from 'react'
 import { LocalizedString } from '../../../../globalDomain'
 import { composeClassName } from '../../../../misc/composeClassName'
-import { Label } from '../../../Label/Label'
+import { Banner } from '../../../Banner/Banner'
 import { FieldProps } from '../../useForm'
 import './Input.scss'
 
@@ -79,7 +79,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
                   () => null,
                   warning => (
                     <div className="warning">
-                      <Label
+                      <Banner
                         content={warning}
                         icon={warningIcon}
                         color="warning"
@@ -90,7 +90,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
               ),
             error => (
               <div className="error">
-                <Label content={error} icon={alert} color="danger" />
+                <Banner content={error} icon={alert} color="danger" />
               </div>
             )
           )

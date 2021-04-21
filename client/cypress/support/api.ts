@@ -4,6 +4,7 @@ declare namespace Cypress {
   interface Chainable {
     mockApiCall: typeof mockApiCall
     mockApiCallWithError: typeof mockApiCallWithError
+    skipLogin: typeof skipLogin
   }
 }
 
@@ -54,3 +55,16 @@ function mockApiCallWithError(
   })
 }
 Cypress.Commands.add('mockApiCallWithError', mockApiCallWithError)
+
+function skipLogin() {
+  localStorage.setItem(
+    'account',
+    JSON.stringify({
+      type: 'loggedIn',
+      accessToken: 'some-access-token',
+      refreshToken: 'some-refresh-token',
+      expiration: new Date(Date.now() + 86400000)
+    })
+  )
+}
+Cypress.Commands.add('skipLogin', skipLogin)

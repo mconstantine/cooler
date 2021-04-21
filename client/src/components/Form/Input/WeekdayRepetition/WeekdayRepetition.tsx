@@ -10,7 +10,7 @@ import {
 } from '../../../../globalDomain'
 import { composeClassName } from '../../../../misc/composeClassName'
 import { Buttons } from '../../../Button/Buttons/Buttons'
-import { Label } from '../../../Label/Label'
+import { Banner } from '../../../Banner/Banner'
 import { FieldProps } from '../../useForm'
 import { ToggleButton } from '../ToggleButton'
 import './WeekdayRepetition.scss'
@@ -123,7 +123,7 @@ export const WeekdayRepetition: FC<Props> = props => {
 
   return (
     <div className={composeClassName('WeekdayRepetition', color)}>
-      <Label content={props.label} color={color} />
+      <Banner content={props.label} color={color} />
       <Buttons>
         {labels.map((label, index) => (
           <ToggleButton
@@ -153,13 +153,17 @@ export const WeekdayRepetition: FC<Props> = props => {
               props.warning,
               option.fold(constNull, warning => (
                 <div className="warning">
-                  <Label content={warning} icon={warningIcon} color="warning" />
+                  <Banner
+                    content={warning}
+                    icon={warningIcon}
+                    color="warning"
+                  />
                 </div>
               ))
             ),
           error => (
             <div className="error">
-              <Label content={error} icon={alert} color="danger" />
+              <Banner content={error} icon={alert} color="danger" />
             </div>
           )
         )

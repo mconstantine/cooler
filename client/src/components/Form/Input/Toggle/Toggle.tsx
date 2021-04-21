@@ -4,7 +4,7 @@ import { alert, warning as warningIcon } from 'ionicons/icons'
 import { FC } from 'react'
 import { LocalizedString } from '../../../../globalDomain'
 import { composeClassName } from '../../../../misc/composeClassName'
-import { Label } from '../../../Label/Label'
+import { Banner } from '../../../Banner/Banner'
 import { FieldProps } from '../../useForm'
 import './Toggle.scss'
 
@@ -61,13 +61,17 @@ export const Toggle: FC<Props> = props => {
               props.warning,
               option.fold(constNull, warning => (
                 <div className="warning">
-                  <Label content={warning} icon={warningIcon} color="warning" />
+                  <Banner
+                    content={warning}
+                    icon={warningIcon}
+                    color="warning"
+                  />
                 </div>
               ))
             ),
           error => (
             <div className="error">
-              <Label content={error} icon={alert} color="danger" />
+              <Banner content={error} icon={alert} color="danger" />
             </div>
           )
         )

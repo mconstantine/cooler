@@ -1,2 +1,2 @@
 import '@testing-library/cypress/add-commands'
-import './mockApiCall'
+import './api'

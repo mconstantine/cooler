@@ -1,9 +1,15 @@
 @import '../../variables';
 
-.Label {
+.Banner {
   @include label;
   margin-top: 8px;
   margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+
+  .Icon {
+    margin-right: 8px;
+  }
 
   &.primary {
     color: $color-primary-dark;
@@ -24,7 +30,7 @@
   }
 }
 
-.light .Label {
+.light .Banner {
   &.primary {
     color: $color-primary-light;
   }

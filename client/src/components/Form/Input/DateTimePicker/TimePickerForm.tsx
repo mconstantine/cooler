@@ -3,7 +3,7 @@ import { pipe } from 'fp-ts/function'
 import { forwardRef, KeyboardEvent, Ref, useRef } from 'react'
 import { a18n } from '../../../../a18n'
 import { LocalizedString } from '../../../../globalDomain'
-import { Label } from '../../../Label/Label'
+import { Banner } from '../../../Banner/Banner'
 import { FieldProps } from '../../useForm'
 import { Input } from '../Input/Input'
 import { leadZero, validateHours } from './utils'
@@ -66,7 +66,7 @@ export const TimePickerForm = forwardRef(
             )
           }
         />
-        <Label content={':' as LocalizedString} />
+        <Banner content={':' as LocalizedString} />
         <Input
           ref={minutesInputRef}
           label={a18n`Minutes`}

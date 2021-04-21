@@ -11,7 +11,7 @@ import { Button } from '../Button/Button/Button'
 import { LoadingButton } from '../Button/LoadingButton/LoadingButton'
 import './Card.scss'
 import { constNull, constVoid, flow, pipe } from 'fp-ts/function'
-import { Label } from '../Label/Label'
+import { Banner } from '../Banner/Banner'
 import { skull } from 'ionicons/icons'
 
 interface SyncAction {
@@ -74,7 +74,7 @@ export const Card: FC<Props> = props => {
       {pipe(
         error,
         option.fold(constNull, error => (
-          <Label content={error} color="danger" icon={skull} />
+          <Banner content={error} color="danger" icon={skull} />
         ))
       )}
       <Buttons>

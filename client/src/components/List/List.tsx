@@ -242,7 +242,7 @@ export const List: FC<Props> = props => {
           const renderValue = (item: ValuedItem) => (
             <div className="itemSideContent">
               <Label
-                content={item.value}
+                message={item.value}
                 color={pipe(
                   item.progress,
                   option.fold(
@@ -311,14 +311,14 @@ export const List: FC<Props> = props => {
                   <div className="itemContent">
                     {pipe(
                       item.label,
-                      option.map(label => <Label content={label} />),
+                      option.map(label => <Label message={label} />),
                       option.toNullable
                     )}
                     {pipe(
                       item.size || 'default',
                       foldSize(
                         () => <Body>{item.content}</Body>,
-                        () => <Label content={item.content} />
+                        () => <Label message={item.content} />
                       )
                     )}
                     {pipe(
