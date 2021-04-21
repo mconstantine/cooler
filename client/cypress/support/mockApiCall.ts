@@ -3,13 +3,13 @@ const apiUrl = Cypress.env('apiUrl')
 declare namespace Cypress {
   interface Chainable {
     mockApiCall: typeof mockApiCall
+    mockApiCallWithError: typeof mockApiCallWithError
   }
 }
 
 function mockApiCall<T>(
   operationName: string,
-  body: Record<string, T>,
-  statusCode?: number
+  data: Record<string, T>
 ): Cypress.Chainable<null>
 function mockApiCall(
   operationName: string,
@@ -17,16 +17,40 @@ function mockApiCall(
 ): Cypress.Chainable<null>
 function mockApiCall<T>(
   operationName: string,
-  body: string | Record<string, T>,
-  statusCode: number = 200
+  data: string | Record<string, T>
 ): Cypress.Chainable<null> {
   return cy.intercept('POST', apiUrl, req => {
     if (req.body.operationName === operationName) {
       req.reply(
-        typeof body === 'string' ? { fixture: body } : { statusCode, body }
+        typeof data === 'string' ? { fixture: data } : { body: { data } }
       )
     }
   })
 }
-
 Cypress.Commands.add('mockApiCall', mockApiCall)
+
+function mockApiCallWithError(
+  operationName: string,
+  statusCode: number,
+  errorCode: string,
+  errorMessage: string
+): Cypress.Chainable<null> {
+  return cy.intercept('POST', apiUrl, req => {
+    if (req.body.operationName === operationName) {
+      req.reply({
+        statusCode,
+        body: {
+          errors: [
+            {
+              extensions: {
+                code: errorCode
+              },
+              message: errorMessage
+            }
+          ]
+        }
+      })
+    }
+  })
+}
+Cypress.Commands.add('mockApiCallWithError', mockApiCallWithError)

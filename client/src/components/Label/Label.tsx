@@ -12,7 +12,7 @@ interface Props {
 
 export const Label: FC<Props> = ({ content, icon, color = 'default' }) => {
   return (
-    <p className={composeClassName('Label', color)}>
+    <p role="banner" className={composeClassName('Label', color)}>
       {icon ? <Icon color={color} src={icon} size="small" /> : null}
       {content}
     </p>

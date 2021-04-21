@@ -1,5 +1,3 @@
-import { createError } from './utils'
-
 describe('Login page', () => {
   it('should render the interface', () => {
     cy.visit('/')
@@ -13,12 +11,10 @@ describe('Login page', () => {
     const password = 'S0m3P4ssw0rd!'
 
     cy.mockApiCall('loginUser', {
-      data: {
-        loginUser: {
-          accessToken: 'some-access-token',
-          refreshToken: 'some-refresh-token',
-          expiration: new Date(Date.now() + 86400000).toISOString()
-        }
+      loginUser: {
+        accessToken: 'some-access-token',
+        refreshToken: 'some-refresh-token',
+        expiration: new Date(Date.now() + 86400000).toISOString()
       }
     }).as('login')
 
@@ -39,7 +35,7 @@ describe('Login page', () => {
   it('should display errors', () => {
     const errorMessage = 'This is an error, like wrong e-mail or password'
 
-    cy.mockApiCall('loginUser', createError('COOLER_400', errorMessage)).as(
+    cy.mockApiCallWithError('loginUser', 400, 'COOLER_400', errorMessage).as(
       'login'
     )
 
@@ -51,9 +47,6 @@ describe('Login page', () => {
     cy.findByRole('button', { name: 'Submit' }).click()
 
     cy.wait('@login')
-    // TODO: make this selector better
-    cy.findByText(errorMessage).should('be.visible')
+    cy.findByRole('banner').findByText(errorMessage).should('be.visible')
   })
-
-  it.skip('should work with the actual server', () => {})
 })
