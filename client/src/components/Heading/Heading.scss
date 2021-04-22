@@ -8,63 +8,125 @@
   justify-content: space-between;
   align-items: center;
 
+  &.s40 {
+    margin-bottom: 20px;
+  }
+
+  &.s36 {
+    margin-bottom: 14px;
+  }
+
+  &.s32 {
+    margin-bottom: 13px;
+  }
+
+  &.s27 {
+    margin-bottom: 9px;
+  }
+
+  &.s24 {
+    margin-bottom: 8px;
+  }
+
+  &.s21 {
+    margin-bottom: 4px;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    margin-top: 0;
+    margin-bottom: 0;
+  }
+
   &.primary {
-    color: mix($color-primary-dark, #fff, 40);
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+      color: mix($color-primary-dark, #fff, 40);
+    }
   }
 
   &.success {
-    color: mix($color-success-dark, #fff, 40);
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+      color: mix($color-success-dark, #fff, 40);
+    }
   }
 
   &.warning {
-    color: mix($color-warning-dark, #fff, 40);
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+      color: mix($color-warning-dark, #fff, 40);
+    }
   }
 
   &.danger {
-    color: mix($color-error-dark, #fff, 40);
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+      color: mix($color-error-dark, #fff, 40);
+    }
   }
 }
 
-h1.Heading,
-h2.Heading,
-h3.Heading {
+.Heading h1,
+.Heading h2,
+.Heading h3 {
   font-weight: $font-weight-light;
 }
 
-h4.Heading,
-h5.Heading,
-h6.Heading {
+.Heading h4,
+.Heading h5,
+.Heading h6 {
   font-weight: $font-weight-regular;
 }
 
-h1.Heading {
+.Heading h1 {
   @include ss('font-size', 32px, 40px);
-  margin-bottom: 20px;
+  // margin-bottom: 20px;
 }
 
-h2.Heading {
+.Heading h2 {
   @include ss('font-size', 28px, 36px);
-  margin-bottom: 14px;
+  // margin-bottom: 14px;
 }
 
-h3.Heading {
+.Heading h3 {
   @include ss('font-size', 24px, 32px);
-  margin-bottom: 13px;
+  // margin-bottom: 13px;
 }
 
-h4.Heading {
+.Heading h4 {
   @include ss('font-size', 22px, 27px);
-  margin-bottom: 9px;
+  // margin-bottom: 9px;
 }
 
-h5.Heading {
+.Heading h5 {
   @include ss('font-size', 20px, 24px);
-  margin-bottom: 8px;
+  // margin-bottom: 8px;
 }
 
-h6.Heading {
+.Heading h6 {
   @include ss('font-size', 18px, 21px);
-  margin-bottom: 4px;
+  // margin-bottom: 4px;
 }
 
 .light {
@@ -72,19 +134,47 @@ h6.Heading {
 
   .Heading {
     &.primary {
-      color: mix($color-primary-light, #000, 60);
+      h1,
+      h2,
+      h3,
+      h4,
+      h5,
+      h6 {
+        color: mix($color-primary-light, #000, 60);
+      }
     }
 
     &.success {
-      color: mix($color-success-light, #000, 60);
+      h1,
+      h2,
+      h3,
+      h4,
+      h5,
+      h6 {
+        color: mix($color-success-light, #000, 60);
+      }
     }
 
     &.warning {
-      color: mix($color-warning-light, #000, 60);
+      h1,
+      h2,
+      h3,
+      h4,
+      h5,
+      h6 {
+        color: mix($color-warning-light, #000, 60);
+      }
     }
 
     &.danger {
-      color: mix($color-error-light, #000, 60);
+      h1,
+      h2,
+      h3,
+      h4,
+      h5,
+      h6 {
+        color: mix($color-error-light, #000, 60);
+      }
     }
   }
 }

@@ -49,7 +49,7 @@ export const CashedAmount: FC<Props> = props => {
       <p>{a18n`The amount of money you cashed since a given date`}</p>
 
       <DateTimePicker
-        name="since"
+        name="cashedAmountSince"
         mode="date"
         label={a18n`Since`}
         value={props.since}

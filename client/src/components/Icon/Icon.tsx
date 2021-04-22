@@ -18,6 +18,7 @@ export const Icon: FC<IconProps> = ({
 }) => {
   return (
     <span
+      aria-hidden
       className={composeClassName('Icon', color, size, className)}
       dangerouslySetInnerHTML={{ __html: src.substring(24) }}
     />

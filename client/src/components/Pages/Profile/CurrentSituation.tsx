@@ -65,7 +65,7 @@ export const CurrentSituation: FC<Props> = props => {
       </Body>
 
       <DateTimePicker
-        name="since"
+        name="currentSituationSince"
         mode="date"
         label={a18n`Since`}
         value={props.since}

@@ -149,57 +149,27 @@ export const Heading: FC<Props> = props => {
     )
   )
 
-  return pipe(
-    props.size,
-    foldHeadingSize(
-      () => (
-        <h1
-          className={composeClassName('Heading', color, props.className || '')}
-        >
-          <span>{props.children}</span>
-          {action}
-        </h1>
-      ),
-      () => (
-        <h2
-          className={composeClassName('Heading', color, props.className || '')}
-        >
-          <span>{props.children}</span>
-          {action}
-        </h2>
-      ),
-      () => (
-        <h3
-          className={composeClassName('Heading', color, props.className || '')}
-        >
-          <span>{props.children}</span>
-          {action}
-        </h3>
-      ),
-      () => (
-        <h4
-          className={composeClassName('Heading', color, props.className || '')}
-        >
-          <span>{props.children}</span>
-          {action}
-        </h4>
-      ),
-      () => (
-        <h5
-          className={composeClassName('Heading', color, props.className || '')}
-        >
-          <span>{props.children}</span>
-          {action}
-        </h5>
-      ),
-      () => (
-        <h6
-          className={composeClassName('Heading', color, props.className || '')}
-        >
-          <span>{props.children}</span>
-          {action}
-        </h6>
-      )
-    )
+  return (
+    <div
+      className={composeClassName(
+        'Heading',
+        color,
+        `s${props.size}`,
+        props.className || ''
+      )}
+    >
+      {pipe(
+        props.size,
+        foldHeadingSize(
+          () => <h1>{props.children}</h1>,
+          () => <h2>{props.children}</h2>,
+          () => <h3>{props.children}</h3>,
+          () => <h4>{props.children}</h4>,
+          () => <h5>{props.children}</h5>,
+          () => <h6>{props.children}</h6>
+        )
+      )}
+      {action}
+    </div>
   )
 }

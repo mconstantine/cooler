@@ -16,84 +16,86 @@ export type InputProps = Omit<
     label: LocalizedString
   }
 
-export const Input = forwardRef<HTMLInputElement, InputProps>((props, ref) => {
-  const [isFocus, setIsFocus] = useState(false)
-  const focusClassName = isFocus ? 'focus' : ''
-  const disabledClassName = props.disabled ? 'disabled' : ''
+export const Input = forwardRef<HTMLInputElement, InputProps>(
+  ({ label, error, warning, children, className = '', ...props }, ref) => {
+    const [isFocus, setIsFocus] = useState(false)
+    const focusClassName = isFocus ? 'focus' : ''
+    const disabledClassName = props.disabled ? 'disabled' : ''
 
-  const colorClassName = pipe(
-    props.error,
-    option.fold(
-      () =>
-        pipe(
-          props.warning,
-          option.fold(
-            () => '',
-            () => 'warning'
-          )
-        ),
-      () => 'error'
+    const colorClassName = pipe(
+      error,
+      option.fold(
+        () =>
+          pipe(
+            warning,
+            option.fold(
+              () => '',
+              () => 'warning'
+            )
+          ),
+        () => 'error'
+      )
     )
-  )
 
-  return (
-    <div
-      className={composeClassName(
-        'Input',
-        props.className || '',
-        colorClassName,
-        focusClassName,
-        disabledClassName
-      )}
-    >
-      <label htmlFor={props.name}>
-        <div className="value">
-          <span>{props.label}</span>
-          <input
-            {...props}
-            ref={ref}
-            id={props.name}
-            value={props.value}
-            onChange={e => props.onChange(e.currentTarget.value)}
-            onFocus={e => {
-              props.onFocus?.(e)
-              setIsFocus(true)
-            }}
-            onBlur={e => {
-              props.onBlur?.(e)
-              setIsFocus(false)
-            }}
-            title={props.label}
-          />
-        </div>
-        {props.children}
-      </label>
-      {pipe(
-        props.error,
-        option.fold(
-          () =>
-            pipe(
-              props.warning,
-              option.fold(
-                () => null,
-                warning => (
-                  <div className="warning">
-                    <Banner
-                      content={warning}
-                      icon={warningIcon}
-                      color="warning"
-                    />
-                  </div>
+    return (
+      <div
+        className={composeClassName(
+          'Input',
+          className,
+          colorClassName,
+          focusClassName,
+          disabledClassName
+        )}
+      >
+        <label htmlFor={props.name}>
+          <div className="value">
+            <span>{label}</span>
+            <input
+              {...props}
+              ref={ref}
+              id={props.name}
+              value={props.value}
+              onChange={e => props.onChange(e.currentTarget.value)}
+              onFocus={e => {
+                props.onFocus?.(e)
+                setIsFocus(true)
+              }}
+              onBlur={e => {
+                props.onBlur?.(e)
+                setIsFocus(false)
+              }}
+              title={label}
+            />
+          </div>
+          {children}
+        </label>
+        {pipe(
+          error,
+          option.fold(
+            () =>
+              pipe(
+                warning,
+                option.fold(
+                  () => null,
+                  warning => (
+                    <div className="warning">
+                      <Banner
+                        content={warning}
+                        icon={warningIcon}
+                        color="warning"
+                      />
+                    </div>
+                  )
                 )
-              )
-            ),
-          error => (
-            <div className="error">
-              <Banner content={error} icon={alert} color="danger" />
-            </div>
+              ),
+            error => (
+              <div className="error">
+                <Banner content={error} icon={alert} color="danger" />
+              </div>
+            )
           )
-        )
-      )}
-    </div>
-  )
-})
+        )}
+      </div>
+    )
+  }
+)
