@@ -30,6 +30,11 @@
   }
 }
 
+.Panel:not(.framed) .Banner {
+  @include ss('padding-left', $spacing-medium-mobile, $spacing-medium-desktop);
+  @include ss('padding-right', $spacing-medium-mobile, $spacing-medium-desktop);
+}
+
 .light .Banner {
   &.primary {
     color: $color-primary-light;

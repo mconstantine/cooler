@@ -116,7 +116,7 @@ export const TaxesListForm: FC<Props> = props => {
 
   const headingAction: Option<HeadingAction> = option.some({
     type: 'sync',
-    label: a18n`Add new`,
+    label: a18n`New tax`,
     icon: option.some(add),
     action: () => dispatch({ type: 'add' })
   })
