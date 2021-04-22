@@ -2,12 +2,8 @@ import { Reader } from 'fp-ts/Reader'
 import gql from 'graphql-tag'
 import * as t from 'io-ts'
 import { NonEmptyString, optionFromNullable } from 'io-ts-types'
-import {
-  LocalizedString,
-  optionFromUndefined,
-  PositiveInteger
-} from '../../../globalDomain'
-import { Connection, Cursor, makeQuery } from '../../../misc/graphql'
+import { LocalizedString, PositiveInteger } from '../../../globalDomain'
+import { Connection, makeQuery } from '../../../misc/graphql'
 
 const PrivateClientForList = t.type(
   {
@@ -53,8 +49,7 @@ export function foldClientForList<T>(
 const ClientsQueryInput = t.type(
   {
     name: optionFromNullable(NonEmptyString),
-    first: PositiveInteger,
-    after: optionFromUndefined(Cursor)
+    first: PositiveInteger
   },
   'ClientsQueryInput'
 )

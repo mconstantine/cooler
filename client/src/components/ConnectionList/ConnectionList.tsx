@@ -29,14 +29,11 @@ interface Props<T, O> {
 
 export function ConnectionList<T, O>(props: Props<T, O>) {
   const [query, setQuery] = useState('')
-
-  const debouncedSearch = useDebounce((query: string) => {
-    props.onSearchQueryChange(query)
-  })
+  const debouncedSearch = useDebounce(props.onSearchQueryChange)
 
   useEffect(() => {
     debouncedSearch(query)
-  }, [query])
+  }, [query, debouncedSearch])
 
   return (
     <Panel title={props.title} framed action={option.none}>

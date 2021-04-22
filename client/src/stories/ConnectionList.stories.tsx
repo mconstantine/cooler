@@ -12,6 +12,7 @@ import { Item } from '../components/List/List'
 import { pipe } from 'fp-ts/function'
 import { UseQueryOutput } from '../effects/useQuery'
 import { IO } from 'fp-ts/IO'
+import { useCallback } from '@storybook/client-api'
 
 interface Args {
   shouldFail: boolean
@@ -113,7 +114,7 @@ const ConnectionListTemplate: Story<Args> = props => {
 
   const { filter, loadMore } = useCreateConnection([...fakeEntities])
 
-  const onQuerySearchChange = (query: string): void => {
+  const onQuerySearchChange = useCallback((query: string): void => {
     setQuery({ type: 'loading' })
 
     pipe(
@@ -144,7 +145,7 @@ const ConnectionListTemplate: Story<Args> = props => {
           })
       )
     )
-  }
+  }, [])
 
   const onLoadMore: IO<void> = () => {
     setQuery({ type: 'loading' })
