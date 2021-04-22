@@ -65,6 +65,7 @@ export const TaxForm: FC<Props> = props => {
   return (
     <Form
       title={title}
+      headingAction={option.none}
       formError={formError}
       submit={submit}
       additionalButtons={pipe(

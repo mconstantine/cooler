@@ -126,6 +126,7 @@ export const ProjectForm: FC<Props> = props => {
           project => project.name
         )
       )}
+      headingAction={option.none}
       submit={submit}
       formError={formError}
       additionalButtons={[

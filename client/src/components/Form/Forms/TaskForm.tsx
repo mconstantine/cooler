@@ -166,6 +166,7 @@ export const TaskForm: FC<Props> = props => {
   return (
     <Form
       title={a18n`New Task`}
+      headingAction={option.none}
       formError={formError}
       submit={submit}
       additionalButtons={[

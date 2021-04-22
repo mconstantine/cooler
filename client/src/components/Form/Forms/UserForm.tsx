@@ -85,6 +85,7 @@ export const UserForm: FC<Props> = props => {
   return (
     <Form
       title={a18n`Edit your data`}
+      headingAction={option.none}
       formError={formError}
       submit={submit}
       additionalButtons={[

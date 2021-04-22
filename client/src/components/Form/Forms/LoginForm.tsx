@@ -1,3 +1,4 @@
+import { option } from 'fp-ts'
 import { ReaderTaskEither } from 'fp-ts/ReaderTaskEither'
 import { NonEmptyString } from 'io-ts-types'
 import { FC } from 'react'
@@ -37,7 +38,12 @@ export const LoginForm: FC<Props> = props => {
   )
 
   return (
-    <Form title={a18n`Login`} submit={submit} formError={formError}>
+    <Form
+      title={a18n`Login`}
+      headingAction={option.none}
+      submit={submit}
+      formError={formError}
+    >
       <Input
         type="email"
         {...fieldProps('email')}

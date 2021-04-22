@@ -97,7 +97,12 @@ export const SessionForm: FC<Props> = props => {
   }
 
   return (
-    <Form title={a18n`New Session`} formError={formError} submit={submit}>
+    <Form
+      title={a18n`New Session`}
+      headingAction={option.none}
+      formError={formError}
+      submit={submit}
+    >
       {pipe(
         props.findTasks,
         option.fold(constNull, findTasks => (

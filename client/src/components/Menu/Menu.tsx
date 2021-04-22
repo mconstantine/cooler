@@ -52,7 +52,7 @@ export const Menu: FC<Props> = () => {
           type="button"
           label={a18n`Clients`}
           icon={option.none}
-          action={() => setRoute(clientsRoute())}
+          action={() => setRoute(clientsRoute('all'))}
           flat
           active={isClientsRoute(route)}
         />

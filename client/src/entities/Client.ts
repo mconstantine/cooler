@@ -1,3 +1,4 @@
+import { pipe } from 'fp-ts/function'
 import * as t from 'io-ts'
 import {
   DateFromISOString,
@@ -5,8 +6,7 @@ import {
   optionFromNullable
 } from 'io-ts-types'
 import { unsafeLocalizedString } from '../a18n'
-import { EmailString, PositiveInteger } from '../globalDomain'
-import { User } from './User'
+import { EmailString, LocalizedString, PositiveInteger } from '../globalDomain'
 
 export const ProvinceValues = {
   AG: unsafeLocalizedString('Agrigento'),
@@ -404,8 +404,8 @@ export const PrivateClientCreationInput = t.intersection([
     {
       type: t.literal('PRIVATE'),
       fiscal_code: NonEmptyString,
-      first_name: NonEmptyString,
-      last_name: NonEmptyString
+      first_name: LocalizedString,
+      last_name: LocalizedString
     },
     'PrivateClientCreationInput'
   )
@@ -421,7 +421,7 @@ export const BusinessClientCreationInput = t.intersection(
       type: t.literal('BUSINESS'),
       country_code: Country,
       vat_number: NonEmptyString,
-      business_name: NonEmptyString
+      business_name: LocalizedString
     })
   ],
   'BusinessClientCreationInput'
@@ -454,8 +454,7 @@ const ClientData = t.type(
   {
     id: PositiveInteger,
     created_at: DateFromISOString,
-    updated_at: DateFromISOString,
-    user: User
+    updated_at: DateFromISOString
   },
   'ClientData'
 )
@@ -487,4 +486,15 @@ export function foldClient<T>(
         return whenBusiness(client)
     }
   }
+}
+
+export function getClientName(client: Client): LocalizedString {
+  return pipe(
+    client,
+    foldClient(
+      client =>
+        unsafeLocalizedString(`${client.first_name} ${client.last_name}`),
+      client => client.business_name
+    )
+  )
 }

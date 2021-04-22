@@ -28,7 +28,7 @@ export const App: FC<Props> = () => {
               <Router
                 render={foldLocation({
                   Home: () => <ProfilePage />,
-                  Clients: () => <ClientsPage />,
+                  Clients: ({ subject }) => <ClientsPage subject={subject} />,
                   Projects: () => <ProjectsPage />
                 })}
               />

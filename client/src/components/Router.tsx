@@ -1,8 +1,9 @@
-import { end, format, lit, parse, Route, zero } from 'fp-ts-routing'
+import { end, format, lit, parse, Route, type, zero } from 'fp-ts-routing'
 import { Reader } from 'fp-ts/Reader'
 import { createContext, FC, lazy, useContext, useEffect, useState } from 'react'
 import { constVoid, pipe } from 'fp-ts/function'
 import { foldAccount, useAccount } from '../contexts/AccountContext'
+import { ClientSubject } from './Pages/Client/domain'
 
 const LoginPage = lazy(() => import('./Pages/Login/LoginPage'))
 
@@ -12,6 +13,7 @@ interface Home {
 
 interface Clients {
   readonly _tag: 'Clients'
+  readonly subject: ClientSubject
 }
 
 interface Projects {
@@ -26,9 +28,10 @@ export function homeRoute(): Home {
   }
 }
 
-export function clientsRoute(): Clients {
+export function clientsRoute(subject: ClientSubject): Clients {
   return {
-    _tag: 'Clients'
+    _tag: 'Clients',
+    subject
   }
 }
 
@@ -57,16 +60,18 @@ export function foldLocation<T>(
     ) => T
   }
 ): (location: Location) => T {
-  return location => matches[location._tag](location)
+  return location => matches[location._tag](location as any)
 }
 
 const homeMatch = end
-const clientsMatch = lit('clients').then(end)
+const clientsMatch = lit('clients')
+  .then(type('subject', ClientSubject))
+  .then(end)
 const projectsMatch = lit('projects').then(end)
 
 const router = zero<Location>()
   .alt(homeMatch.parser.map(homeRoute))
-  .alt(clientsMatch.parser.map(clientsRoute))
+  .alt(clientsMatch.parser.map(({ subject }) => clientsRoute(subject)))
   .alt(projectsMatch.parser.map(projectsRoute))
 
 interface Props {
@@ -78,16 +83,13 @@ function parseCurrentPath() {
 }
 
 function formatLocation(location: Location): string {
-  return format(
-    pipe(
-      location,
-      foldLocation({
-        Home: () => homeMatch.formatter,
-        Clients: () => clientsMatch.formatter,
-        Projects: () => projectsMatch.formatter
-      })
-    ),
-    location
+  return pipe(
+    location,
+    foldLocation({
+      Home: location => format(homeMatch.formatter, location),
+      Clients: location => format(clientsMatch.formatter, location),
+      Projects: location => format(projectsMatch.formatter, location)
+    })
   )
 }
 

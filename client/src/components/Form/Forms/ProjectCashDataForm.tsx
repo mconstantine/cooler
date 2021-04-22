@@ -112,6 +112,7 @@ export const ProjectCashDataForm: FC<Props> = props => {
   return (
     <Form
       title={a18n`Cash project`}
+      headingAction={option.none}
       formError={formError}
       submit={submit}
       additionalButtons={[

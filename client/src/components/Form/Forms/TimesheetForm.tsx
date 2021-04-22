@@ -100,6 +100,7 @@ export const TimesheetForm: FC<Props> = props => {
   return (
     <Form
       title={a18n`New Timesheet`}
+      headingAction={option.none}
       formError={formError}
       submit={submit}
       submitLabel={a18n`Download`}

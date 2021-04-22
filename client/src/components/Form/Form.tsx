@@ -15,9 +15,11 @@ import {
 import { Banner } from '../Banner/Banner'
 import { Panel } from '../Panel/Panel'
 import './Form.scss'
+import { HeadingAction } from '../Heading/Heading'
 
 interface Props {
   title: LocalizedString
+  headingAction: Option<HeadingAction>
   submit: TaskEither<LocalizedString, unknown>
   submitLabel?: LocalizedString
   submitIcon?: string
@@ -66,7 +68,7 @@ export const Form: FC<Props> = ({
   }, [loadingState])
 
   return (
-    <Panel title={props.title} framed action={option.none}>
+    <Panel title={props.title} framed action={props.headingAction}>
       <form className="Form" onSubmit={onSubmit}>
         {props.children}
 
