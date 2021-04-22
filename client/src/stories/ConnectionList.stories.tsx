@@ -16,6 +16,8 @@ import { useCallback } from '@storybook/client-api'
 
 interface Args {
   shouldFail: boolean
+  actionLabel: LocalizedString
+  action: IO<void>
 }
 
 interface FakeEntity {
@@ -178,6 +180,12 @@ const ConnectionListTemplate: Story<Args> = props => {
       <Content>
         <ConnectionListComponent
           title={unsafeLocalizedString('Entities')}
+          action={option.some({
+            type: 'sync',
+            label: props.actionLabel,
+            icon: option.none,
+            action: props.action
+          })}
           query={query}
           extractConnection={data => data.connection}
           onSearchQueryChange={onQuerySearchChange}
@@ -248,14 +256,21 @@ function createConnection(
 export const ConnectionList = ConnectionListTemplate.bind({})
 
 ConnectionList.args = {
-  shouldFail: false
+  shouldFail: false,
+  actionLabel: unsafeLocalizedString('Action')
 }
 
 ConnectionList.argTypes = {
+  actionLabel: {
+    name: 'Action label'
+  },
   shouldFail: {
     name: 'Should fail',
     description: 'Set this to true to make searching fail',
     control: 'boolean'
+  },
+  action: {
+    action: 'onActionClick'
   }
 }
 

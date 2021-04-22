@@ -2,6 +2,7 @@ import { option } from 'fp-ts'
 import { constVoid, pipe } from 'fp-ts/function'
 import { Reader } from 'fp-ts/Reader'
 import { NonEmptyString } from 'io-ts-types'
+import { add } from 'ionicons/icons'
 import { useCallback, useState } from 'react'
 import { a18n } from '../../../a18n'
 import { foldQuery, useQuery } from '../../../effects/useQuery'
@@ -69,6 +70,12 @@ export default function ClientsPage() {
       <Content>
         <ConnectionList
           title={a18n`Clients`}
+          action={option.some({
+            type: 'sync',
+            label: a18n`New client`,
+            icon: option.some(add),
+            action: () => console.log('TODO: switch view')
+          })}
           query={clients}
           extractConnection={({ clients }) => clients}
           renderListItem={renderClient}

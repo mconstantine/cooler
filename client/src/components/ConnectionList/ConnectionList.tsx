@@ -17,9 +17,12 @@ import { LoadingBlock } from '../Loading/LoadingBlock'
 import { Panel } from '../Panel/Panel'
 import { useEffect } from 'react'
 import { Button } from '../Button/Button/Button'
+import { Option } from 'fp-ts/Option'
+import { HeadingAction } from '../Heading/Heading'
 
 interface Props<T, O> {
   title: LocalizedString
+  action: Option<HeadingAction>
   query: UseQueryOutput<any, O>['query']
   extractConnection: Reader<O, Connection<T>>
   renderListItem: (item: T) => Item
@@ -36,7 +39,7 @@ export function ConnectionList<T, O>(props: Props<T, O>) {
   }, [query, debouncedSearch])
 
   return (
-    <Panel title={props.title} framed action={option.none}>
+    <Panel title={props.title} framed action={props.action}>
       <Input
         type="text"
         name="search"
