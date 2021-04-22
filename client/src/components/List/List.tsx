@@ -16,12 +16,12 @@ import {
 } from '../../globalDomain'
 import { composeClassName } from '../../misc/composeClassName'
 import { Icon } from '../Icon/Icon'
-import { Label } from '../Label/Label'
 import './List.scss'
 import { chevronForwardOutline } from 'ionicons/icons'
 import { Heading } from '../Heading/Heading'
 import { Body } from '../Body/Body'
 import { IO } from 'fp-ts/IO'
+import { Banner } from '../Banner/Banner'
 
 type Position = 'start' | 'end'
 type Size = 'default' | 'small'
@@ -241,8 +241,8 @@ export const List: FC<Props> = props => {
 
           const renderValue = (item: ValuedItem) => (
             <div className="itemSideContent">
-              <Label
-                message={item.value}
+              <Banner
+                content={item.value}
                 color={pipe(
                   item.progress,
                   option.fold(
@@ -311,14 +311,14 @@ export const List: FC<Props> = props => {
                   <div className="itemContent">
                     {pipe(
                       item.label,
-                      option.map(label => <Label message={label} />),
+                      option.map(label => <Banner content={label} />),
                       option.toNullable
                     )}
                     {pipe(
                       item.size || 'default',
                       foldSize(
                         () => <Body>{item.content}</Body>,
-                        () => <Label message={item.content} />
+                        () => <Banner content={item.content} />
                       )
                     )}
                     {pipe(

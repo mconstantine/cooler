@@ -7,7 +7,6 @@ import { a18n, formatDateTime } from '../../../a18n'
 import { LocalizedString } from '../../../globalDomain'
 import { Option } from 'fp-ts/Option'
 import { Panel } from '../../Panel/Panel'
-import { List } from '../../List/List'
 import { Buttons } from '../../Button/Buttons/Buttons'
 import { Button } from '../../Button/Button/Button'
 import { LoadingButton } from '../../Button/LoadingButton/LoadingButton'
@@ -17,6 +16,7 @@ import { useDialog } from '../../../effects/useDialog'
 import { User } from '../../../entities/User'
 import { ReaderTaskEither } from 'fp-ts/ReaderTaskEither'
 import { IO } from 'fp-ts/IO'
+import { ReadOnlyInput } from '../../Form/Input/ReadOnlyInput/ReadOnlyInput'
 
 export interface UserUpdate extends Pick<User, 'name' | 'email'> {
   password: Option<NonEmptyString>
@@ -50,38 +50,25 @@ export const UserData: FC<Props> = props => {
     boolean.fold(
       () => (
         <Panel title={a18n`Your data`} framed action={option.none}>
-          <List
-            heading={option.none}
-            items={[
-              {
-                type: 'readonly',
-                key: 'name',
-                label: option.some(a18n`Name`),
-                content: props.user.name,
-                description: option.none
-              },
-              {
-                type: 'readonly',
-                key: 'email',
-                label: option.some(a18n`E-mail address`),
-                content: (props.user.email as unknown) as LocalizedString,
-                description: option.none
-              },
-              {
-                type: 'readonly',
-                key: 'created_at',
-                label: option.some(a18n`Created at`),
-                content: formatDateTime(props.user.created_at),
-                description: option.none
-              },
-              {
-                type: 'readonly',
-                key: 'updated_at',
-                label: option.some(a18n`Last updated at`),
-                content: formatDateTime(props.user.updated_at),
-                description: option.none
-              }
-            ]}
+          <ReadOnlyInput
+            name="name"
+            label={a18n`Name`}
+            value={props.user.name}
+          />
+          <ReadOnlyInput
+            name="email"
+            label={a18n`E-mail address`}
+            value={(props.user.email as unknown) as LocalizedString}
+          />
+          <ReadOnlyInput
+            name="created_at"
+            label={a18n`Created at`}
+            value={formatDateTime(props.user.created_at)}
+          />
+          <ReadOnlyInput
+            name="updated_at"
+            label={a18n`Last updated at`}
+            value={formatDateTime(props.user.updated_at)}
           />
           <Buttons spacing="spread">
             <Button
