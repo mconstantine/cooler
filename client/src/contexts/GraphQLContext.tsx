@@ -12,6 +12,35 @@ import {
   extractApiError
 } from '../misc/graphql'
 import { OperationDefinitionNode } from 'graphql'
+import gql from 'graphql-tag'
+import * as t from 'io-ts'
+import { DateFromISOString, NonEmptyString } from 'io-ts-types'
+
+const refreshTokenQuery = gql`
+  mutation refreshToken($refreshToken: String!) {
+    refreshToken(refreshToken: $refreshToken) {
+      accessToken
+      refreshToken
+      expiration
+    }
+  }
+`
+
+const AccessTokenResponse = t.type(
+  {
+    accessToken: NonEmptyString,
+    refreshToken: NonEmptyString,
+    expiration: DateFromISOString
+  },
+  'AccessTokenResponse'
+)
+
+const RefreshTokenResponse = t.type(
+  {
+    refreshToken: AccessTokenResponse
+  },
+  'RefreshTokenResponse'
+)
 
 interface GraphQLContext {
   sendGraphQLCall: <I, II, O, OO>(
@@ -88,12 +117,65 @@ export const GraphQLProvider: FC = props => {
               either.fold(
                 () => taskEither.left(unexpectedApiError),
                 flow(extractApiError, error => {
+                  const failure = taskEither.left(error)
+
                   if (error.code === 'COOLER_403') {
-                    // TODO: try refreshing the token
-                    dispatch({ type: 'logout' })
+                    return pipe(
+                      account,
+                      foldAccount(
+                        () => failure,
+                        ({ refreshToken }) =>
+                          pipe(
+                            taskEither.tryCatch(
+                              () =>
+                                window.fetch(process.env.REACT_APP_API_URL!, {
+                                  method: 'POST',
+                                  headers: {
+                                    'Content-Type': 'application/json'
+                                  },
+                                  body: JSON.stringify({
+                                    operationName: 'refreshToken',
+                                    query: refreshTokenQuery.loc!.source.body,
+                                    variables: { refreshToken }
+                                  })
+                                }),
+                              () => error
+                            ),
+                            taskEither.chain(response =>
+                              taskEither.tryCatch(
+                                () => response.json(),
+                                () => error
+                              )
+                            ),
+                            taskEither.chain(response => {
+                              if (response.data) {
+                                return pipe(
+                                  response.data,
+                                  RefreshTokenResponse.decode,
+                                  reportDecodeErrors,
+                                  taskEither.fromEither,
+                                  taskEither.mapLeft(() => error),
+                                  taskEither.chain(({ refreshToken }) =>
+                                    taskEither.fromIO(() =>
+                                      dispatch({
+                                        type: 'refresh',
+                                        ...refreshToken
+                                      })
+                                    )
+                                  )
+                                )
+                              } else {
+                                return taskEither.fromIO(() =>
+                                  dispatch({ type: 'logout' })
+                                )
+                              }
+                            })
+                          )
+                      )
+                    )
                   }
 
-                  return taskEither.left(error)
+                  return failure
                 })
               )
             )
