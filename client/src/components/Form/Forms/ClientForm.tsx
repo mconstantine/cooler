@@ -33,13 +33,10 @@ import { Heading } from '../../Heading/Heading'
 import { Option } from 'fp-ts/Option'
 import { IO } from 'fp-ts/IO'
 import { ReaderTaskEither } from 'fp-ts/ReaderTaskEither'
-import { trash } from 'ionicons/icons'
-import { useDialog } from '../../../effects/useDialog'
 
 interface Props {
   client: Option<Client>
   onSubmit: ReaderTaskEither<ClientCreationInput, LocalizedString, unknown>
-  onDelete: ReaderTaskEither<Client, LocalizedString, unknown>
   onCancel: IO<unknown>
 }
 
@@ -66,15 +63,6 @@ function foldFormType<T>(
 }
 
 export const ClientForm: FC<Props> = props => {
-  const [Dialog, onDelete] = useDialog(props.onDelete, {
-    title: client => {
-      const clientName = getClientName(client)
-      return a18n`Are you sure you want to delete ${clientName}?`
-    },
-    message: () =>
-      a18n`All data about this client, its projects, tasks, sessions will be deleted!`
-  })
-
   const { fieldProps, submit, formError, values, setValues } = useForm(
     {
       initialValues: pipe(
@@ -324,99 +312,87 @@ export const ClientForm: FC<Props> = props => {
   )
 
   return (
-    <>
-      <Form
-        title={title}
-        headingAction={pipe(
-          props.client,
-          option.map(client => ({
-            type: 'async',
-            label: a18n`Delete`,
-            action: onDelete(client),
-            icon: trash,
-            color: 'danger'
-          }))
-        )}
-        formError={formError}
-        submit={submit}
-        additionalButtons={[
-          {
-            type: 'button',
-            label: a18n`Cancel`,
-            icon: option.none,
-            action: props.onCancel
-          }
-        ]}
-      >
-        <SimpleSelect
-          label={a18n`Client type`}
-          {...fieldProps('type')}
-          options={FormTypeValues}
-        />
-        {pipe(
-          values.type,
-          foldFormType(
-            () => (
-              <>
-                <Input
-                  {...fieldProps('fiscal_code')}
-                  label={a18n`Fiscal code`}
-                  value={fieldProps('fiscal_code').value.toUpperCase()}
-                />
-                <Input {...fieldProps('first_name')} label={a18n`First name`} />
-                <Input {...fieldProps('last_name')} label={a18n`Last name`} />
-              </>
-            ),
-            () => (
-              <>
-                <Select
-                  type="default"
-                  {...fieldProps('country_code')}
-                  label={a18n`Country`}
-                  options={CountryValues}
-                  codec={Country}
-                  emptyPlaceholder={a18n`No country found`}
-                />
-                <Input {...fieldProps('vat_number')} label={a18n`VAT number`} />
-                <Input
-                  {...fieldProps('business_name')}
-                  label={a18n`Business name`}
-                />
-              </>
-            )
+    <Form
+      title={title}
+      headingAction={option.none}
+      formError={formError}
+      submit={submit}
+      additionalButtons={[
+        {
+          type: 'button',
+          label: a18n`Cancel`,
+          icon: option.none,
+          action: props.onCancel
+        }
+      ]}
+    >
+      <SimpleSelect
+        label={a18n`Client type`}
+        {...fieldProps('type')}
+        options={FormTypeValues}
+      />
+      {pipe(
+        values.type,
+        foldFormType(
+          () => (
+            <>
+              <Input
+                {...fieldProps('fiscal_code')}
+                label={a18n`Fiscal code`}
+                value={fieldProps('fiscal_code').value.toUpperCase()}
+              />
+              <Input {...fieldProps('first_name')} label={a18n`First name`} />
+              <Input {...fieldProps('last_name')} label={a18n`Last name`} />
+            </>
+          ),
+          () => (
+            <>
+              <Select
+                type="default"
+                {...fieldProps('country_code')}
+                label={a18n`Country`}
+                options={CountryValues}
+                codec={Country}
+                emptyPlaceholder={a18n`No country found`}
+              />
+              <Input {...fieldProps('vat_number')} label={a18n`VAT number`} />
+              <Input
+                {...fieldProps('business_name')}
+                label={a18n`Business name`}
+              />
+            </>
           )
-        )}
+        )
+      )}
 
-        <Heading size={24} action={option.none}>{a18n`Address`}</Heading>
+      <Heading size={24} action={option.none}>{a18n`Address`}</Heading>
 
-        <Select
-          type="default"
-          {...fieldProps('address_country')}
-          label={a18n`Country`}
-          options={CountryValues}
-          codec={Country}
-          onChange={onCountryChange}
-          emptyPlaceholder={a18n`No country found`}
-        />
-        <Select
-          type="default"
-          {...fieldProps('address_province')}
-          label={a18n`Province`}
-          options={ProvinceValues}
-          codec={Province}
-          onChange={onProvinceChange}
-          emptyPlaceholder={a18n`No Province found`}
-        />
-        <Input {...fieldProps('address_city')} label={a18n`City`} />
-        <Input {...fieldProps('address_zip')} label={a18n`Zip code`} />
-        <Input {...fieldProps('address_street')} label={a18n`Street`} />
-        <Input
-          {...fieldProps('address_street_number')}
-          label={a18n`Street number`}
-        />
-        <Input {...fieldProps('address_email')} label={a18n`E-mail address`} />
-      </Form>
-      <Dialog />
-    </>
+      <Select
+        type="default"
+        {...fieldProps('address_country')}
+        label={a18n`Country`}
+        options={CountryValues}
+        codec={Country}
+        onChange={onCountryChange}
+        emptyPlaceholder={a18n`No country found`}
+      />
+      <Select
+        type="default"
+        {...fieldProps('address_province')}
+        label={a18n`Province`}
+        options={ProvinceValues}
+        codec={Province}
+        onChange={onProvinceChange}
+        emptyPlaceholder={a18n`No Province found`}
+      />
+      <Input {...fieldProps('address_city')} label={a18n`City`} />
+      <Input {...fieldProps('address_zip')} label={a18n`Zip code`} />
+      <Input {...fieldProps('address_street')} label={a18n`Street`} />
+      <Input
+        {...fieldProps('address_street_number')}
+        label={a18n`Street number`}
+      />
+      <Input {...fieldProps('address_email')} label={a18n`E-mail address`} />
+    </Form>
   )
 }

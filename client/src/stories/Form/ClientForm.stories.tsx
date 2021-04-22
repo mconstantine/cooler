@@ -12,7 +12,6 @@ import { CoolerStory } from '../CoolerStory'
 interface Args {
   shouldFail: boolean
   onSubmit: Reader<ClientCreationInput, void>
-  onDelete: IO<void>
   onCancel: IO<void>
 }
 
@@ -32,28 +31,12 @@ const ClientFormTemplate: Story<Args> = props => {
       )
     )
 
-  const onDelete = () =>
-    pipe(
-      props.shouldFail,
-      boolean.fold(
-        () =>
-          pipe(
-            props.onCancel,
-            task.fromIO,
-            task.delay(500),
-            taskEither.rightTask
-          ),
-        () => taskEither.left(unsafeLocalizedString("I'm an error!"))
-      )
-    )
-
   return (
     <CoolerStory>
       <Content>
         <ClientFormComponent
           client={option.none}
           onSubmit={onSubmit}
-          onDelete={onDelete}
           onCancel={props.onCancel}
         />
       </Content>
@@ -74,7 +57,6 @@ ClientForm.argTypes = {
     description: 'Set this to true to make the form submission fail'
   },
   onSubmit: { action: 'submit' },
-  onDelete: { action: 'delete' },
   onCancel: { action: 'cancel' }
 }
 
