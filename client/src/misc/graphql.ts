@@ -2,12 +2,11 @@ import { Reader } from 'fp-ts/Reader'
 import { Option } from 'fp-ts/Option'
 import { DocumentNode } from 'graphql'
 import * as t from 'io-ts'
-import { NonEmptyString, optionFromNullable } from 'io-ts-types'
+import { optionFromNullable } from 'io-ts-types'
 import {
   LocalizedString,
   NonNegativeInteger,
   PositiveInteger,
-  unsafeNonEmptyString,
   unsafeNonNegativeInteger
 } from '../globalDomain'
 import { IO } from 'fp-ts/IO'
@@ -15,17 +14,32 @@ import { Lazy, pipe } from 'fp-ts/function'
 import { boolean, nonEmptyArray, option } from 'fp-ts'
 import { commonErrors } from './commonErrors'
 
+interface CursorBrand {
+  readonly Cursor: unique symbol
+}
+
+export const Cursor = t.brand(
+  t.string,
+  (_): _ is t.Branded<string, CursorBrand> => true,
+  'Cursor'
+)
+export type Cursor = t.TypeOf<typeof Cursor>
+
+export function unsafeCursor(s: string): Cursor {
+  return s as Cursor
+}
+
 export const Edge = <T extends t.Mixed>(T: T) =>
   t.type(
     {
       node: T,
-      cursor: NonEmptyString
+      cursor: Cursor
     },
     `Edge<${T.name}>`
   )
 export interface Edge<T> {
   node: T
-  cursor: NonEmptyString
+  cursor: Cursor
 }
 
 export const Connection = <T extends t.Mixed>(T: T) =>
@@ -35,8 +49,8 @@ export const Connection = <T extends t.Mixed>(T: T) =>
       edges: t.array(Edge(T)),
       pageInfo: t.type(
         {
-          startCursor: optionFromNullable(NonEmptyString),
-          endCursor: optionFromNullable(NonEmptyString),
+          startCursor: optionFromNullable(Cursor),
+          endCursor: optionFromNullable(Cursor),
           hasNextPage: t.boolean,
           hasPreviousPage: t.boolean
         },
@@ -49,8 +63,8 @@ export interface Connection<T> {
   totalCount: NonNegativeInteger
   edges: Edge<T>[]
   pageInfo: {
-    startCursor: Option<NonEmptyString>
-    endCursor: Option<NonEmptyString>
+    startCursor: Option<Cursor>
+    endCursor: Option<Cursor>
     hasNextPage: boolean
     hasPreviousPage: boolean
   }
@@ -69,7 +83,7 @@ export function addToConnection<T extends { id: PositiveInteger }>(
     totalCount: unsafeNonNegativeInteger(connection.totalCount + 1),
     edges: [
       {
-        cursor: unsafeNonEmptyString(newNode.id.toString()),
+        cursor: unsafeCursor(newNode.id.toString()),
         node: newNode
       },
       ...connection.edges

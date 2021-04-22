@@ -1,4 +1,4 @@
-import { either, option } from 'fp-ts'
+import { boolean, either, option } from 'fp-ts'
 import { flow, identity, pipe } from 'fp-ts/function'
 import { Option } from 'fp-ts/Option'
 import * as t from 'io-ts'
@@ -30,7 +30,12 @@ export const EmailString = t.brand(
 export type EmailString = t.TypeOf<typeof EmailString>
 
 export function unsafeEmailString(s: string): EmailString {
-  return s as EmailString
+  return pipe(
+    EmailString.decode(s),
+    either.fold(() => {
+      throw new Error('Called unsafeEmailString with invalid EmailString')
+    }, identity)
+  )
 }
 
 export const Color = t.keyof(
@@ -56,7 +61,12 @@ export const Size = t.keyof(
 export type Size = t.TypeOf<typeof Size>
 
 export function unsafeNonEmptyString(s: string): NonEmptyString {
-  return s as NonEmptyString
+  return pipe(
+    NonEmptyString.decode(s),
+    either.fold(() => {
+      throw new Error('Called unsafeNonEmptyString with empty string')
+    }, identity)
+  )
 }
 
 interface PositiveIntegerBrand {
@@ -91,7 +101,14 @@ export type PositiveIntegerFromString = t.TypeOf<
 >
 
 export function unsafePositiveInteger(n: number): PositiveInteger {
-  return n as PositiveInteger
+  return pipe(
+    PositiveInteger.decode(n),
+    either.fold(() => {
+      throw new Error(
+        'Called unsafePositiveInteger with invalid PositiveInteger'
+      )
+    }, identity)
+  )
 }
 
 interface NonNegativeIntegerBrand {
@@ -106,7 +123,14 @@ export const NonNegativeInteger = t.brand(
 export type NonNegativeInteger = t.TypeOf<typeof NonNegativeInteger>
 
 export function unsafeNonNegativeInteger(n: number): NonNegativeInteger {
-  return Math.abs(n) as NonNegativeInteger
+  return pipe(
+    NonNegativeInteger.decode(n),
+    either.fold(() => {
+      throw new Error(
+        'Called unsafeNonNegativeInteger with invalid NonNegativeInteger'
+      )
+    }, identity)
+  )
 }
 
 export const NonNegativeIntegerFromString: t.Type<
@@ -161,7 +185,14 @@ export type NonNegativeNumberFromString = t.TypeOf<
 >
 
 export function unsafeNonNegativeNumber(n: number): NonNegativeNumber {
-  return Math.abs(n) as NonNegativeNumber
+  return pipe(
+    NonNegativeNumber.decode(n),
+    either.fold(() => {
+      throw new Error(
+        'Called unsafeNonNegativeNumber with invalid NonNegativeNumber'
+      )
+    }, identity)
+  )
 }
 
 interface PercentageBrand {
@@ -195,7 +226,12 @@ export const PercentageFromString: t.Type<
 export type PercentageFromString = t.TypeOf<typeof PercentageFromString>
 
 export function unsafePercentage(n: number): Percentage {
-  return n as Percentage
+  return pipe(
+    Percentage.decode(n),
+    either.fold(() => {
+      throw new Error('Called unsafePercentage with invalid Percentage')
+    }, identity)
+  )
 }
 
 export function computePercentage(whole: number, fraction: number): Percentage {
@@ -227,6 +263,25 @@ export const OptionFromEmptyString: t.Type<
   ),
   option.fold(() => '', identity)
 )
+
+export function optionFromUndefined<T extends t.Mixed>(
+  codec: T,
+  name?: string
+): t.Type<Option<T>, T | undefined> {
+  return new t.Type(
+    `OptionFromUndefined<${name}>`,
+    tOption(codec).is,
+    u =>
+      pipe(
+        u === undefined,
+        boolean.fold(
+          () => pipe(codec.decode(u), either.map(option.some)),
+          () => t.success(option.none as Option<T>)
+        )
+      ),
+    option.fold(() => undefined, identity)
+  )
+}
 
 function NumberHigherThan<T extends number>(
   min: number,

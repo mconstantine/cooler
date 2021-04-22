@@ -4,17 +4,14 @@ import { Option } from 'fp-ts/Option'
 import { unsafeLocalizedString } from '../a18n'
 import { Content } from '../components/Content/Content'
 import { ConnectionList as ConnectionListComponent } from '../components/ConnectionList/ConnectionList'
-import {
-  LocalizedString,
-  unsafeNonEmptyString,
-  unsafeNonNegativeInteger
-} from '../globalDomain'
+import { LocalizedString, unsafeNonNegativeInteger } from '../globalDomain'
 import { CoolerStory } from './CoolerStory'
 import { useState } from 'react'
-import { Connection } from '../misc/graphql'
-import { TaskEither } from 'fp-ts/TaskEither'
+import { Connection, unsafeCursor } from '../misc/graphql'
 import { Item } from '../components/List/List'
 import { pipe } from 'fp-ts/function'
+import { UseQueryOutput } from '../effects/useQuery'
+import { IO } from 'fp-ts/IO'
 
 interface Args {
   shouldFail: boolean
@@ -99,31 +96,73 @@ const fakeEntities: FakeEntity[] = [
   }
 ]
 
+interface FakeQueryInput {
+  query: string
+}
+
+interface FakeQueryData {
+  connection: Connection<FakeEntity>
+}
+
 const ConnectionListTemplate: Story<Args> = props => {
+  const [query, setQuery] = useState<
+    UseQueryOutput<FakeQueryInput, FakeQueryData>['query']
+  >({
+    type: 'loading'
+  })
+
   const { filter, loadMore } = useCreateConnection([...fakeEntities])
 
-  const onQuerySearchChange = (
-    query: string
-  ): TaskEither<LocalizedString, Connection<FakeEntity>> =>
+  const onQuerySearchChange = (query: string): void => {
+    setQuery({ type: 'loading' })
+
     pipe(
       props.shouldFail,
       boolean.fold(
-        () =>
+        () => {
           pipe(
             task.fromIO(() => filter(query)),
             task.delay(500),
-            task => taskEither.fromTask(task)
-          ),
-        () => taskEither.left(unsafeLocalizedString("I'm an error!"))
+            task => taskEither.fromTask(task),
+            taskEither.chain(connection =>
+              taskEither.fromIO(() =>
+                setQuery({
+                  type: 'success',
+                  data: { connection }
+                })
+              )
+            )
+          )()
+        },
+        () =>
+          setQuery({
+            type: 'failed',
+            error: {
+              code: 'COOLER_500',
+              message: unsafeLocalizedString("I'm an error!")
+            }
+          })
       )
     )
+  }
 
-  const onLoadMore: TaskEither<
-    LocalizedString,
-    Connection<FakeEntity>
-  > = pipe(task.fromIO(loadMore), task.delay(500), task =>
-    taskEither.fromTask(task)
-  )
+  const onLoadMore: IO<void> = () => {
+    setQuery({ type: 'loading' })
+
+    pipe(
+      task.fromIO(loadMore),
+      task.delay(500),
+      task => taskEither.fromTask(task),
+      taskEither.chain(connection =>
+        taskEither.fromIO(() =>
+          setQuery({
+            type: 'success',
+            data: { connection }
+          })
+        )
+      )
+    )()
+  }
 
   const renderListItem = (entity: FakeEntity): Item => ({
     key: entity.id,
@@ -138,7 +177,8 @@ const ConnectionListTemplate: Story<Args> = props => {
       <Content>
         <ConnectionListComponent
           title={unsafeLocalizedString('Entities')}
-          initialValue={createConnection(fakeEntities.slice(0, 5), true)}
+          query={query}
+          extractConnection={data => data.connection}
           onSearchQueryChange={onQuerySearchChange}
           onLoadMore={onLoadMore}
           renderListItem={renderListItem}
@@ -163,6 +203,7 @@ function useCreateConnection(
     )
 
     setEntitites(filteredEntities)
+
     return createConnection(
       filteredEntities.slice(0, 5),
       filteredEntities.length > 5
@@ -184,22 +225,20 @@ function createConnection(
       startCursor: pipe(
         entities,
         nonEmptyArray.fromArray,
-        option.map(entities =>
-          unsafeNonEmptyString(entities[0].id.toString(10))
-        )
+        option.map(entities => unsafeCursor(entities[0].id.toString(10)))
       ),
       endCursor: pipe(
         entities,
         nonEmptyArray.fromArray,
         option.map(entities =>
-          unsafeNonEmptyString(entities[entities.length - 1].id.toString(10))
+          unsafeCursor(entities[entities.length - 1].id.toString(10))
         )
       ),
       hasPreviousPage: false,
       hasNextPage
     },
     edges: entities.map((entity, index) => ({
-      cursor: unsafeNonEmptyString(index.toString(10)),
+      cursor: unsafeCursor(index.toString(10)),
       node: entity
     }))
   }

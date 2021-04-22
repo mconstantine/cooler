@@ -4,6 +4,7 @@ import { Reader } from 'fp-ts/Reader'
 import { useCallback, useEffect, useState } from 'react'
 import { ApiError, GraphQLQuery } from '../misc/graphql'
 import { useGraphQL } from '../contexts/GraphQLContext'
+import { ReaderTaskEither } from 'fp-ts/ReaderTaskEither'
 
 interface LoadingQuery {
   type: 'loading'
@@ -44,7 +45,7 @@ interface UpdateQueryFn<O> {
 
 export interface UseQueryOutput<I, O> {
   query: Query<O>
-  refresh: Reader<I, void>
+  refresh: ReaderTaskEither<I, ApiError, O>
   update: UpdateQueryFn<O>
 }
 
@@ -67,27 +68,33 @@ export function useQuery<I, II, O, OO>(
   const { sendGraphQLCall } = useGraphQL()
   const [state, setState] = useState<Query<O>>({ type: 'loading' })
 
-  const refresh: Reader<I, void> = useCallback(
+  const refresh: ReaderTaskEither<I, ApiError, O> = useCallback(
     variables => {
       setState({
         type: 'loading'
       })
 
-      pipe(
+      return pipe(
         sendGraphQLCall(query, variables),
         taskEither.bimap(
-          error =>
+          error => {
             setState({
               type: 'failed',
               error
-            }),
-          data =>
+            })
+
+            return error
+          },
+          data => {
             setState({
               type: 'success',
               data
             })
+
+            return data
+          }
         )
-      )()
+      )
     },
     [sendGraphQLCall, query]
   )
@@ -104,7 +111,7 @@ export function useQuery<I, II, O, OO>(
     )
 
   useEffect(() => {
-    refresh(variables)
+    refresh(variables)()
   }, [refresh, variables])
 
   return { query: state, refresh, update }
