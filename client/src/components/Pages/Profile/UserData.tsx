@@ -1,5 +1,5 @@
 import { boolean, option, taskEither } from 'fp-ts'
-import { flow, pipe } from 'fp-ts/function'
+import { constNull, flow, pipe } from 'fp-ts/function'
 import { TaskEither } from 'fp-ts/TaskEither'
 import { NonEmptyString } from 'io-ts-types'
 import { FC, useState } from 'react'
@@ -17,6 +17,7 @@ import { User } from '../../../entities/User'
 import { ReaderTaskEither } from 'fp-ts/ReaderTaskEither'
 import { IO } from 'fp-ts/IO'
 import { ReadOnlyInput } from '../../Form/Input/ReadOnlyInput/ReadOnlyInput'
+import { ErrorPanel } from '../../ErrorPanel/ErrorPanel'
 
 export interface UserUpdate extends Pick<User, 'name' | 'email'> {
   password: Option<NonEmptyString>
@@ -31,6 +32,7 @@ interface Props {
 
 export const UserData: FC<Props> = props => {
   const [isEditing, setIsEditing] = useState(false)
+  const [error, setError] = useState<Option<LocalizedString>>(option.none)
 
   const onSubmit = flow(
     props.onDataChange,
@@ -39,11 +41,19 @@ export const UserData: FC<Props> = props => {
 
   const onCancel = () => setIsEditing(false)
 
-  const [Dialog, deleteProfile] = useDialog(() => props.onDeleteProfile, {
-    title: () => a18n`Are you sure you want to delete your account?`,
-    message: () =>
-      a18n`All your data, clients, projects, tasks and sessions will be deleted!`
-  })
+  const [Dialog, deleteProfile] = useDialog(
+    () =>
+      pipe(
+        taskEither.rightIO(() => setError(option.none)),
+        taskEither.chain(() => props.onDeleteProfile),
+        taskEither.mapLeft(flow(option.some, setError))
+      ),
+    {
+      title: () => a18n`Are you sure you want to delete your account?`,
+      message: () =>
+        a18n`All your data, clients, projects, tasks and sessions will be deleted!`
+    }
+  )
 
   return pipe(
     isEditing,
@@ -70,6 +80,10 @@ export const UserData: FC<Props> = props => {
             label={a18n`Last updated at`}
             value={formatDateTime(props.user.updated_at)}
           />
+          {pipe(
+            error,
+            option.fold(constNull, error => <ErrorPanel error={error} />)
+          )}
           <Buttons spacing="spread">
             <Button
               type="button"

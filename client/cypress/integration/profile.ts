@@ -79,6 +79,32 @@ describe('Profile page', () => {
     cy.findByRole('heading', { name: 'Login' }).should('be.visible')
   })
 
+  it('should allow to logout', () => {
+    cy.findByRole('button', { name: 'Logout' }).click()
+    cy.findByRole('heading', { name: 'Login' }).should('be.visible')
+  })
+
+  it('should allow to delete the profile', () => {
+    cy.mockApiCall('deleteMe', {
+      deleteMe: {
+        id: profile.data.me.id
+      }
+    })
+
+    cy.findByRole('button', { name: 'Delete profile' }).click()
+    cy.findByRole('button', { name: 'Confirm' }).click()
+    cy.findByRole('heading', { name: 'Login' }).should('be.visible')
+  })
+
+  it('should correctly switch "since" date', () => {
+    cy.findAllByRole('textbox', { name: 'Since' }).invoke('first').click()
+    cy.findByRole('textbox', { name: 'Year' }).clear().type('2021')
+    cy.findByRole('textbox', { name: 'Month' }).clear().type('April').blur()
+    cy.findAllByRole('button', { name: '30' }).invoke('last').click()
+    cy.findByRole('button', { name: 'Confirm' }).click()
+    cy.wait('@profile')
+  })
+
   it('should allow to switch to settings page and back', () => {
     cy.findByRole('button', { name: 'Settings' }).click()
     cy.findByRole('heading', { name: 'Settings' }).should('be.visible')

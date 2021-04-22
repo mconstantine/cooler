@@ -12,7 +12,7 @@ import {
   getConnectionNodes,
   updateConnection
 } from '../../../../misc/graphql'
-import { ErrorPanel } from '../../../ErrorPanel'
+import { ErrorPanel } from '../../../ErrorPanel/ErrorPanel'
 import { LoadingBlock } from '../../../Loading/LoadingBlock'
 import {
   createTaxMutation,

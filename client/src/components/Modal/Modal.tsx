@@ -40,6 +40,7 @@ export const Modal: FC<Props> = ({ isOpen, onClose, ...props }) => {
         props.className || '',
         openClassName
       )}
+      role="alertdialog"
     >
       <div className="dim" onClick={onClose} />
 

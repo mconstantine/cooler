@@ -16,7 +16,7 @@ import {
   ProfileQueryOutput
 } from './domain'
 import { LoadingBlock } from '../../../Loading/LoadingBlock'
-import { ErrorPanel } from '../../../ErrorPanel'
+import { ErrorPanel } from '../../../ErrorPanel/ErrorPanel'
 import { getConnectionNodes } from '../../../../misc/graphql'
 import { UserData } from '../UserData'
 import { CurrentSituation } from '../CurrentSituation'
@@ -68,7 +68,10 @@ export const Profile: FC<Props> = props => {
 
   const onDeleteProfile: TaskEither<LocalizedString, unknown> = pipe(
     deleteProfile(),
-    taskEither.mapLeft(error => error.message)
+    taskEither.mapLeft(error => error.message),
+    taskEither.chain(() =>
+      taskEither.fromIO(() => dispatch({ type: 'logout' }))
+    )
   )
 
   return pipe(
