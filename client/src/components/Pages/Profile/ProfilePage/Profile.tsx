@@ -1,5 +1,5 @@
-import { taskEither } from 'fp-ts'
-import { pipe } from 'fp-ts/function'
+import { option, taskEither } from 'fp-ts'
+import { constVoid, pipe } from 'fp-ts/function'
 import { IO } from 'fp-ts/IO'
 import { TaskEither } from 'fp-ts/TaskEither'
 import { ReaderTaskEither } from 'fp-ts/ReaderTaskEither'
@@ -43,14 +43,23 @@ export const Profile: FC<Props> = props => {
     pipe(
       updateProfile({ user }),
       taskEither.chain(({ updateMe }) =>
-        taskEither.fromIO(() =>
+        taskEither.fromIO(() => {
+          pipe(
+            profile,
+            foldQuery(constVoid, constVoid, ({ me }) => {
+              if (me.email !== user.email || option.isSome(user.password)) {
+                dispatch({ type: 'logout' })
+              }
+            })
+          )
+
           update(({ me }) => ({
             me: {
               ...me,
               ...updateMe
             }
           }))
-        )
+        })
       ),
       taskEither.mapLeft(error => error.message)
     )
