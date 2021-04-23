@@ -47,6 +47,6 @@ describe('Login page', () => {
     cy.findByRole('button', { name: 'Submit' }).click()
 
     cy.wait('@login')
-    cy.findByRole('banner').findByText(errorMessage).should('be.visible')
+    cy.findByRole('banner', { name: errorMessage }).should('be.visible')
   })
 })

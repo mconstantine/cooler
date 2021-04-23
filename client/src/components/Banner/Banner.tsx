@@ -12,7 +12,11 @@ interface Props {
 
 export const Banner: FC<Props> = ({ content, icon, color = 'default' }) => {
   return (
-    <p role="banner" className={composeClassName('Banner', color)}>
+    <p
+      role="banner"
+      aria-label={content}
+      className={composeClassName('Banner', color)}
+    >
       {icon ? <Icon color={color} src={icon} size="small" /> : null}
       {content}
     </p>

@@ -4,6 +4,7 @@ declare namespace Cypress {
   interface Chainable {
     mockApiCall: typeof mockApiCall
     mockApiCallWithError: typeof mockApiCallWithError
+    mockApiConnection: typeof mockApiConnection
     skipLogin: typeof skipLogin
   }
 }
@@ -37,21 +38,23 @@ function mockApiCallWithError(
   errorMessage: string
 ): Cypress.Chainable<null> {
   return cy.intercept('POST', apiUrl, req => {
-    if (req.body.operationName === operationName) {
-      req.reply({
-        statusCode,
-        body: {
-          errors: [
-            {
-              extensions: {
-                code: errorCode
-              },
-              message: errorMessage
-            }
-          ]
-        }
-      })
+    if (req.body.operationName !== operationName) {
+      return
     }
+
+    req.reply({
+      statusCode,
+      body: {
+        errors: [
+          {
+            extensions: {
+              code: errorCode
+            },
+            message: errorMessage
+          }
+        ]
+      }
+    })
   })
 }
 Cypress.Commands.add('mockApiCallWithError', mockApiCallWithError)
@@ -68,3 +71,43 @@ function skipLogin() {
   )
 }
 Cypress.Commands.add('skipLogin', skipLogin)
+
+function mockApiConnection<T extends { id: number }>(
+  operationName: string,
+  allData: T[],
+  getItemName: (item: T) => string
+): Cypress.Chainable<null> {
+  return cy.intercept('POST', apiUrl, req => {
+    if (req.body.operationName !== operationName) {
+      return
+    }
+
+    const name: string | null = req.body.variables.name
+    const first: number = req.body.variables.first
+
+    const filtered = name
+      ? allData.filter(item => new RegExp(name).test(getItemName(item)))
+      : allData
+
+    const sliced = filtered.slice(0, first)
+
+    req.reply({
+      data: {
+        [operationName]: {
+          totalCount: allData.length,
+          pageInfo: {
+            startCursor: btoa(sliced[0].id.toString(10)),
+            endCursor: btoa(sliced[sliced.length - 1].id.toString(10)),
+            hasPreviousPage: false,
+            hasNextPage: sliced.length < filtered.length
+          },
+          edges: sliced.map(item => ({
+            cursor: btoa(item.id.toString(10)),
+            node: item
+          }))
+        }
+      }
+    })
+  })
+}
+Cypress.Commands.add('mockApiConnection', mockApiConnection)

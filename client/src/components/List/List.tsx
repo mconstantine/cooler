@@ -276,6 +276,7 @@ export const List: FC<Props> = props => {
                 sizeClassName,
                 progressClassName
               )}
+              aria-label={item.content}
             >
               {pipe(
                 item,

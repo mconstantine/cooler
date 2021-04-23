@@ -74,7 +74,7 @@ export default function ClientData(props: Props) {
           update(({ client }) => ({
             client: {
               ...client,
-              updateClient
+              ...updateClient
             }
           }))
 
