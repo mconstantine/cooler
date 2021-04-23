@@ -239,7 +239,7 @@ export function getUserProjects(
 ): TaskEither<ApolloError, Connection<DatabaseProject>> {
   return queryToConnection(
     args,
-    ['project.*'],
+    ['project.*', 'client.user'],
     'project',
     DatabaseProject,
     SQL`

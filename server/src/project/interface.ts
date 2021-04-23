@@ -14,6 +14,7 @@ import {
   NonNegativeNumber,
   PositiveInteger
 } from '../misc/Types'
+import { reportDecodeErrors } from '../misc/reportDecodeErrors'
 
 const CashData = t.type({
   at: DateFromISOString,
@@ -66,8 +67,8 @@ const DatabaseProjectMiddleware = t.type(
     user: PositiveInteger,
     cashed_at: optionFromNullable(DateFromISOString),
     cashed_balance: optionFromNullable(NonNegativeNumber),
-    created_at: DateFromISOString,
-    updated_at: DateFromISOString
+    created_at: DateFromSQLDate,
+    updated_at: DateFromSQLDate
   },
   'DatabaseProjectMiddleware'
 )
@@ -192,9 +193,10 @@ export const DatabaseProject = new t.Type<DatabaseProjectC, PlainProject>(
     tOption(CashData).is(u.cashed) &&
     DateFromSQLDate.is(u.created_at) &&
     DateFromSQLDate.is(u.updated_at),
-  (u, c) =>
-    pipe(
+  (u, c) => {
+    return pipe(
       DatabaseProjectMiddleware.validate(u, c),
+      reportDecodeErrors('DatabaseProjectMiddleware'),
       either.chain(u =>
         pipe(
           sequenceS(option.option)({
@@ -227,7 +229,8 @@ export const DatabaseProject = new t.Type<DatabaseProjectC, PlainProject>(
           )
         )
       )
-    ),
+    )
+  },
   project =>
     pipe(
       {
