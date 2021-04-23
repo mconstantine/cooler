@@ -3,9 +3,42 @@ import { Reader } from 'fp-ts/Reader'
 import { createContext, FC, lazy, useContext, useEffect, useState } from 'react'
 import { constVoid, pipe } from 'fp-ts/function'
 import { foldAccount, useAccount } from '../contexts/AccountContext'
-import { ClientSubject } from './Pages/Client/domain'
+import { PositiveInteger, PositiveIntegerFromString } from '../globalDomain'
+import { IO } from 'fp-ts/IO'
+import * as t from 'io-ts'
 
 const LoginPage = lazy(() => import('./Pages/Login/LoginPage'))
+
+const RouteSubjectKey = t.keyof(
+  {
+    all: true,
+    new: true
+  },
+  'RouteSubjectKey'
+)
+
+export const RouteSubject = t.union(
+  [RouteSubjectKey, PositiveIntegerFromString],
+  'RouteSubject'
+)
+export type RouteSubject = t.TypeOf<typeof RouteSubject>
+
+export function foldRouteSubject<T>(
+  whenAll: IO<T>,
+  whenNew: IO<T>,
+  whenDetails: Reader<PositiveInteger, T>
+): Reader<RouteSubject, T> {
+  return subject => {
+    switch (subject) {
+      case 'all':
+        return whenAll()
+      case 'new':
+        return whenNew()
+      default:
+        return whenDetails(subject)
+    }
+  }
+}
 
 interface Home {
   readonly _tag: 'Home'
@@ -13,11 +46,12 @@ interface Home {
 
 interface Clients {
   readonly _tag: 'Clients'
-  readonly subject: ClientSubject
+  readonly subject: RouteSubject
 }
 
 interface Projects {
   readonly _tag: 'Projects'
+  readonly subject: RouteSubject
 }
 
 export type Location = Home | Clients | Projects
@@ -28,16 +62,17 @@ export function homeRoute(): Home {
   }
 }
 
-export function clientsRoute(subject: ClientSubject): Clients {
+export function clientsRoute(subject: RouteSubject): Clients {
   return {
     _tag: 'Clients',
     subject
   }
 }
 
-export function projectsRoute(): Projects {
+export function projectsRoute(subject: RouteSubject): Projects {
   return {
-    _tag: 'Projects'
+    _tag: 'Projects',
+    subject
   }
 }
 
@@ -65,14 +100,16 @@ export function foldLocation<T>(
 
 const homeMatch = end
 const clientsMatch = lit('clients')
-  .then(type('subject', ClientSubject))
+  .then(type('subject', RouteSubject))
   .then(end)
-const projectsMatch = lit('projects').then(end)
+const projectsMatch = lit('projects')
+  .then(type('subject', RouteSubject))
+  .then(end)
 
 const router = zero<Location>()
   .alt(homeMatch.parser.map(homeRoute))
   .alt(clientsMatch.parser.map(({ subject }) => clientsRoute(subject)))
-  .alt(projectsMatch.parser.map(projectsRoute))
+  .alt(projectsMatch.parser.map(({ subject }) => projectsRoute(subject)))
 
 interface Props {
   render: (location: Location) => JSX.Element

@@ -1,46 +1,10 @@
-import { IO } from 'fp-ts/IO'
 import { Reader } from 'fp-ts/Reader'
 import gql from 'graphql-tag'
 import * as t from 'io-ts'
 import { NonEmptyString, optionFromNullable } from 'io-ts-types'
 import { Client, ClientCreationInput } from '../../../entities/Client'
-import {
-  LocalizedString,
-  PositiveInteger,
-  PositiveIntegerFromString
-} from '../../../globalDomain'
+import { LocalizedString, PositiveInteger } from '../../../globalDomain'
 import { Connection, makeMutation, makeQuery } from '../../../misc/graphql'
-
-const ClientSubjectKey = t.keyof(
-  {
-    all: true,
-    new: true
-  },
-  'ClientSubjectKey'
-)
-
-export const ClientSubject = t.union(
-  [ClientSubjectKey, PositiveIntegerFromString],
-  'ClientSubject'
-)
-export type ClientSubject = t.TypeOf<typeof ClientSubject>
-
-export function foldClientSubject<T>(
-  whenAll: IO<T>,
-  whenNew: IO<T>,
-  whenClientDetails: Reader<PositiveInteger, T>
-): Reader<ClientSubject, T> {
-  return subject => {
-    switch (subject) {
-      case 'all':
-        return whenAll()
-      case 'new':
-        return whenNew()
-      default:
-        return whenClientDetails(subject)
-    }
-  }
-}
 
 const PrivateClientForList = t.type(
   {

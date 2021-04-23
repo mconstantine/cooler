@@ -2,14 +2,14 @@ import { pipe } from 'fp-ts/function'
 import { lazy } from 'react'
 import { Content } from '../../Content/Content'
 import { Menu } from '../../Menu/Menu'
-import { ClientSubject, foldClientSubject } from './domain'
+import { foldRouteSubject, RouteSubject } from '../../Router'
 
 const ClientsList = lazy(() => import('./ClientsList'))
 const NewClient = lazy(() => import('./NewClient'))
 const ClientData = lazy(() => import('./ClientData'))
 
 interface Props {
-  subject: ClientSubject
+  subject: RouteSubject
 }
 
 export default function ClientsPage(props: Props) {
@@ -19,7 +19,7 @@ export default function ClientsPage(props: Props) {
       <Content>
         {pipe(
           props.subject,
-          foldClientSubject(
+          foldRouteSubject(
             () => <ClientsList />,
             () => <NewClient />,
             id => <ClientData id={id} />
