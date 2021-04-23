@@ -7,22 +7,18 @@ import { useCallback, useState } from 'react'
 import { a18n } from '../../../a18n'
 import { foldQuery, useQuery } from '../../../effects/useQuery'
 import { LocalizedString, unsafePositiveInteger } from '../../../globalDomain'
+import { ConnectionQueryInput } from '../../../misc/graphql'
 import { ConnectionList } from '../../ConnectionList/ConnectionList'
 import { RoutedItem } from '../../List/List'
 import { clientsRoute, useRouter } from '../../Router'
-import {
-  ClientForList,
-  clientsQuery,
-  ClientsQueryInput,
-  foldClientForList
-} from './domain'
+import { ClientForList, clientsQuery, foldClientForList } from './domain'
 
 const clientsPerPage = unsafePositiveInteger(20)
 
 export default function ClientsList() {
   const { setRoute } = useRouter()
 
-  const [input, setInput] = useState<ClientsQueryInput>({
+  const [input, setInput] = useState<ConnectionQueryInput>({
     name: option.none,
     first: clientsPerPage
   })

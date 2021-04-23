@@ -2,7 +2,7 @@ import { Reader } from 'fp-ts/Reader'
 import { Option } from 'fp-ts/Option'
 import { DocumentNode } from 'graphql'
 import * as t from 'io-ts'
-import { optionFromNullable } from 'io-ts-types'
+import { NonEmptyString, optionFromNullable } from 'io-ts-types'
 import {
   LocalizedString,
   NonNegativeInteger,
@@ -69,6 +69,15 @@ export interface Connection<T> {
     hasPreviousPage: boolean
   }
 }
+
+export const ConnectionQueryInput = t.type(
+  {
+    name: optionFromNullable(NonEmptyString),
+    first: PositiveInteger
+  },
+  'ConnectionQueryInput'
+)
+export type ConnectionQueryInput = t.TypeOf<typeof ConnectionQueryInput>
 
 export function getConnectionNodes<T>(connection: Connection<T>): T[] {
   return connection.edges.map(edge => edge.node)

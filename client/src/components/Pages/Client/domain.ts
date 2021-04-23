@@ -1,10 +1,14 @@
 import { Reader } from 'fp-ts/Reader'
 import gql from 'graphql-tag'
 import * as t from 'io-ts'
-import { NonEmptyString, optionFromNullable } from 'io-ts-types'
 import { Client, ClientCreationInput } from '../../../entities/Client'
 import { LocalizedString, PositiveInteger } from '../../../globalDomain'
-import { Connection, makeMutation, makeQuery } from '../../../misc/graphql'
+import {
+  Connection,
+  ConnectionQueryInput,
+  makeMutation,
+  makeQuery
+} from '../../../misc/graphql'
 
 const PrivateClientForList = t.type(
   {
@@ -47,15 +51,6 @@ export function foldClientForList<T>(
   }
 }
 
-const ClientsQueryInput = t.type(
-  {
-    name: optionFromNullable(NonEmptyString),
-    first: PositiveInteger
-  },
-  'ClientsQueryInput'
-)
-export type ClientsQueryInput = t.TypeOf<typeof ClientsQueryInput>
-
 const ClientsQueryOutput = t.type(
   {
     clients: Connection(ClientForList)
@@ -92,7 +87,7 @@ export const clientsQuery = makeQuery({
       }
     }
   `,
-  inputCodec: ClientsQueryInput,
+  inputCodec: ConnectionQueryInput,
   outputCodec: ClientsQueryOutput
 })
 
