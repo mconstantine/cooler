@@ -155,12 +155,12 @@ export const fakeTask: Task = {
 
 export const fakeTaxes: Tax[] = [
   {
-    id: unsafePositiveInteger(0),
+    id: unsafePositiveInteger(1),
     label: unsafeLocalizedString('Some tax'),
     value: unsafePercentage(0.2572)
   },
   {
-    id: unsafePositiveInteger(1),
+    id: unsafePositiveInteger(2),
     label: unsafeLocalizedString('Some other tax'),
     value: unsafePercentage(0.1005)
   }
