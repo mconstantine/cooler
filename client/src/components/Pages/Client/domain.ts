@@ -102,7 +102,12 @@ const ClientsQueryOutput = t.type(
 export const clientsQuery = makeQuery({
   query: gql`
     query clients($name: String, $first: Int!, $after: String) {
-      clients(name: $name, first: $first, after: $after) {
+      clients(
+        name: $name
+        first: $first
+        after: $after
+        orderBy: "business_name ASC, first_name ASC, last_name ASC"
+      ) {
         totalCount
         pageInfo {
           startCursor
@@ -167,6 +172,48 @@ export const clientQuery = makeQuery({
   `,
   inputCodec: ClientQueryInput,
   outputCodec: ClientQueryOutput
+})
+
+const CreateClientMutationInput = t.type(
+  {
+    client: ClientCreationInput
+  },
+  'CreateClientMutationInput'
+)
+
+const CreateClientMutationOutput = t.type(
+  {
+    createClient: Client
+  },
+  'CreateClientMutationOutput'
+)
+
+export const createClientMutation = makeMutation({
+  query: gql`
+    mutation createClient($client: ClientCreationInput!) {
+      createClient(client: $client) {
+        id
+        type
+        fiscal_code
+        first_name
+        last_name
+        country_code
+        vat_number
+        business_name
+        address_country
+        address_province
+        address_city
+        address_zip
+        address_street
+        address_street_number
+        address_email
+        created_at
+        updated_at
+      }
+    }
+  `,
+  inputCodec: CreateClientMutationInput,
+  outputCodec: CreateClientMutationOutput
 })
 
 const UpdateClientMutationInput = t.type(

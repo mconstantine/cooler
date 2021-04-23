@@ -63,8 +63,18 @@ export function nonBlankString(
   )
 }
 
-export function optionalString(): Validator<string, Option<NonEmptyString>> {
-  return flow(NonEmptyString.decode, option.fromEither, taskEither.right)
+export function optionalString(): Validator<
+  string,
+  Option<NonEmptyString & LocalizedString>
+> {
+  return flow(
+    NonEmptyString.decode,
+    option.fromEither,
+    option.map(
+      s => unsafeLocalizedString(s) as NonEmptyString & LocalizedString
+    ),
+    taskEither.right
+  )
 }
 
 export function passThrough<I = string, O = I>(): Validator<I, O> {

@@ -29,7 +29,6 @@ import { fiscalCodeLinter, vatNumberLinter } from '../../../misc/clientLinters'
 import { Input } from '../Input/Input/Input'
 import { sequenceS } from 'fp-ts/Apply'
 import { SimpleSelect } from '../Input/SimpleSelect'
-import { Heading } from '../../Heading/Heading'
 import { Option } from 'fp-ts/Option'
 import { IO } from 'fp-ts/IO'
 import { ReaderTaskEither } from 'fp-ts/ReaderTaskEither'
@@ -336,17 +335,21 @@ export const ClientForm: FC<Props> = props => {
         foldFormType(
           () => (
             <>
+              <Input {...fieldProps('first_name')} label={a18n`First name`} />
+              <Input {...fieldProps('last_name')} label={a18n`Last name`} />
               <Input
                 {...fieldProps('fiscal_code')}
                 label={a18n`Fiscal code`}
                 value={fieldProps('fiscal_code').value.toUpperCase()}
               />
-              <Input {...fieldProps('first_name')} label={a18n`First name`} />
-              <Input {...fieldProps('last_name')} label={a18n`Last name`} />
             </>
           ),
           () => (
             <>
+              <Input
+                {...fieldProps('business_name')}
+                label={a18n`Business name`}
+              />
               <Select
                 type="default"
                 {...fieldProps('country_code')}
@@ -356,21 +359,15 @@ export const ClientForm: FC<Props> = props => {
                 emptyPlaceholder={a18n`No country found`}
               />
               <Input {...fieldProps('vat_number')} label={a18n`VAT number`} />
-              <Input
-                {...fieldProps('business_name')}
-                label={a18n`Business name`}
-              />
             </>
           )
         )
       )}
 
-      <Heading size={24} action={option.none}>{a18n`Address`}</Heading>
-
       <Select
         type="default"
         {...fieldProps('address_country')}
-        label={a18n`Country`}
+        label={a18n`Address – country`}
         options={CountryValues}
         codec={Country}
         onChange={onCountryChange}
@@ -379,18 +376,18 @@ export const ClientForm: FC<Props> = props => {
       <Select
         type="default"
         {...fieldProps('address_province')}
-        label={a18n`Province`}
+        label={a18n`Address – province`}
         options={ProvinceValues}
         codec={Province}
         onChange={onProvinceChange}
         emptyPlaceholder={a18n`No Province found`}
       />
-      <Input {...fieldProps('address_city')} label={a18n`City`} />
-      <Input {...fieldProps('address_zip')} label={a18n`Zip code`} />
-      <Input {...fieldProps('address_street')} label={a18n`Street`} />
+      <Input {...fieldProps('address_city')} label={a18n`Address – city`} />
+      <Input {...fieldProps('address_zip')} label={a18n`Address – ZIP code`} />
+      <Input {...fieldProps('address_street')} label={a18n`Address – street`} />
       <Input
         {...fieldProps('address_street_number')}
-        label={a18n`Street number`}
+        label={a18n`Address – street number`}
       />
       <Input {...fieldProps('address_email')} label={a18n`E-mail address`} />
     </Form>

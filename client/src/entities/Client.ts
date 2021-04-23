@@ -1,10 +1,6 @@
 import { pipe } from 'fp-ts/function'
 import * as t from 'io-ts'
-import {
-  DateFromISOString,
-  NonEmptyString,
-  optionFromNullable
-} from 'io-ts-types'
+import { DateFromISOString, optionFromNullable } from 'io-ts-types'
 import { unsafeLocalizedString } from '../a18n'
 import { EmailString, LocalizedString, PositiveInteger } from '../globalDomain'
 
@@ -386,10 +382,10 @@ export const ClientCreationCommonInput = t.type(
   {
     address_country: Country,
     address_province: Province,
-    address_city: NonEmptyString,
-    address_zip: NonEmptyString,
-    address_street: NonEmptyString,
-    address_street_number: optionFromNullable(NonEmptyString),
+    address_city: LocalizedString,
+    address_zip: LocalizedString,
+    address_street: LocalizedString,
+    address_street_number: optionFromNullable(LocalizedString),
     address_email: EmailString
   },
   'ClientCreationCommonInput'
@@ -403,7 +399,7 @@ export const PrivateClientCreationInput = t.intersection([
   t.type(
     {
       type: t.literal('PRIVATE'),
-      fiscal_code: NonEmptyString,
+      fiscal_code: LocalizedString,
       first_name: LocalizedString,
       last_name: LocalizedString
     },
@@ -420,7 +416,7 @@ export const BusinessClientCreationInput = t.intersection(
     t.type({
       type: t.literal('BUSINESS'),
       country_code: Country,
-      vat_number: NonEmptyString,
+      vat_number: LocalizedString,
       business_name: LocalizedString
     })
   ],

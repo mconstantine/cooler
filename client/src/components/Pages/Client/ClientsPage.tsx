@@ -6,7 +6,7 @@ import { ClientSubject, foldClientSubject } from './domain'
 
 const ClientsList = lazy(() => import('./ClientsList'))
 const NewClient = lazy(() => import('./NewClient'))
-const EditClient = lazy(() => import('./EditClient'))
+const ClientData = lazy(() => import('./ClientData'))
 
 interface Props {
   subject: ClientSubject
@@ -22,7 +22,7 @@ export default function ClientsPage(props: Props) {
           foldClientSubject(
             () => <ClientsList />,
             () => <NewClient />,
-            id => <EditClient id={id} />
+            id => <ClientData id={id} />
           )
         )}
       </Content>
