@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { ApiError, GraphQLQuery } from '../misc/graphql'
 import { useGraphQL } from '../contexts/GraphQLContext'
 import { ReaderTaskEither } from 'fp-ts/ReaderTaskEither'
+import { useMutation } from './useMutation'
 
 interface LoadingQuery {
   type: 'loading'
@@ -115,4 +116,13 @@ export function useQuery<I, II, O, OO>(
   }, [refresh, variables])
 
   return { query: state, refresh, update }
+}
+
+export function useLazyQuery<I, II, O, OO>(
+  query: GraphQLQuery<I, II, O, OO>
+): ReaderTaskEither<I, ApiError, O> {
+  return useMutation({
+    ...query,
+    type: 'mutation'
+  })
 }
