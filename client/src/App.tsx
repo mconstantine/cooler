@@ -5,6 +5,7 @@ import { foldLocation, Router } from './components/Router'
 import { LoadingBlock } from './components/Loading/LoadingBlock'
 import { AccountProvider } from './contexts/AccountContext'
 import { GraphQLProvider } from './contexts/GraphQLContext'
+import { ConfigProvider } from './contexts/ConfigContext'
 
 const ProfilePage = lazy(
   () => import('./components/Pages/Profile/ProfilePage/ProfilePage')
@@ -20,22 +21,26 @@ interface Props {}
 
 export const App: FC<Props> = () => {
   return (
-    <ThemeProvider>
-      <Cooler>
-        <AccountProvider>
-          <GraphQLProvider>
-            <Suspense fallback={<LoadingBlock />}>
-              <Router
-                render={foldLocation({
-                  Home: () => <ProfilePage />,
-                  Clients: ({ subject }) => <ClientsPage subject={subject} />,
-                  Projects: ({ subject }) => <ProjectsPage subject={subject} />
-                })}
-              />
-            </Suspense>
-          </GraphQLProvider>
-        </AccountProvider>
-      </Cooler>
-    </ThemeProvider>
+    <ConfigProvider>
+      <ThemeProvider>
+        <Cooler>
+          <AccountProvider>
+            <GraphQLProvider>
+              <Suspense fallback={<LoadingBlock />}>
+                <Router
+                  render={foldLocation({
+                    Home: () => <ProfilePage />,
+                    Clients: ({ subject }) => <ClientsPage subject={subject} />,
+                    Projects: ({ subject }) => (
+                      <ProjectsPage subject={subject} />
+                    )
+                  })}
+                />
+              </Suspense>
+            </GraphQLProvider>
+          </AccountProvider>
+        </Cooler>
+      </ThemeProvider>
+    </ConfigProvider>
   )
 }

@@ -5,6 +5,7 @@ import { Reader } from 'fp-ts/Reader'
 import { NonEmptyString } from 'io-ts-types'
 import { useCallback, useState } from 'react'
 import { a18n } from '../../../a18n'
+import { useConfig } from '../../../contexts/ConfigContext'
 import { useQuery } from '../../../effects/useQuery'
 import { unsafePositiveInteger } from '../../../globalDomain'
 import { ConnectionQueryInput } from '../../../misc/graphql'
@@ -13,12 +14,11 @@ import { RoutedItem } from '../../List/List'
 import { projectsRoute, useRouter } from '../../Router'
 import { ProjectForList, projectsQuery } from './domain'
 
-const projectsPerPage = unsafePositiveInteger(20)
-
 export default function ProjectsList() {
+  const { entitiesPerPage } = useConfig()
   const [input, setInput] = useState<ConnectionQueryInput>({
     name: option.none,
-    first: projectsPerPage
+    first: entitiesPerPage
   })
 
   const { setRoute } = useRouter()
@@ -38,15 +38,15 @@ export default function ProjectsList() {
     query =>
       setInput({
         name: pipe(query, NonEmptyString.decode, option.fromEither),
-        first: projectsPerPage
+        first: entitiesPerPage
       }),
-    []
+    [entitiesPerPage]
   )
 
   const onLoadMore: IO<void> = () =>
     setInput(input => ({
       ...input,
-      first: unsafePositiveInteger(input.first + projectsPerPage)
+      first: unsafePositiveInteger(input.first + entitiesPerPage)
     }))
 
   return (

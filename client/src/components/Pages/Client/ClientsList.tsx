@@ -1,11 +1,12 @@
 import { option } from 'fp-ts'
-import { constVoid, pipe } from 'fp-ts/function'
+import { pipe } from 'fp-ts/function'
 import { Reader } from 'fp-ts/Reader'
 import { NonEmptyString } from 'io-ts-types'
 import { add } from 'ionicons/icons'
 import { useCallback, useState } from 'react'
 import { a18n } from '../../../a18n'
-import { foldQuery, useQuery } from '../../../effects/useQuery'
+import { useConfig } from '../../../contexts/ConfigContext'
+import { useQuery } from '../../../effects/useQuery'
 import { LocalizedString, unsafePositiveInteger } from '../../../globalDomain'
 import { ConnectionQueryInput } from '../../../misc/graphql'
 import { ConnectionList } from '../../ConnectionList/ConnectionList'
@@ -13,14 +14,13 @@ import { RoutedItem } from '../../List/List'
 import { clientsRoute, useRouter } from '../../Router'
 import { ClientForList, clientsQuery, foldClientForList } from './domain'
 
-const clientsPerPage = unsafePositiveInteger(20)
-
 export default function ClientsList() {
+  const { entitiesPerPage } = useConfig()
   const { setRoute } = useRouter()
 
   const [input, setInput] = useState<ConnectionQueryInput>({
     name: option.none,
-    first: clientsPerPage
+    first: entitiesPerPage
   })
 
   const { query: clients } = useQuery(clientsQuery, input)
@@ -45,21 +45,16 @@ export default function ClientsList() {
     query =>
       setInput({
         name: pipe(query, NonEmptyString.decode, option.fromEither),
-        first: clientsPerPage
+        first: entitiesPerPage
       }),
-    []
+    [entitiesPerPage]
   )
 
   const onLoadMore = () =>
-    pipe(
-      clients,
-      foldQuery(constVoid, constVoid, ({ clients }) =>
-        setInput(input => ({
-          ...input,
-          first: unsafePositiveInteger(clients.edges.length + clientsPerPage)
-        }))
-      )
-    )
+    setInput(input => ({
+      ...input,
+      first: unsafePositiveInteger(input.first + entitiesPerPage)
+    }))
 
   return (
     <ConnectionList
