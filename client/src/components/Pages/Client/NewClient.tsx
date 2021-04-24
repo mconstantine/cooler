@@ -21,8 +21,8 @@ export default function NewClient() {
     pipe(
       createClient({ client }),
       taskEither.mapLeft(error => error.message),
-      taskEither.chain(() =>
-        taskEither.fromIO(() => setRoute(clientsRoute('all')))
+      taskEither.chain(({ createClient }) =>
+        taskEither.fromIO(() => setRoute(clientsRoute(createClient.id)))
       )
     )
 

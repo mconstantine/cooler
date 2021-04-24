@@ -50,7 +50,7 @@ describe('Clients pages', () => {
     })
   })
 
-  describe('Client creation', () => {
+  describe.only('Client creation', () => {
     beforeEach(() => {
       cy.visit('/clients/new')
     })
@@ -89,7 +89,7 @@ describe('Clients pages', () => {
       )
       cy.findByRole('button', { name: 'Submit' }).click()
       cy.wait('@createClient')
-      cy.url().should('eq', Cypress.config().baseUrl + '/clients/all')
+      cy.url().should('eq', Cypress.config().baseUrl + '/clients/42')
     })
 
     it('should be able to create a business client', () => {
@@ -129,7 +129,7 @@ describe('Clients pages', () => {
       )
       cy.findByRole('button', { name: 'Submit' }).click()
       cy.wait('@createClient')
-      cy.url().should('eq', Cypress.config().baseUrl + '/clients/all')
+      cy.url().should('eq', Cypress.config().baseUrl + '/clients/42')
     })
 
     it('should validate fiscal code', () => {
