@@ -3,7 +3,7 @@ import { constNull, pipe } from 'fp-ts/function'
 import { IO } from 'fp-ts/IO'
 import { Reader } from 'fp-ts/Reader'
 import { refresh } from 'ionicons/icons'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { a18n } from '../../a18n'
 import { useDebounce } from '../../effects/useDebounce'
 import { foldQuery, UseQueryOutput } from '../../effects/useQuery'
@@ -33,10 +33,15 @@ interface Props<T, O> {
 export function ConnectionList<T, O>(props: Props<T, O>) {
   const [query, setQuery] = useState('')
   const debouncedSearch = useDebounce(props.onSearchQueryChange)
+  const searchInputRef = useRef<HTMLInputElement | null>(null)
 
   useEffect(() => {
     debouncedSearch(query)
   }, [query, debouncedSearch])
+
+  useEffect(() => {
+    searchInputRef.current?.focus()
+  }, [])
 
   return (
     <Panel title={props.title} framed action={props.action}>
@@ -56,6 +61,7 @@ export function ConnectionList<T, O>(props: Props<T, O>) {
         )}
         error={option.none}
         warning={option.none}
+        ref={searchInputRef}
       />
       {pipe(
         props.query,
