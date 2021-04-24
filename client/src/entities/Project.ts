@@ -12,6 +12,8 @@ import {
   NonNegativeNumber,
   PositiveInteger
 } from '../globalDomain'
+import { Connection } from '../misc/graphql'
+import { Tax } from './Tax'
 
 const CashData = t.type({
   at: DateFromISOString,
@@ -19,10 +21,18 @@ const CashData = t.type({
 })
 export type CashData = t.TypeOf<typeof CashData>
 
+const User = t.type(
+  {
+    taxes: Connection(Tax)
+  },
+  'User'
+)
+
 const Client = t.type(
   {
     id: PositiveInteger,
-    name: LocalizedString
+    name: LocalizedString,
+    user: User
   },
   'Client'
 )
@@ -117,10 +127,10 @@ export type ProjectCreationInput = t.TypeOf<typeof ProjectCreationInput>
 const ProjectCreationOutput = t.type(
   {
     name: LocalizedString,
-    description: optionCodec(LocalizedString),
+    description: t.union([LocalizedString, t.null]),
     client: PositiveInteger,
-    cashed_at: optionFromNullable(DateFromISOString),
-    cashed_balance: optionFromNullable(NonNegativeNumber)
+    cashed_at: t.union([DateFromISOString, t.null]),
+    cashed_balance: t.union([NonNegativeNumber, t.null])
   },
   'ProjectCreationOutput'
 )
@@ -139,10 +149,11 @@ export const ProjectCreationInputFromAPI: t.Type<
       either.chain(output =>
         t.success({
           ...output,
+          description: option.fromNullable(output.description),
           cashed: pipe(
             sequenceS(option.option)({
-              at: output.cashed_at,
-              balance: output.cashed_balance
+              at: option.fromNullable(output.cashed_at),
+              balance: option.fromNullable(output.cashed_balance)
             })
           )
         })
@@ -150,13 +161,17 @@ export const ProjectCreationInputFromAPI: t.Type<
     ),
   input => ({
     ...input,
+    description: option.toNullable(input.description),
     cashed_at: pipe(
       input.cashed,
-      option.map(({ at }) => at)
+      option.map(({ at }) => at),
+      option.toNullable
     ),
     cashed_balance: pipe(
       input.cashed,
-      option.map(({ balance }) => balance)
-    )
+      option.map(({ balance }) => balance),
+      option.toNullable
+    ),
+    cashed: undefined
   })
 )

@@ -1,4 +1,3 @@
-import { pipe } from 'fp-ts/function'
 import * as t from 'io-ts'
 import { DateFromISOString, optionFromNullable } from 'io-ts-types'
 import { unsafeLocalizedString } from '../a18n'
@@ -484,13 +483,15 @@ export function foldClient<T>(
   }
 }
 
-export function getClientName(client: Client): LocalizedString {
-  return pipe(
-    client,
-    foldClient(
-      client =>
-        unsafeLocalizedString(`${client.first_name} ${client.last_name}`),
-      client => client.business_name
-    )
-  )
+export function getClientName(
+  client:
+    | Pick<PrivateClient, 'type' | 'first_name' | 'last_name'>
+    | Pick<BusinessClient, 'type' | 'business_name'>
+): LocalizedString {
+  switch (client.type) {
+    case 'PRIVATE':
+      return unsafeLocalizedString(`${client.first_name} ${client.last_name}`)
+    case 'BUSINESS':
+      return client.business_name
+  }
 }

@@ -3,6 +3,7 @@ import { pipe } from 'fp-ts/function'
 import { IO } from 'fp-ts/IO'
 import { Reader } from 'fp-ts/Reader'
 import { NonEmptyString } from 'io-ts-types'
+import { add } from 'ionicons/icons'
 import { useCallback, useState } from 'react'
 import { a18n } from '../../../a18n'
 import { useConfig } from '../../../contexts/ConfigContext'
@@ -52,7 +53,12 @@ export default function ProjectsList() {
   return (
     <ConnectionList
       title={a18n`Projects`}
-      action={option.none}
+      action={option.some({
+        type: 'sync',
+        label: a18n`New project`,
+        icon: option.some(add),
+        action: () => setRoute(projectsRoute('new'))
+      })}
       query={query}
       extractConnection={({ projects }) => projects}
       renderListItem={renderListItem}

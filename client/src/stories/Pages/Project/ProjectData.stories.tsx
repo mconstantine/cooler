@@ -1,5 +1,5 @@
 import { Meta, Story } from '@storybook/react'
-import { task, taskEither } from 'fp-ts'
+import { option, task, taskEither } from 'fp-ts'
 import { pipe } from 'fp-ts/function'
 import { Reader } from 'fp-ts/Reader'
 import { ReaderTaskEither } from 'fp-ts/ReaderTaskEither'
@@ -44,6 +44,7 @@ const ProjectDataTemplate: Story<Args> = props => {
           onChange={onProjectChange}
           onDelete={onDelete}
           showClient={props.showClient}
+          onBack={option.none}
         />
       </Content>
     </CoolerStory>

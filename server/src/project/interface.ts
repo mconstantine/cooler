@@ -369,7 +369,7 @@ const ProjectUpdateInputMiddleware = t.partial(
     name: NonEmptyString,
     description: optionFromNullable(NonEmptyString),
     client: PositiveInteger,
-    cashed_at: optionFromNullable(DateFromSQLDate),
+    cashed_at: optionFromNullable(DateFromISOString),
     cashed_balance: optionFromNullable(NonNegativeNumber)
   },
   'ProjectUpdateInputMiddleware'

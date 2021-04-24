@@ -8,24 +8,60 @@ import { Tax } from '../entities/Tax'
 import {
   LocalizedString,
   PositiveInteger,
+  unsafeNonNegativeInteger,
   unsafeNonNegativeNumber,
   unsafePercentage,
   unsafePositiveInteger
 } from '../globalDomain'
+import { Connection, unsafeCursor } from '../misc/graphql'
+
+export const fakeTaxes: Tax[] = [
+  {
+    id: unsafePositiveInteger(1),
+    label: unsafeLocalizedString('Some tax'),
+    value: unsafePercentage(0.2572)
+  },
+  {
+    id: unsafePositiveInteger(2),
+    label: unsafeLocalizedString('Some other tax'),
+    value: unsafePercentage(0.1005)
+  }
+]
 
 interface FakeClient {
   id: PositiveInteger
   name: LocalizedString
+  user: {
+    taxes: Connection<Tax>
+  }
+}
+
+const fakeTaxConnection: Connection<Tax> = {
+  totalCount: unsafeNonNegativeInteger(fakeTaxes.length),
+  pageInfo: {
+    startCursor: option.some(unsafeCursor(fakeTaxes[0].id.toString())),
+    endCursor: option.some(
+      unsafeCursor(fakeTaxes[fakeTaxes.length - 1].id.toString())
+    ),
+    hasPreviousPage: false,
+    hasNextPage: false
+  },
+  edges: fakeTaxes.map(tax => ({
+    cursor: unsafeCursor(tax.id.toString()),
+    node: tax
+  }))
 }
 
 export const fakeClients: FakeClient[] = [
   {
     id: unsafePositiveInteger(1),
-    name: unsafeLocalizedString('John Doe')
+    name: unsafeLocalizedString('John Doe'),
+    user: { taxes: fakeTaxConnection }
   },
   {
     id: unsafePositiveInteger(2),
-    name: unsafeLocalizedString('Some Company')
+    name: unsafeLocalizedString('Some Company'),
+    user: { taxes: fakeTaxConnection }
   }
 ]
 
@@ -152,16 +188,3 @@ export const fakeTask: Task = {
   created_at: new Date(2020, 8, 20, 9, 30),
   updated_at: new Date(2021, 0, 1, 15, 45)
 }
-
-export const fakeTaxes: Tax[] = [
-  {
-    id: unsafePositiveInteger(1),
-    label: unsafeLocalizedString('Some tax'),
-    value: unsafePercentage(0.2572)
-  },
-  {
-    id: unsafePositiveInteger(2),
-    label: unsafeLocalizedString('Some other tax'),
-    value: unsafePercentage(0.1005)
-  }
-]

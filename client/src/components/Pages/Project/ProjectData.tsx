@@ -1,8 +1,10 @@
 import { boolean, option, readerTaskEither } from 'fp-ts'
 import { pipe } from 'fp-ts/function'
+import { IO } from 'fp-ts/IO'
+import { Option } from 'fp-ts/Option'
 import { Reader } from 'fp-ts/Reader'
 import { ReaderTaskEither } from 'fp-ts/ReaderTaskEither'
-import { skull } from 'ionicons/icons'
+import { arrowUp, skull } from 'ionicons/icons'
 import { FC, useState } from 'react'
 import { a18n, formatDateTime } from '../../../a18n'
 import { useDialog } from '../../../effects/useDialog'
@@ -25,6 +27,7 @@ interface Props {
     Record<PositiveInteger, LocalizedString>
   >
   showClient: Reader<PositiveInteger, unknown>
+  onBack: Option<IO<unknown>>
 }
 
 export const ProjectData: FC<Props> = props => {
@@ -47,7 +50,19 @@ export const ProjectData: FC<Props> = props => {
     isEditing,
     boolean.fold(
       () => (
-        <Panel title={props.project.name} framed action={option.none}>
+        <Panel
+          title={props.project.name}
+          framed
+          action={pipe(
+            props.onBack,
+            option.map(action => ({
+              type: 'sync',
+              label: a18n`Back`,
+              icon: option.some(arrowUp),
+              action
+            }))
+          )}
+        >
           <List
             heading={option.none}
             items={[

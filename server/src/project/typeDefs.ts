@@ -26,7 +26,9 @@ export default gql`
   input ProjectCreationInput {
     name: String!
     description: String
-    client: Int!
+    client: Int
+    cashed_at: Date
+    cashed_balance: Date
   }
 
   input ProjectUpdateInput {
