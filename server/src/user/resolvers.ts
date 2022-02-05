@@ -16,90 +16,87 @@ import {
 } from './model'
 import { ensureUser } from '../misc/ensureUser'
 import { createResolver } from '../misc/createResolver'
-import * as t from 'io-ts'
 import { pipe } from 'fp-ts/function'
 import { taskEither } from 'fp-ts'
-import { coolerError, EmptyObject } from '../misc/Types'
+import { coolerError } from '../misc/Types'
 import { a18n } from '../misc/a18n'
+import { Resolvers } from '../assignResolvers'
 
-const CreateUserMutationInput = t.type(
+const createUserResolver = createResolver(
   {
-    user: UserCreationInput
+    body: UserCreationInput,
+    output: AccessTokenResponse
   },
-  'CreateUserMutationInput'
-)
-type CreateUserMutationInput = t.TypeOf<typeof CreateUserMutationInput>
-const createUserMutation = createResolver(
-  CreateUserMutationInput,
-  AccessTokenResponse,
-  (_parent, { user }, context) => createUser(user, context)
+  ({ body }, context) => createUser(body, context)
 )
 
-const LoginUserMutationInput = t.type(
+const loginUserResolver = createResolver(
   {
-    user: UserLoginInput
+    body: UserLoginInput,
+    output: AccessTokenResponse
   },
-  'LoginUserMutationInput'
-)
-type LoginUserMutationInput = t.TypeOf<typeof LoginUserMutationInput>
-const loginUserMutation = createResolver(
-  LoginUserMutationInput,
-  AccessTokenResponse,
-  (_parent, { user }) => loginUser(user)
+  ({ body }) => loginUser(body)
 )
 
-const refreshTokenMutation = createResolver(
-  RefreshTokenInput,
-  AccessTokenResponse,
-  (_parent, args) => refreshToken(args)
-)
-
-const UpdateMeMutationInput = t.type(
+const refreshTokenResolver = createResolver(
   {
-    user: UserUpdateInput
+    body: RefreshTokenInput,
+    output: AccessTokenResponse
   },
-  'UpdateMeMutationInput'
+  ({ body }) => refreshToken(body)
 )
-type UpdateMeMutationInput = t.TypeOf<typeof UpdateMeMutationInput>
-const updateMeMutation = createResolver(
-  UpdateMeMutationInput,
-  User,
-  (_parent, { user }, context) =>
+
+const updateProfileResolver = createResolver(
+  {
+    body: UserUpdateInput,
+    output: User
+  },
+  ({ body }, context) =>
     pipe(
       ensureUser(context),
-      taskEither.chain(contextUser => updateUser(contextUser.id, user))
+      taskEither.chain(contextUser => updateUser(contextUser.id, body))
     )
 )
 
-const deleteMeMutation = createResolver(
-  EmptyObject,
-  User,
-  (_parent, _args, context) =>
+const deleteProfileResolver = createResolver(
+  {
+    output: User
+  },
+  (_args, context) =>
     pipe(
       ensureUser(context),
       taskEither.chain(user => deleteUser(user.id))
     )
 )
 
-const meQuery = createResolver(EmptyObject, User, (_parent, _args, context) =>
-  pipe(
-    getUserFromContext(context),
-    taskEither.fromOption(() =>
-      coolerError('COOLER_403', a18n`You cannot see this user`)
+const profileQueryResolver = createResolver(
+  {
+    output: User
+  },
+  (_args, context) =>
+    pipe(
+      getUserFromContext(context),
+      taskEither.fromOption(() =>
+        coolerError('COOLER_403', a18n`You cannot see this user`)
+      )
     )
-  )
 )
 
-const resolvers = {
-  Mutation: {
-    createUser: createUserMutation,
-    loginUser: loginUserMutation,
-    refreshToken: refreshTokenMutation,
-    updateMe: updateMeMutation,
-    deleteMe: deleteMeMutation
+const resolvers: Resolvers = {
+  path: '/users',
+  POST: {
+    '/': createUserResolver,
+    '/login': loginUserResolver,
+    '/refreshToken': refreshTokenResolver
   },
-  Query: {
-    me: meQuery
+  PUT: {
+    '/': updateProfileResolver
+  },
+  DELETE: {
+    '/': deleteProfileResolver
+  },
+  GET: {
+    '/me': profileQueryResolver
   }
 }
 

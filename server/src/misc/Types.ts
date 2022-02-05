@@ -3,8 +3,9 @@ import * as t from 'io-ts'
 import { date, option as tOption } from 'io-ts-types'
 import { either, option } from 'fp-ts'
 import { validate as isEmail } from 'isemail'
-import { ApolloError } from 'apollo-server-express'
 import { Option } from 'fp-ts/Option'
+import { IO } from 'fp-ts/IO'
+import { Reader } from 'fp-ts/Reader'
 
 const sqlDatePattern = /^(\d{4})-(\d{2})-(\d{2})\s(\d{2}):(\d{2}):(\d{2})$/
 
@@ -95,6 +96,18 @@ export type Percentage = t.TypeOf<typeof Percentage>
 export const EmptyObject = t.type({})
 export type EmptyObject = t.TypeOf<typeof EmptyObject>
 
+export type LocalizedStringBrand = string & {
+  readonly LocalizedString: unique symbol
+}
+
+export const LocalizedString = t.brand(
+  t.string,
+  (_): _ is t.Branded<string, LocalizedStringBrand> => true,
+  'LocalizedString'
+)
+
+export type LocalizedString = t.TypeOf<typeof LocalizedString>
+
 const CoolerErrorType = t.keyof({
   COOLER_400: true,
   COOLER_401: true,
@@ -105,12 +118,28 @@ const CoolerErrorType = t.keyof({
 })
 type CoolerErrorType = t.TypeOf<typeof CoolerErrorType>
 
+export function foldCoolerErrorType<T>(
+  cases: Record<CoolerErrorType, IO<T>>
+): Reader<CoolerErrorType, T> {
+  return errorType => cases[errorType]()
+}
+
+export const CoolerError = t.type(
+  {
+    code: CoolerErrorType,
+    message: LocalizedString,
+    extras: t.record(t.string, t.unknown)
+  },
+  'CoolerError'
+)
+export type CoolerError = t.TypeOf<typeof CoolerError>
+
 export function coolerError(
-  type: CoolerErrorType,
+  code: CoolerErrorType,
   message: LocalizedString,
   extras?: Record<string, any>
-): ApolloError {
-  return new ApolloError(message, type, extras)
+): CoolerError {
+  return { code, message, extras: extras || {} }
 }
 
 export interface OptionFromNull<C extends t.Mixed>
@@ -152,15 +181,3 @@ export function optionFromUndefined<C extends t.Mixed>(
 export function isObject(u: unknown): u is Object {
   return Object.prototype.toString.call(u) === '[object Object]'
 }
-
-export type LocalizedStringBrand = string & {
-  readonly LocalizedString: unique symbol
-}
-
-export const LocalizedString = t.brand(
-  t.string,
-  (_): _ is t.Branded<string, LocalizedStringBrand> => true,
-  'LocalizedString'
-)
-
-export type LocalizedString = t.TypeOf<typeof LocalizedString>
