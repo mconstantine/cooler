@@ -10,14 +10,18 @@ import SQL from 'sql-template-strings'
 import { ConnectionQueryArgs } from '../misc/ConnectionQueryArgs'
 import { queryToConnection } from '../misc/queryToConnection'
 import { DatabaseUser, User } from '../user/interface'
-import { ApolloError } from 'apollo-server-express'
 import { Connection } from '../misc/Connection'
 import { DatabaseProject, Project } from '../project/interface'
 import { TaskEither } from 'fp-ts/TaskEither'
 import { constVoid, flow, pipe } from 'fp-ts/function'
 import { getProjectById } from '../project/database'
 import { option, taskEither } from 'fp-ts'
-import { coolerError, DateFromSQLDate, PositiveInteger } from '../misc/Types'
+import {
+  CoolerError,
+  coolerError,
+  DateFromSQLDate,
+  PositiveInteger
+} from '../misc/Types'
 import {
   getTaskById,
   insertTask,
@@ -35,7 +39,7 @@ import { a18n } from '../misc/a18n'
 export function createTask(
   input: TaskCreationInput,
   user: User
-): TaskEither<ApolloError, Task> {
+): TaskEither<CoolerError, Task> {
   return pipe(
     getProjectById(input.project),
     taskEither.chain(
@@ -69,7 +73,7 @@ export function createTask(
 export function createTasksBatch(
   input: TasksBatchCreationInput,
   user: User
-): TaskEither<ApolloError, Project> {
+): TaskEither<CoolerError, Project> {
   return pipe(
     getProjectById(input.project),
     taskEither.chain(
@@ -98,7 +102,7 @@ export function createTasksBatch(
           t.type({ start_time: DateFromSQLDate })
         ),
         taskEither.chain(existingTasks => {
-          let result: TaskEither<ApolloError, any> = taskEither.fromIO(
+          let result: TaskEither<CoolerError, any> = taskEither.fromIO(
             constVoid
           )
 
@@ -251,7 +255,7 @@ function formatTaskName(
 export function getTask(
   id: PositiveInteger,
   user: User
-): TaskEither<ApolloError, Task> {
+): TaskEither<CoolerError, Task> {
   return pipe(
     getTaskById(id),
     taskEither.chain(
@@ -274,7 +278,7 @@ export function getTask(
 export function listTasks(
   args: TasksConnectionQueryArgs,
   user: User
-): TaskEither<ApolloError, Connection<Task>> {
+): TaskEither<CoolerError, Connection<Task>> {
   const sql = SQL`
     JOIN project ON project.id = task.project
     JOIN client ON client.id = project.client
@@ -295,7 +299,7 @@ export function updateTask(
   id: PositiveInteger,
   input: TaskUpdateInput,
   user: User
-): TaskEither<ApolloError, Task> {
+): TaskEither<CoolerError, Task> {
   return pipe(
     getTaskById(id),
     taskEither.chain(
@@ -356,7 +360,7 @@ export function updateTask(
 export function deleteTask(
   id: PositiveInteger,
   user: User
-): TaskEither<ApolloError, Task> {
+): TaskEither<CoolerError, Task> {
   return pipe(
     getTaskById(id),
     taskEither.chain(
@@ -384,7 +388,7 @@ export function deleteTask(
 
 export function getTaskProject(
   task: DatabaseTask
-): TaskEither<ApolloError, Project> {
+): TaskEither<CoolerError, Project> {
   return pipe(
     getProjectById(task.project),
     taskEither.chain(
@@ -398,7 +402,7 @@ export function getTaskProject(
 export function getUserTasks(
   user: DatabaseUser,
   args: UserTasksConnectionQueryArgs
-): TaskEither<ApolloError, Connection<Task>> {
+): TaskEither<CoolerError, Connection<Task>> {
   const rest = SQL`
     JOIN project ON project.id = task.project
     JOIN client ON project.client = client.id
@@ -437,7 +441,7 @@ export function getUserTasks(
 export function getProjectTasks(
   project: DatabaseProject,
   args: ConnectionQueryArgs
-): TaskEither<ApolloError, Connection<Task>> {
+): TaskEither<CoolerError, Connection<Task>> {
   return queryToConnection(
     args,
     ['*'],

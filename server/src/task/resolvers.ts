@@ -1,143 +1,112 @@
 import {
-  DatabaseTask,
   Task,
   TaskCreationInput,
   TasksBatchCreationInput,
   TaskUpdateInput
 } from './interface'
-import { DatabaseProject, Project } from '../project/interface'
+import { Project } from '../project/interface'
 import {
   createTask,
   listTasks,
   updateTask,
   deleteTask,
   getTask,
-  getTaskProject,
-  getUserTasks,
-  getProjectTasks,
   createTasksBatch
 } from './model'
 import { ConnectionQueryArgs } from '../misc/ConnectionQueryArgs'
-import { DatabaseUser } from '../user/interface'
 import { ensureUser } from '../misc/ensureUser'
 import { Connection } from '../misc/Connection'
 import { createResolver } from '../misc/createResolver'
 import * as t from 'io-ts'
-import {
-  DateFromISOString,
-  NonEmptyString,
-  optionFromNullable
-} from 'io-ts-types'
+import { NonEmptyString, optionFromNullable } from 'io-ts-types'
 import { pipe } from 'fp-ts/function'
 import { taskEither } from 'fp-ts'
-import { PositiveInteger } from '../misc/Types'
+import { IdInput } from '../misc/Types'
+import { Resolvers } from '../assignResolvers'
 
-const taskProjectResolver = createResolver<DatabaseTask>(
-  t.void,
-  Project,
-  getTaskProject
-)
+// const taskProjectResolver = createResolver<DatabaseTask>(
+//   t.void,
+//   Project,
+//   getTaskProject
+// )
 
-export const UserTasksConnectionQueryArgs = t.intersection(
-  [
-    ConnectionQueryArgs,
-    t.type({
-      from: optionFromNullable(DateFromISOString),
-      to: optionFromNullable(DateFromISOString)
-    })
-  ],
-  'UserTasksConnectionQueryArgs'
-)
-export type UserTasksConnectionQueryArgs = t.TypeOf<
-  typeof UserTasksConnectionQueryArgs
->
-const userTasksResolver = createResolver<DatabaseUser>(
-  UserTasksConnectionQueryArgs,
-  Connection(Task),
-  getUserTasks
-)
+// export const UserTasksConnectionQueryArgs = t.intersection(
+//   [
+//     ConnectionQueryArgs,
+//     t.type({
+//       from: optionFromNullable(DateFromISOString),
+//       to: optionFromNullable(DateFromISOString)
+//     })
+//   ],
+//   'UserTasksConnectionQueryArgs'
+// )
+// export type UserTasksConnectionQueryArgs = t.TypeOf<
+//   typeof UserTasksConnectionQueryArgs
+// >
+// const userTasksResolver = createResolver<DatabaseUser>(
+//   UserTasksConnectionQueryArgs,
+//   Connection(Task),
+//   getUserTasks
+// )
 
-const projectTasksResolver = createResolver<DatabaseProject>(
-  ConnectionQueryArgs,
-  Connection(Task),
-  getProjectTasks
-)
+// const projectTasksResolver = createResolver<DatabaseProject>(
+//   ConnectionQueryArgs,
+//   Connection(Task),
+//   getProjectTasks
+// )
 
-const CreateTaskMutationInput = t.type(
+const createTaskResolver = createResolver(
   {
-    task: TaskCreationInput
+    body: TaskCreationInput,
+    output: Task
   },
-  'CreateTaskMutationInput'
-)
-const createTaskMutation = createResolver(
-  CreateTaskMutationInput,
-  Task,
-  (_parent, { task }, context) =>
+  ({ body }, context) =>
     pipe(
       ensureUser(context),
-      taskEither.chain(user => createTask(task, user))
+      taskEither.chain(user => createTask(body, user))
     )
 )
 
-const CreateTasksBatchMutationInput = t.type(
+const createTasksBatchResolver = createResolver(
   {
-    input: TasksBatchCreationInput
+    body: TasksBatchCreationInput,
+    output: Project
   },
-  'CreateTasksBatchMutationInput'
-)
-const createTasksBatchMutation = createResolver(
-  CreateTasksBatchMutationInput,
-  Project,
-  (_parent, { input }, context) =>
+  ({ body }, context) =>
     pipe(
       ensureUser(context),
-      taskEither.chain(user => createTasksBatch(input, user))
+      taskEither.chain(user => createTasksBatch(body, user))
     )
 )
 
-const UpdateTaskMutationInput = t.type(
+const updateTaskResolver = createResolver(
   {
-    id: PositiveInteger,
-    task: TaskUpdateInput
+    params: IdInput,
+    body: TaskUpdateInput,
+    output: Task
   },
-  'UpdateTaskMutationInput'
-)
-const updateTaskMutation = createResolver(
-  UpdateTaskMutationInput,
-  Task,
-  (_parent, { id, task }, context) =>
+  ({ params: { id }, body }, context) =>
     pipe(
       ensureUser(context),
-      taskEither.chain(user => updateTask(id, task, user))
+      taskEither.chain(user => updateTask(id, body, user))
     )
 )
 
-const DeleteTaskMutationInput = t.type(
+const deleteTaskResolver = createResolver(
   {
-    id: PositiveInteger
+    params: IdInput,
+    output: Task
   },
-  'DeleteTaskMutationInput'
-)
-const deleteTaskMutation = createResolver(
-  DeleteTaskMutationInput,
-  Task,
-  (_parent, { id }, context) =>
+  ({ params: { id } }, context) =>
     pipe(
       ensureUser(context),
       taskEither.chain(user => deleteTask(id, user))
     )
 )
 
-const TaskQueryInput = t.type(
-  {
-    id: PositiveInteger
-  },
-  'TaskQueryInput'
-)
-const taskQuery = createResolver(
-  TaskQueryInput,
-  Task,
-  (_parent, { id }, context) =>
+const getTaskResolver = createResolver(
+  { params: IdInput, output: Task },
+  ({ params: { id } }, context) =>
     pipe(
       ensureUser(context),
       taskEither.chain(user => getTask(id, user))
@@ -154,35 +123,34 @@ export const TasksConnectionQueryArgs = t.intersection(
   'TasksConnectionQueryArgs'
 )
 export type TasksConnectionQueryArgs = t.TypeOf<typeof TasksConnectionQueryArgs>
-const tasksQuery = createResolver(
-  TasksConnectionQueryArgs,
-  Connection(Task),
-  (_parent, args, context) =>
+
+const getTasksResolver = createResolver(
+  {
+    query: TasksConnectionQueryArgs,
+    output: Connection(Task)
+  },
+  ({ query }, context) =>
     pipe(
       ensureUser(context),
-      taskEither.chain(user => listTasks(args, user))
+      taskEither.chain(user => listTasks(query, user))
     )
 )
 
-const resolvers = {
-  Task: {
-    project: taskProjectResolver
+const resolvers: Resolvers = {
+  path: '/tasks',
+  POST: {
+    '/': createTaskResolver,
+    '/batch': createTasksBatchResolver
   },
-  User: {
-    tasks: userTasksResolver
+  PUT: {
+    '/:id': updateTaskResolver
   },
-  Project: {
-    tasks: projectTasksResolver
+  DELETE: {
+    '/:id': deleteTaskResolver
   },
-  Mutation: {
-    createTask: createTaskMutation,
-    createTasksBatch: createTasksBatchMutation,
-    updateTask: updateTaskMutation,
-    deleteTask: deleteTaskMutation
-  },
-  Query: {
-    task: taskQuery,
-    tasks: tasksQuery
+  GET: {
+    '/:id': getTaskResolver,
+    '/': getTasksResolver
   }
 }
 
