@@ -1,32 +1,31 @@
-import { ApolloError } from 'apollo-server-express'
 import { Option } from 'fp-ts/Option'
 import { TaskEither } from 'fp-ts/TaskEither'
 import SQL from 'sql-template-strings'
 import { dbGet, insert, remove, update } from '../misc/dbUtils'
-import { PositiveInteger } from '../misc/Types'
+import { CoolerError, PositiveInteger } from '../misc/Types'
 import { DatabaseTaxCreationInput, Tax, TaxUpdateInput } from './interface'
 
 export function getTaxById(
   id: PositiveInteger
-): TaskEither<ApolloError, Option<Tax>> {
+): TaskEither<CoolerError, Option<Tax>> {
   return dbGet(SQL`SELECT * FROM tax WHERE id = ${id}`, Tax)
 }
 
 export function insertTax(
   tax: DatabaseTaxCreationInput
-): TaskEither<ApolloError, PositiveInteger> {
+): TaskEither<CoolerError, PositiveInteger> {
   return insert('tax', tax, DatabaseTaxCreationInput)
 }
 
 export function updateTax(
   id: PositiveInteger,
   tax: TaxUpdateInput
-): TaskEither<ApolloError, PositiveInteger> {
+): TaskEither<CoolerError, PositiveInteger> {
   return update('tax', id, tax, TaxUpdateInput)
 }
 
 export function deleteTax(
   id: PositiveInteger
-): TaskEither<ApolloError, PositiveInteger> {
+): TaskEither<CoolerError, PositiveInteger> {
   return remove('tax', { id })
 }

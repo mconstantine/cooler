@@ -2,7 +2,6 @@ import { Tax, TaxCreationInput, TaxUpdateInput } from './interface'
 import { DatabaseUser, User } from '../user/interface'
 import { ConnectionQueryArgs } from '../misc/ConnectionQueryArgs'
 import SQL from 'sql-template-strings'
-import { ApolloError } from 'apollo-server-express'
 import { queryToConnection } from '../misc/queryToConnection'
 import { Connection } from '../misc/Connection'
 import {
@@ -14,14 +13,14 @@ import {
 import { TaskEither } from 'fp-ts/TaskEither'
 import { pipe } from 'fp-ts/function'
 import { taskEither } from 'fp-ts'
-import { coolerError, PositiveInteger } from '../misc/Types'
+import { CoolerError, coolerError, PositiveInteger } from '../misc/Types'
 import { getUserById } from '../user/database'
 import { a18n } from '../misc/a18n'
 
 export function createTax(
   input: TaxCreationInput,
   user: User
-): TaskEither<ApolloError, Tax> {
+): TaskEither<CoolerError, Tax> {
   return pipe(
     insertTax({ ...input, user: user.id }),
     taskEither.chain(getTaxById),
@@ -39,7 +38,7 @@ export function createTax(
 export function getTax(
   id: PositiveInteger,
   user: User
-): TaskEither<ApolloError, Tax> {
+): TaskEither<CoolerError, Tax> {
   return pipe(
     getTaxById(id),
     taskEither.chain(
@@ -62,7 +61,7 @@ export function getTax(
 export function listTaxes(
   args: ConnectionQueryArgs,
   user: User
-): TaskEither<ApolloError, Connection<Tax>> {
+): TaskEither<CoolerError, Connection<Tax>> {
   return queryToConnection(
     args,
     ['tax.*'],
@@ -76,7 +75,7 @@ export function updateTax(
   id: PositiveInteger,
   input: TaxUpdateInput,
   user: User
-): TaskEither<ApolloError, Tax> {
+): TaskEither<CoolerError, Tax> {
   return pipe(
     getTaxById(id),
     taskEither.chain(
@@ -108,7 +107,7 @@ export function updateTax(
 export function deleteTax(
   id: PositiveInteger,
   user: User
-): TaskEither<ApolloError, Tax> {
+): TaskEither<CoolerError, Tax> {
   return pipe(
     getTaxById(id),
     taskEither.chain(
@@ -134,7 +133,7 @@ export function deleteTax(
   )
 }
 
-export function getTaxUser(tax: Tax): TaskEither<ApolloError, User> {
+export function getTaxUser(tax: Tax): TaskEither<CoolerError, User> {
   return pipe(
     getUserById(tax.user),
     taskEither.chain(
@@ -148,7 +147,7 @@ export function getTaxUser(tax: Tax): TaskEither<ApolloError, User> {
 export function getUserTaxes(
   user: DatabaseUser,
   args: ConnectionQueryArgs
-): TaskEither<ApolloError, Connection<Tax>> {
+): TaskEither<CoolerError, Connection<Tax>> {
   return queryToConnection(
     args,
     ['tax.*'],

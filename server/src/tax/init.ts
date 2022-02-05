@@ -1,9 +1,9 @@
 import SQL from 'sql-template-strings'
 import { TaskEither } from 'fp-ts/TaskEither'
-import { ApolloError } from 'apollo-server-express'
 import { dbExec } from '../misc/dbUtils'
+import { CoolerError } from '../misc/Types'
 
-export default function init(): TaskEither<ApolloError, void> {
+export default function init(): TaskEither<CoolerError, void> {
   return dbExec(SQL`
     CREATE TABLE IF NOT EXISTS tax (
       id INTEGER PRIMARY KEY,

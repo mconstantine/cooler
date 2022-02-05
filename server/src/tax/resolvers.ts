@@ -1,111 +1,94 @@
 import { Tax, TaxCreationInput, TaxUpdateInput } from './interface'
-import { DatabaseUser, User } from '../user/interface'
 import { ConnectionQueryArgs } from '../misc/ConnectionQueryArgs'
-import {
-  createTax,
-  updateTax,
-  deleteTax,
-  getTax,
-  listTaxes,
-  getTaxUser,
-  getUserTaxes
-} from './model'
+import { createTax, updateTax, deleteTax, getTax, listTaxes } from './model'
 import { ensureUser } from '../misc/ensureUser'
 import { Connection } from '../misc/Connection'
 import { createResolver } from '../misc/createResolver'
-import { EmptyObject, PositiveInteger } from '../misc/Types'
-import * as t from 'io-ts'
+import { IdInput } from '../misc/Types'
 import { pipe } from 'fp-ts/function'
 import { taskEither } from 'fp-ts'
+import { Resolvers } from '../assignResolvers'
 
-const taxUserResolver = createResolver<Tax>(EmptyObject, User, getTaxUser)
+// const taxUserResolver = createResolver<Tax>(EmptyObject, User, getTaxUser)
 
-const userTaxesResolver = createResolver<DatabaseUser>(
-  ConnectionQueryArgs,
-  Connection(Tax),
-  getUserTaxes
-)
+// const userTaxesResolver = createResolver<DatabaseUser>(
+//   ConnectionQueryArgs,
+//   Connection(Tax),
+//   getUserTaxes
+// )
 
-const CreateTaxMutationInput = t.type(
+const createTaxResolver = createResolver(
   {
-    tax: TaxCreationInput
+    body: TaxCreationInput,
+    output: Tax
   },
-  'CreateTaxMutationInput'
-)
-const createTaxMutation = createResolver(
-  CreateTaxMutationInput,
-  Tax,
-  (_parent, { tax }, context) =>
+  ({ body }, context) =>
     pipe(
       ensureUser(context),
-      taskEither.chain(user => createTax(tax, user))
+      taskEither.chain(user => createTax(body, user))
     )
 )
 
-const UpdateTaxMutationInput = t.type(
-  { id: PositiveInteger, tax: TaxUpdateInput },
-  'UpdateTaxMutationInput'
-)
-const updateTaxMutation = createResolver(
-  UpdateTaxMutationInput,
-  Tax,
-  (_parent, { id, tax }, context) =>
+const updateTaxResolver = createResolver(
+  {
+    params: IdInput,
+    body: TaxUpdateInput,
+    output: Tax
+  },
+  ({ params: { id }, body }, context) =>
     pipe(
       ensureUser(context),
-      taskEither.chain(user => updateTax(id, tax, user))
+      taskEither.chain(user => updateTax(id, body, user))
     )
 )
 
-const DeleteTaxMutationInput = t.type(
-  { id: PositiveInteger },
-  'DeleteTaxMutationInput'
-)
-const deleteTaxMutation = createResolver(
-  DeleteTaxMutationInput,
-  Tax,
-  (_parent, { id }, context) =>
+const deleteTaxResolver = createResolver(
+  {
+    params: IdInput,
+    output: Tax
+  },
+  ({ params: { id } }, context) =>
     pipe(
       ensureUser(context),
       taskEither.chain(user => deleteTax(id, user))
     )
 )
 
-const TaxQueryInput = t.type({ id: PositiveInteger }, 'TaxQueryInput')
-const taxQuery = createResolver(
-  TaxQueryInput,
-  Tax,
-  (_parent, { id }, context) =>
+const getTaxResolver = createResolver(
+  { params: IdInput, output: Tax },
+  ({ params: { id } }, context) =>
     pipe(
       ensureUser(context),
       taskEither.chain(user => getTax(id, user))
     )
 )
 
-const taxesQuery = createResolver(
-  ConnectionQueryArgs,
-  Connection(Tax),
-  (_parent, args, context) =>
+const getTaxesResolver = createResolver(
+  {
+    query: ConnectionQueryArgs,
+    output: Connection(Tax)
+  },
+  ({ query }, context) =>
     pipe(
       ensureUser(context),
-      taskEither.chain(user => listTaxes(args, user))
+      taskEither.chain(user => listTaxes(query, user))
     )
 )
 
-const resolvers = {
-  Tax: {
-    user: taxUserResolver
+const resolvers: Resolvers = {
+  path: '/taxes',
+  POST: {
+    '/': createTaxResolver
   },
-  User: {
-    taxes: userTaxesResolver
+  PUT: {
+    '/:id': updateTaxResolver
   },
-  Mutation: {
-    createTax: createTaxMutation,
-    updateTax: updateTaxMutation,
-    deleteTax: deleteTaxMutation
+  DELETE: {
+    '/:id': deleteTaxResolver
   },
-  Query: {
-    tax: taxQuery,
-    taxes: taxesQuery
+  GET: {
+    '/:id': getTaxResolver,
+    '/': getTaxesResolver
   }
 }
 
