@@ -5,14 +5,13 @@ import initTask from './task/init'
 import initSession from './session/init'
 import initTax from './tax/init'
 import { TaskEither } from 'fp-ts/TaskEither'
-import { ApolloError } from 'apollo-server-express'
 import { pipe } from 'fp-ts/function'
 import { taskEither } from 'fp-ts'
 import { getDatabase } from './misc/getDatabase'
-import { coolerError } from './misc/Types'
+import { CoolerError, coolerError } from './misc/Types'
 import { a18n } from './misc/a18n'
 
-export function init(): TaskEither<ApolloError, void> {
+export function init(): TaskEither<CoolerError, void> {
   return pipe(
     initUser(),
     taskEither.chain(initClient),

@@ -1,12 +1,11 @@
 import { UserContext, User, Context } from '../user/interface'
-import { ApolloError } from 'apollo-server-express'
 import { TaskEither } from 'fp-ts/TaskEither'
 import { pipe } from 'fp-ts/function'
 import { boolean, taskEither } from 'fp-ts'
-import { coolerError } from './Types'
+import { CoolerError, coolerError } from './Types'
 import { a18n } from './a18n'
 
-export function ensureUser(context: Context): TaskEither<ApolloError, User> {
+export function ensureUser(context: Context): TaskEither<CoolerError, User> {
   return pipe(
     isUserContext(context),
     boolean.fold(

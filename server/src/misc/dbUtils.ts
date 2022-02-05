@@ -4,11 +4,10 @@ import { TaskEither } from 'fp-ts/TaskEither'
 import { ISqlite } from 'sqlite'
 import { getDatabase } from './getDatabase'
 import { removeUndefined } from './removeUndefined'
-import { coolerError, PositiveInteger } from './Types'
+import { CoolerError, coolerError, PositiveInteger } from './Types'
 import { Statement } from 'sqlite3'
 import { SQLStatement } from 'sql-template-strings'
 import { Option } from 'fp-ts/Option'
-import { ApolloError } from 'apollo-server-express'
 import { Type } from 'io-ts'
 import { reportDecodeErrors } from './reportDecodeErrors'
 import { sequenceT } from 'fp-ts/Apply'
@@ -17,7 +16,7 @@ import { a18n } from './a18n'
 export function dbRun(
   sql: ISqlite.SqlType,
   ...args: any[]
-): TaskEither<ApolloError, ISqlite.RunResult<Statement>> {
+): TaskEither<CoolerError, ISqlite.RunResult<Statement>> {
   return pipe(
     getDatabase(),
     taskEither.chain(db =>
@@ -35,7 +34,7 @@ export function dbRun(
   )
 }
 
-export function dbExec(sql: SQLStatement): TaskEither<ApolloError, void> {
+export function dbExec(sql: SQLStatement): TaskEither<CoolerError, void> {
   return pipe(
     getDatabase(),
     taskEither.chain(db =>
@@ -56,7 +55,7 @@ export function dbExec(sql: SQLStatement): TaskEither<ApolloError, void> {
 export function dbGet<S, D>(
   sql: SQLStatement,
   codec: Type<D, S>
-): TaskEither<ApolloError, Option<D>> {
+): TaskEither<CoolerError, Option<D>> {
   return pipe(
     getDatabase(),
     taskEither.chain(db =>
@@ -100,7 +99,7 @@ export function dbGet<S, D>(
 export function dbGetAll<S, D>(
   sql: SQLStatement,
   codec: Type<D, S>
-): TaskEither<ApolloError, D[]> {
+): TaskEither<CoolerError, D[]> {
   return pipe(
     getDatabase(),
     taskEither.chain(db =>
@@ -150,7 +149,7 @@ export function insert<D extends Record<string, any>, S>(
   tableName: string,
   _rows: D | D[],
   codec: Type<D, S>
-): TaskEither<ApolloError, PositiveInteger> {
+): TaskEither<CoolerError, PositiveInteger> {
   const rows: S[] = pipe(
     Array.isArray(_rows) ? _rows : [_rows],
     rows => rows.map(removeUndefined) as D[],
@@ -177,7 +176,7 @@ export function update<D extends Record<string, any>, S>(
   id: PositiveInteger,
   row: D,
   codec: Type<D, S>
-): TaskEither<ApolloError, PositiveInteger> {
+): TaskEither<CoolerError, PositiveInteger> {
   const encodedRow = codec.encode(row)
 
   // Magic reduce from { key: value } to [['key = ?'], [value]]
@@ -206,7 +205,7 @@ export function update<D extends Record<string, any>, S>(
 export function remove<T extends Record<string, any>>(
   tableName: string,
   where?: Partial<T>
-): TaskEither<ApolloError, PositiveInteger> {
+): TaskEither<CoolerError, PositiveInteger> {
   let query = `DELETE FROM ${tableName}`
   let args = [] as any[]
 

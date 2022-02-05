@@ -1,38 +1,37 @@
-import { ApolloError } from 'apollo-server-express'
 import { Option } from 'fp-ts/Option'
 import { TaskEither } from 'fp-ts/TaskEither'
 import SQL from 'sql-template-strings'
 import { dbGet, insert, remove, update } from '../misc/dbUtils'
-import { EmailString, PositiveInteger } from '../misc/Types'
+import { CoolerError, EmailString, PositiveInteger } from '../misc/Types'
 import { DatabaseUser, UserCreationInput, UserUpdateInput } from './interface'
 
 export function getUserByEmail(
   email: EmailString
-): TaskEither<ApolloError, Option<DatabaseUser>> {
+): TaskEither<CoolerError, Option<DatabaseUser>> {
   return dbGet(SQL`SELECT * FROM user WHERE email = ${email}`, DatabaseUser)
 }
 
 export function getUserById(
   id: PositiveInteger
-): TaskEither<ApolloError, Option<DatabaseUser>> {
+): TaskEither<CoolerError, Option<DatabaseUser>> {
   return dbGet(SQL`SELECT * FROM user WHERE id = ${id}`, DatabaseUser)
 }
 
 export function insertUser(
   user: UserCreationInput
-): TaskEither<ApolloError, PositiveInteger> {
+): TaskEither<CoolerError, PositiveInteger> {
   return insert('user', user, UserCreationInput)
 }
 
 export function updateUser(
   id: PositiveInteger,
   user: UserUpdateInput
-): TaskEither<ApolloError, PositiveInteger> {
+): TaskEither<CoolerError, PositiveInteger> {
   return update('user', id, user, UserUpdateInput)
 }
 
 export function deleteUser(
   id: PositiveInteger
-): TaskEither<ApolloError, PositiveInteger> {
+): TaskEither<CoolerError, PositiveInteger> {
   return remove('user', { id })
 }

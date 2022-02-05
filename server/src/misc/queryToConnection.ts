@@ -1,9 +1,13 @@
 import SQL, { SQLStatement } from 'sql-template-strings'
 import { ConnectionQueryArgs } from './ConnectionQueryArgs'
 import { Connection, Edge } from './Connection'
-import { coolerError, PositiveInteger, NonNegativeInteger } from './Types'
+import {
+  coolerError,
+  PositiveInteger,
+  NonNegativeInteger,
+  CoolerError
+} from './Types'
 import { TaskEither } from 'fp-ts/TaskEither'
-import { ApolloError } from 'apollo-server-express'
 import { nonEmptyArray, option, taskEither } from 'fp-ts'
 import { flow, pipe } from 'fp-ts/function'
 import { dbGetAll } from './dbUtils'
@@ -39,7 +43,7 @@ export function queryToConnection<
   from: string,
   codec: t.Type<D, S>,
   rest?: SQLStatement
-): TaskEither<ApolloError, Connection<D>> {
+): TaskEither<CoolerError, Connection<D>> {
   if ((args.first && args.before) || (args.last && args.after)) {
     return taskEither.left(
       coolerError(

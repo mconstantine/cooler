@@ -8,7 +8,6 @@ import {
   UserUpdateInput
 } from './interface'
 import SQL from 'sql-template-strings'
-import { ApolloError } from 'apollo-server-express'
 import { dbGet } from '../misc/dbUtils'
 import { hashSync, compareSync } from 'bcryptjs'
 import { isUserContext } from '../misc/ensureUser'
@@ -17,7 +16,7 @@ import { NonEmptyString } from 'io-ts-types'
 import { Option } from 'fp-ts/Option'
 import { boolean, option, taskEither } from 'fp-ts'
 import { pipe } from 'fp-ts/function'
-import { coolerError, PositiveInteger } from '../misc/Types'
+import { CoolerError, coolerError, PositiveInteger } from '../misc/Types'
 import { TaskEither } from 'fp-ts/TaskEither'
 import {
   getUserByEmail,
@@ -33,7 +32,7 @@ import { a18n } from '../misc/a18n'
 export function createUser(
   input: UserCreationInput,
   context: Context
-): TaskEither<ApolloError, AccessTokenResponse> {
+): TaskEither<CoolerError, AccessTokenResponse> {
   const { name, email, password } = input
 
   return pipe(
@@ -86,7 +85,7 @@ export function createUser(
 
 export function loginUser(
   input: UserLoginInput
-): TaskEither<ApolloError, AccessTokenResponse> {
+): TaskEither<CoolerError, AccessTokenResponse> {
   const { email, password } = input
 
   return pipe(
@@ -111,7 +110,7 @@ export function loginUser(
 
 export function refreshToken(
   input: RefreshTokenInput
-): TaskEither<ApolloError, AccessTokenResponse> {
+): TaskEither<CoolerError, AccessTokenResponse> {
   const { refreshToken } = input
 
   return pipe(
@@ -140,7 +139,7 @@ export function refreshToken(
 export function updateUser(
   id: PositiveInteger,
   user: UserUpdateInput
-): TaskEither<ApolloError, User> {
+): TaskEither<CoolerError, User> {
   const { name, email, password } = user
 
   return pipe(
@@ -206,7 +205,7 @@ export function updateUser(
   )
 }
 
-export function deleteUser(id: PositiveInteger): TaskEither<ApolloError, User> {
+export function deleteUser(id: PositiveInteger): TaskEither<CoolerError, User> {
   return pipe(
     getUserById(id),
     taskEither.chain(
