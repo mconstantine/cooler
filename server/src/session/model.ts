@@ -7,7 +7,6 @@ import {
 import { DatabaseUser, User } from '../user/interface'
 import { ConnectionQueryArgs } from '../misc/ConnectionQueryArgs'
 import SQL from 'sql-template-strings'
-import { ApolloError } from 'apollo-server-express'
 import { dbGetAll, dbGet } from '../misc/dbUtils'
 import { queryToConnection } from '../misc/queryToConnection'
 import { DatabaseTask, Task } from '../task/interface'
@@ -23,6 +22,7 @@ import {
   deleteSession as deleteDatabaseSession
 } from './database'
 import {
+  CoolerError,
   coolerError,
   DateFromSQLDate,
   NonNegativeInteger,
@@ -39,7 +39,10 @@ import { getProjectById } from '../project/database'
 import { sequenceS } from 'fp-ts/Apply'
 import { getClientById } from '../client/database'
 import { DatabaseProject } from '../project/interface'
-import { UserDataFromSessionResolverInput } from './resolvers'
+import {
+  TimesheetCreationOutput,
+  UserDataFromSessionResolverInput
+} from './resolvers'
 import { a18n } from '../misc/a18n'
 
 const TIMESHEETS_PATH = '/public/timesheets'
@@ -47,7 +50,7 @@ const TIMESHEETS_PATH = '/public/timesheets'
 export function startSession(
   taskId: PositiveInteger,
   user: User
-): TaskEither<ApolloError, Session> {
+): TaskEither<CoolerError, Session> {
   return pipe(
     getTaskById(taskId),
     taskEither.chain(
@@ -114,7 +117,7 @@ export function startSession(
 export function getSession(
   id: PositiveInteger,
   user: User
-): TaskEither<ApolloError, Session> {
+): TaskEither<CoolerError, Session> {
   return pipe(
     getSessionById(id),
     taskEither.chain(
@@ -148,7 +151,7 @@ type SessionsConnectionQueryArgs = t.TypeOf<typeof SessionsConnectionQueryArgs>
 export function listSessions(
   args: SessionsConnectionQueryArgs,
   user: User
-): TaskEither<ApolloError, Connection<Session>> {
+): TaskEither<CoolerError, Connection<Session>> {
   const sql = SQL`
     JOIN task ON task.id = session.task
     JOIN project ON project.id = task.project
@@ -174,7 +177,7 @@ export function updateSession(
   id: PositiveInteger,
   input: SessionUpdateInput,
   user: User
-): TaskEither<ApolloError, Session> {
+): TaskEither<CoolerError, Session> {
   return pipe(
     getSessionById(id),
     taskEither.chain(
@@ -242,14 +245,14 @@ export function updateSession(
 export function stopSession(
   id: PositiveInteger,
   user: User
-): TaskEither<ApolloError, Session> {
+): TaskEither<CoolerError, Session> {
   return updateSession(id, { end_time: option.some(new Date()) }, user)
 }
 
 export function deleteSession(
   id: PositiveInteger,
   user: User
-): TaskEither<ApolloError, Session> {
+): TaskEither<CoolerError, Session> {
   return pipe(
     getSessionById(id),
     taskEither.chain(
@@ -278,7 +281,7 @@ export function deleteSession(
 export function createTimesheet(
   input: TimesheetCreationInput,
   user: User
-): TaskEither<ApolloError, string> {
+): TaskEither<CoolerError, TimesheetCreationOutput> {
   const timesheetsDirectoryPath = path.join(process.cwd(), TIMESHEETS_PATH)
   const filename = `${crypto.randomBytes(12).toString('hex')}.csv`
 
@@ -458,13 +461,15 @@ export function createTimesheet(
         taskEither.fromEither
       )
     ),
-    taskEither.map(() => path.join(TIMESHEETS_PATH, filename))
+    taskEither.map(() => ({
+      fileLocation: path.join(TIMESHEETS_PATH, filename)
+    }))
   )
 }
 
 export function getSessionTask(
   session: DatabaseSession
-): TaskEither<ApolloError, Task> {
+): TaskEither<CoolerError, Task> {
   return pipe(
     getTaskById(session.task),
     taskEither.chain(
@@ -479,13 +484,13 @@ export function getTaskSessions(
   task: DatabaseTask,
   args: ConnectionQueryArgs,
   user: User
-): TaskEither<ApolloError, Connection<Session>> {
+): TaskEither<CoolerError, Connection<Session>> {
   return listSessions({ ...args, task: option.some(task.id) }, user)
 }
 
 export function getTaskActualWorkingHours(
   task: DatabaseTask
-): TaskEither<ApolloError, number> {
+): TaskEither<CoolerError, number> {
   return pipe(
     dbGet(
       SQL`
@@ -510,7 +515,7 @@ export function getTaskActualWorkingHours(
 
 export function getTaskBudget(
   task: DatabaseTask
-): TaskEither<ApolloError, number> {
+): TaskEither<CoolerError, number> {
   return pipe(
     dbGet(
       SQL`
@@ -533,7 +538,7 @@ export function getTaskBudget(
 
 export function getTaskBalance(
   task: DatabaseTask
-): TaskEither<ApolloError, number> {
+): TaskEither<CoolerError, number> {
   return pipe(
     dbGet(
       SQL`
@@ -559,7 +564,7 @@ export function getTaskBalance(
 
 export function getProjectExpectedWorkingHours(
   project: DatabaseProject
-): TaskEither<ApolloError, number> {
+): TaskEither<CoolerError, number> {
   return pipe(
     dbGet(
       SQL`
@@ -582,7 +587,7 @@ export function getProjectExpectedWorkingHours(
 
 export function getProjectActualWorkingHours(
   project: DatabaseProject
-): TaskEither<ApolloError, number> {
+): TaskEither<CoolerError, number> {
   return pipe(
     dbGet(
       SQL`
@@ -608,7 +613,7 @@ export function getProjectActualWorkingHours(
 
 export function getProjectBudget(
   project: DatabaseProject
-): TaskEither<ApolloError, number> {
+): TaskEither<CoolerError, number> {
   return pipe(
     dbGet(
       SQL`
@@ -631,7 +636,7 @@ export function getProjectBudget(
 
 export function getProjectBalance(
   project: DatabaseProject
-): TaskEither<ApolloError, number> {
+): TaskEither<CoolerError, number> {
   return pipe(
     dbGet(
       SQL`
@@ -658,7 +663,7 @@ export function getProjectBalance(
 export function getUserOpenSessions(
   user: DatabaseUser,
   args: ConnectionQueryArgs
-): TaskEither<ApolloError, Connection<Session>> {
+): TaskEither<CoolerError, Connection<Session>> {
   return queryToConnection(
     args,
     ['session.*'],
@@ -676,7 +681,7 @@ export function getUserOpenSessions(
 export function getUserExpectedWorkingHours(
   user: DatabaseUser,
   input: UserDataFromSessionResolverInput
-): TaskEither<ApolloError, number> {
+): TaskEither<CoolerError, number> {
   const sql = SQL`
     SELECT IFNULL(SUM(task.expectedWorkingHours), 0) AS expectedWorkingHours
     FROM task
@@ -711,7 +716,7 @@ export function getUserExpectedWorkingHours(
 export function getUserActualWorkingHours(
   user: DatabaseUser,
   input: UserDataFromSessionResolverInput
-): TaskEither<ApolloError, number> {
+): TaskEither<CoolerError, number> {
   const sql = SQL`
     SELECT IFNULL(SUM((
       strftime('%s', session.end_time) - strftime('%s', session.start_time)
@@ -751,7 +756,7 @@ export function getUserActualWorkingHours(
 export function getUserBudget(
   user: DatabaseUser,
   input: UserDataFromSessionResolverInput
-): TaskEither<ApolloError, number> {
+): TaskEither<CoolerError, number> {
   const sql = SQL`
     SELECT IFNULL(SUM(expectedWorkingHours * hourlyCost), 0) AS budget
     FROM task
@@ -786,7 +791,7 @@ export function getUserBudget(
 export function getUserBalance(
   user: DatabaseUser,
   input: UserDataFromSessionResolverInput
-): TaskEither<ApolloError, number> {
+): TaskEither<CoolerError, number> {
   const sql = SQL`
     SELECT IFNULL(SUM((
       strftime('%s', session.end_time) - strftime('%s', session.start_time)
