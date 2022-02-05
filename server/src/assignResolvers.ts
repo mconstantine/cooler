@@ -1,5 +1,5 @@
 import userResolvers from './user/resolvers'
-// import clientResolvers from './client/resolvers'
+import clientResolvers from './client/resolvers'
 // import projectResolvers from './project/resolvers'
 // import taskResolvers from './task/resolvers'
 // import sessionResolvers from './session/resolvers'
@@ -10,10 +10,10 @@ import express, { Express, Router } from 'express'
 
 export type Resolvers = {
   path: string
-} & Record<HttpMethod, Record<string, Resolver>>
+} & Record<HttpMethod, Record<string, Resolver<any, any, any, any>>>
 
 export function assignResolvers(app: Express) {
-  const resolvers = [userResolvers]
+  const resolvers = [userResolvers, clientResolvers]
 
   resolvers.forEach(resolver => {
     const router = Router().use(express.json({ strict: true }))

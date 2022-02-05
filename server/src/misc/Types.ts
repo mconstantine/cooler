@@ -178,6 +178,9 @@ export function optionFromUndefined<C extends t.Mixed>(
   )
 }
 
-export function isObject(u: unknown): u is Object {
-  return Object.prototype.toString.call(u) === '[object Object]'
-}
+export const IdInput = t.type(
+  {
+    id: PositiveInteger
+  },
+  'IdInput'
+)

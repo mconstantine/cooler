@@ -4,97 +4,78 @@ import {
   listClients,
   updateClient,
   deleteClient,
-  getClient,
-  getClientName,
-  getClientUser,
-  getUserClients
+  getClient
 } from './model'
 import { ConnectionQueryArgs } from '../misc/ConnectionQueryArgs'
 import { ensureUser } from '../misc/ensureUser'
-import { User, DatabaseUser } from '../user/interface'
 import { Connection } from '../misc/Connection'
 import { createResolver } from '../misc/createResolver'
 import * as t from 'io-ts'
 import { taskEither } from 'fp-ts'
-import { EmptyObject, PositiveInteger } from '../misc/Types'
+import { IdInput } from '../misc/Types'
 import { pipe } from 'fp-ts/function'
 import { NonEmptyString, optionFromNullable } from 'io-ts-types'
+import { Resolvers } from '../assignResolvers'
 
-const clientNameResolver = createResolver<Client>(
-  EmptyObject,
-  NonEmptyString,
-  client => taskEither.right(getClientName(client))
-)
+// const clientNameResolver = createResolver<Client>(
+//   EmptyObject,
+//   NonEmptyString,
+//   client => taskEither.right(getClientName(client))
+// )
 
-const clientUserResolver = createResolver<Client>(EmptyObject, User, client =>
-  getClientUser(client)
-)
+// const clientUserResolver = createResolver<Client>(EmptyObject, User, client =>
+//   getClientUser(client)
+// )
 
-const userClientsResolver = createResolver<DatabaseUser>(
-  ConnectionQueryArgs,
-  Connection(Client),
-  (user, args) => getUserClients(user, args)
-)
+// const userClientsResolver = createResolver<DatabaseUser>(
+//   ConnectionQueryArgs,
+//   Connection(Client),
+//   (user, args) => getUserClients(user, args)
+// )
 
-const CreateClientMutationInput = t.type(
+const createClientResolver = createResolver(
   {
-    client: ClientCreationInput
+    body: ClientCreationInput,
+    output: Client
   },
-  'CreateClientMutationInput'
-)
-const createClientMutation = createResolver(
-  CreateClientMutationInput,
-  Client,
-  (_parent, { client }, context) =>
+  ({ body }, context) =>
     pipe(
       ensureUser(context),
-      taskEither.chain(user => createClient({ ...client }, user))
+      taskEither.chain(user => createClient(body, user))
     )
 )
 
-const UpdateClientMutationInput = t.type(
+const updateClientResolver = createResolver(
   {
-    id: PositiveInteger,
-    client: ClientUpdateInput
+    params: IdInput,
+    body: ClientUpdateInput,
+    output: Client
   },
-  'UpdateClientMutationInput'
-)
-const updateClientMutation = createResolver(
-  UpdateClientMutationInput,
-  Client,
-  (_parent, { id, client }, context) =>
+  ({ params: { id }, body }, context) =>
     pipe(
       ensureUser(context),
-      taskEither.chain(user => updateClient(id, client, user))
+      taskEither.chain(user => updateClient(id, body, user))
     )
 )
 
-const DeleteClientMutationInput = t.type(
+const deleteClientResolver = createResolver(
   {
-    id: PositiveInteger
+    params: IdInput,
+    output: Client
   },
-  'DeleteClientMutationInput'
-)
-const deleteClientMutation = createResolver(
-  DeleteClientMutationInput,
-  Client,
-  (_parent, { id }, context) =>
+  ({ params: { id } }, context) =>
     pipe(
       ensureUser(context),
       taskEither.chain(user => deleteClient(id, user))
     )
 )
 
-const ClientQueryInput = t.type(
+const getClientResolver = createResolver(
   {
-    id: PositiveInteger
+    params: IdInput,
+    output: Client
   },
-  'ClientQueryInput'
-)
-const clientQuery = createResolver(
-  ClientQueryInput,
-  Client,
-  (_parent, { id }, context) =>
+  ({ params: { id } }, context) =>
     pipe(
       ensureUser(context),
       taskEither.chain(user => getClient(id, user))
@@ -113,32 +94,52 @@ export const ClientConnectionQuerysArgs = t.intersection(
 export type ClientConnectionQuerysArgs = t.TypeOf<
   typeof ClientConnectionQuerysArgs
 >
-const clientsQuery = createResolver(
-  ClientConnectionQuerysArgs,
-  Connection(Client),
-  (_parent, args, context) =>
+
+const getClientsResolver = createResolver(
+  {
+    query: ClientConnectionQuerysArgs,
+    output: Connection(Client)
+  },
+  ({ query }, context) =>
     pipe(
       ensureUser(context),
-      taskEither.chain(user => listClients(args, user))
+      taskEither.chain(user => listClients(query, user))
     )
 )
 
-const resolvers = {
-  Client: {
-    name: clientNameResolver,
-    user: clientUserResolver
+// const resolvers = {
+//   Client: {
+//     name: clientNameResolver,
+//     user: clientUserResolver
+//   },
+//   User: {
+//     clients: userClientsResolver
+//   },
+//   Mutation: {
+//     createClient: createClientMutation,
+//     updateClient: updateClientMutation,
+//     deleteClient: deleteClientMutation
+//   },
+//   Query: {
+//     client: clientQuery,
+//     clients: clientsQuery
+//   }
+// }
+
+const resolvers: Resolvers = {
+  path: '/clients',
+  POST: {
+    '/': createClientResolver
   },
-  User: {
-    clients: userClientsResolver
+  PUT: {
+    '/:id': updateClientResolver
   },
-  Mutation: {
-    createClient: createClientMutation,
-    updateClient: updateClientMutation,
-    deleteClient: deleteClientMutation
+  DELETE: {
+    '/:id': deleteClientResolver
   },
-  Query: {
-    client: clientQuery,
-    clients: clientsQuery
+  GET: {
+    '/:id': getClientResolver,
+    '/': getClientsResolver
   }
 }
 

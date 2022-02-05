@@ -17,7 +17,6 @@ import SQL from 'sql-template-strings'
 import { ConnectionQueryArgs } from '../misc/ConnectionQueryArgs'
 import { queryToConnection } from '../misc/queryToConnection'
 import { DatabaseUser, User } from '../user/interface'
-import { ApolloError } from 'apollo-server-express'
 import { Connection } from '../misc/Connection'
 import { TaskEither } from 'fp-ts/TaskEither'
 import { constVoid, pipe } from 'fp-ts/function'
@@ -28,7 +27,7 @@ import {
   updateClient as updateDatabaseClient,
   deleteClient as deleteDatabaseClient
 } from './database'
-import { coolerError, PositiveInteger } from '../misc/Types'
+import { CoolerError, coolerError, PositiveInteger } from '../misc/Types'
 import { NonEmptyString } from 'io-ts-types'
 import { getUserById } from '../user/database'
 import { ClientConnectionQuerysArgs } from './resolvers'
@@ -37,7 +36,7 @@ import { a18n } from '../misc/a18n'
 export function createClient(
   input: ClientCreationInput,
   user: User
-): TaskEither<ApolloError, Client> {
+): TaskEither<CoolerError, Client> {
   const commonInput: ClientCreationCommonInput & { user: PositiveInteger } = {
     address_city: input.address_city,
     address_country: input.address_country,
@@ -84,7 +83,7 @@ export function createClient(
 export function getClient(
   id: PositiveInteger,
   user: User
-): TaskEither<ApolloError, Client> {
+): TaskEither<CoolerError, Client> {
   return pipe(
     getClientById(id),
     taskEither.chain(
@@ -107,7 +106,7 @@ export function getClient(
 export function listClients(
   args: ClientConnectionQuerysArgs,
   user: User
-): TaskEither<ApolloError, Connection<Client>> {
+): TaskEither<CoolerError, Connection<Client>> {
   const where = SQL`WHERE user = ${user.id}`
 
   pipe(
@@ -128,7 +127,7 @@ export function updateClient(
   id: PositiveInteger,
   input: ClientUpdateInput,
   user: User
-): TaskEither<ApolloError, Client> {
+): TaskEither<CoolerError, Client> {
   return pipe(
     getClientById(id),
     taskEither.chain(
@@ -198,7 +197,7 @@ export function updateClient(
 export function deleteClient(
   id: PositiveInteger,
   user: User
-): TaskEither<ApolloError, Client> {
+): TaskEither<CoolerError, Client> {
   return pipe(
     getClientById(id),
     taskEither.chain(
@@ -236,7 +235,7 @@ export function getClientName(client: Client): NonEmptyString {
 
 export function getClientUser(
   client: DatabaseClient
-): TaskEither<ApolloError, User> {
+): TaskEither<CoolerError, User> {
   return pipe(
     getUserById(client.user),
     taskEither.chain(
@@ -250,7 +249,7 @@ export function getClientUser(
 export function getUserClients(
   user: DatabaseUser,
   args: ConnectionQueryArgs
-): TaskEither<ApolloError, Connection<Client>> {
+): TaskEither<CoolerError, Connection<Client>> {
   return queryToConnection(
     args,
     ['*'],
