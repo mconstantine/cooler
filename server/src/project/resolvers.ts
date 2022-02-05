@@ -1,125 +1,95 @@
-import {
-  DatabaseProject,
-  Project,
-  ProjectCreationInput,
-  ProjectUpdateInput
-} from './interface'
+import { Project, ProjectCreationInput, ProjectUpdateInput } from './interface'
 import {
   createProject,
   listProjects,
   updateProject,
   deleteProject,
-  getProject,
-  getProjectClient,
-  getUserProjects,
-  getUserCashedBalance,
-  getClientProjects
+  getProject
 } from './model'
-import { Client, DatabaseClient } from '../client/interface'
 import { ConnectionQueryArgs } from '../misc/ConnectionQueryArgs'
-import { DatabaseUser } from '../user/interface'
 import { ensureUser } from '../misc/ensureUser'
 import { Connection } from '../misc/Connection'
 import * as t from 'io-ts'
 import { taskEither } from 'fp-ts'
 import { createResolver } from '../misc/createResolver'
-import { EmptyObject, NonNegativeNumber, PositiveInteger } from '../misc/Types'
-import {
-  DateFromISOString,
-  NonEmptyString,
-  optionFromNullable
-} from 'io-ts-types'
+import { IdInput } from '../misc/Types'
+import { NonEmptyString, optionFromNullable } from 'io-ts-types'
 import { pipe } from 'fp-ts/function'
+import { Resolvers } from '../assignResolvers'
 
-const projectClientResolver = createResolver<DatabaseProject>(
-  EmptyObject,
-  Client,
-  project => getProjectClient(project)
-)
+// const projectClientResolver = createResolver<DatabaseProject>(
+//   EmptyObject,
+//   Client,
+//   project => getProjectClient(project)
+// )
 
-const clientProjectsResolver = createResolver<DatabaseClient>(
-  ConnectionQueryArgs,
-  Connection(Project),
-  (client, args) => getClientProjects(client, args)
-)
+// const clientProjectsResolver = createResolver<DatabaseClient>(
+//   ConnectionQueryArgs,
+//   Connection(Project),
+//   (client, args) => getClientProjects(client, args)
+// )
 
-const userProjectsResolver = createResolver<DatabaseUser>(
-  ConnectionQueryArgs,
-  Connection(Project),
-  (user, args) => getUserProjects(user, args)
-)
+// const userProjectsResolver = createResolver<DatabaseUser>(
+//   ConnectionQueryArgs,
+//   Connection(Project),
+//   (user, args) => getUserProjects(user, args)
+// )
 
-const UserCashedBalanceResolverInput = t.type(
+// const UserCashedBalanceResolverInput = t.type(
+//   {
+//     since: optionFromNullable(DateFromISOString)
+//   },
+//   'UserCashedBalanceResolverInput'
+// )
+// const userCashedBalanceResolver = createResolver<DatabaseUser>(
+//   UserCashedBalanceResolverInput,
+//   NonNegativeNumber,
+//   (user, { since }) => getUserCashedBalance(user, since)
+// )
+
+const createProjectResolver = createResolver(
   {
-    since: optionFromNullable(DateFromISOString)
+    body: ProjectCreationInput,
+    output: Project
   },
-  'UserCashedBalanceResolverInput'
-)
-const userCashedBalanceResolver = createResolver<DatabaseUser>(
-  UserCashedBalanceResolverInput,
-  NonNegativeNumber,
-  (user, { since }) => getUserCashedBalance(user, since)
-)
-
-const CreateProjectMutationInput = t.type(
-  {
-    project: ProjectCreationInput
-  },
-  'CreateProjectMutationInput'
-)
-const createProjectMutation = createResolver(
-  CreateProjectMutationInput,
-  Project,
-  (_parent, { project }, context) =>
+  ({ body }, context) =>
     pipe(
       ensureUser(context),
-      taskEither.chain(user => createProject(project, user))
+      taskEither.chain(user => createProject(body, user))
     )
 )
 
-const UpdateProjectMutationInput = t.type(
+const updateProjectResolver = createResolver(
   {
-    id: PositiveInteger,
-    project: ProjectUpdateInput
+    params: IdInput,
+    body: ProjectUpdateInput,
+    output: Project
   },
-  'UpdateProjectMutationInput'
-)
-const updateProjectMutation = createResolver(
-  UpdateProjectMutationInput,
-  Project,
-  (_parent, { id, project }, context) =>
+  ({ params: { id }, body }, context) =>
     pipe(
       ensureUser(context),
-      taskEither.chain(user => updateProject(id, project, user))
+      taskEither.chain(user => updateProject(id, body, user))
     )
 )
 
-const DeleteProjectMutationInput = t.type(
+const deleteProjectResolver = createResolver(
   {
-    id: PositiveInteger
+    params: IdInput,
+    output: Project
   },
-  'DeleteProjectMutationInput'
-)
-const deleteProjectMutation = createResolver(
-  DeleteProjectMutationInput,
-  Project,
-  (_parent, { id }, context) =>
+  ({ params: { id } }, context) =>
     pipe(
       ensureUser(context),
       taskEither.chain(user => deleteProject(id, user))
     )
 )
 
-const ProjectQueryInput = t.type(
+const getProjectResolver = createResolver(
   {
-    id: PositiveInteger
+    params: IdInput,
+    output: Project
   },
-  'ProjectQueryInput'
-)
-const projectQuery = createResolver(
-  ProjectQueryInput,
-  Project,
-  (_parent, { id }, context) =>
+  ({ params: { id } }, context) =>
     pipe(
       ensureUser(context),
       taskEither.chain(user => getProject(id, user))
@@ -138,35 +108,33 @@ export const ProjectConnectionQueryArgs = t.intersection(
 export type ProjectConnectionQueryArgs = t.TypeOf<
   typeof ProjectConnectionQueryArgs
 >
-const projectsQuery = createResolver(
-  ProjectConnectionQueryArgs,
-  Connection(Project),
-  (_parent, args, context) =>
+
+const getProjectsResolver = createResolver(
+  {
+    query: ProjectConnectionQueryArgs,
+    output: Connection(Project)
+  },
+  ({ query }, context) =>
     pipe(
       ensureUser(context),
-      taskEither.chain(user => listProjects(args, user))
+      taskEither.chain(user => listProjects(query, user))
     )
 )
 
-const resolvers = {
-  Project: {
-    client: projectClientResolver
+const resolvers: Resolvers = {
+  path: '/projects',
+  POST: {
+    '/': createProjectResolver
   },
-  User: {
-    projects: userProjectsResolver,
-    cashedBalance: userCashedBalanceResolver
+  PUT: {
+    '/:id': updateProjectResolver
   },
-  Client: {
-    projects: clientProjectsResolver
+  DELETE: {
+    '/:id': deleteProjectResolver
   },
-  Mutation: {
-    createProject: createProjectMutation,
-    updateProject: updateProjectMutation,
-    deleteProject: deleteProjectMutation
-  },
-  Query: {
-    project: projectQuery,
-    projects: projectsQuery
+  GET: {
+    '/:id': getProjectResolver,
+    '/': getProjectsResolver
   }
 }
 

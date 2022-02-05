@@ -9,9 +9,9 @@ import { ConnectionQueryArgs } from '../misc/ConnectionQueryArgs'
 import { queryToConnection } from '../misc/queryToConnection'
 import { DatabaseUser, User } from '../user/interface'
 import { DatabaseClient } from '../client/interface'
-import { ApolloError } from 'apollo-server-express'
 import { Connection } from '../misc/Connection'
 import {
+  CoolerError,
   coolerError,
   DateFromSQLDate,
   NonNegativeNumber,
@@ -36,7 +36,7 @@ import { a18n } from '../misc/a18n'
 export function createProject(
   { name, description, client }: ProjectCreationInput,
   user: User
-): TaskEither<ApolloError, Project> {
+): TaskEither<CoolerError, Project> {
   return pipe(
     getClientById(client),
     taskEither.chain(
@@ -72,7 +72,7 @@ export function createProject(
 export function getProject(
   id: PositiveInteger,
   user: User
-): TaskEither<ApolloError, Project> {
+): TaskEither<CoolerError, Project> {
   return pipe(
     getProjectById(id),
     taskEither.chain(
@@ -95,7 +95,7 @@ export function getProject(
 export function listProjects(
   args: ProjectConnectionQueryArgs,
   user: User
-): TaskEither<ApolloError, Connection<Project>> {
+): TaskEither<CoolerError, Connection<Project>> {
   const sql = SQL`
     JOIN client ON project.client = client.id
     WHERE client.user = ${user.id}
@@ -121,7 +121,7 @@ export function updateProject(
   id: PositiveInteger,
   project: ProjectUpdateInput,
   user: User
-): TaskEither<ApolloError, Project> {
+): TaskEither<CoolerError, Project> {
   const { name, description, client, cashed } = project
 
   return pipe(
@@ -191,7 +191,7 @@ export function updateProject(
 export function deleteProject(
   id: PositiveInteger,
   user: User
-): TaskEither<ApolloError, Project> {
+): TaskEither<CoolerError, Project> {
   return pipe(
     getProjectById(id),
     taskEither.chain(
@@ -219,7 +219,7 @@ export function deleteProject(
 
 export function getProjectClient(
   project: DatabaseProject
-): TaskEither<ApolloError, DatabaseClient> {
+): TaskEither<CoolerError, DatabaseClient> {
   return pipe(
     getClientById(project.client),
     taskEither.chain(
@@ -236,7 +236,7 @@ export function getProjectClient(
 export function getUserProjects(
   user: DatabaseUser,
   args: ConnectionQueryArgs
-): TaskEither<ApolloError, Connection<DatabaseProject>> {
+): TaskEither<CoolerError, Connection<DatabaseProject>> {
   return queryToConnection(
     args,
     ['project.*', 'client.user'],
@@ -252,7 +252,7 @@ export function getUserProjects(
 export function getUserCashedBalance(
   user: DatabaseUser,
   since: Option<Date>
-): TaskEither<ApolloError, NonNegativeNumber> {
+): TaskEither<CoolerError, NonNegativeNumber> {
   const sql = SQL`
     SELECT IFNULL(SUM(project.cashed_balance), 0) AS balance
     FROM project
@@ -290,7 +290,7 @@ export function getUserCashedBalance(
 export function getClientProjects(
   client: DatabaseClient,
   args: ConnectionQueryArgs
-): TaskEither<ApolloError, Connection<DatabaseProject>> {
+): TaskEither<CoolerError, Connection<DatabaseProject>> {
   return queryToConnection(
     args,
     ['*'],
