@@ -1,6 +1,6 @@
 import { pipe } from 'fp-ts/function'
 import * as t from 'io-ts'
-import { date, option as tOption } from 'io-ts-types'
+import { date, IntFromString, option as tOption } from 'io-ts-types'
 import { either, option } from 'fp-ts'
 import { validate as isEmail } from 'isemail'
 import { Option } from 'fp-ts/Option'
@@ -178,9 +178,29 @@ export function optionFromUndefined<C extends t.Mixed>(
   )
 }
 
+export const PositiveIntegerFromString: t.Type<
+  PositiveInteger,
+  string,
+  unknown
+> = new t.Type(
+  'PositiveIntegerFromString',
+  PositiveInteger.is,
+  (u, c) =>
+    pipe(
+      IntFromString.decode(u),
+      either.chain(n =>
+        n > 0 ? t.success(n as PositiveInteger) : t.failure(u, c)
+      )
+    ),
+  n => n.toString(10)
+)
+export type PositiveIntegerFromString = t.TypeOf<
+  typeof PositiveIntegerFromString
+>
+
 export const IdInput = t.type(
   {
-    id: PositiveInteger
+    id: PositiveIntegerFromString
   },
   'IdInput'
 )

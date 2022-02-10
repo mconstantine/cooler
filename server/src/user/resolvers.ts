@@ -83,7 +83,7 @@ const profileQueryResolver = createResolver(
 )
 
 const resolvers: Resolvers = {
-  path: '/users',
+  path: '/profile',
   POST: {
     '/': createUserResolver,
     '/login': loginUserResolver,
@@ -96,7 +96,7 @@ const resolvers: Resolvers = {
     '/': deleteProfileResolver
   },
   GET: {
-    '/me': profileQueryResolver
+    '/': profileQueryResolver
   }
 }
 

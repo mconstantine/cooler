@@ -1,11 +1,10 @@
-import { ApolloError } from 'apollo-server-express'
 import { either, taskEither } from 'fp-ts'
 import { pipe } from 'fp-ts/function'
 import { TaskEither } from 'fp-ts/TaskEither'
 import { unsafeLocalizedString } from '../misc/a18n'
-import { coolerError } from '../misc/Types'
+import { CoolerError, coolerError } from '../misc/Types'
 
-export function testError(): ApolloError {
+export function testError(): CoolerError {
   return coolerError('COOLER_500', unsafeLocalizedString('Test failed'))
 }
 

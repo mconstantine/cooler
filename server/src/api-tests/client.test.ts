@@ -1,76 +1,32 @@
+import axios, { AxiosError } from 'axios'
+import { taskEither } from 'fp-ts'
+import { constVoid, pipe } from 'fp-ts/function'
+import { TaskEither } from 'fp-ts/TaskEither'
+import { NonEmptyString } from 'io-ts-types'
 import {
-  ApolloClient,
-  ApolloError,
-  gql,
-  NormalizedCacheObject
-} from '@apollo/client'
-import { constVoid, identity, pipe } from 'fp-ts/function'
-import {
-  BusinessClientCreationInput,
+  Client,
   ClientCreationInput,
-  foldClientCreationInput,
-  PrivateClientCreationInput,
-  Country,
-  Province,
-  PrivateClientData,
-  BusinessClientData
+  ClientUpdateInput,
+  Country
 } from '../client/interface'
+import { CoolerError } from '../misc/Types'
+import { getFakeClient } from '../test/getFakeClient'
 import { getFakeUser } from '../test/getFakeUser'
 import { registerUser } from '../test/registerUser'
 import { pipeTestTaskEither, testTaskEither } from '../test/util'
 import { User } from '../user/interface'
-import { loginUser, mutate } from './graphQLUtils'
-import { startServerAndGetClient, stopServer } from './setupTests'
-import * as t from 'io-ts'
-import { getFakeClient } from '../test/getFakeClient'
-import { option, taskEither } from 'fp-ts'
-import { NonEmptyString, optionFromNullable } from 'io-ts-types'
-import { clientFragment } from './fragments'
-import { TaskEither } from 'fp-ts/lib/TaskEither'
-import { EmailString, PositiveInteger } from '../misc/Types'
-
-const PopulatedClientData = t.type({
-  id: PositiveInteger,
-  address_country: Country,
-  address_province: Province,
-  address_city: NonEmptyString,
-  address_zip: NonEmptyString,
-  address_street: NonEmptyString,
-  address_street_number: optionFromNullable(NonEmptyString),
-  address_email: EmailString,
-  user: User
-})
-
-const PrivateClientResponse = t.intersection([
-  PopulatedClientData,
-  PrivateClientData,
-  t.type({
-    name: NonEmptyString
-  })
-])
-type PrivateClientResponse = t.TypeOf<typeof PrivateClientResponse>
-
-const BusinessClientResponse = t.intersection([
-  PopulatedClientData,
-  BusinessClientData,
-  t.type({
-    name: NonEmptyString
-  })
-])
-type BusinessClientResponse = t.TypeOf<typeof BusinessClientResponse>
+import { setupTests } from './setupTests'
+import { API_URL, loginUser, testRequest } from './utils'
 
 describe('client resolvers', () => {
-  let apolloClient: ApolloClient<NormalizedCacheObject>
+  let stopServer: TaskEither<Error, void>
   let user: User
   let accessToken: string
 
   beforeAll(async () => {
     const userInput = getFakeUser()
 
-    apolloClient = await pipe(
-      startServerAndGetClient(),
-      testTaskEither(identity)
-    )
+    stopServer = await setupTests()
 
     await pipe(
       registerUser(userInput),
@@ -82,7 +38,7 @@ describe('client resolvers', () => {
     )
 
     await pipe(
-      loginUser(apolloClient, userInput.email, userInput.password),
+      loginUser(userInput.email, userInput.password),
       pipeTestTaskEither(response => {
         accessToken = response.accessToken
       }),
@@ -91,27 +47,47 @@ describe('client resolvers', () => {
   })
 
   afterAll(async () => {
-    await pipe(stopServer(), testTaskEither(constVoid))
+    await pipe(stopServer, testTaskEither(constVoid))
   })
 
   describe('createClient', () => {
     describe('private client', () => {
       it('should work', async () => {
-        const data = getFakeClient(user.id, {
-          type: 'PRIVATE'
-        })
+        const data = ClientCreationInput.encode(
+          getFakeClient(user.id, {
+            type: 'PRIVATE'
+          })
+        )
 
-        await pipe(createClient(data), testTaskEither(constVoid))
+        await pipe(
+          axios.post(`${API_URL}/clients`, data, {
+            headers: {
+              Authorization: `Bearer ${accessToken}`
+            }
+          }),
+          testRequest(Client),
+          testTaskEither(constVoid)
+        )
       })
     })
 
     describe('business client', () => {
       it('should work', async () => {
-        const data = getFakeClient(user.id, {
-          type: 'BUSINESS'
-        })
+        const data = ClientCreationInput.encode(
+          getFakeClient(user.id, {
+            type: 'BUSINESS'
+          })
+        )
 
-        await pipe(createClient(data), testTaskEither(constVoid))
+        await pipe(
+          axios.post(`${API_URL}/clients`, data, {
+            headers: {
+              Authorization: `Bearer ${accessToken}`
+            }
+          }),
+          testRequest(Client),
+          testTaskEither(constVoid)
+        )
       })
     })
   })
@@ -123,44 +99,38 @@ describe('client resolvers', () => {
           type: 'PRIVATE'
         })
 
-        const update = getFakeClient(user.id, {
-          type: 'BUSINESS'
-        })
+        const update = ClientUpdateInput.encode(
+          getFakeClient(user.id, {
+            type: 'BUSINESS'
+          })
+        )
 
         await pipe(
           createClient(data),
           taskEither.chain(client =>
-            mutate(
-              t.type({
-                updateClient: BusinessClientResponse
-              }),
-              apolloClient,
-              gql`
-                ${clientFragment}
-
-                mutation {
-                  updateClient(
-                    id: ${client.id},
-                    client: ${getBusinessClientDocumentNodeInput(update)}
-                  ) {
-                    ...Client
-                  }
+            pipe(
+              axios.put(`${API_URL}/clients/${client.id}/`, update, {
+                headers: {
+                  Authorization: `Bearer ${accessToken}`
                 }
-              `,
-              accessToken
+              }),
+              testRequest(Client)
             )
           ),
-          testTaskEither(({ updateClient }) => {
-            expect(updateClient.type).toBe('BUSINESS')
-            expect(Country.is(updateClient.country_code)).toBe(true)
-            expect(NonEmptyString.is(updateClient.vat_number)).toBe(true)
-            expect(NonEmptyString.is(updateClient.business_name)).toBe(true)
+          testTaskEither(client => {
+            expect(client.type).toBe('BUSINESS')
             // @ts-ignore
-            expect(updateClient.fiscal_code).toBeNull()
+            expect(Country.is(client.country_code)).toBe(true)
             // @ts-ignore
-            expect(updateClient.first_name).toBeNull()
+            expect(NonEmptyString.is(client.vat_number)).toBe(true)
             // @ts-ignore
-            expect(updateClient.last_name).toBeNull()
+            expect(NonEmptyString.is(client.business_name)).toBe(true)
+            // @ts-ignore
+            expect(client.fiscal_code).toBeNull()
+            // @ts-ignore
+            expect(client.first_name).toBeNull()
+            // @ts-ignore
+            expect(client.last_name).toBeNull()
           })
         )
       })
@@ -172,44 +142,38 @@ describe('client resolvers', () => {
           type: 'BUSINESS'
         })
 
-        const update = getFakeClient(user.id, {
-          type: 'PRIVATE'
-        })
+        const update = ClientUpdateInput.encode(
+          getFakeClient(user.id, {
+            type: 'PRIVATE'
+          })
+        )
 
         await pipe(
           createClient(data),
           taskEither.chain(client =>
-            mutate(
-              t.type({
-                updateClient: PrivateClientResponse
-              }),
-              apolloClient,
-              gql`
-                ${clientFragment}
-
-                mutation {
-                  updateClient(
-                    id: ${client.id},
-                    client: ${getPrivateClientDocumentNodeInput(update)}
-                  ) {
-                    ...Client
-                  }
+            pipe(
+              axios.put(`${API_URL}/clients/${client.id}/`, update, {
+                headers: {
+                  Authorization: `Bearer ${accessToken}`
                 }
-              `,
-              accessToken
+              }),
+              testRequest(Client)
             )
           ),
-          testTaskEither(({ updateClient }) => {
-            expect(updateClient.type).toBe('PRIVATE')
-            expect(NonEmptyString.is(updateClient.fiscal_code)).toBe(true)
-            expect(NonEmptyString.is(updateClient.first_name)).toBe(true)
-            expect(NonEmptyString.is(updateClient.last_name)).toBe(true)
+          testTaskEither(client => {
+            expect(client.type).toBe('PRIVATE')
             // @ts-ignore
-            expect(updateClient.country_code).toBeNull()
+            expect(NonEmptyString.is(client.fiscal_code)).toBe(true)
             // @ts-ignore
-            expect(updateClient.vat_number).toBeNull()
+            expect(NonEmptyString.is(client.first_name)).toBe(true)
             // @ts-ignore
-            expect(updateClient.business_name).toBeNull()
+            expect(NonEmptyString.is(client.last_name)).toBe(true)
+            // @ts-ignore
+            expect(client.country_code).toBeNull()
+            // @ts-ignore
+            expect(client.vat_number).toBeNull()
+            // @ts-ignore
+            expect(client.business_name).toBeNull()
           })
         )
       })
@@ -217,83 +181,15 @@ describe('client resolvers', () => {
   })
 
   function createClient(
-    client: PrivateClientCreationInput
-  ): TaskEither<ApolloError, PrivateClientResponse>
-  function createClient(
-    client: BusinessClientCreationInput
-  ): TaskEither<ApolloError, BusinessClientResponse>
-  function createClient(
-    client: ClientCreationInput
-  ): TaskEither<ApolloError, any> {
-    const input = pipe(
-      client,
-      foldClientCreationInput(
-        getPrivateClientDocumentNodeInput,
-        getBusinessClientDocumentNodeInput
-      )
-    )
-
+    data: ClientCreationInput
+  ): TaskEither<AxiosError<CoolerError>, Client> {
     return pipe(
-      mutate(
-        t.type({
-          createClient: pipe(
-            client,
-            foldClientCreationInput(
-              () => PrivateClientResponse,
-              // @ts-ignore
-              () => BusinessClientResponse
-            )
-          )
-        }),
-        apolloClient,
-        gql`
-          ${clientFragment}
-
-          mutation {
-            createClient(client: ${input}) {
-              ...Client
-            }
-          }
-        `,
-        accessToken
-      ),
-      taskEither.map(({ createClient }) => createClient)
+      axios.post(`${API_URL}/clients`, ClientCreationInput.encode(data), {
+        headers: {
+          Authorization: `Bearer ${accessToken}`
+        }
+      }),
+      testRequest(Client)
     )
   }
 })
-
-function getPrivateClientDocumentNodeInput(
-  client: PrivateClientCreationInput
-): string {
-  return `{
-    type: PRIVATE
-    fiscal_code: "${client.fiscal_code}"
-    first_name: "${client.first_name}"
-    last_name: "${client.last_name}"
-    address_country: "${client.address_country}"
-    address_province: "${client.address_province}"
-    address_city: "${client.address_city}"
-    address_zip: "${client.address_zip}"
-    address_street: "${client.address_street}"
-    address_street_number: "${option.toNullable(client.address_street_number)}"
-    address_email: "${client.address_email}"
-  }`
-}
-
-function getBusinessClientDocumentNodeInput(
-  client: BusinessClientCreationInput
-): string {
-  return `{
-    type: BUSINESS
-    country_code: "${client.country_code}"
-    vat_number: "${client.vat_number}"
-    business_name: "${client.business_name}"
-    address_country: "${client.address_country}"
-    address_province: "${client.address_province}"
-    address_city: "${client.address_city}"
-    address_zip: "${client.address_zip}"
-    address_street: "${client.address_street}"
-    address_street_number: "${option.toNullable(client.address_street_number)}"
-    address_email: "${client.address_email}"
-  }`
-}

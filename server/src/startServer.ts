@@ -8,6 +8,7 @@ import { pipe } from 'fp-ts/function'
 import { TaskEither } from 'fp-ts/TaskEither'
 import { initI18n } from './misc/a18n'
 import { CoolerError } from './misc/Types'
+import cors from 'cors'
 
 function listen(app: Express): Promise<TaskEither<Error, void>> {
   return new Promise((resolve, reject) => {
@@ -47,6 +48,8 @@ export function startServer(): TaskEither<
     taskEither.chain(() =>
       taskEither.fromTask(() => {
         const app = express()
+
+        app.use(cors({ origin: '*' }))
 
         assignResolvers(app)
 

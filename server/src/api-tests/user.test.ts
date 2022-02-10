@@ -1,26 +1,24 @@
-import { constVoid, identity, pipe } from 'fp-ts/function'
-import { pipeTestTaskEither, testTaskEither } from '../test/util'
-import { ApolloClient, gql, NormalizedCacheObject } from '@apollo/client'
+import { constVoid, pipe } from 'fp-ts/function'
+import { testTaskEither } from '../test/util'
 import { getFakeUser } from '../test/getFakeUser'
-import { AccessTokenResponse, User } from '../user/interface'
-import { loginUser, mutate, query } from './graphQLUtils'
-import * as t from 'io-ts'
-import { startServerAndGetClient, stopServer } from './setupTests'
 import { remove } from '../misc/dbUtils'
 import { registerUser } from '../test/registerUser'
 import { taskEither } from 'fp-ts'
-import { sleep } from '../test/sleep'
-import { tokenFragment, userFragment } from './fragments'
+import { TaskEither } from 'fp-ts/TaskEither'
+import { setupTests } from './setupTests'
+import axios from 'axios'
+import { API_URL, loginUser, testRequest } from './utils'
+import { AccessTokenResponse, User } from '../user/interface'
 
 describe('user resolvers', () => {
-  let client: ApolloClient<NormalizedCacheObject>
+  let stopServer: TaskEither<Error, void>
 
   beforeAll(async () => {
-    client = await pipe(startServerAndGetClient(), testTaskEither(identity))
+    stopServer = await setupTests()
   })
 
   afterAll(async () => {
-    await pipe(stopServer(), testTaskEither(constVoid))
+    await pipe(stopServer, testTaskEither(constVoid))
   })
 
   describe('registration', () => {
@@ -32,25 +30,12 @@ describe('user resolvers', () => {
       const data = getFakeUser()
 
       await pipe(
-        mutate(
-          t.type({
-            createUser: AccessTokenResponse
-          }),
-          client,
-          gql`
-            ${tokenFragment}
-
-            mutation {
-              createUser(user: {
-                name: "${data.name}"
-                email: "${data.email}"
-                password: "${data.password}"
-              }) {
-                ...TokenResponse
-              }
-            }
-          `
-        ),
+        axios.post(`${API_URL}/profile`, {
+          name: data.name,
+          email: data.email,
+          password: data.password
+        }),
+        testRequest(AccessTokenResponse),
         testTaskEither(constVoid)
       )
     })
@@ -69,7 +54,11 @@ describe('user resolvers', () => {
 
     it('should work', async () => {
       await pipe(
-        loginUser(client, user.email, user.password),
+        axios.post(`${API_URL}/profile/login`, {
+          email: user.email,
+          password: user.password
+        }),
+        testRequest(AccessTokenResponse),
         testTaskEither(constVoid)
       )
     })
@@ -90,27 +79,15 @@ describe('user resolvers', () => {
       const data = getFakeUser()
 
       await pipe(
-        loginUser(client, user.email, user.password),
+        loginUser(user.email, user.password),
         taskEither.chain(({ accessToken }) =>
-          mutate(
-            t.type({
-              updateMe: User
-            }),
-            client,
-            gql`
-              ${userFragment}
-
-              mutation {
-                updateMe(user: {
-                  name: "${data.name}",
-                  email: "${data.email}",
-                  password: "${data.password}"
-                }) {
-                  ...User
-                }
+          pipe(
+            axios.put(`${API_URL}/profile`, data, {
+              headers: {
+                Authorization: `Bearer ${accessToken}`
               }
-            `,
-            accessToken
+            }),
+            testRequest(User)
           )
         ),
         testTaskEither(constVoid)
@@ -131,23 +108,15 @@ describe('user resolvers', () => {
 
     it('should work', async () => {
       await pipe(
-        loginUser(client, user.email, user.password),
+        loginUser(user.email, user.password),
         taskEither.chain(({ accessToken }) =>
-          mutate(
-            t.type({
-              deleteMe: User
-            }),
-            client,
-            gql`
-              ${userFragment}
-
-              mutation {
-                deleteMe {
-                  ...User
-                }
+          pipe(
+            axios.delete(`${API_URL}/profile`, {
+              headers: {
+                Authorization: `Bearer ${accessToken}`
               }
-            `,
-            accessToken
+            }),
+            testRequest(User)
           )
         ),
         testTaskEither(constVoid)
@@ -168,29 +137,19 @@ describe('user resolvers', () => {
 
     it('should work', async () => {
       await pipe(
-        loginUser(client, user.email, user.password),
-        taskEither.chain(res => taskEither.fromTask(sleep(1000, res))),
+        loginUser(user.email, user.password),
         taskEither.chain(({ accessToken, refreshToken }) =>
           pipe(
-            mutate(
-              t.type({
-                refreshToken: AccessTokenResponse
-              }),
-              client,
-              gql`
-                ${tokenFragment}
-
-                mutation {
-                  refreshToken(refreshToken: "${refreshToken}") {
-                    ...TokenResponse
-                  }
+            axios.post(
+              `${API_URL}/profile/refreshToken`,
+              { refreshToken },
+              {
+                headers: {
+                  Authorization: `Bearer ${accessToken}`
                 }
-              `
+              }
             ),
-            pipeTestTaskEither(result => {
-              expect(result.refreshToken.refreshToken).toBe(refreshToken)
-              expect(result.refreshToken.accessToken).not.toBe(accessToken)
-            })
+            testRequest(AccessTokenResponse)
           )
         ),
         testTaskEither(constVoid)
@@ -198,7 +157,7 @@ describe('user resolvers', () => {
     })
   })
 
-  describe('me', () => {
+  describe('getProfile', () => {
     const user = getFakeUser()
 
     beforeAll(async () => {
@@ -211,23 +170,15 @@ describe('user resolvers', () => {
 
     it('should work', async () => {
       await pipe(
-        loginUser(client, user.email, user.password),
+        loginUser(user.email, user.password),
         taskEither.chain(({ accessToken }) =>
-          query(
-            t.type({
-              me: User
-            }),
-            client,
-            gql`
-              ${userFragment}
-
-              query {
-                me {
-                  ...User
-                }
+          pipe(
+            axios.get(`${API_URL}/profile`, {
+              headers: {
+                Authorization: `Bearer ${accessToken}`
               }
-            `,
-            accessToken
+            }),
+            testRequest(User)
           )
         ),
         testTaskEither(constVoid)
