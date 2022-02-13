@@ -104,7 +104,7 @@ describe('getTax', () => {
     await pipe(
       getTax(tax1.id, user2),
       testTaskEitherError(error => {
-        expect(error.extensions.code).toBe('COOLER_403')
+        expect(error.code).toBe('COOLER_403')
       })
     )
   })
@@ -141,7 +141,7 @@ describe('updateTax', () => {
     await pipe(
       updateTax(tax1.id, getFakeTax(user2.id), user2),
       testTaskEitherError(error => {
-        expect(error.extensions.code).toBe('COOLER_403')
+        expect(error.code).toBe('COOLER_403')
       })
     )
   })
@@ -169,7 +169,7 @@ describe('deleteTax', () => {
       insertTax(getFakeTax(user1.id)),
       taskEither.chain(taxId => deleteTax(taxId, user2)),
       testTaskEitherError(error => {
-        expect(error.extensions.code).toBe('COOLER_403')
+        expect(error.code).toBe('COOLER_403')
       })
     )
   })

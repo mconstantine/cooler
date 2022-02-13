@@ -7,7 +7,6 @@ import { EmailString } from '../misc/Types'
 import { getFakeUser } from '../test/getFakeUser'
 import {
   pipeTestTaskEither,
-  pipeTestTaskEitherError,
   testError,
   testTaskEither,
   testTaskEitherError
@@ -66,7 +65,7 @@ describe('userModel', () => {
         createUser(input, {}),
         taskEither.chain(() => createUser(getFakeUser(), {})),
         testTaskEitherError(error => {
-          expect(error.extensions.code).toBe('COOLER_403')
+          expect(error.code).toBe('COOLER_403')
         })
       )
 
@@ -91,7 +90,7 @@ describe('userModel', () => {
           createUser(getFakeUser({ email: input.email }), { user })
         ),
         testTaskEitherError(error => {
-          expect(error.extensions.code).toBe('COOLER_409')
+          expect(error.code).toBe('COOLER_409')
         })
       )
     })
@@ -127,7 +126,7 @@ describe('userModel', () => {
           password: user.password
         }),
         testTaskEitherError(error => {
-          expect(error.extensions.code).toBe('COOLER_404')
+          expect(error.code).toBe('COOLER_404')
         })
       )
     })
@@ -139,7 +138,7 @@ describe('userModel', () => {
           password: (user.password + 'not') as NonEmptyString
         }),
         testTaskEitherError(error => {
-          expect(error.extensions.code).toBe('COOLER_400')
+          expect(error.code).toBe('COOLER_400')
         })
       )
     })
@@ -179,7 +178,7 @@ describe('userModel', () => {
           refreshToken: 'fake' as NonEmptyString
         }),
         testTaskEitherError(error => {
-          expect(error.extensions.code).toBe('COOLER_400')
+          expect(error.code).toBe('COOLER_400')
         })
       )
     })
@@ -190,7 +189,7 @@ describe('userModel', () => {
           refreshToken: response.accessToken
         }),
         testTaskEitherError(error => {
-          expect(error.extensions.code).toBe('COOLER_400')
+          expect(error.code).toBe('COOLER_400')
         })
       )
     })
@@ -239,10 +238,13 @@ describe('userModel', () => {
             )
           )
         ),
-        pipeTestTaskEitherError(error => {
-          expect(error.extensions.code).toBe('COOLER_409')
-        }),
-        taskEither.chain(() => remove('user', { email: user2.email })),
+        testTaskEitherError(error => {
+          expect(error.code).toBe('COOLER_409')
+        })
+      )
+
+      await pipe(
+        remove('user', { email: user2.email }),
         testTaskEither(constVoid)
       )
     })

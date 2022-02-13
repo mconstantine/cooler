@@ -9,14 +9,6 @@ import { pipe } from 'fp-ts/function'
 import { taskEither } from 'fp-ts'
 import { Resolvers } from '../assignResolvers'
 
-// const taxUserResolver = createResolver<Tax>(EmptyObject, User, getTaxUser)
-
-// const userTaxesResolver = createResolver<DatabaseUser>(
-//   ConnectionQueryArgs,
-//   Connection(Tax),
-//   getUserTaxes
-// )
-
 const createTaxResolver = createResolver(
   {
     body: TaxCreationInput,

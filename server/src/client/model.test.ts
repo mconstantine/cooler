@@ -89,7 +89,7 @@ describe('getClient', () => {
     await pipe(
       getClient(client2.id, user1),
       testTaskEitherError(error => {
-        expect(error.extensions.code).toBe('COOLER_403')
+        expect(error.code).toBe('COOLER_403')
       })
     )
   })
@@ -133,7 +133,7 @@ describe('updateClient', () => {
     await pipe(
       updateClient(client1.id, data, user1),
       testTaskEitherError(error => {
-        expect(error.extensions.code).toBe('COOLER_403')
+        expect(error.code).toBe('COOLER_403')
       })
     )
   })
@@ -242,7 +242,7 @@ describe('deleteClient', () => {
     await pipe(
       deleteClient(client2.id, user1),
       testTaskEitherError(error => {
-        expect(error.extensions.code).toBe('COOLER_403')
+        expect(error.code).toBe('COOLER_403')
       })
     )
   })

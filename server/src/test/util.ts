@@ -1,5 +1,6 @@
 import { either, taskEither } from 'fp-ts'
 import { pipe } from 'fp-ts/function'
+import { Reader } from 'fp-ts/Reader'
 import { TaskEither } from 'fp-ts/TaskEither'
 import { unsafeLocalizedString } from '../misc/a18n'
 import { CoolerError, coolerError } from '../misc/Types'
@@ -14,7 +15,13 @@ export function pipeLog<A>(a: A): A {
 }
 
 export function testTaskEither<E, A, B>(
-  testFunction: (result: A) => B
+  testFunction: Reader<A, B>
+): (te: TaskEither<E, A>) => Promise<B>
+export function testTaskEither<E, A, B>(
+  testValue: A
+): (te: TaskEither<E, A>) => Promise<A>
+export function testTaskEither<E, A, B>(
+  test: Reader<A, B> | A
 ): (te: TaskEither<E, A>) => Promise<B> {
   return async te => {
     const result = await te()
@@ -23,10 +30,21 @@ export function testTaskEither<E, A, B>(
 
     return pipe(
       result,
-      either.fold(error => {
-        console.log(error)
-        return (null as unknown) as B
-      }, testFunction)
+      either.fold(
+        error => {
+          console.log(error)
+          return (null as unknown) as B
+        },
+        res => {
+          if (typeof test === 'function') {
+            const testFunction = test as Reader<A, B>
+            return testFunction(res)
+          } else {
+            expect(res).toEqual(test)
+            return (res as unknown) as B
+          }
+        }
+      )
     )
   }
 }

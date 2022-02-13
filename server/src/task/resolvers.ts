@@ -24,37 +24,6 @@ import { taskEither } from 'fp-ts'
 import { IdInput } from '../misc/Types'
 import { Resolvers } from '../assignResolvers'
 
-// const taskProjectResolver = createResolver<DatabaseTask>(
-//   t.void,
-//   Project,
-//   getTaskProject
-// )
-
-// export const UserTasksConnectionQueryArgs = t.intersection(
-//   [
-//     ConnectionQueryArgs,
-//     t.type({
-//       from: optionFromNullable(DateFromISOString),
-//       to: optionFromNullable(DateFromISOString)
-//     })
-//   ],
-//   'UserTasksConnectionQueryArgs'
-// )
-// export type UserTasksConnectionQueryArgs = t.TypeOf<
-//   typeof UserTasksConnectionQueryArgs
-// >
-// const userTasksResolver = createResolver<DatabaseUser>(
-//   UserTasksConnectionQueryArgs,
-//   Connection(Task),
-//   getUserTasks
-// )
-
-// const projectTasksResolver = createResolver<DatabaseProject>(
-//   ConnectionQueryArgs,
-//   Connection(Task),
-//   getProjectTasks
-// )
-
 const createTaskResolver = createResolver(
   {
     body: TaskCreationInput,

@@ -17,22 +17,6 @@ import { pipe } from 'fp-ts/function'
 import { NonEmptyString, optionFromNullable } from 'io-ts-types'
 import { Resolvers } from '../assignResolvers'
 
-// const clientNameResolver = createResolver<Client>(
-//   EmptyObject,
-//   NonEmptyString,
-//   client => taskEither.right(getClientName(client))
-// )
-
-// const clientUserResolver = createResolver<Client>(EmptyObject, User, client =>
-//   getClientUser(client)
-// )
-
-// const userClientsResolver = createResolver<DatabaseUser>(
-//   ConnectionQueryArgs,
-//   Connection(Client),
-//   (user, args) => getUserClients(user, args)
-// )
-
 const createClientResolver = createResolver(
   {
     body: ClientCreationInput,

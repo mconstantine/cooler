@@ -1,5 +1,4 @@
 import { init } from '../init'
-import resolvers from './resolvers'
 import { remove } from '../misc/dbUtils'
 import { getFakeUser } from '../test/getFakeUser'
 import { getFakeClient } from '../test/getFakeClient'
@@ -19,6 +18,19 @@ import { NonNegativeNumber } from '../misc/Types'
 import { sequenceS, sequenceT } from 'fp-ts/Apply'
 import { insertSession } from './database'
 import { getFakeSession } from '../test/getFakeSession'
+import {
+  getProjectActualWorkingHours,
+  getProjectBalance,
+  getProjectBudget,
+  getProjectExpectedWorkingHours,
+  getTaskActualWorkingHours,
+  getTaskBalance,
+  getTaskBudget,
+  getUserActualWorkingHours,
+  getUserBalance,
+  getUserBudget,
+  getUserExpectedWorkingHours
+} from './model'
 
 describe('session resolvers', () => {
   let user: User
@@ -78,18 +90,9 @@ describe('session resolvers', () => {
 
     describe('empty state', () => {
       it('should work', async () => {
-        const actualWorkingHours = await resolvers.Task.actualWorkingHours(
-          task,
-          {},
-          { user }
-        )
-
-        const budget = await resolvers.Task.budget(task, {}, { user })
-        const balance = await resolvers.Task.balance(task, {}, { user })
-
-        expect(actualWorkingHours).toBe(0)
-        expect(budget).toBe(500)
-        expect(balance).toBe(0)
+        await pipe(getTaskActualWorkingHours(task), testTaskEither(0))
+        await pipe(getTaskBudget(task), testTaskEither(500))
+        await pipe(getTaskBalance(task), testTaskEither(0))
       })
     })
 
@@ -125,26 +128,19 @@ describe('session resolvers', () => {
 
       describe('actualWorkingHours', () => {
         it('should work', async () => {
-          const actualWorkingHours = await resolvers.Task.actualWorkingHours(
-            task,
-            {},
-            { user }
-          )
-          expect(actualWorkingHours).toBe(4.5)
+          await pipe(getTaskActualWorkingHours(task), testTaskEither(4.5))
         })
       })
 
       describe('budget', () => {
         it('should work', async () => {
-          const budget = await resolvers.Task.budget(task, {}, { user })
-          expect(budget).toBe(500)
+          await pipe(getTaskBudget(task), testTaskEither(500))
         })
       })
 
       describe('balance', () => {
         it('should work', async () => {
-          const balance = await resolvers.Task.balance(task, {}, { user })
-          expect(balance).toBe(225)
+          await pipe(getTaskBalance(task), testTaskEither(225))
         })
       })
     })
@@ -153,25 +149,10 @@ describe('session resolvers', () => {
   describe('Project', () => {
     describe('empty state', () => {
       it('should work', async () => {
-        const expectedWorkingHours = await resolvers.Project.expectedWorkingHours(
-          project,
-          {},
-          { user }
-        )
-
-        const actualWorkingHours = await resolvers.Project.actualWorkingHours(
-          project,
-          {},
-          { user }
-        )
-
-        const budget = await resolvers.Project.budget(project, {}, { user })
-        const balance = await resolvers.Project.balance(project, {}, { user })
-
-        expect(expectedWorkingHours).toBe(0)
-        expect(actualWorkingHours).toBe(0)
-        expect(budget).toBe(0)
-        expect(balance).toBe(0)
+        await pipe(getProjectExpectedWorkingHours(project), testTaskEither(0))
+        await pipe(getProjectActualWorkingHours(project), testTaskEither(0))
+        await pipe(getProjectBudget(project), testTaskEither(0))
+        await pipe(getProjectBalance(project), testTaskEither(0))
       })
     })
 
@@ -273,37 +254,28 @@ describe('session resolvers', () => {
 
       describe('expectedWorkingHours', () => {
         it('should work', async () => {
-          const expectedWorkingHours = await resolvers.Project.expectedWorkingHours(
-            project,
-            {},
-            { user }
+          await pipe(
+            getProjectExpectedWorkingHours(project),
+            testTaskEither(35)
           )
-          expect(expectedWorkingHours).toBe(35)
         })
       })
 
       describe('actualWorkingHours', () => {
         it('should work', async () => {
-          const actualWorkingHours = await resolvers.Project.actualWorkingHours(
-            project,
-            {},
-            { user }
-          )
-          expect(actualWorkingHours).toBe(24)
+          await pipe(getProjectActualWorkingHours(project), testTaskEither(24))
         })
       })
 
       describe('budget', () => {
         it('should work', async () => {
-          const budget = await resolvers.Project.budget(project, {}, { user })
-          expect(budget).toBe(600)
+          await pipe(getProjectBudget(project), testTaskEither(600))
         })
       })
 
       describe('balance', () => {
         it('should work', async () => {
-          const balance = await resolvers.Project.balance(project, {}, { user })
-          expect(balance).toBe(582.5)
+          await pipe(getProjectBalance(project), testTaskEither(582.5))
         })
       })
     })
@@ -311,7 +283,7 @@ describe('session resolvers', () => {
 
   describe('User', () => {
     let user2: User
-    const since = '1990-01-01T04:30:00.000Z'
+    const since = option.some(new Date(1990, 0, 1, 4, 30))
 
     beforeAll(async () => {
       await pipe(
@@ -325,34 +297,18 @@ describe('session resolvers', () => {
 
     describe('empty state', () => {
       it('should work', async () => {
-        const expectedWorkingHours = await resolvers.User.expectedWorkingHours(
-          user2,
-          { since },
-          { user: user2 }
+        await pipe(
+          getUserExpectedWorkingHours(user2, { since }),
+          testTaskEither(0)
         )
 
-        const actualWorkingHours = await resolvers.User.actualWorkingHours(
-          user2,
-          { since },
-          { user: user2 }
+        await pipe(
+          getUserActualWorkingHours(user2, { since }),
+          testTaskEither(0)
         )
 
-        const budget = await resolvers.User.budget(
-          user2,
-          { since },
-          { user: user2 }
-        )
-
-        const balance = await resolvers.User.balance(
-          user2,
-          { since },
-          { user: user2 }
-        )
-
-        expect(expectedWorkingHours).toBe(0)
-        expect(actualWorkingHours).toBe(0)
-        expect(budget).toBe(0)
-        expect(balance).toBe(0)
+        await pipe(getUserBudget(user2, { since }), testTaskEither(0))
+        await pipe(getUserBalance(user2, { since }), testTaskEither(0))
       })
     })
 
@@ -484,45 +440,31 @@ describe('session resolvers', () => {
 
       describe('expectedWorkingHours', () => {
         it('should work', async () => {
-          const expectedWorkingHours = await resolvers.User.expectedWorkingHours(
-            user2,
-            { since },
-            { user: user2 }
+          await pipe(
+            getUserExpectedWorkingHours(user2, { since }),
+            testTaskEither(5)
           )
-          expect(expectedWorkingHours).toBe(5)
         })
       })
 
       describe('actualWorkingHours', () => {
         it('should work', async () => {
-          const actualWorkingHours = await resolvers.User.actualWorkingHours(
-            user2,
-            { since },
-            { user: user2 }
+          await pipe(
+            getUserActualWorkingHours(user2, { since }),
+            testTaskEither(14.25)
           )
-          expect(actualWorkingHours).toBe(14.25)
         })
       })
 
       describe('budget', () => {
         it('should work', async () => {
-          const budget = await resolvers.User.budget(
-            user2,
-            { since },
-            { user: user2 }
-          )
-          expect(budget).toBe(150)
+          await pipe(getUserBudget(user2, { since }), testTaskEither(150))
         })
       })
 
       describe('balance', () => {
         it('should work', async () => {
-          const balance = await resolvers.User.balance(
-            user2,
-            { since },
-            { user: user2 }
-          )
-          expect(balance).toBe(417.5)
+          await pipe(getUserBalance(user2, { since }), testTaskEither(417.5))
         })
       })
     })

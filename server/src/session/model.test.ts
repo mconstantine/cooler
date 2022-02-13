@@ -143,7 +143,7 @@ describe('startSession', () => {
     await pipe(
       startSession(task2.id, user1),
       testTaskEitherError(error => {
-        expect(error.extensions.code).toBe('COOLER_403')
+        expect(error.code).toBe('COOLER_403')
       })
     )
   })
@@ -154,7 +154,7 @@ describe('startSession', () => {
       pipeTestTaskEither(constVoid),
       taskEither.chain(() => startSession(task1.id, user1)),
       testTaskEitherError(error => {
-        expect(error.extensions.code).toBe('COOLER_409')
+        expect(error.code).toBe('COOLER_409')
       })
     )
   })
@@ -190,7 +190,7 @@ describe('getSession', () => {
     await pipe(
       getSession(session2.id, user1),
       testTaskEitherError(error => {
-        expect(error.extensions.code).toBe('COOLER_403')
+        expect(error.code).toBe('COOLER_403')
       })
     )
   })
@@ -237,7 +237,7 @@ describe('updateSession', () => {
     await pipe(
       updateSession(session1.id, getFakeSession(task1.id), user2),
       testTaskEitherError(error => {
-        expect(error.extensions.code).toBe('COOLER_403')
+        expect(error.code).toBe('COOLER_403')
       })
     )
   })
@@ -246,7 +246,7 @@ describe('updateSession', () => {
     await pipe(
       updateSession(session1.id, getFakeSession(task2.id), user1),
       testTaskEitherError(error => {
-        expect(error.extensions.code).toBe('COOLER_403')
+        expect(error.code).toBe('COOLER_403')
       })
     )
   })
@@ -259,7 +259,7 @@ describe('updateSession', () => {
         updateSession(session2.id, { end_time: option.none }, user2)
       ),
       testTaskEitherError(error => {
-        expect(error.extensions.code).toBe('COOLER_409')
+        expect(error.code).toBe('COOLER_409')
       })
     )
   })
@@ -304,7 +304,7 @@ describe('deleteSession', () => {
     await pipe(
       deleteSession(session2.id, user1),
       testTaskEitherError(error => {
-        expect(error.extensions.code).toBe('COOLER_403')
+        expect(error.code).toBe('COOLER_403')
       })
     )
   })

@@ -12,7 +12,7 @@ import { registerUser } from '../test/registerUser'
 import { testError, testTaskEither } from '../test/util'
 import { getUserById } from '../user/database'
 import { insertProject } from './database'
-import resolvers from './resolvers'
+import { getUserCashedBalance } from './model'
 
 describe('project resolvers', () => {
   beforeAll(async () => {
@@ -57,12 +57,7 @@ describe('project resolvers', () => {
               taskEither.chain(taskEither.fromOption(testError))
             )
           ),
-          taskEither.chain(user =>
-            taskEither.tryCatch(
-              () => resolvers.User.cashedBalance(user, {}, {}),
-              testError
-            )
-          ),
+          taskEither.chain(user => getUserCashedBalance(user, option.none)),
           testTaskEither(result => {
             expect(result).toBe(40)
           })

@@ -207,7 +207,7 @@ describe('createTask', () => {
     await pipe(
       createTask(getFakeTask(project2.id), user1),
       testTaskEitherError(error => {
-        expect(error.extensions.code).toBe('COOLER_403')
+        expect(error.code).toBe('COOLER_403')
       })
     )
   })
@@ -459,7 +459,7 @@ describe('getTask', () => {
     await pipe(
       getTask(task2.id, user1),
       testTaskEitherError(error => {
-        expect(error.extensions.code).toBe('COOLER_403')
+        expect(error.code).toBe('COOLER_403')
       })
     )
   })
@@ -499,7 +499,7 @@ describe('updateTask', () => {
     await pipe(
       updateTask(task1.id, getFakeTask(project1.id), user2),
       testTaskEitherError(error => {
-        expect(error.extensions.code).toBe('COOLER_403')
+        expect(error.code).toBe('COOLER_403')
       })
     )
   })
@@ -508,7 +508,7 @@ describe('updateTask', () => {
     await pipe(
       updateTask(task1.id, getFakeTask(project2.id), user1),
       testTaskEitherError(error => {
-        expect(error.extensions.code).toBe('COOLER_403')
+        expect(error.code).toBe('COOLER_403')
       })
     )
   })
@@ -544,7 +544,7 @@ describe('deleteTask', () => {
     await pipe(
       deleteTask(task2.id, user1),
       testTaskEitherError(error => {
-        expect(error.extensions.code).toBe('COOLER_403')
+        expect(error.code).toBe('COOLER_403')
       })
     )
   })

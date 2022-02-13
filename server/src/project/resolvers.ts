@@ -17,36 +17,6 @@ import { NonEmptyString, optionFromNullable } from 'io-ts-types'
 import { pipe } from 'fp-ts/function'
 import { Resolvers } from '../assignResolvers'
 
-// const projectClientResolver = createResolver<DatabaseProject>(
-//   EmptyObject,
-//   Client,
-//   project => getProjectClient(project)
-// )
-
-// const clientProjectsResolver = createResolver<DatabaseClient>(
-//   ConnectionQueryArgs,
-//   Connection(Project),
-//   (client, args) => getClientProjects(client, args)
-// )
-
-// const userProjectsResolver = createResolver<DatabaseUser>(
-//   ConnectionQueryArgs,
-//   Connection(Project),
-//   (user, args) => getUserProjects(user, args)
-// )
-
-// const UserCashedBalanceResolverInput = t.type(
-//   {
-//     since: optionFromNullable(DateFromISOString)
-//   },
-//   'UserCashedBalanceResolverInput'
-// )
-// const userCashedBalanceResolver = createResolver<DatabaseUser>(
-//   UserCashedBalanceResolverInput,
-//   NonNegativeNumber,
-//   (user, { since }) => getUserCashedBalance(user, since)
-// )
-
 const createProjectResolver = createResolver(
   {
     body: ProjectCreationInput,

@@ -18,9 +18,8 @@ import {
 import { testError, testTaskEither } from '../test/util'
 import { sleep } from '../test/sleep'
 import { NonEmptyString } from 'io-ts-types'
-import { NonNegativeNumber, PositiveInteger } from '../misc/Types'
+import { CoolerError, NonNegativeNumber, PositiveInteger } from '../misc/Types'
 import { TaskEither } from 'fp-ts/TaskEither'
-import { ApolloError } from 'apollo-server-express'
 import * as t from 'io-ts'
 
 describe('initProject', () => {
@@ -230,7 +229,7 @@ describe('initProject', () => {
 
 function getProjectById(
   id: PositiveInteger
-): TaskEither<ApolloError, DatabaseProject> {
+): TaskEither<CoolerError, DatabaseProject> {
   return pipe(
     dbGet(
       SQL`

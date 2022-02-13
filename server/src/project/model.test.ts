@@ -110,7 +110,7 @@ describe('createProject', () => {
     await pipe(
       createProject(getFakeProject(client2.id), user1),
       testTaskEitherError(error => {
-        expect(error.extensions.code).toBe('COOLER_403')
+        expect(error.code).toBe('COOLER_403')
       })
     )
   })
@@ -131,7 +131,7 @@ describe('getProject', () => {
     await pipe(
       getProject(project2.id, user1),
       testTaskEitherError(error => {
-        expect(error.extensions.code).toBe('COOLER_403')
+        expect(error.code).toBe('COOLER_403')
       })
     )
   })
@@ -174,7 +174,7 @@ describe('updateProject', () => {
     await pipe(
       updateProject(project1.id, getFakeProject(client1.id), user2),
       testTaskEitherError(error => {
-        expect(error.extensions.code).toBe('COOLER_403')
+        expect(error.code).toBe('COOLER_403')
       })
     )
   })
@@ -183,7 +183,7 @@ describe('updateProject', () => {
     await pipe(
       updateProject(project1.id, getFakeProject(client2.id), user1),
       testTaskEitherError(error => {
-        expect(error.extensions.code).toBe('COOLER_403')
+        expect(error.code).toBe('COOLER_403')
       })
     )
   })
@@ -219,7 +219,7 @@ describe('deleteProject', () => {
     await pipe(
       deleteProject(project2.id, user1),
       testTaskEitherError(error => {
-        expect(error.extensions.code).toBe('COOLER_403')
+        expect(error.code).toBe('COOLER_403')
       })
     )
   })

@@ -56,6 +56,7 @@ describe('getDatabase', () => {
 
     await pipe(
       getDatabase(),
+      taskEither.mapLeft(() => new Error('Unable to access database')),
       taskEither.chain(db =>
         pipe(
           createTable(db),
