@@ -28,13 +28,28 @@ import {
   updateTask as updateDatabaseTask,
   deleteTask as deleteDatabasetask
 } from './database'
-import { NonEmptyString } from 'io-ts-types'
-import * as t from 'io-ts'
 import {
-  TasksConnectionQueryArgs,
-  UserTasksConnectionQueryArgs
-} from './resolvers'
+  DateFromISOString,
+  NonEmptyString,
+  optionFromNullable
+} from 'io-ts-types'
+import * as t from 'io-ts'
+import { TasksConnectionQueryArgs } from './resolvers'
 import { a18n } from '../misc/a18n'
+
+const UserTasksConnectionQueryArgs = t.intersection(
+  [
+    ConnectionQueryArgs,
+    t.type({
+      from: optionFromNullable(DateFromISOString),
+      to: optionFromNullable(DateFromISOString)
+    })
+  ],
+  'UserTasksConnectionQueryArgs'
+)
+type UserTasksConnectionQueryArgs = t.TypeOf<
+  typeof UserTasksConnectionQueryArgs
+>
 
 export function createTask(
   input: TaskCreationInput,
