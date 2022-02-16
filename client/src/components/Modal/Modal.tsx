@@ -1,5 +1,5 @@
 import { option } from 'fp-ts'
-import { FC, useEffect } from 'react'
+import { PropsWithChildren, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { composeClassName } from '../../misc/composeClassName'
 import { Panel } from '../Panel/Panel'
@@ -12,7 +12,8 @@ interface Props {
   className?: string
 }
 
-export const Modal: FC<Props> = ({ isOpen, onClose, ...props }) => {
+export function Modal(props: PropsWithChildren<Props>) {
+  const { isOpen, onClose } = props
   const openClassName = isOpen ? 'open' : ''
 
   useEffect(() => {

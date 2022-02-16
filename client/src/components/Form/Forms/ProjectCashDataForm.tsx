@@ -1,6 +1,5 @@
 import { IO } from 'fp-ts/IO'
 import { ReaderTaskEither } from 'fp-ts/ReaderTaskEither'
-import { FC } from 'react'
 import { CashData, Project } from '../../../entities/Project'
 import {
   LocalizedString,
@@ -52,7 +51,7 @@ function foldCashBalanceType<T>(
   }
 }
 
-export const ProjectCashDataForm: FC<Props> = props => {
+export function ProjectCashDataForm(props: Props) {
   const { fieldProps, formError, submit, values, setValues } = useForm(
     {
       initialValues: {

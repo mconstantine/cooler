@@ -1,7 +1,6 @@
 import { option } from 'fp-ts'
 import { pipe } from 'fp-ts/function'
 import { moon, sunny } from 'ionicons/icons'
-import { FC } from 'react'
 import { a18n } from '../../a18n'
 import { Button } from '../Button/Button/Button'
 import { Buttons } from '../Button/Buttons/Buttons'
@@ -17,9 +16,7 @@ import {
   useRouter
 } from '../Router'
 
-interface Props {}
-
-export const Menu: FC<Props> = () => {
+export function Menu() {
   const { theme, setTheme } = useTheme()
   const { route, setRoute } = useRouter()
 

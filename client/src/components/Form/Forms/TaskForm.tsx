@@ -2,7 +2,7 @@ import { boolean, option } from 'fp-ts'
 import { constNull, constUndefined, pipe } from 'fp-ts/function'
 import { TaskEither } from 'fp-ts/TaskEither'
 import { Option } from 'fp-ts/Option'
-import { FC, useState } from 'react'
+import { useState } from 'react'
 import { a18n, leadZero, unsafeLocalizedString } from '../../../a18n'
 import {
   LocalizedString,
@@ -87,14 +87,14 @@ export function foldFormData<T>(
 ): (data: FormData) => T {
   return data => {
     if (data.shouldRepeat) {
-      return whenTasksBatch((data as unknown) as TasksBatchFormData)
+      return whenTasksBatch(data as unknown as TasksBatchFormData)
     } else {
-      return whenSingleTask((data as unknown) as SingleTaskFormData)
+      return whenSingleTask(data as unknown as SingleTaskFormData)
     }
   }
 }
 
-export const TaskForm: FC<Props> = props => {
+export function TaskForm(props: Props) {
   const { fieldProps, submit, formError, values } = useForm(
     {
       initialValues: pipe(

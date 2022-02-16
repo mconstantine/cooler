@@ -1,6 +1,6 @@
 import { boolean, option, taskEither } from 'fp-ts'
 import { constNull, constVoid, flow, pipe } from 'fp-ts/function'
-import { FC, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   a18n,
   formatDate,
@@ -89,7 +89,8 @@ function getInitialValues(date: Date) {
   }
 }
 
-export const DateTimePicker: FC<Props> = ({ mode = 'datetime', ...props }) => {
+export function DateTimePicker(props: Props) {
+  const mode = props.mode || 'datetime'
   const [isOpen, setIsOpen] = useState(false)
 
   const { fieldProps, setValues, submit } = useForm(

@@ -7,7 +7,7 @@ import {
   pipe
 } from 'fp-ts/function'
 import { Option } from 'fp-ts/Option'
-import { FC, MouseEvent } from 'react'
+import { MouseEvent } from 'react'
 import {
   Color,
   LocalizedString,
@@ -118,7 +118,7 @@ type Props = {
   items: Item[]
 }
 
-export const List: FC<Props> = props => {
+export function List(props: Props) {
   const unwrap = pipe(
     !!props.unwrapDescriptions,
     boolean.fold(

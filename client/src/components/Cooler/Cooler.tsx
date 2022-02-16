@@ -1,8 +1,6 @@
-import { FC } from 'react'
+import { PropsWithChildren } from 'react'
 import '../../index.scss'
 
-interface Props {}
-
-export const Cooler: FC<Props> = props => {
+export function Cooler(props: PropsWithChildren<{}>) {
   return <div className="Cooler">{props.children}</div>
 }

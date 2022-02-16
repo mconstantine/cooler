@@ -1,6 +1,6 @@
 import { either, option } from 'fp-ts'
 import { ReaderTaskEither } from 'fp-ts/ReaderTaskEither'
-import { FC, Reducer, useReducer, useRef } from 'react'
+import { Reducer, useReducer, useRef } from 'react'
 import { a18n } from '../a18n'
 import { Body } from '../components/Body/Body'
 import { Button } from '../components/Button/Button/Button'
@@ -18,6 +18,7 @@ import {
 } from 'fp-ts/function'
 import { Option } from 'fp-ts/Option'
 import { Either } from 'fp-ts/Either'
+import { Reader } from 'fp-ts/Reader'
 
 interface IdleState<I> {
   type: 'idle'
@@ -94,7 +95,7 @@ interface Props<I> {
 export function useDialog<I, E, O>(
   callback: ReaderTaskEither<I, E, O>,
   props: Props<I>
-): [FC<{}>, ReaderTaskEither<I, E, O>] {
+): [Reader<{}, JSX.Element>, ReaderTaskEither<I, E, O>] {
   const [state, dispatch] = useReducer<Reducer<State<I>, Action<I>>>(reducer, {
     type: 'idle',
     latestInput: option.none

@@ -2,7 +2,6 @@ import { boolean, option, taskEither } from 'fp-ts'
 import { constNull, constUndefined, pipe } from 'fp-ts/function'
 import { Option } from 'fp-ts/Option'
 import { TaskEither } from 'fp-ts/TaskEither'
-import { FC } from 'react'
 import { a18n } from '../../../a18n'
 import {
   LocalizedString,
@@ -33,7 +32,7 @@ interface Props {
   onCancel: IO<void>
 }
 
-export const ProjectForm: FC<Props> = props => {
+export function ProjectForm(props: Props) {
   const { fieldProps, submit, formError, values } = useForm(
     {
       initialValues: pipe(

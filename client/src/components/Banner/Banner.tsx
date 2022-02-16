@@ -1,4 +1,3 @@
-import { FC } from 'react'
 import { Color, LocalizedString } from '../../globalDomain'
 import { composeClassName } from '../../misc/composeClassName'
 import { Icon } from '../Icon/Icon'
@@ -10,15 +9,17 @@ interface Props {
   color?: Color
 }
 
-export const Banner: FC<Props> = ({ content, icon, color = 'default' }) => {
+export function Banner(props: Props) {
+  const color = props.color || 'default'
+
   return (
     <p
       role="banner"
-      aria-label={content}
+      aria-label={props.content}
       className={composeClassName('Banner', color)}
     >
-      {icon ? <Icon color={color} src={icon} size="small" /> : null}
-      {content}
+      {props.icon ? <Icon color={color} src={props.icon} size="small" /> : null}
+      {props.content}
     </p>
   )
 }

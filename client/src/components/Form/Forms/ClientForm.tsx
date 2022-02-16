@@ -1,4 +1,3 @@
-import { FC } from 'react'
 import {
   ClientCreationInput,
   Country,
@@ -61,7 +60,7 @@ function foldFormType<T>(
   }
 }
 
-export const ClientForm: FC<Props> = props => {
+export function ClientForm(props: Props) {
   const { fieldProps, submit, formError, values, setValues } = useForm(
     {
       initialValues: pipe(

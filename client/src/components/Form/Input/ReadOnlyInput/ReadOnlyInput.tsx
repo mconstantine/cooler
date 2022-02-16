@@ -1,6 +1,5 @@
 import { option } from 'fp-ts'
 import { constVoid } from 'fp-ts/function'
-import { FC } from 'react'
 import { LocalizedString } from '../../../../globalDomain'
 import { Input } from '../Input/Input'
 import './ReadOnlyInput.scss'
@@ -11,7 +10,7 @@ interface Props {
   value: LocalizedString
 }
 
-export const ReadOnlyInput: FC<Props> = props => {
+export function ReadOnlyInput(props: Props) {
   return (
     <div className="ReadOnlyInput">
       <Input

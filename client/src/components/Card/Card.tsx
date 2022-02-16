@@ -1,7 +1,7 @@
 import { IO } from 'fp-ts/IO'
 import { TaskEither } from 'fp-ts/TaskEither'
 import { Option } from 'fp-ts/Option'
-import { FC, useState } from 'react'
+import { useState } from 'react'
 import { Color, LocalizedString } from '../../globalDomain'
 import { Panel } from '../Panel/Panel'
 import { List } from '../List/List'
@@ -53,7 +53,7 @@ interface Props {
   actions: Action[]
 }
 
-export const Card: FC<Props> = props => {
+export function Card(props: Props) {
   const [error, setError] = useState<Option<LocalizedString>>(option.none)
 
   return (

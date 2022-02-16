@@ -1,4 +1,3 @@
-import { FC } from 'react'
 import './Heading.scss'
 import * as t from 'io-ts'
 import { Color, LocalizedString } from '../../globalDomain'
@@ -97,7 +96,7 @@ interface Props {
   action: Option<HeadingAction>
 }
 
-export const Heading: FC<Props> = props => {
+export function Heading(props: Props) {
   const color = props.color || 'default'
 
   const isActionFlat = pipe(

@@ -1,4 +1,3 @@
-import { FC } from 'react'
 import { Color, Size } from '../../globalDomain'
 import { composeClassName } from '../../misc/composeClassName'
 import './Icon.scss'
@@ -10,17 +9,16 @@ interface IconProps {
   className?: string
 }
 
-export const Icon: FC<IconProps> = ({
-  src,
-  color = 'default',
-  size = 'large',
-  className = ''
-}) => {
+export function Icon(props: IconProps) {
+  const color = props.color || 'default'
+  const size = props.size || 'large'
+  const className = props.className || ''
+
   return (
     <span
       aria-hidden
       className={composeClassName('Icon', color, size, className)}
-      dangerouslySetInnerHTML={{ __html: src.substring(24) }}
+      dangerouslySetInnerHTML={{ __html: props.src.substring(24) }}
     />
   )
 }

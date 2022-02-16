@@ -1,5 +1,4 @@
 import { option } from 'fp-ts'
-import { FC } from 'react'
 import { a18n } from '../../../../a18n'
 import { LocalizedString } from '../../../../globalDomain'
 import { Button } from '../../../Button/Button/Button'
@@ -14,14 +13,8 @@ interface Props {
   disabled?: boolean
 }
 
-export const DaysGrid: FC<Props> = ({
-  year,
-  month,
-  selection,
-  onChange,
-  disabled = false
-}) => {
-  const date = new Date(year, month, 1)
+export function DaysGrid(props: Props) {
+  const date = new Date(props.year, props.month, 1)
   const today = new Date()
 
   date.setDate(1 - date.getDay())
@@ -58,10 +51,10 @@ export const DaysGrid: FC<Props> = ({
             }) as LocalizedString
           }
           icon={option.none}
-          action={() => onChange(day)}
-          disabled={disabled || day.getMonth() !== month}
+          action={() => props.onChange(day)}
+          disabled={props.disabled || day.getMonth() !== props.month}
           color={isSameDay(day, today) ? 'primary' : 'default'}
-          selected={isSameDay(day, selection)}
+          selected={isSameDay(day, props.selection)}
         />
       ))}
     </div>

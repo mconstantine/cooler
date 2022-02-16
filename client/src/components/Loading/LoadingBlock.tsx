@@ -1,9 +1,10 @@
-import { FC } from 'react'
 import { Loading, LoadingProps } from './Loading'
 import './LoadingBlock.scss'
 
-export const LoadingBlock: FC<LoadingProps> = props => (
-  <div className="LoadingBlock">
-    <Loading {...props} />
-  </div>
-)
+export function LoadingBlock(props: LoadingProps) {
+  return (
+    <div className="LoadingBlock">
+      <Loading {...props} />
+    </div>
+  )
+}

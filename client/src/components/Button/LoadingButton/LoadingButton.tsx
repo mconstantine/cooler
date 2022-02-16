@@ -1,6 +1,6 @@
 import { taskEither } from 'fp-ts'
 import { pipe } from 'fp-ts/function'
-import { FC, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import {
   ControlledLoadingButton,
@@ -13,7 +13,7 @@ import {
 type Props = Omit<CommonProps, 'loadingState'> &
   (Omit<ButtonProps, 'loadingState'> | Omit<InputProps, 'loadingState'>)
 
-export const LoadingButton: FC<Props> = props => {
+export function LoadingButton(props: Props) {
   const [loadingState, setLoadingState] = useState<LoadingState>('default')
 
   useEffect(() => {

@@ -1,6 +1,6 @@
 import { TaskEither } from 'fp-ts/TaskEither'
 import { Option } from 'fp-ts/Option'
-import { FC, useState } from 'react'
+import { useState } from 'react'
 import {
   LocalizedString,
   PositiveInteger,
@@ -29,7 +29,7 @@ interface Props {
   onSubmit: (data: SessionCreationInput) => TaskEither<LocalizedString, unknown>
 }
 
-export const SessionForm: FC<Props> = props => {
+export function SessionForm(props: Props) {
   const [didSessionEnd, setDidSessionEnd] = useState(
     pipe(
       props.session,

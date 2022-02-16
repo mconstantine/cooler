@@ -1,7 +1,7 @@
 import { option } from 'fp-ts'
 import { constNull, pipe } from 'fp-ts/function'
 import { alert, warning as warningIcon } from 'ionicons/icons'
-import { FC, useMemo } from 'react'
+import { useMemo } from 'react'
 import { a18n } from '../../../../a18n'
 import {
   Color,
@@ -72,13 +72,7 @@ function getWeekdayLabels(): LocalizedString[] {
 
 function getValues(value: NonNegativeInteger): boolean[] {
   return [
-    0x0000001,
-    0x0000010,
-    0x0000100,
-    0x0001000,
-    0x0010000,
-    0x0100000,
-    0x1000000
+    0x0000001, 0x0000010, 0x0000100, 0x0001000, 0x0010000, 0x0100000, 0x1000000
   ].map(n => !!(value & n))
 }
 
@@ -102,7 +96,7 @@ function getChangedValue(
   return (value ^ changingBit) as NonNegativeInteger
 }
 
-export const WeekdayRepetition: FC<Props> = props => {
+export function WeekdayRepetition(props: Props) {
   const labels: LocalizedString[] = useMemo(getWeekdayLabels, [])
   const values = getValues(props.value)
 

@@ -1,4 +1,3 @@
-import { FC } from 'react'
 import { a18n } from '../../../a18n'
 import * as t from 'io-ts'
 import {
@@ -58,7 +57,7 @@ interface Props {
   onSubmit: (data: FormData) => TaskEither<LocalizedString, unknown>
 }
 
-export const TimesheetForm: FC<Props> = props => {
+export function TimesheetForm(props: Props) {
   const { fieldProps, formError, submit, values, setValues } = useForm(
     {
       initialValues: {

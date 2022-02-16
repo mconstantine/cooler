@@ -1,7 +1,7 @@
 import { boolean, option } from 'fp-ts'
 import { constNull, pipe } from 'fp-ts/function'
 import { Option } from 'fp-ts/Option'
-import { FC, HTMLProps } from 'react'
+import { HTMLProps } from 'react'
 import { Color, LocalizedString } from '../../../globalDomain'
 import { composeClassName } from '../../../misc/composeClassName'
 import { Icon } from '../../Icon/Icon'
@@ -47,14 +47,13 @@ export function foldButtonProps<T>(
   }
 }
 
-export const Button: FC<ButtonProps> = ({
-  color = 'default',
-  disabled = false,
-  className = '',
-  selected = false,
-  active = false,
-  ...props
-}) => {
+export function Button(props: ButtonProps) {
+  const color = props.color || 'default'
+  const disabled = props.disabled || false
+  const className = props.className || ''
+  const selected = props.selected || false
+  const active = props.active || false
+
   const disabledClassName = pipe(
     disabled,
     boolean.fold(

@@ -1,5 +1,4 @@
 import { IO } from 'fp-ts/IO'
-import { FC } from 'react'
 import { Color, LocalizedString } from '../../globalDomain'
 import { composeClassName } from '../../misc/composeClassName'
 import './Body.scss'
@@ -14,7 +13,7 @@ interface Props {
   children: LocalizedString
 }
 
-export const Body: FC<Props> = props => {
+export function Body(props: Props) {
   const color = props.color || 'default'
   const emphasis = props.emphasis || 'full'
   const clickable = props.onClick ? 'clickable' : ''

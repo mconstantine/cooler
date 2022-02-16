@@ -1,7 +1,6 @@
 import { option } from 'fp-ts'
 import { constNull, pipe } from 'fp-ts/function'
 import { alert, warning as warningIcon } from 'ionicons/icons'
-import { FC } from 'react'
 import { LocalizedString } from '../../../../globalDomain'
 import { composeClassName } from '../../../../misc/composeClassName'
 import { Banner } from '../../../Banner/Banner'
@@ -13,7 +12,7 @@ interface Props extends FieldProps<boolean> {
   disabled?: boolean
 }
 
-export const Toggle: FC<Props> = props => {
+export function Toggle(props: Props) {
   const checkedClassName = props.value ? 'checked' : ''
   const disabledClassName = props.disabled ? 'disabled' : ''
 

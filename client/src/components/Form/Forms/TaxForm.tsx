@@ -3,7 +3,6 @@ import { IO } from 'fp-ts/IO'
 import { constUndefined, pipe } from 'fp-ts/function'
 import { Option } from 'fp-ts/Option'
 import { ReaderTaskEither } from 'fp-ts/ReaderTaskEither'
-import { FC } from 'react'
 import { a18n } from '../../../a18n'
 import { Tax, TaxCreationInput } from '../../../entities/Tax'
 import { LocalizedString, PercentageFromString } from '../../../globalDomain'
@@ -20,7 +19,7 @@ interface Props {
   onCancel: Option<IO<void>>
 }
 
-export const TaxForm: FC<Props> = props => {
+export function TaxForm(props: Props) {
   const { fieldProps, formError, submit } = useForm(
     {
       initialValues: pipe(

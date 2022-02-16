@@ -1,5 +1,5 @@
 import { Option } from 'fp-ts/Option'
-import { FC } from 'react'
+import { PropsWithChildren } from 'react'
 import { Color, LocalizedString } from '../../globalDomain'
 import { composeClassName } from '../../misc/composeClassName'
 import { HeadingAction, Heading } from '../Heading/Heading'
@@ -13,7 +13,7 @@ interface Props {
   color?: Color
 }
 
-export const Panel: FC<Props> = props => {
+export function Panel(props: PropsWithChildren<Props>) {
   const framedClassName = props.framed ? 'framed' : ''
   const colorClassName = props.color || 'default'
 
