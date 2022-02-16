@@ -5,10 +5,10 @@ import {
   makeGetRequest,
   makePostRequest,
   makePutRequest
-} from '../../../effects/api/useApi'
-import { Client, ClientCreationInput } from '../../../entities/Client'
-import { LocalizedString, PositiveInteger } from '../../../globalDomain'
-import { Connection, ConnectionQueryInput } from '../../../misc/Connection'
+} from '../../effects/api/useApi'
+import { Client, ClientCreationInput } from '../../entities/Client'
+import { LocalizedString, PositiveInteger } from '../../globalDomain'
+import { Connection, ConnectionQueryInput } from '../../misc/Connection'
 
 const PrivateClientForList = t.type(
   {

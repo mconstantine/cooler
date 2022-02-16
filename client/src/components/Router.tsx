@@ -1,6 +1,6 @@
 import { end, format, lit, parse, Route, type, zero } from 'fp-ts-routing'
 import { Reader } from 'fp-ts/Reader'
-import { createContext, FC, useContext, useEffect, useState } from 'react'
+import { createContext, useContext, useEffect, useState } from 'react'
 import { constVoid, pipe } from 'fp-ts/function'
 import { PositiveInteger, PositiveIntegerFromString } from '../globalDomain'
 import { IO } from 'fp-ts/IO'
@@ -135,7 +135,7 @@ const LocationContext = createContext<LocationContext>({
   setLocation: constVoid
 })
 
-export const Router: FC<Props> = props => {
+export function Router(props: Props) {
   const [location, setLocation] = useState<Location>(parseCurrentPath())
 
   useEffect(() => {

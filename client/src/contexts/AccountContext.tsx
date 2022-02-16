@@ -25,6 +25,7 @@ import { a18n } from '../a18n'
 import { commonErrors } from '../misc/commonErrors'
 import { ReaderTaskEither } from 'fp-ts/ReaderTaskEither'
 import { Option } from 'fp-ts/Option'
+import { Content } from '../components/Content/Content'
 
 const LoginInput = t.type(
   {
@@ -121,7 +122,11 @@ export function AccountProvider(props: PropsWithChildren<{}>) {
       {pipe(
         state,
         foldAccountState({
-          ANONYMOUS: () => <LoginForm onSubmit={login} />,
+          ANONYMOUS: () => (
+            <Content>
+              <LoginForm onSubmit={login} />
+            </Content>
+          ),
           LOGGED_IN: () => props.children
         })
       )}

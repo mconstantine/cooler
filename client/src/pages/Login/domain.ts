@@ -1,7 +1,7 @@
 import * as t from 'io-ts'
 import { DateFromISOString, NonEmptyString } from 'io-ts-types'
-import { makePostRequest } from '../../../effects/api/useApi'
-import { EmailString } from '../../../globalDomain'
+import { makePostRequest } from '../../effects/api/useApi'
+import { EmailString } from '../../globalDomain'
 
 const LoginInput = t.type(
   {

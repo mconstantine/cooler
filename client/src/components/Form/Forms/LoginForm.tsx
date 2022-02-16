@@ -1,7 +1,6 @@
 import { option } from 'fp-ts'
 import { ReaderTaskEither } from 'fp-ts/ReaderTaskEither'
 import { NonEmptyString } from 'io-ts-types'
-import { FC } from 'react'
 import { a18n } from '../../../a18n'
 import { EmailString, LocalizedString } from '../../../globalDomain'
 import { commonErrors } from '../../../misc/commonErrors'
@@ -19,7 +18,7 @@ interface Props {
   onSubmit: ReaderTaskEither<FormData, LocalizedString, unknown>
 }
 
-export const LoginForm: FC<Props> = props => {
+export function LoginForm(props: Props) {
   const { fieldProps, submit, formError } = useForm(
     {
       initialValues: {

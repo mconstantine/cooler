@@ -9,16 +9,14 @@ import {
   makeGetRequest,
   makePostRequest,
   makePutRequest
-} from '../../../../effects/api/useApi'
-import { TaxCreationInput, TaxUpdateInput } from '../../../../entities/Tax'
+} from '../../effects/api/useApi'
+import { TaxCreationInput, TaxUpdateInput } from '../../entities/Tax'
 import {
   EmailString,
   LocalizedString,
-  NonNegativeNumber,
   Percentage,
   PositiveInteger
-} from '../../../../globalDomain'
-import { Connection } from '../../../../misc/Connection'
+} from '../../globalDomain'
 
 const Tax = t.type({
   id: PositiveInteger,
@@ -32,19 +30,13 @@ const Profile = t.type(
     name: LocalizedString,
     email: EmailString,
     created_at: DateFromISOString,
-    updated_at: DateFromISOString,
-    expectedWorkingHours: NonNegativeNumber,
-    actualWorkingHours: NonNegativeNumber,
-    budget: NonNegativeNumber,
-    balance: NonNegativeNumber,
-    cashedBalance: NonNegativeNumber,
-    taxes: Connection(Tax)
+    updated_at: DateFromISOString
   },
   'Profile'
 )
 export type Profile = t.TypeOf<typeof Profile>
 
-export const profileQuery = makeGetRequest({
+export const getProfileRequest = makeGetRequest({
   url: '/profile',
   inputCodec: t.void,
   outputCodec: Profile

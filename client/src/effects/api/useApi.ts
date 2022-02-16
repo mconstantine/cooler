@@ -2,10 +2,10 @@ import * as t from 'io-ts'
 import { TaskEither } from 'fp-ts/TaskEither'
 import { IO } from 'fp-ts/IO'
 import { Reader } from 'fp-ts/Reader'
-import { either, option, taskEither } from 'fp-ts'
+import { either, option, readerTaskEither, taskEither } from 'fp-ts'
 import { pipe, flow } from 'fp-ts/function'
 import { reportErrors } from './reportErrors'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { query } from './api'
 import { Query } from './Query'
 import { NonEmptyString } from 'io-ts-types'
@@ -319,6 +319,33 @@ export function useGet<I, II, O, OO>(
 
 export function useLazyGet<I, II, O, OO>(request: GetRequest<I, II, O, OO>) {
   return useCommand(request)
+}
+
+export function useReactiveCommand<I, II, O, OO>(
+  request: Request<I, II, O, OO>
+): [
+  query: Query<CoolerError, O>,
+  setter: Reader<O, void>,
+  command: ReaderTaskEither<I, void, void>
+] {
+  const [state, setState] = useState<Query<CoolerError, O>>(query.loading())
+  const command = useCommand(request)
+  const setter: Reader<O, void> = flow(query.right, setState)
+
+  const commandHandler: ReaderTaskEither<I, void, void> = useMemo(
+    () =>
+      pipe(
+        command,
+        readerTaskEither.bimap(
+          flow(query.left, setState),
+          flow(query.right, setState)
+        )
+      ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
+  )
+
+  return [state, setter, commandHandler]
 }
 
 export function usePost<I, II, O, OO>(request: PostRequest<I, II, O, OO>) {

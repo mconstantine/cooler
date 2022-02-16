@@ -5,13 +5,13 @@ import {
   makeGetRequest,
   makePostRequest,
   makePutRequest
-} from '../../../effects/api/useApi'
+} from '../../effects/api/useApi'
 import {
   ProjectFromAPI,
   ProjectCreationInputFromAPI
-} from '../../../entities/Project'
-import { LocalizedString, PositiveInteger } from '../../../globalDomain'
-import { Connection, ConnectionQueryInput } from '../../../misc/Connection'
+} from '../../entities/Project'
+import { LocalizedString, PositiveInteger } from '../../globalDomain'
+import { Connection, ConnectionQueryInput } from '../../misc/Connection'
 
 const ProjectForListClient = t.type(
   {

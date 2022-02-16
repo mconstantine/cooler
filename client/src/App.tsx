@@ -1,20 +1,15 @@
-import { Suspense } from 'react'
+import { lazy, Suspense } from 'react'
 import { ThemeProvider } from './contexts/ThemeContext'
 import { Cooler } from './components/Cooler/Cooler'
 import { foldLocation, Router } from './components/Router'
 import { LoadingBlock } from './components/Loading/LoadingBlock'
 import { AccountProvider } from './contexts/AccountContext'
 import { ConfigProvider } from './contexts/ConfigContext'
+import { pipe } from 'fp-ts/function'
+import { Menu } from './components/Menu/Menu'
+import { Content } from './components/Content/Content'
 
-// const ProfilePage = lazy(
-//   () => import('./components/Pages/Profile/ProfilePage/ProfilePage')
-// )
-
-// const ClientsPage = lazy(() => import('./components/Pages/Client/ClientsPage'))
-
-// const ProjectsPage = lazy(
-//   () => import('./components/Pages/Project/ProjectsPage')
-// )
+const Profile = lazy(() => import('./pages/Profile/Profile'))
 
 export function App() {
   return (
@@ -24,14 +19,21 @@ export function App() {
           <AccountProvider>
             <Suspense fallback={<LoadingBlock />}>
               <Router
-                render={foldLocation({
-                  // Home: () => <ProfilePage />,
-                  // Clients: ({ subject }) => <ClientsPage subject={subject} />,
-                  // Projects: ({ subject }) => <ProjectsPage subject={subject} />
-                  Home: () => <p>Home</p>,
-                  Clients: () => <p>Clients</p>,
-                  Projects: () => <p>Projects</p>
-                })}
+                render={location => (
+                  <>
+                    <Menu />
+                    <Content>
+                      {pipe(
+                        location,
+                        foldLocation({
+                          Home: () => <Profile />,
+                          Clients: () => <p>Clients</p>,
+                          Projects: () => <p>Projects</p>
+                        })
+                      )}
+                    </Content>
+                  </>
+                )}
               />
             </Suspense>
           </AccountProvider>
