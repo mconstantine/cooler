@@ -1,135 +1,130 @@
-import { constVoid, pipe } from 'fp-ts/function'
-import { Reader } from 'fp-ts/Reader'
-import { DateFromISOString, NonEmptyString } from 'io-ts-types'
+import * as t from 'io-ts'
+import { constVoid, flow, pipe } from 'fp-ts/function'
 import {
   createContext,
-  FC,
-  Reducer,
+  PropsWithChildren,
   useContext,
   useEffect,
   useReducer
 } from 'react'
-import * as t from 'io-ts'
+import {
+  foldAccountState,
+  logoutAction,
+  reducer,
+  setLoginAction
+} from './AccountContextState'
+import { option, readerTaskEither } from 'fp-ts'
+import { DateFromISOString, NonEmptyString } from 'io-ts-types'
+import { EmailString, LocalizedString } from '../globalDomain'
+import { makeRequest } from '../effects/api/useApi'
 import { useStorage } from '../effects/useStorage'
-import { option } from 'fp-ts'
+import { IO } from 'fp-ts/IO'
+import { FormData, LoginForm } from '../components/Form/Forms/LoginForm'
+import { foldCoolerErrorType } from '../misc/Connection'
+import { a18n } from '../a18n'
+import { commonErrors } from '../misc/commonErrors'
+import { ReaderTaskEither } from 'fp-ts/ReaderTaskEither'
+import { Option } from 'fp-ts/Option'
 
-const AnonymousAccount = t.type(
+const LoginInput = t.type(
   {
-    type: t.literal('anonymous')
+    email: EmailString,
+    password: NonEmptyString
   },
-  'AnonymousAccount'
+  'LoginInput'
 )
-type AnonymousAccount = t.TypeOf<typeof AnonymousAccount>
+type LoginInput = t.TypeOf<typeof LoginInput>
 
-const LoggedInAccount = t.type(
+export const LoginOutput = t.type(
   {
-    type: t.literal('loggedIn'),
     accessToken: NonEmptyString,
     refreshToken: NonEmptyString,
     expiration: DateFromISOString
   },
-  'LoggedInAccount'
+  'LoginOutput'
 )
-type LoggedInAccount = t.TypeOf<typeof LoggedInAccount>
+export type LoginOutput = t.TypeOf<typeof LoginOutput>
 
-export const Account = t.union([AnonymousAccount, LoggedInAccount], 'Account')
-export type Account = t.TypeOf<typeof Account>
-
-export function foldAccount<T>(
-  whenAnonymous: (account: AnonymousAccount) => T,
-  whenLoggedIn: (account: LoggedInAccount) => T
-): (account: Account) => T {
-  return state => {
-    switch (state.type) {
-      case 'anonymous':
-        return whenAnonymous(state)
-      case 'loggedIn':
-        return whenLoggedIn(state)
-    }
-  }
-}
-
-type Action =
-  | {
-      type: 'login'
-      accessToken: NonEmptyString
-      refreshToken: NonEmptyString
-      expiration: Date
-    }
-  | {
-      type: 'refresh'
-      accessToken: NonEmptyString
-      refreshToken: NonEmptyString
-      expiration: Date
-    }
-  | {
-      type: 'logout'
-    }
-
-function reducer(state: Account, action: Action): Account {
-  switch (state.type) {
-    case 'anonymous':
-      switch (action.type) {
-        case 'login':
-          return {
-            ...action,
-            type: 'loggedIn'
-          }
-        case 'refresh':
-        case 'logout':
-          return state
-      }
-    case 'loggedIn':
-      switch (action.type) {
-        case 'login':
-          return state
-        case 'refresh':
-          return {
-            ...action,
-            type: 'loggedIn'
-          }
-        case 'logout':
-          return {
-            type: 'anonymous'
-          }
-      }
-  }
-}
-
-export interface AccountContext {
-  account: Account
-  dispatch: Reader<Action, void>
+interface AccountContext {
+  token: Option<LoginOutput>
+  logout: IO<void>
 }
 
 const AccountContext = createContext<AccountContext>({
-  account: {
-    type: 'anonymous'
-  },
-  dispatch: constVoid
+  token: option.none,
+  logout: constVoid
 })
 
-export const AccountProvider: FC = props => {
-  const { readStorage, writeStorage } = useStorage()
+export function useAccount() {
+  return useContext(AccountContext)
+}
 
-  const [state, dispatch] = useReducer<Reducer<Account, Action>>(
-    reducer,
-    pipe(
-      readStorage('account'),
-      option.getOrElse(() => ({ type: 'anonymous' } as Account))
+export function AccountProvider(props: PropsWithChildren<{}>) {
+  const [state, dispatch] = useReducer(reducer, { type: 'ANONYMOUS' })
+  const { readStorage, writeStorage, clearStorage } = useStorage()
+
+  const logout = () => {
+    clearStorage('account')
+    dispatch(logoutAction())
+  }
+
+  const loginCommand = (input: LoginInput) =>
+    makeRequest(
+      {
+        method: 'POST',
+        url: '/profile/login',
+        inputCodec: LoginInput,
+        outputCodec: LoginOutput
+      },
+      option.none,
+      input
+    )
+
+  const login: ReaderTaskEither<FormData, LocalizedString, void> = pipe(
+    loginCommand,
+    readerTaskEither.bimap(
+      flow(
+        error => error.code,
+        foldCoolerErrorType({
+          COOLER_404: () => a18n`No accounts found with this email address.`,
+          COOLER_400: () => a18n`The password is incorrect.`,
+          COOLER_401: () => commonErrors.unexpected,
+          COOLER_403: () => commonErrors.unexpected,
+          COOLER_500: () => commonErrors.unexpected,
+          COOLER_409: () => commonErrors.unexpected
+        })
+      ),
+      response => {
+        writeStorage('account', response)
+        dispatch(setLoginAction(response))
+      }
     )
   )
 
   useEffect(() => {
-    writeStorage('account', state)
-  }, [state, writeStorage])
+    pipe(
+      readStorage('account'),
+      option.fold(constVoid, token => dispatch(setLoginAction(token)))
+    )
+  }, [readStorage])
+
+  const token: Option<LoginOutput> = pipe(
+    state,
+    foldAccountState({
+      ANONYMOUS: () => option.none,
+      LOGGED_IN: ({ token }) => option.some(token)
+    })
+  )
 
   return (
-    <AccountContext.Provider value={{ account: state, dispatch }}>
-      {props.children}
+    <AccountContext.Provider value={{ token, logout }}>
+      {pipe(
+        state,
+        foldAccountState({
+          ANONYMOUS: () => <LoginForm onSubmit={login} />,
+          LOGGED_IN: () => props.children
+        })
+      )}
     </AccountContext.Provider>
   )
-}
-
-export function useAccount() {
-  return useContext(AccountContext)
 }

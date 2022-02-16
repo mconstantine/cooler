@@ -12,7 +12,7 @@ interface A18n {
   getA18n(namespace: string): A18n
 }
 
-export const a18n: A18n = (originalA18n as unknown) as A18n
+export const a18n: A18n = originalA18n as unknown as A18n
 
 export function unsafeLocalizedString(s: string): LocalizedString {
   return s as LocalizedString
@@ -45,20 +45,20 @@ const november = date.toLocaleDateString(undefined, { month: 'long' })
 date.setMonth(11)
 const december = date.toLocaleDateString(undefined, { month: 'long' })
 
-export const localizedMonthNames: Record<Month, LocalizedString> = {
-  0: january as LocalizedString,
-  1: february as LocalizedString,
-  2: march as LocalizedString,
-  3: april as LocalizedString,
-  4: may as LocalizedString,
-  5: june as LocalizedString,
-  6: july as LocalizedString,
-  7: august as LocalizedString,
-  8: september as LocalizedString,
-  9: october as LocalizedString,
-  10: november as LocalizedString,
-  11: december as LocalizedString
-}
+export const localizedMonthNames = {
+  0: january,
+  1: february,
+  2: march,
+  3: april,
+  4: may,
+  5: june,
+  6: july,
+  7: august,
+  8: september,
+  9: october,
+  10: november,
+  11: december
+} as Record<Month, LocalizedString>
 
 function addTimezone(date: Date): Date {
   return new Date(
@@ -144,9 +144,9 @@ export function formatNumber(
   n: number,
   formatDecimals = false
 ): LocalizedString {
-  return (formatDecimals || n % 1 !== 0
-    ? n.toFixed(2)
-    : n.toString()) as LocalizedString
+  return (
+    formatDecimals || n % 1 !== 0 ? n.toFixed(2) : n.toString()
+  ) as LocalizedString
 }
 
 export function formatMoneyAmount(moneyAmount: number): LocalizedString {

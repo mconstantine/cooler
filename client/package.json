@@ -8,8 +8,6 @@
     "@capacitor/core": "^2.4.4",
     "a18n": "^1.5.1",
     "fp-ts-routing": "^0.5.4",
-    "graphql": "^15.4.0",
-    "graphql-tag": "^2.11.0",
     "io-ts": "^2.2.13",
     "io-ts-types": "^0.5.12",
     "ionicons": "^5.2.3",
@@ -71,7 +69,6 @@
     "eslint-plugin-cypress": "^2.11.2",
     "eslint-plugin-fp-ts": "^0.2.1",
     "fp-ts": "^2.9.1",
-    "graphql-tools": "^7.0.4",
     "prettier": "^2.2.1",
     "storybook-dark-mode": "^1.0.8"
   }

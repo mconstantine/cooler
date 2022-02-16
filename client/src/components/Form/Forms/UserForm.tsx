@@ -2,30 +2,25 @@ import { option, taskEither } from 'fp-ts'
 import { sequenceS } from 'fp-ts/Apply'
 import { flow, pipe } from 'fp-ts/function'
 import { IO } from 'fp-ts/IO'
-import { Option } from 'fp-ts/Option'
-import { TaskEither } from 'fp-ts/TaskEither'
+import { ReaderTaskEither } from 'fp-ts/ReaderTaskEither'
 import { NonEmptyString } from 'io-ts-types'
-import { FC } from 'react'
 import { a18n } from '../../../a18n'
 import { User } from '../../../entities/User'
 import { EmailString, LocalizedString } from '../../../globalDomain'
 import { commonErrors } from '../../../misc/commonErrors'
+import { ProfileUpdateInput } from '../../Pages/Profile/ProfilePage/domain'
 import { Form } from '../Form'
 import { Input } from '../Input/Input/Input'
 import { useForm } from '../useForm'
 import * as validators from '../validators'
 
-export interface UserUpdate extends Pick<User, 'name' | 'email'> {
-  password: Option<NonEmptyString>
-}
-
 interface Props {
   user: User
-  onSubmit: (data: UserUpdate) => TaskEither<LocalizedString, unknown>
+  onSubmit: ReaderTaskEither<ProfileUpdateInput, LocalizedString, unknown>
   onCancel: IO<void>
 }
 
-export const UserForm: FC<Props> = props => {
+export function UserForm(props: Props) {
   const { fieldProps, formError, submit } = useForm(
     {
       initialValues: {
@@ -47,7 +42,7 @@ export const UserForm: FC<Props> = props => {
     {
       formValidator: data => {
         const defaultData = {
-          name: (data.name as string) as LocalizedString,
+          name: data.name as string as LocalizedString,
           email: data.email
         }
 

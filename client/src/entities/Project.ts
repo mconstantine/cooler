@@ -12,7 +12,7 @@ import {
   NonNegativeNumber,
   PositiveInteger
 } from '../globalDomain'
-import { Connection } from '../misc/graphql'
+import { Connection } from '../misc/Connection'
 import { Tax } from './Tax'
 
 const CashData = t.type({
@@ -74,44 +74,41 @@ export const Project = t.type(
 )
 export type Project = t.TypeOf<typeof Project>
 
-export const ProjectFromAPI: t.Type<
-  Project,
-  ProjectInput,
-  unknown
-> = new t.Type(
-  'ProjectFromAPI',
-  Project.is,
-  (u, c) =>
-    pipe(
-      ProjectInput.validate(u, c),
-      either.chain(input =>
-        t.success({
-          ...input,
-          cashed: pipe(
-            sequenceS(option.option)({
-              cashed_at: input.cashed_at,
-              cashed_balance: input.cashed_balance
-            }),
-            option.map(({ cashed_at, cashed_balance }) => ({
-              at: cashed_at,
-              balance: cashed_balance
-            }))
-          )
-        })
+export const ProjectFromAPI: t.Type<Project, ProjectInput, unknown> =
+  new t.Type(
+    'ProjectFromAPI',
+    Project.is,
+    (u, c) =>
+      pipe(
+        ProjectInput.validate(u, c),
+        either.chain(input =>
+          t.success({
+            ...input,
+            cashed: pipe(
+              sequenceS(option.option)({
+                cashed_at: input.cashed_at,
+                cashed_balance: input.cashed_balance
+              }),
+              option.map(({ cashed_at, cashed_balance }) => ({
+                at: cashed_at,
+                balance: cashed_balance
+              }))
+            )
+          })
+        )
+      ),
+    project => ({
+      ...project,
+      cashed_at: pipe(
+        project.cashed,
+        option.map(cashed => cashed.at)
+      ),
+      cashed_balance: pipe(
+        project.cashed,
+        option.map(cashed => cashed.balance)
       )
-    ),
-  project => ({
-    ...project,
-    cashed_at: pipe(
-      project.cashed,
-      option.map(cashed => cashed.at)
-    ),
-    cashed_balance: pipe(
-      project.cashed,
-      option.map(cashed => cashed.balance)
-    )
-  })
-)
+    })
+  )
 
 export const ProjectCreationInput = t.type(
   {

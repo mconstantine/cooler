@@ -12,7 +12,15 @@ module.exports = {
       'error',
       {
         allowTypes: true,
-        allowedModules: ['function', 'Apply']
+        allowedModules: [
+          'function',
+          'Apply',
+          'Applicative',
+          'FromEither',
+          'Functor',
+          'Chain',
+          'Witherable'
+        ]
       }
     ]
   }

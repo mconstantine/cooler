@@ -206,23 +206,20 @@ export const Percentage = t.brand(
 )
 export type Percentage = t.TypeOf<typeof Percentage>
 
-export const PercentageFromString: t.Type<
-  Percentage,
-  string,
-  unknown
-> = new t.Type(
-  'PercentageFromString',
-  Percentage.is,
-  (u, c) =>
-    pipe(
-      NumberFromString.decode(u),
-      either.map(n => n / 100),
-      either.chain(n =>
-        n >= 0 && n <= 1 ? t.success(n as Percentage) : t.failure(u, c)
-      )
-    ),
-  n => (n * 100).toFixed(2)
-)
+export const PercentageFromString: t.Type<Percentage, string, unknown> =
+  new t.Type(
+    'PercentageFromString',
+    Percentage.is,
+    (u, c) =>
+      pipe(
+        NumberFromString.decode(u),
+        either.map(n => n / 100),
+        either.chain(n =>
+          n >= 0 && n <= 1 ? t.success(n as Percentage) : t.failure(u, c)
+        )
+      ),
+    n => (n * 100).toFixed(2)
+  )
 export type PercentageFromString = t.TypeOf<typeof PercentageFromString>
 
 export function unsafePercentage(n: number): Percentage {
@@ -406,3 +403,10 @@ export const MinuteFromString = t.intersection(
   'MinuteFromString'
 )
 export type MinuteFromString = t.TypeOf<typeof MinuteFromString>
+
+export const IdInput = t.type(
+  {
+    id: PositiveInteger
+  },
+  'IdInput'
+)

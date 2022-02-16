@@ -7,12 +7,14 @@ import { ConnectionList as ConnectionListComponent } from '../components/Connect
 import { LocalizedString, unsafeNonNegativeInteger } from '../globalDomain'
 import { CoolerStory } from './CoolerStory'
 import { useState } from 'react'
-import { Connection, unsafeCursor } from '../misc/graphql'
+import { Connection, unsafeCursor } from '../misc/Connection'
 import { Item } from '../components/List/List'
 import { pipe } from 'fp-ts/function'
-import { UseQueryOutput } from '../effects/useQuery'
 import { IO } from 'fp-ts/IO'
 import { useCallback } from '@storybook/client-api'
+import { Query } from '../effects/api/Query'
+import { query } from '../effects/api/api'
+import { CoolerError } from '../effects/api/useApi'
 
 interface Args {
   shouldFail: boolean
@@ -99,70 +101,50 @@ const fakeEntities: FakeEntity[] = [
   }
 ]
 
-interface FakeQueryInput {
-  query: string
-}
-
-interface FakeQueryData {
-  connection: Connection<FakeEntity>
-}
-
 const ConnectionListTemplate: Story<Args> = props => {
-  const [query, setQuery] = useState<
-    UseQueryOutput<FakeQueryInput, FakeQueryData>['query']
-  >({
-    type: 'loading'
-  })
+  const [request, setRequest] = useState<
+    Query<CoolerError, Connection<FakeEntity>>
+  >(query.loading())
 
   const { filter, loadMore } = useCreateConnection([...fakeEntities])
 
-  const onQuerySearchChange = useCallback((query: string): void => {
-    setQuery({ type: 'loading' })
+  const onQuerySearchChange = useCallback((queryString: string): void => {
+    setRequest(query.loading())
 
     pipe(
       props.shouldFail,
       boolean.fold(
         () => {
           pipe(
-            task.fromIO(() => filter(query)),
+            task.fromIO(() => filter(queryString)),
             task.delay(500),
             task => taskEither.fromTask(task),
             taskEither.chain(connection =>
-              taskEither.fromIO(() =>
-                setQuery({
-                  type: 'success',
-                  data: { connection }
-                })
-              )
+              taskEither.fromIO(() => setRequest(query.right(connection)))
             )
           )()
         },
         () =>
-          setQuery({
-            type: 'failed',
-            error: {
+          setRequest(
+            query.left({
               code: 'COOLER_500',
-              message: unsafeLocalizedString("I'm an error!")
-            }
-          })
+              message: unsafeLocalizedString("I'm an error!"),
+              extras: {}
+            })
+          )
       )
     )
   }, [])
 
   const onLoadMore: IO<void> = () => {
-    setQuery({ type: 'loading' })
+    setRequest(query.loading())
 
     pipe(
       task.fromIO(loadMore),
       task.delay(500),
       task => taskEither.fromTask(task),
       taskEither.chain(connection =>
-        taskEither.fromIO(() =>
-          setQuery({
-            type: 'success',
-            data: { connection }
-          })
-        )
+        taskEither.fromIO(() => setRequest(query.right(connection)))
       )
     )()
   }
@@ -186,8 +168,7 @@ const ConnectionListTemplate: Story<Args> = props => {
             icon: option.none,
             action: props.action
           })}
-          query={query}
-          extractConnection={data => data.connection}
+          query={request}
           onSearchQueryChange={onQuerySearchChange}
           onLoadMore={onLoadMore}
           renderListItem={renderListItem}
@@ -197,9 +178,7 @@ const ConnectionListTemplate: Story<Args> = props => {
   )
 }
 
-function useCreateConnection(
-  allEntities: FakeEntity[]
-): {
+function useCreateConnection(allEntities: FakeEntity[]): {
   filter: (query: string) => Connection<FakeEntity>
   loadMore: () => Connection<FakeEntity>
 } {

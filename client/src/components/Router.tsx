@@ -1,13 +1,10 @@
 import { end, format, lit, parse, Route, type, zero } from 'fp-ts-routing'
 import { Reader } from 'fp-ts/Reader'
-import { createContext, FC, lazy, useContext, useEffect, useState } from 'react'
+import { createContext, FC, useContext, useEffect, useState } from 'react'
 import { constVoid, pipe } from 'fp-ts/function'
-import { foldAccount, useAccount } from '../contexts/AccountContext'
 import { PositiveInteger, PositiveIntegerFromString } from '../globalDomain'
 import { IO } from 'fp-ts/IO'
 import * as t from 'io-ts'
-
-const LoginPage = lazy(() => import('./Pages/Login/LoginPage'))
 
 const RouteSubjectKey = t.keyof(
   {
@@ -88,13 +85,11 @@ export function isProjectsRoute(location: Location): boolean {
   return location._tag === 'Projects'
 }
 
-export function foldLocation<T>(
-  matches: {
-    [K in Location['_tag']]: (
-      args: Omit<Extract<Location, { _tag: K }>, '_tag'>
-    ) => T
-  }
-): (location: Location) => T {
+export function foldLocation<T>(matches: {
+  [K in Location['_tag']]: (
+    args: Omit<Extract<Location, { _tag: K }>, '_tag'>
+  ) => T
+}): (location: Location) => T {
   return location => matches[location._tag](location as any)
 }
 
@@ -142,7 +137,6 @@ const LocationContext = createContext<LocationContext>({
 
 export const Router: FC<Props> = props => {
   const [location, setLocation] = useState<Location>(parseCurrentPath())
-  const { account } = useAccount()
 
   useEffect(() => {
     const onRouteChange = () => {
@@ -158,13 +152,7 @@ export const Router: FC<Props> = props => {
 
   return (
     <LocationContext.Provider value={{ location, setLocation }}>
-      {pipe(
-        account,
-        foldAccount(
-          () => <LoginPage />,
-          () => props.render(location)
-        )
-      )}
+      {props.render(location)}
     </LocationContext.Provider>
   )
 }

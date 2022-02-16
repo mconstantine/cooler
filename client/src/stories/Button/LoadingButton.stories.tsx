@@ -73,10 +73,6 @@ LoadingButton.args = {
 
 LoadingButton.argTypes = {
   ...buttonArgTypes,
-  icon: {
-    ...buttonArgTypes.icon,
-    control: null
-  },
   result: {
     name: 'Result',
     control: {

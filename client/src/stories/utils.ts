@@ -13,7 +13,7 @@ import {
   unsafePercentage,
   unsafePositiveInteger
 } from '../globalDomain'
-import { Connection, unsafeCursor } from '../misc/graphql'
+import { Connection, unsafeCursor } from '../misc/Connection'
 
 export const fakeTaxes: Tax[] = [
   {

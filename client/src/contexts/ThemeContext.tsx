@@ -1,7 +1,13 @@
 import { option } from 'fp-ts'
 import { constVoid, pipe } from 'fp-ts/function'
 import { Reader } from 'fp-ts/Reader'
-import { createContext, FC, useContext, useEffect, useState } from 'react'
+import {
+  createContext,
+  PropsWithChildren,
+  useContext,
+  useEffect,
+  useState
+} from 'react'
 import { useStorage } from '../effects/useStorage'
 import * as t from 'io-ts'
 
@@ -38,7 +44,7 @@ const ThemeContext = createContext<ThemeContext>({
   setTheme: constVoid
 })
 
-export const ThemeProvider: FC = props => {
+export function ThemeProvider(props: PropsWithChildren<{}>) {
   const { readStorage, writeStorage } = useStorage()
 
   const [theme, setTheme] = useState<Theme>(

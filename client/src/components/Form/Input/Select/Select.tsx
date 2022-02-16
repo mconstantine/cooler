@@ -110,21 +110,10 @@ export type SelectProps<T extends Index> =
   | UnsearchableSelectProps<T>
   | AsyncSelectProps<T>
 
-function foldSelectProps<T extends Index, O>(
-  whenDefault: (props: DefaultSelectProps<T>) => O,
-  whenUnsearchable: (props: UnsearchableSelectProps<T>) => O,
-  whenAsync: (props: AsyncSelectProps<T>) => O
-): (props: SelectProps<T>) => O {
-  return props => {
-    switch (props.type) {
-      case 'default':
-        return whenDefault(props)
-      case 'unsearchable':
-        return whenUnsearchable(props)
-      case 'async':
-        return whenAsync(props)
-    }
-  }
+function foldSelectProps<T extends Index, O>(cases: {
+  [k in SelectProps<T>['type']]: Reader<Extract<SelectProps<T>, { type: k }>, O>
+}): Reader<SelectProps<T>, O> {
+  return props => cases[props.type](props as any)
 }
 
 type Select = <T extends Index>(
@@ -147,8 +136,8 @@ export const Select: Select = forwardRef(
 
     const options = pipe(
       props,
-      foldSelectProps(
-        ({ options }) => {
+      foldSelectProps<T, Record<T, LocalizedString>>({
+        default: ({ options }) => {
           const regex = new RegExp(getOptionLabel(props.value), 'i')
 
           return pipe(
@@ -156,12 +145,12 @@ export const Select: Select = forwardRef(
             record.filter(label => regex.test(label))
           ) as Record<T, LocalizedString>
         },
-        () => props.options,
-        () => props.options
-      )
+        unsearchable: ({ options }) => options,
+        async: ({ options }) => options as Record<T, LocalizedString>
+      })
     )
 
-    const onInputChange = (input: LocalizedString): void => {
+    const onInputChange: Reader<LocalizedString, void> = input => {
       setIsOpen(true)
       setHighlightedItem(option.none)
 
@@ -185,9 +174,11 @@ export const Select: Select = forwardRef(
 
       pipe(
         props,
-        foldSelectProps(constVoid, constVoid, ({ onQueryChange }) =>
-          onQueryChange(input)
-        )
+        foldSelectProps({
+          default: constVoid,
+          unsearchable: constVoid,
+          async: ({ onQueryChange }) => onQueryChange(input)
+        })
       )
     }
 
@@ -197,11 +188,11 @@ export const Select: Select = forwardRef(
 
       pipe(
         props,
-        foldSelectProps(
-          () => inputRef.current?.select(),
-          constVoid,
-          () => inputRef.current?.select()
-        )
+        foldSelectProps({
+          default: () => inputRef.current?.select(),
+          unsearchable: constVoid,
+          async: () => inputRef.current?.select()
+        })
       )
     }
 
@@ -380,7 +371,7 @@ export const Select: Select = forwardRef(
       ),
       nonEmptyArray.fromArray,
       option.fold(() => {
-        const getEmptyItem = (content: LocalizedString): RoutedItem => ({
+        const getEmptyItem: Reader<LocalizedString, RoutedItem> = content => ({
           key: '',
           type: 'routed',
           label: option.none,
@@ -392,11 +383,11 @@ export const Select: Select = forwardRef(
 
         return pipe(
           props,
-          foldSelectProps(
-            ({ emptyPlaceholder }) => [getEmptyItem(emptyPlaceholder)],
-            () => [],
-            ({ emptyPlaceholder }) => [getEmptyItem(emptyPlaceholder)]
-          )
+          foldSelectProps({
+            default: ({ emptyPlaceholder }) => [getEmptyItem(emptyPlaceholder)],
+            unsearchable: () => [],
+            async: ({ emptyPlaceholder }) => [getEmptyItem(emptyPlaceholder)]
+          })
         )
       }, identity)
     )
@@ -415,7 +406,11 @@ export const Select: Select = forwardRef(
             autoComplete="off"
             readOnly={pipe(
               props,
-              foldSelectProps(constFalse, constTrue, constFalse)
+              foldSelectProps({
+                default: constFalse,
+                unsearchable: constTrue,
+                async: constFalse
+              })
             )}
             disabled={props.disabled}
             error={props.error}
@@ -424,11 +419,11 @@ export const Select: Select = forwardRef(
             {props.children}
             {pipe(
               props,
-              foldSelectProps(
-                constFalse,
-                constFalse,
-                ({ isLoading }) => !!isLoading
-              ),
+              foldSelectProps({
+                default: constFalse,
+                unsearchable: constFalse,
+                async: ({ isLoading }) => !!isLoading
+              }),
               boolean.fold(
                 () => (
                   <Icon
