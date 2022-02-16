@@ -121,12 +121,9 @@ export function formatDuration(
   durationMs: number,
   showSeconds = false
 ): LocalizedString {
-  const duration = Math.abs(durationMs)
+  const duration = Math.round(Math.abs(durationMs))
   const hours = Math.floor(duration / 3600000)
-
-  const minutes = showSeconds
-    ? Math.floor((duration - hours * 3600000) / 60000)
-    : Math.ceil((duration - hours * 3600000) / 60000)
+  const minutes = Math.floor((duration - hours * 3600000) / 60000)
 
   const secondsString = showSeconds
     ? ':' +

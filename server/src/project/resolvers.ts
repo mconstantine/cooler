@@ -91,21 +91,23 @@ const getProjectsResolver = createResolver(
     )
 )
 
-const resolvers: Resolvers = {
-  path: '/projects',
-  POST: {
-    '/': createProjectResolver
-  },
-  PUT: {
-    '/:id': updateProjectResolver
-  },
-  DELETE: {
-    '/:id': deleteProjectResolver
-  },
-  GET: {
-    '/:id': getProjectResolver,
-    '/': getProjectsResolver
+const resolvers: Resolvers = [
+  {
+    path: '/projects',
+    POST: {
+      '/': createProjectResolver
+    },
+    PUT: {
+      '/:id': updateProjectResolver
+    },
+    DELETE: {
+      '/:id': deleteProjectResolver
+    },
+    GET: {
+      '/:id': getProjectResolver,
+      '/': getProjectsResolver
+    }
   }
-}
+]
 
 export default resolvers

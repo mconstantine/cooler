@@ -12,26 +12,21 @@ import {
   getSession,
   listSessions,
   createTimesheet,
-  stopSession
+  stopSession,
+  getUserExpectedWorkingHours,
+  getUserActualWorkingHours,
+  getUserBudget,
+  getUserBalance
 } from './model'
 import { Connection } from '../misc/Connection'
 import * as t from 'io-ts'
 import { DateFromISOString, optionFromNullable } from 'io-ts-types'
 import { createResolver } from '../misc/createResolver'
-import { IdInput, PositiveInteger } from '../misc/Types'
+import { IdInput, NonNegativeNumber, PositiveInteger } from '../misc/Types'
 import { pipe } from 'fp-ts/function'
 import { taskEither } from 'fp-ts'
 import { Resolvers } from '../assignResolvers'
-
-export const UserDataFromSessionResolverInput = t.type(
-  {
-    since: optionFromNullable(DateFromISOString)
-  },
-  'UserDataFromSessionResolverInput'
-)
-export type UserDataFromSessionResolverInput = t.TypeOf<
-  typeof UserDataFromSessionResolverInput
->
+import { sequenceS } from 'fp-ts/lib/Apply'
 
 export const TimesheetCreationOutput = t.type(
   { fileLocation: t.string },
@@ -101,30 +96,6 @@ export type TimesheetCreationOutput = t.TypeOf<typeof TimesheetCreationOutput>
 //   ConnectionQueryArgs,
 //   Connection(Session),
 //   getUserOpenSessions
-// )
-
-// const userExpectedWorkingHoursResolver = createResolver<DatabaseUser>(
-//   UserDataFromSessionResolverInput,
-//   t.number,
-//   getUserExpectedWorkingHours
-// )
-
-// const userActualWorkingHoursResolver = createResolver<DatabaseUser>(
-//   UserDataFromSessionResolverInput,
-//   t.number,
-//   getUserActualWorkingHours
-// )
-
-// const userBudgetResolver = createResolver<DatabaseUser>(
-//   UserDataFromSessionResolverInput,
-//   t.number,
-//   getUserBudget
-// )
-
-// const userBalanceResolver = createResolver<DatabaseUser>(
-//   UserDataFromSessionResolverInput,
-//   t.number,
-//   getUserBalance
 // )
 
 const startSessionResolver = createResolver(
@@ -223,23 +194,100 @@ const getSessionsResolver = createResolver(
     )
 )
 
-const resolvers: Resolvers = {
-  path: '/sessions',
-  POST: {
-    '/:id/start': startSessionResolver,
-    '/:id/stop': stopSessionResolver,
-    '/timesheet': createTimesheetResolver
+export const UserStatsQueryInput = t.type(
+  {
+    since: optionFromNullable(DateFromISOString)
   },
-  PUT: {
-    '/:id': updateSessionResolver
+  'UserStatsQueryInput'
+)
+export type UserStatsQueryInput = t.TypeOf<typeof UserStatsQueryInput>
+
+const UserStatsQueryOutput = t.type(
+  {
+    expectedWorkingHours: NonNegativeNumber,
+    actualWorkingHours: NonNegativeNumber,
+    budget: NonNegativeNumber,
+    balance: NonNegativeNumber
   },
-  DELETE: {
-    '/:id': deleteSessionResolver
+  'UserStatsQueryOutput'
+)
+
+export const getUserStatsResolver = createResolver(
+  {
+    query: UserStatsQueryInput,
+    output: UserStatsQueryOutput
   },
-  GET: {
-    '/:id': getSessionResolver,
-    '/': getSessionsResolver
+  ({ query }, context) =>
+    pipe(
+      ensureUser(context),
+      taskEither.chain(user =>
+        pipe(
+          pipe(
+            {
+              expectedWorkingHours: getUserExpectedWorkingHours(user, query),
+              actualWorkingHours: getUserActualWorkingHours(user, query),
+              budget: getUserBudget(user, query),
+              balance: getUserBalance(user, query)
+            },
+            sequenceS(taskEither.taskEither)
+          )
+        )
+      )
+    )
+)
+
+// const userExpectedWorkingHoursResolver = createResolver<DatabaseUser>(
+//   UserDataFromSessionResolverInput,
+//   t.number,
+//   getUserExpectedWorkingHours
+// )
+
+// const userActualWorkingHoursResolver = createResolver<DatabaseUser>(
+//   UserDataFromSessionResolverInput,
+//   t.number,
+//   getUserActualWorkingHours
+// )
+
+// const userBudgetResolver = createResolver<DatabaseUser>(
+//   UserDataFromSessionResolverInput,
+//   t.number,
+//   getUserBudget
+// )
+
+// const userBalanceResolver = createResolver<DatabaseUser>(
+//   UserDataFromSessionResolverInput,
+//   t.number,
+//   getUserBalance
+// )
+
+const resolvers: Resolvers = [
+  {
+    path: '/sessions',
+    POST: {
+      '/:id/start': startSessionResolver,
+      '/:id/stop': stopSessionResolver,
+      '/timesheet': createTimesheetResolver
+    },
+    PUT: {
+      '/:id': updateSessionResolver
+    },
+    DELETE: {
+      '/:id': deleteSessionResolver
+    },
+    GET: {
+      '/:id': getSessionResolver,
+      '/': getSessionsResolver
+    }
+  },
+  {
+    path: '/profile',
+    POST: {},
+    PUT: {},
+    DELETE: {},
+    GET: {
+      '/stats': getUserStatsResolver
+    }
   }
-}
+]
 
 export default resolvers

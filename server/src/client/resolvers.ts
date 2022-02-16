@@ -91,40 +91,23 @@ const getClientsResolver = createResolver(
     )
 )
 
-// const resolvers = {
-//   Client: {
-//     name: clientNameResolver,
-//     user: clientUserResolver
-//   },
-//   User: {
-//     clients: userClientsResolver
-//   },
-//   Mutation: {
-//     createClient: createClientMutation,
-//     updateClient: updateClientMutation,
-//     deleteClient: deleteClientMutation
-//   },
-//   Query: {
-//     client: clientQuery,
-//     clients: clientsQuery
-//   }
-// }
-
-const resolvers: Resolvers = {
-  path: '/clients',
-  POST: {
-    '/': createClientResolver
-  },
-  PUT: {
-    '/:id': updateClientResolver
-  },
-  DELETE: {
-    '/:id': deleteClientResolver
-  },
-  GET: {
-    '/:id': getClientResolver,
-    '/': getClientsResolver
+const resolvers: Resolvers = [
+  {
+    path: '/clients',
+    POST: {
+      '/': createClientResolver
+    },
+    PUT: {
+      '/:id': updateClientResolver
+    },
+    DELETE: {
+      '/:id': deleteClientResolver
+    },
+    GET: {
+      '/:id': getClientResolver,
+      '/': getClientsResolver
+    }
   }
-}
+]
 
 export default resolvers

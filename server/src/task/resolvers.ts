@@ -105,22 +105,24 @@ const getTasksResolver = createResolver(
     )
 )
 
-const resolvers: Resolvers = {
-  path: '/tasks',
-  POST: {
-    '/': createTaskResolver,
-    '/batch': createTasksBatchResolver
-  },
-  PUT: {
-    '/:id': updateTaskResolver
-  },
-  DELETE: {
-    '/:id': deleteTaskResolver
-  },
-  GET: {
-    '/:id': getTaskResolver,
-    '/': getTasksResolver
+const resolvers: Resolvers = [
+  {
+    path: '/tasks',
+    POST: {
+      '/': createTaskResolver,
+      '/batch': createTasksBatchResolver
+    },
+    PUT: {
+      '/:id': updateTaskResolver
+    },
+    DELETE: {
+      '/:id': deleteTaskResolver
+    },
+    GET: {
+      '/:id': getTaskResolver,
+      '/': getTasksResolver
+    }
   }
-}
+]
 
 export default resolvers

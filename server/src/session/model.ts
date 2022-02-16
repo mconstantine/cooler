@@ -39,10 +39,7 @@ import { getProjectById } from '../project/database'
 import { sequenceS } from 'fp-ts/Apply'
 import { getClientById } from '../client/database'
 import { DatabaseProject } from '../project/interface'
-import {
-  TimesheetCreationOutput,
-  UserDataFromSessionResolverInput
-} from './resolvers'
+import { TimesheetCreationOutput, UserStatsQueryInput } from './resolvers'
 import { a18n } from '../misc/a18n'
 
 const TIMESHEETS_PATH = '/public/timesheets'
@@ -680,8 +677,8 @@ export function getUserOpenSessions(
 
 export function getUserExpectedWorkingHours(
   user: DatabaseUser,
-  input: UserDataFromSessionResolverInput
-): TaskEither<CoolerError, number> {
+  input: UserStatsQueryInput
+): TaskEither<CoolerError, NonNegativeNumber> {
   const sql = SQL`
     SELECT IFNULL(SUM(task.expectedWorkingHours), 0) AS expectedWorkingHours
     FROM task
@@ -701,7 +698,7 @@ export function getUserExpectedWorkingHours(
     dbGet(
       sql,
       t.type({
-        expectedWorkingHours: t.number
+        expectedWorkingHours: NonNegativeNumber
       })
     ),
     taskEither.chain(
@@ -715,8 +712,8 @@ export function getUserExpectedWorkingHours(
 
 export function getUserActualWorkingHours(
   user: DatabaseUser,
-  input: UserDataFromSessionResolverInput
-): TaskEither<CoolerError, number> {
+  input: UserStatsQueryInput
+): TaskEither<CoolerError, NonNegativeNumber> {
   const sql = SQL`
     SELECT IFNULL(SUM((
       strftime('%s', session.end_time) - strftime('%s', session.start_time)
@@ -741,7 +738,7 @@ export function getUserActualWorkingHours(
     dbGet(
       sql,
       t.type({
-        actualWorkingHours: t.number
+        actualWorkingHours: NonNegativeNumber
       })
     ),
     taskEither.chain(
@@ -755,8 +752,8 @@ export function getUserActualWorkingHours(
 
 export function getUserBudget(
   user: DatabaseUser,
-  input: UserDataFromSessionResolverInput
-): TaskEither<CoolerError, number> {
+  input: UserStatsQueryInput
+): TaskEither<CoolerError, NonNegativeNumber> {
   const sql = SQL`
     SELECT IFNULL(SUM(expectedWorkingHours * hourlyCost), 0) AS budget
     FROM task
@@ -776,7 +773,7 @@ export function getUserBudget(
     dbGet(
       sql,
       t.type({
-        budget: t.number
+        budget: NonNegativeNumber
       })
     ),
     taskEither.chain(
@@ -790,8 +787,8 @@ export function getUserBudget(
 
 export function getUserBalance(
   user: DatabaseUser,
-  input: UserDataFromSessionResolverInput
-): TaskEither<CoolerError, number> {
+  input: UserStatsQueryInput
+): TaskEither<CoolerError, NonNegativeNumber> {
   const sql = SQL`
     SELECT IFNULL(SUM((
       strftime('%s', session.end_time) - strftime('%s', session.start_time)
@@ -816,7 +813,7 @@ export function getUserBalance(
     dbGet(
       sql,
       t.type({
-        balance: t.number
+        balance: NonNegativeNumber
       })
     ),
     taskEither.chain(

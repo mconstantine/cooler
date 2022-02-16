@@ -67,21 +67,23 @@ const getTaxesResolver = createResolver(
     )
 )
 
-const resolvers: Resolvers = {
-  path: '/taxes',
-  POST: {
-    '/': createTaxResolver
-  },
-  PUT: {
-    '/:id': updateTaxResolver
-  },
-  DELETE: {
-    '/:id': deleteTaxResolver
-  },
-  GET: {
-    '/:id': getTaxResolver,
-    '/': getTaxesResolver
+const resolvers: Resolvers = [
+  {
+    path: '/taxes',
+    POST: {
+      '/': createTaxResolver
+    },
+    PUT: {
+      '/:id': updateTaxResolver
+    },
+    DELETE: {
+      '/:id': deleteTaxResolver
+    },
+    GET: {
+      '/:id': getTaxResolver,
+      '/': getTaxesResolver
+    }
   }
-}
+]
 
 export default resolvers

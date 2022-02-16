@@ -7,22 +7,14 @@ import {
 import {
   makeDeleteRequest,
   makeGetRequest,
-  makePostRequest,
   makePutRequest
 } from '../../effects/api/useApi'
-import { TaxCreationInput, TaxUpdateInput } from '../../entities/Tax'
 import {
   EmailString,
   LocalizedString,
-  Percentage,
+  NonNegativeNumber,
   PositiveInteger
 } from '../../globalDomain'
-
-const Tax = t.type({
-  id: PositiveInteger,
-  label: LocalizedString,
-  value: Percentage
-})
 
 const Profile = t.type(
   {
@@ -36,10 +28,34 @@ const Profile = t.type(
 )
 export type Profile = t.TypeOf<typeof Profile>
 
+const ProfileStatsQueryInput = t.type(
+  {
+    since: DateFromISOString
+  },
+  'ProfileStatsQueryInput'
+)
+export type ProfileStatsQueryInput = t.TypeOf<typeof ProfileStatsQueryInput>
+
+const ProfileStats = t.type(
+  {
+    expectedWorkingHours: NonNegativeNumber,
+    actualWorkingHours: NonNegativeNumber,
+    budget: NonNegativeNumber,
+    balance: NonNegativeNumber
+  },
+  'UserStatsQueryOutput'
+)
+
 export const getProfileRequest = makeGetRequest({
   url: '/profile',
   inputCodec: t.void,
   outputCodec: Profile
+})
+
+export const getProfileStatsRequest = makeGetRequest({
+  url: '/profile/stats',
+  inputCodec: ProfileStatsQueryInput,
+  outputCodec: ProfileStats
 })
 
 export const ProfileUpdateInput = t.type(
@@ -63,23 +79,3 @@ export const deleteProfileRequest = makeDeleteRequest({
   inputCodec: t.void,
   outputCodec: Profile
 })
-
-export const createTaxRequest = makePostRequest({
-  url: '/taxes',
-  inputCodec: TaxCreationInput,
-  outputCodec: Tax
-})
-
-export const makeUdateTaxRequest = (id: PositiveInteger) =>
-  makePutRequest({
-    url: `/taxes/${id}`,
-    inputCodec: TaxUpdateInput,
-    outputCodec: Tax
-  })
-
-export const makeDeleteTaxRequest = (id: PositiveInteger) =>
-  makeDeleteRequest({
-    url: `/taxes/${id}`,
-    inputCodec: t.void,
-    outputCodec: Tax
-  })

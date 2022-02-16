@@ -82,22 +82,24 @@ const profileQueryResolver = createResolver(
     )
 )
 
-const resolvers: Resolvers = {
-  path: '/profile',
-  POST: {
-    '/': createUserResolver,
-    '/login': loginUserResolver,
-    '/refreshToken': refreshTokenResolver
-  },
-  PUT: {
-    '/': updateProfileResolver
-  },
-  DELETE: {
-    '/': deleteProfileResolver
-  },
-  GET: {
-    '/': profileQueryResolver
+const resolvers: Resolvers = [
+  {
+    path: '/profile',
+    POST: {
+      '/': createUserResolver,
+      '/login': loginUserResolver,
+      '/refreshToken': refreshTokenResolver
+    },
+    PUT: {
+      '/': updateProfileResolver
+    },
+    DELETE: {
+      '/': deleteProfileResolver
+    },
+    GET: {
+      '/': profileQueryResolver
+    }
   }
-}
+]
 
 export default resolvers
