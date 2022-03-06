@@ -7,7 +7,7 @@ import {
   flow,
   identity,
   Lazy,
-  pipe,
+  pipe
 } from 'fp-ts/function'
 import { Monoid } from 'fp-ts/Monoid'
 import { Semigroup } from 'fp-ts/Semigroup'
@@ -23,7 +23,7 @@ import {
   option,
   separated,
   readonlyArray,
-  readonlyNonEmptyArray,
+  readonlyNonEmptyArray
 } from 'fp-ts'
 import { Option } from 'fp-ts/Option'
 import { Either } from 'fp-ts/Either'
@@ -32,12 +32,12 @@ import {
   apFirst as apFirst_,
   Apply2,
   apS as apS_,
-  apSecond as apSecond_,
+  apSecond as apSecond_
 } from 'fp-ts/Apply'
 import {
   Applicative as ApplicativeHKT,
   Applicative2,
-  Applicative2C,
+  Applicative2C
 } from 'fp-ts/Applicative'
 import { bind as bind_, Chain2, chainFirst as chainFirst_ } from 'fp-ts/Chain'
 import { Foldable2 } from 'fp-ts/Foldable'
@@ -52,7 +52,7 @@ import {
   FromEither2,
   fromOption as fromOption_,
   fromOptionK as fromOptionK_,
-  fromPredicate as fromPredicate_,
+  fromPredicate as fromPredicate_
 } from 'fp-ts/FromEither'
 import { flap as flap_, bindTo as bindTo_, Functor2 } from 'fp-ts/Functor'
 import { Refinement } from 'fp-ts/Refinement'
@@ -77,17 +77,17 @@ export interface Left<E> {
 export type Query<E, A> = Loading | Right<A> | Left<E>
 
 export const loading = <E = never, A = never>(): Query<E, A> => ({
-  _tag: 'Loading',
+  _tag: 'Loading'
 })
 
 export const left = <E = never, A = never>(left: E): Query<E, A> => ({
   _tag: 'Left',
-  left,
+  left
 })
 
 export const right = <E = never, A = never>(right: A): Query<E, A> => ({
   _tag: 'Right',
-  right,
+  right
 })
 
 export const URI = 'Query'
@@ -113,10 +113,10 @@ const _reduceRight: Foldable2<URI>['reduceRight'] = (fa, b, f) =>
   pipe(fa, reduceRight(b, f))
 
 const _traverse = <F>(
-  F: ApplicativeHKT<F>,
+  F: ApplicativeHKT<F>
 ): (<E, A, B>(
   ta: Query<E, A>,
-  f: (a: A) => HKT<F, B>,
+  f: (a: A) => HKT<F, B>
 ) => HKT<F, Query<E, B>>) => {
   const traverseF = traverse(F)
   return (ta, f) => pipe(ta, traverseF(f))
@@ -129,8 +129,8 @@ export const getShow = <E, A>(SE: Show<E>, SA: Show<A>): Show<Query<E, A>> => ({
   show: fold(
     () => 'loading',
     left => `left(${SE.show(left)})`,
-    right => `right(${SA.show(right)})`,
-  ),
+    right => `right(${SA.show(right)})`
+  )
 })
 
 export const getEq = <E, A>(EL: Eq<E>, EA: Eq<A>): Eq<Query<E, A>> => ({
@@ -142,19 +142,19 @@ export const getEq = <E, A>(EL: Eq<E>, EA: Eq<A>): Eq<Query<E, A>> => ({
         ex =>
           pipe(
             y,
-            fold(constFalse, ey => EL.equals(ex, ey), constFalse),
+            fold(constFalse, ey => EL.equals(ex, ey), constFalse)
           ),
         ax =>
           pipe(
             y,
-            fold(constFalse, constFalse, ay => EA.equals(ax, ay)),
-          ),
-      ),
-    ),
+            fold(constFalse, constFalse, ay => EA.equals(ax, ay))
+          )
+      )
+    )
 })
 
 export const getSemigroup = <E, A>(
-  S: Semigroup<A>,
+  S: Semigroup<A>
 ): Semigroup<Query<E, A>> => ({
   concat: (x, y) =>
     pipe(
@@ -163,11 +163,11 @@ export const getSemigroup = <E, A>(
         pipe(
           y,
           chain(ay => right(S.concat(ax, ay))),
-          orElse(() => x),
-        ),
+          orElse(() => x)
+        )
       ),
-      orElse(() => y),
-    ),
+      orElse(() => y)
+    )
 })
 
 export const getCompactable = <E>(M: Monoid<E>): Compactable2C<URI, E> => {
@@ -182,9 +182,9 @@ export const getCompactable = <E>(M: Monoid<E>): Compactable2C<URI, E> => {
         chain(
           option.fold(
             () => empty,
-            a => right(a),
-          ),
-        ),
+            a => right(a)
+          )
+        )
       ),
     separate: <A, B>(ma: Query<any, Either<A, B>>) =>
       pipe(
@@ -197,11 +197,11 @@ export const getCompactable = <E>(M: Monoid<E>): Compactable2C<URI, E> => {
               a,
               either.fold<A, B, Separated<Query<E, A>, Query<E, B>>>(
                 e => separated.separated(right(e), empty as Query<E, B>),
-                a => separated.separated(empty as Query<E, A>, right(a)),
-              ),
-            ),
-        ),
-      ),
+                a => separated.separated(empty as Query<E, A>, right(a))
+              )
+            )
+        )
+      )
   }
 }
 
@@ -218,15 +218,15 @@ export const getFilterable = <E>(M: Monoid<E>): Filterable2C<URI, E> => {
           predicate,
           boolean.fold(
             () => empty,
-            () => ma,
-          ),
-        ),
-      ),
+            () => ma
+          )
+        )
+      )
     )
 
   const partition = <A>(
     ma: Query<E, A>,
-    predicate: Predicate<A>,
+    predicate: Predicate<A>
   ): Separated<Query<E, A>, Query<E, A>> => {
     return pipe(
       ma,
@@ -235,11 +235,11 @@ export const getFilterable = <E>(M: Monoid<E>): Filterable2C<URI, E> => {
           predicate(a),
           boolean.fold<Separated<Query<E, A>, Query<E, A>>>(
             () => separated.separated(right(a), empty),
-            () => separated.separated(empty, right(a)),
-          ),
-        ),
+            () => separated.separated(empty, right(a))
+          )
+        )
       ),
-      getOrElse(() => separated.separated(ma, ma)),
+      getOrElse(() => separated.separated(ma, ma))
     )
   }
 
@@ -256,10 +256,10 @@ export const getFilterable = <E>(M: Monoid<E>): Filterable2C<URI, E> => {
         chain(
           flow(
             f,
-            option.fold(() => empty as Query<E, B>, right),
-          ),
+            option.fold(() => empty as Query<E, B>, right)
+          )
         ),
-        orElse(() => ma as Query<E, B>),
+        orElse(() => ma as Query<E, B>)
       ),
     partition,
     partitionMap: <E, A, B, C>(ma: Query<E, A>, f: Reader<A, Either<B, C>>) =>
@@ -273,11 +273,11 @@ export const getFilterable = <E>(M: Monoid<E>): Filterable2C<URI, E> => {
               f(a),
               either.fold(
                 e => separated.separated(right(e), empty as Query<E, C>),
-                a => separated.separated(empty as Query<E, B>, right(a)),
-              ),
-            ),
-        ),
-      ),
+                a => separated.separated(empty as Query<E, B>, right(a))
+              )
+            )
+        )
+      )
   }
 }
 
@@ -300,12 +300,12 @@ export const getWitherable = <E>(M: Monoid<E>): Witherable2C<URI, E> => {
     foldMap: _foldMap,
     reduceRight: _reduceRight,
     wither: witherDefault(Traversable, C),
-    wilt: wiltDefault(Traversable, C),
+    wilt: wiltDefault(Traversable, C)
   }
 }
 
 export const getApplicativeValidation = <E>(
-  SE: Semigroup<E>,
+  SE: Semigroup<E>
 ): Applicative2C<URI, E> => ({
   URI,
   _E: undefined as any,
@@ -321,8 +321,8 @@ export const getApplicativeValidation = <E>(
             foldF(
               identity,
               fa => left(SE.concat(fab.left, fa.left)),
-              () => fab,
-            ),
+              () => fab
+            )
           ),
         fab =>
           pipe(
@@ -330,12 +330,12 @@ export const getApplicativeValidation = <E>(
             foldF(
               identity,
               fa => left(fa.left),
-              fa => right(fab.right(fa.right)),
-            ),
-          ),
-      ),
+              fa => right(fab.right(fa.right))
+            )
+          )
+      )
     ),
-  of,
+  of
 })
 
 export const getAltValidation = <E>(SE: Semigroup<E>): Alt2C<URI, E> => ({
@@ -355,13 +355,13 @@ export const getAltValidation = <E>(SE: Semigroup<E>): Alt2C<URI, E> => ({
             foldF<E, A, Query<E, A>>(
               identity,
               ea => left(SE.concat(me.left, ea.left)),
-              identity,
-            ),
+              identity
+            )
           )
         },
-        identity,
-      ),
-    ),
+        identity
+      )
+    )
 })
 
 export const map =
@@ -371,14 +371,14 @@ export const map =
 
 export const Functor: Functor2<URI> = {
   URI,
-  map: _map,
+  map: _map
 }
 
 export const of: <E = never, A = never>(a: A) => Query<E, A> = right
 
 export const Pointed: Pointed2<URI> = {
   URI,
-  of,
+  of
 }
 
 export const apW =
@@ -387,25 +387,25 @@ export const apW =
     pipe(
       fab,
       chain<E1 | E2, Reader<A, B>, B>(f =>
-        pipe(fa, chain<E2, A, B>(flow(f, right))),
-      ),
+        pipe(fa, chain<E2, A, B>(flow(f, right)))
+      )
     )
 
 export const ap: <E, A>(
-  fa: Query<E, A>,
+  fa: Query<E, A>
 ) => <B>(fab: Query<E, Reader<A, B>>) => Query<E, B> = apW
 
 export const Apply: Apply2<URI> = {
   URI,
   map: _map,
-  ap: _ap,
+  ap: _ap
 }
 
 export const Applicative: Applicative2<URI> = {
   URI,
   map: _map,
   ap: _ap,
-  of,
+  of
 }
 
 export const chainW =
@@ -414,14 +414,14 @@ export const chainW =
     pipe(ma, fold<E1, A, Query<E1 | E2, B>>(loading, left, f))
 
 export const chain: <E, A, B>(
-  f: Reader<A, Query<E, B>>,
+  f: Reader<A, Query<E, B>>
 ) => Reader<Query<E, A>, Query<E, B>> = chainW
 
 export const Chain: Chain2<URI> = {
   URI,
   map: _map,
   ap: _ap,
-  chain: _chain,
+  chain: _chain
 }
 
 export const Monad: Monad2<URI> = {
@@ -429,43 +429,43 @@ export const Monad: Monad2<URI> = {
   map: _map,
   ap: _ap,
   of,
-  chain: _chain,
+  chain: _chain
 }
 
 export const reduce: <A, B>(
   b: B,
-  f: (b: B, a: A) => B,
+  f: (b: B, a: A) => B
 ) => <E>(fa: Query<E, A>) => B = (b, f) => fa =>
   pipe(
     fa,
     map(a => f(b, a)),
-    getOrElse(() => b),
+    getOrElse(() => b)
   )
 
 export const foldMap: <M>(
-  M: Monoid<M>,
+  M: Monoid<M>
 ) => <A>(f: Reader<A, M>) => <E>(fa: Query<E, A>) => M = M => f => fa =>
   pipe(
     fa,
     map(f),
-    getOrElse(() => M.empty),
+    getOrElse(() => M.empty)
   )
 
 export const reduceRight: <A, B>(
   b: B,
-  f: (a: A, b: B) => B,
+  f: (a: A, b: B) => B
 ) => <E>(fa: Query<E, A>) => B = (b, f) => fa =>
   pipe(
     fa,
     map(a => f(a, b)),
-    getOrElse(() => b),
+    getOrElse(() => b)
   )
 
 export const Foldable: Foldable2<URI> = {
   URI,
   reduce: _reduce,
   foldMap: _foldMap,
-  reduceRight: _reduceRight,
+  reduceRight: _reduceRight
 }
 
 export const traverse: PipeableTraverse2<URI> =
@@ -477,8 +477,8 @@ export const traverse: PipeableTraverse2<URI> =
       fold(
         () => F.of(loading()),
         flow(left, F.of),
-        a => F.map(f(a), right),
-      ),
+        a => F.map(f(a), right)
+      )
     )
 
 export const sequence: Traversable2<URI>['sequence'] =
@@ -489,8 +489,8 @@ export const sequence: Traversable2<URI>['sequence'] =
       fold(
         () => F.of(loading()),
         flow(left, F.of),
-        a => F.map(a, right),
-      ),
+        a => F.map(a, right)
+      )
     )
 
 export const Traversable: Traversable2<URI> = {
@@ -500,7 +500,7 @@ export const Traversable: Traversable2<URI> = {
   foldMap: _foldMap,
   reduceRight: _reduceRight,
   traverse: _traverse,
-  sequence,
+  sequence
 }
 
 export const altW =
@@ -509,13 +509,13 @@ export const altW =
     pipe(fa, orElse<E1, A | B, E2>(that))
 
 export const alt: <E, A>(
-  that: Lazy<Query<E, A>>,
+  that: Lazy<Query<E, A>>
 ) => (fa: Query<E, A>) => Query<E, A> = altW
 
 export const Alt: Alt2<URI> = {
   URI,
   map: _map,
-  alt: _alt,
+  alt: _alt
 }
 
 export const extend =
@@ -526,7 +526,7 @@ export const extend =
 export const Extend: Extend2<URI> = {
   URI,
   map: _map,
-  extend: _extend,
+  extend: _extend
 }
 
 export const throwError: MonadThrow2<URI>['throwError'] = left
@@ -537,12 +537,12 @@ export const MonadThrow: MonadThrow2<URI> = {
   ap: _ap,
   of,
   chain: _chain,
-  throwError,
+  throwError
 }
 
 export const FromEither: FromEither2<URI> = {
   URI,
-  fromEither: identity,
+  fromEither: identity
 }
 
 export const fromPredicate = fromPredicate_(FromEither)
@@ -560,7 +560,7 @@ export const isLoading = (ma: Query<unknown, unknown>): ma is Loading =>
 export const matchFW: <E, A, B, C>(
   onLoading: Reader<Loading, B | C>,
   onLeft: Reader<Left<E>, B>,
-  onRight: Reader<Right<A>, C>,
+  onRight: Reader<Right<A>, C>
 ) => Reader<Query<E, A>, B | C> = (onLoading, onLeft, onRight) => ma => {
   switch (ma._tag) {
     case 'Loading':
@@ -575,30 +575,30 @@ export const matchFW: <E, A, B, C>(
 export const matchW: <E, B, A, C>(
   onLoading: IO<B | C>,
   onLeft: Reader<E, B>,
-  onRight: Reader<A, C>,
+  onRight: Reader<A, C>
 ) => Reader<Query<E, A>, B | C> = (onLoading, onLeft, onRight) =>
   matchFW(
     onLoading,
     ({ left }) => onLeft(left),
-    ({ right }) => onRight(right),
+    ({ right }) => onRight(right)
   )
 
 export const matchF: <E, A, B>(
   onLoading: Reader<Loading, B>,
   onLeft: Reader<Left<E>, B>,
-  onRight: Reader<Right<A>, B>,
+  onRight: Reader<Right<A>, B>
 ) => Reader<Query<E, A>, B> = matchFW
 
 export const match: <E, A, B>(
   onLoading: IO<B>,
   onLeft: Reader<E, B>,
-  onRight: Reader<A, B>,
+  onRight: Reader<A, B>
 ) => Reader<Query<E, A>, B> = matchW
 
 export const foldF: <E, A, B>(
   onLoading: Reader<Loading, B>,
   onLeft: Reader<Left<E>, B>,
-  onRight: Reader<Right<A>, B>,
+  onRight: Reader<Right<A>, B>
 ) => Reader<Query<E, A>, B> = matchF
 
 export const foldW = matchW
@@ -606,7 +606,7 @@ export const foldW = matchW
 export const fold: <E, A, B>(
   onLoading: IO<B>,
   onLeft: Reader<E, B>,
-  onRight: Reader<A, B>,
+  onRight: Reader<A, B>
 ) => Reader<Query<E, A>, B> = match
 
 export const getOrElseW =
@@ -622,15 +622,15 @@ export const apFirst = apFirst_(Apply)
 export const apSecond = apSecond_(Apply)
 
 export const chainFirst: <E, A, B>(
-  f: Reader<A, Query<E, B>>,
+  f: Reader<A, Query<E, B>>
 ) => Reader<Query<E, A>, Query<E, A>> = chainFirst_(Chain)
 
 export const chainFirstW: <E2, A, B>(
-  f: Reader<A, Query<E2, B>>,
+  f: Reader<A, Query<E2, B>>
 ) => <E1>(ma: Query<E1, A>) => Query<E1 | E2, A> = chainFirst as any
 
 export const flattenW: <E1, E2, A>(
-  mma: Query<E1, Either<E2, A>>,
+  mma: Query<E1, Either<E2, A>>
 ) => Query<E1 | E2, A> = chainW(identity)
 
 export const flatten: <E, A>(mma: Query<E, Either<E, A>>) => Query<E, A> =
@@ -645,15 +645,15 @@ export const filterOrElse = filterOrElse_(FromEither, Chain)
 
 export const filterOrElseW: {
   <A, B extends A, E2>(refinement: Refinement<A, B>, onFalse: Reader<A, E2>): <
-    E1,
+    E1
   >(
-    ma: Query<E1, A>,
+    ma: Query<E1, A>
   ) => Query<E1 | E2, B>
   <A, E2>(predicate: Predicate<A>, onFalse: Reader<A, E2>): <E1, B extends A>(
-    mb: Query<E1, B>,
+    mb: Query<E1, B>
   ) => Query<E1 | E2, B>
   <A, E2>(predicate: Predicate<A>, onFalse: Reader<A, E2>): <E1>(
-    ma: Query<E1, A>,
+    ma: Query<E1, A>
   ) => Query<E1 | E2, A>
 } = filterOrElse
 
@@ -666,7 +666,7 @@ export const orElseW =
     pipe(ma, fold<E1, A, Query<E2, A | B>>(loading, onLeft, right))
 
 export const orElse: <E1, A, E2>(
-  onLeft: Reader<E1, Query<E2, A>>,
+  onLeft: Reader<E1, Query<E2, A>>
 ) => Reader<Query<E1, A>, Query<E2, A>> = orElseW
 
 export const fromNullable =
@@ -676,7 +676,7 @@ export const fromNullable =
 
 export const tryCatch = <E, A>(
   f: Lazy<A>,
-  onThrow: Reader<unknown, E>,
+  onThrow: Reader<unknown, E>
 ): Query<E, A> => {
   try {
     return right(f())
@@ -688,25 +688,27 @@ export const tryCatch = <E, A>(
 export const tryCatchK =
   <A extends ReadonlyArray<unknown>, B, E>(
     f: (...a: A) => B,
-    onThrow: (error: unknown) => E,
+    onThrow: (error: unknown) => E
   ): ((...a: A) => Query<E, B>) =>
   (...a) =>
     tryCatch(() => f(...a), onThrow)
 
 export const fromNullableK =
   <E>(
-    e: E,
+    e: E
   ): (<A extends ReadonlyArray<unknown>, B>(
-    f: (...a: A) => B | null | undefined,
+    f: (...a: A) => B | null | undefined
   ) => (...a: A) => Query<E, NonNullable<B>>) =>
   f =>
     flow(f, fromNullable(e))
 
+export const fromIO = <E, A>(io: IO<A>): Query<E, A> => right(io())
+
 export const chainNullableK =
   <E>(
-    e: E,
+    e: E
   ): (<A, B>(
-    f: Reader<A, B | null | undefined>,
+    f: Reader<A, B | null | undefined>
   ) => Reader<Query<E, A>, Query<E, NonNullable<B>>>) =>
   f =>
     chain(pipe(f, fromNullableK(e)))
@@ -720,7 +722,7 @@ export function elem<A>(E: Eq<A>): {
   <E>(a: A, ma: Query<E, A>): boolean
 }
 export function elem<A>(
-  E: Eq<A>,
+  E: Eq<A>
 ): <E>(a: A, ma?: Query<E, A>) => boolean | ((ma: Query<E, A>) => boolean) {
   return (a, ma?) => {
     if (ma === undefined) {
@@ -731,7 +733,7 @@ export function elem<A>(
     return pipe(
       ma,
       map(b => E.equals(a, b)),
-      getOrElse(constFalse),
+      getOrElse(constFalse)
     )
   }
 }
@@ -747,9 +749,9 @@ export const bind = bind_(Chain)
 
 export const bindW: <N extends string, A, E2, B>(
   name: Exclude<N, keyof A>,
-  f: Reader<A, Query<E2, B>>,
+  f: Reader<A, Query<E2, B>>
 ) => <E1>(
-  fa: Query<E1, A>,
+  fa: Query<E1, A>
 ) => Query<
   E1 | E2,
   { readonly [K in keyof A | N]: K extends keyof A ? A[K] : B }
@@ -759,9 +761,9 @@ export const apS = apS_(Apply)
 
 export const apSW: <A, N extends string, E2, B>(
   name: Exclude<N, keyof A>,
-  fb: Query<E2, B>,
+  fb: Query<E2, B>
 ) => <E1>(
-  fa: Query<E1, A>,
+  fa: Query<E1, A>
 ) => Query<
   E1 | E2,
   { readonly [K in keyof A | N]: K extends keyof A ? A[K] : B }
@@ -771,7 +773,7 @@ export const ApT: Query<never, readonly []> = of([])
 
 export const traverseReadonlyNonEmptyArrayWithIndex =
   <A, E, B>(
-    f: (index: number, a: A) => Query<E, B>,
+    f: (index: number, a: A) => Query<E, B>
   ): Reader<ReadonlyNonEmptyArray<A>, Query<E, ReadonlyNonEmptyArray<B>>> =>
   as =>
     pipe(
@@ -793,11 +795,11 @@ export const traverseReadonlyNonEmptyArrayWithIndex =
         }
 
         return right(res)
-      }),
+      })
     )
 
 export const traverseReadonlyArrayWithIndex = <A, E, B>(
-  f: (index: number, a: A) => Query<E, B>,
+  f: (index: number, a: A) => Query<E, B>
 ): Reader<ReadonlyArray<A>, Query<E, ReadonlyArray<B>>> => {
   const g = traverseReadonlyNonEmptyArrayWithIndex(f)
 
@@ -806,17 +808,17 @@ export const traverseReadonlyArrayWithIndex = <A, E, B>(
 }
 
 export const traverseArrayWithIndex: <E, A, B>(
-  f: (index: number, a: A) => Query<E, B>,
+  f: (index: number, a: A) => Query<E, B>
 ) => Reader<ReadonlyArray<A>, Query<E, ReadonlyArray<B>>> =
   traverseReadonlyArrayWithIndex
 
 export const traverseArray = <E, A, B>(
-  f: Reader<A, Query<E, B>>,
+  f: Reader<A, Query<E, B>>
 ): Reader<ReadonlyArray<A>, Query<E, ReadonlyArray<B>>> =>
   traverseReadonlyArrayWithIndex((_, a) => f(a))
 
 export const sequenceArray: <E, A>(
-  as: ReadonlyArray<Query<E, A>>,
+  as: ReadonlyArray<Query<E, A>>
 ) => Query<E, ReadonlyArray<A>> = traverseArray(identity)
 
 export const query: Monad2<URI> &
@@ -837,5 +839,5 @@ export const query: Monad2<URI> &
   sequence,
   alt: _alt,
   extend: _extend,
-  throwError: throwError,
+  throwError: throwError
 }

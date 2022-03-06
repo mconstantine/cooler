@@ -1,11 +1,11 @@
 import * as t from 'io-ts'
 import { NonEmptyString } from 'io-ts-types'
-import { NonNegativeInteger } from './Types'
+import { NonNegativeIntegerFromString } from './Types'
 
 export const ConnectionQueryArgs = t.partial(
   {
-    first: NonNegativeInteger,
-    last: NonNegativeInteger,
+    first: NonNegativeIntegerFromString,
+    last: NonNegativeIntegerFromString,
     before: NonEmptyString,
     after: NonEmptyString,
     orderBy: NonEmptyString

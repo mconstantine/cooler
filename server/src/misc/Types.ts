@@ -198,6 +198,26 @@ export type PositiveIntegerFromString = t.TypeOf<
   typeof PositiveIntegerFromString
 >
 
+export const NonNegativeIntegerFromString: t.Type<
+  NonNegativeInteger,
+  string,
+  unknown
+> = new t.Type(
+  'NonNegativeIntegerFromString',
+  NonNegativeInteger.is,
+  (u, c) =>
+    pipe(
+      IntFromString.decode(u),
+      either.chain(n =>
+        n >= 0 ? t.success(n as NonNegativeInteger) : t.failure(u, c)
+      )
+    ),
+  n => n.toString(10)
+)
+export type NonNegativeIntegerFromString = t.TypeOf<
+  typeof NonNegativeIntegerFromString
+>
+
 export const IdInput = t.type(
   {
     id: PositiveIntegerFromString
