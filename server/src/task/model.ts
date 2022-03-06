@@ -3,19 +3,20 @@ import {
   TasksBatchCreationInput,
   TaskCreationInput,
   TaskUpdateInput,
-  DatabaseTask
+  DatabaseTask,
+  TaskWithProject
 } from './interface'
 import { dbGetAll } from '../misc/dbUtils'
 import SQL from 'sql-template-strings'
 import { ConnectionQueryArgs } from '../misc/ConnectionQueryArgs'
 import { queryToConnection } from '../misc/queryToConnection'
-import { DatabaseUser, User } from '../user/interface'
+import { User } from '../user/interface'
 import { Connection } from '../misc/Connection'
 import { DatabaseProject, Project } from '../project/interface'
 import { TaskEither } from 'fp-ts/TaskEither'
 import { constVoid, flow, pipe } from 'fp-ts/function'
 import { getProjectById } from '../project/database'
-import { option, taskEither } from 'fp-ts'
+import { array, option, taskEither } from 'fp-ts'
 import {
   CoolerError,
   coolerError,
@@ -36,8 +37,10 @@ import {
 import * as t from 'io-ts'
 import { TasksConnectionQueryArgs } from './resolvers'
 import { a18n } from '../misc/a18n'
+import { sequenceS } from 'fp-ts/Apply'
+import { getTaskActualWorkingHours } from '../session/model'
 
-const UserTasksConnectionQueryArgs = t.intersection(
+export const UserTasksConnectionQueryArgs = t.intersection(
   [
     ConnectionQueryArgs,
     t.type({
@@ -415,10 +418,12 @@ export function getTaskProject(
 }
 
 export function getUserTasks(
-  user: DatabaseUser,
-  args: UserTasksConnectionQueryArgs
-): TaskEither<CoolerError, Connection<Task>> {
-  const rest = SQL`
+  args: UserTasksConnectionQueryArgs,
+  user: User
+): TaskEither<CoolerError, TaskWithProject[]> {
+  let query = SQL`
+    SELECT task.*, project.id AS project, client.user
+    FROM task
     JOIN project ON project.id = task.project
     JOIN client ON project.client = client.id
     WHERE client.user = ${user.id}
@@ -429,7 +434,7 @@ export function getUserTasks(
     option.fold(
       constVoid,
       flow(DateFromSQLDate.encode, from =>
-        rest.append(SQL` AND start_time >= ${from}`)
+        query.append(SQL` AND start_time >= ${from}`)
       )
     )
   )
@@ -439,17 +444,37 @@ export function getUserTasks(
     option.fold(
       constVoid,
       flow(DateFromSQLDate.encode, to =>
-        rest.append(SQL` AND start_time <= ${to}`)
+        query.append(SQL` AND start_time <= ${to}`)
       )
     )
   )
 
-  return queryToConnection(
-    args,
-    ['task.*, client.user'],
-    'task',
-    DatabaseTask,
-    rest
+  query.append(SQL` ORDER BY task.name DESC, project.name DESC`)
+
+  return pipe(
+    dbGetAll(query, DatabaseTask),
+    taskEither.chain(
+      flow(
+        array.map(task =>
+          pipe(
+            {
+              project: getTaskProject(task),
+              actualWorkingHours: getTaskActualWorkingHours(task)
+            },
+            sequenceS(taskEither.taskEither),
+            taskEither.map(({ project, actualWorkingHours }) => ({
+              ...task,
+              actualWorkingHours,
+              project: {
+                id: project.id,
+                name: project.name
+              }
+            }))
+          )
+        ),
+        array.sequence(taskEither.taskEither)
+      )
+    )
   )
 }
 

@@ -15,6 +15,7 @@ import {
   NonNegativeNumber,
   PositiveInteger
 } from '../../globalDomain'
+import { Task } from '../../entities/Task'
 
 const Profile = t.type(
   {
@@ -78,4 +79,18 @@ export const deleteProfileRequest = makeDeleteRequest({
   url: '/profile',
   inputCodec: t.void,
   outputCodec: Profile
+})
+
+const TasksDueTodayInput = t.type(
+  {
+    from: DateFromISOString,
+    to: DateFromISOString
+  },
+  'TasksDueTodayInput'
+)
+
+export const getTasksDueTodayRequest = makeGetRequest({
+  url: '/tasks/due',
+  inputCodec: TasksDueTodayInput,
+  outputCodec: t.array(Task)
 })

@@ -167,14 +167,17 @@ describe('getTodayTasks', () => {
     const now = new Date()
 
     await pipe(
-      getUserTasks(user1, {
-        from: option.some(
-          new Date(now.getFullYear(), now.getMonth(), now.getDate())
-        ),
-        to: option.some(
-          new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1)
-        )
-      }),
+      getUserTasks(
+        {
+          from: option.some(
+            new Date(now.getFullYear(), now.getMonth(), now.getDate())
+          ),
+          to: option.some(
+            new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1)
+          )
+        },
+        user1
+      ),
       testTaskEither(connection => {
         const tasks = getConnectionNodes(connection)
 

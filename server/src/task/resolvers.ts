@@ -2,7 +2,8 @@ import {
   Task,
   TaskCreationInput,
   TasksBatchCreationInput,
-  TaskUpdateInput
+  TaskUpdateInput,
+  TaskWithProject
 } from './interface'
 import { Project } from '../project/interface'
 import {
@@ -11,7 +12,9 @@ import {
   updateTask,
   deleteTask,
   getTask,
-  createTasksBatch
+  createTasksBatch,
+  UserTasksConnectionQueryArgs,
+  getUserTasks
 } from './model'
 import { ConnectionQueryArgs } from '../misc/ConnectionQueryArgs'
 import { ensureUser } from '../misc/ensureUser'
@@ -105,6 +108,18 @@ const getTasksResolver = createResolver(
     )
 )
 
+const getTasksDueResolver = createResolver(
+  {
+    query: UserTasksConnectionQueryArgs,
+    output: t.array(TaskWithProject)
+  },
+  ({ query }, context) =>
+    pipe(
+      ensureUser(context),
+      taskEither.chain(user => getUserTasks(query, user))
+    )
+)
+
 const resolvers: Resolvers = [
   {
     path: '/tasks',
@@ -119,6 +134,7 @@ const resolvers: Resolvers = [
       '/:id': deleteTaskResolver
     },
     GET: {
+      '/due': getTasksDueResolver,
       '/:id': getTaskResolver,
       '/': getTasksResolver
     }

@@ -17,38 +17,76 @@ const TaskCommonData = t.type(
     name: NonEmptyString,
     description: optionFromNullable(NonEmptyString),
     expectedWorkingHours: NonNegativeNumber,
-    hourlyCost: NonNegativeNumber,
-    project: PositiveInteger
+    hourlyCost: NonNegativeNumber
   },
   'TaskCommonData'
 )
 
-export const Task = t.intersection(
+const SimpleTaskData = t.intersection(
   [
     TaskCommonData,
     t.type({
-      start_time: DateFromISOString,
-      created_at: DateFromISOString,
-      updated_at: DateFromISOString
+      project: PositiveInteger
     })
   ],
-  'Task'
+  'SimpleTaskData'
 )
+
+const TaskWithProjectData = t.intersection(
+  [
+    TaskCommonData,
+    t.type({
+      project: t.type(
+        {
+          id: PositiveInteger,
+          name: NonEmptyString
+        },
+        'Project'
+      )
+    })
+  ],
+  'TaskWithProjectData'
+)
+
+const TaskInputData = t.type(
+  {
+    start_time: DateFromISOString,
+    created_at: DateFromISOString,
+    updated_at: DateFromISOString
+  },
+  'TaskInputData'
+)
+
+const DatabaseTaskData = t.type(
+  {
+    user: PositiveInteger,
+    start_time: DateFromSQLDate,
+    created_at: DateFromSQLDate,
+    updated_at: DateFromSQLDate
+  },
+  'DatabaseTaskData'
+)
+
+export const Task = t.intersection([SimpleTaskData, TaskInputData], 'Task')
 export type Task = t.TypeOf<typeof Task>
 
+export const TaskWithProject = t.intersection(
+  [TaskWithProjectData, TaskInputData],
+  'TaskWithProject'
+)
+export type TaskWithProject = t.TypeOf<typeof TaskWithProject>
+
 export const DatabaseTask = t.intersection(
-  [
-    TaskCommonData,
-    t.type({
-      user: PositiveInteger,
-      start_time: DateFromSQLDate,
-      created_at: DateFromSQLDate,
-      updated_at: DateFromSQLDate
-    })
-  ],
+  [SimpleTaskData, DatabaseTaskData],
   'DatabaseTask'
 )
 export type DatabaseTask = t.TypeOf<typeof DatabaseTask>
+
+export const DatabaseTaskWithProject = t.intersection(
+  [TaskWithProjectData, DatabaseTaskData],
+  'DatabaseTaskWithProject'
+)
+export type DatabaseTaskWithProject = t.TypeOf<typeof DatabaseTaskWithProject>
 
 export const TaskCreationInput = t.type(
   {
