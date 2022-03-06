@@ -8,11 +8,10 @@ import { reportErrors } from './reportErrors'
 import { useEffect, useMemo, useState } from 'react'
 import { query } from './api'
 import { Query } from './Query'
-import { NonEmptyString } from 'io-ts-types'
 import { Option } from 'fp-ts/Option'
 import { LocalizedString } from '../../globalDomain'
 import { ReaderTaskEither } from 'fp-ts/ReaderTaskEither'
-import { useAccount } from '../../contexts/AccountContext'
+import { LoginOutput, useAccount } from '../../contexts/AccountContext'
 import { a18n } from '../../a18n'
 
 const API_URL = process.env['REACT_APP_API_URL']?.replace(/\/?$/, '')
@@ -35,7 +34,7 @@ function foldHttpMethod<O>(
   return method => cases[method]()
 }
 
-interface Request<I, II, O, OO> {
+export interface Request<I, II, O, OO> {
   method: HttpMethod
   url: string
   inputCodec: t.Type<I, II>
@@ -114,7 +113,7 @@ export type CoolerError = t.TypeOf<typeof CoolerError>
 
 export function makeRequest<I, II, O, OO>(
   request: Request<I, II, O, OO>,
-  token: Option<NonEmptyString>,
+  token: Option<LoginOutput>,
   input?: I
 ): TaskEither<CoolerError, O> {
   const createQuery: IO<string> = () => {
@@ -170,7 +169,7 @@ export function makeRequest<I, II, O, OO>(
               token,
               option.fold(
                 () => ({}),
-                token => ({ Authorization: `Bearer ${token}` })
+                token => ({ Authorization: `Bearer ${token.accessToken}` })
               )
             )
           },
@@ -258,21 +257,14 @@ function useQuery<I, II, O, OO>(
   request: Request<I, II, O, OO>,
   input?: I
 ): QueryHookOutput<O> {
-  const { token } = useAccount()
+  const { withLogin } = useAccount()
   const [queryState, setQueryState] = useState<Query<CoolerError, O>>(
     query.loading()
   )
 
   const makeSendRequest = (request: Request<I, II, O, OO>, input?: I) =>
     pipe(
-      makeRequest(
-        request,
-        pipe(
-          token,
-          option.map(({ accessToken }) => accessToken)
-        ),
-        input
-      ),
+      withLogin(request as Request<I | undefined, II, O, OO>, input),
       taskEither.bimap(
         flow(query.left, setQueryState),
         flow(query.right, setQueryState)
@@ -297,17 +289,8 @@ function useQuery<I, II, O, OO>(
 function useCommand<I, II, O, OO>(
   request: Request<I, II, O, OO>
 ): ReaderTaskEither<I, CoolerError, O> {
-  const { token } = useAccount()
-
-  return input =>
-    makeRequest(
-      request,
-      pipe(
-        token,
-        option.map(({ accessToken }) => accessToken)
-      ),
-      input
-    )
+  const { withLogin } = useAccount()
+  return input => withLogin(request, input)
 }
 
 export function useGet<I, II, O, OO>(

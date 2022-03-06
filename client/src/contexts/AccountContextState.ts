@@ -30,6 +30,18 @@ export function setLoginAction(token: LoginOutput): SetLoginAction {
   }
 }
 
+interface RefreshTokenAction {
+  type: 'REFRESH_TOKEN'
+  token: LoginOutput
+}
+
+export function refreshTokenAction(token: LoginOutput): RefreshTokenAction {
+  return {
+    type: 'REFRESH_TOKEN',
+    token
+  }
+}
+
 interface LogoutAction {
   type: 'LOGOUT'
 }
@@ -38,7 +50,7 @@ export function logoutAction(): LogoutAction {
   return { type: 'LOGOUT' }
 }
 
-type AccountAction = SetLoginAction | LogoutAction
+type AccountAction = SetLoginAction | RefreshTokenAction | LogoutAction
 
 export function reducer(
   state: AccountState,
@@ -52,6 +64,7 @@ export function reducer(
             type: 'LOGGED_IN',
             token: action.token
           }
+        case 'REFRESH_TOKEN':
         case 'LOGOUT':
           return state
       }
@@ -59,6 +72,11 @@ export function reducer(
       switch (action.type) {
         case 'LOGOUT':
           return { type: 'ANONYMOUS' }
+        case 'REFRESH_TOKEN':
+          return {
+            ...state,
+            token: action.token
+          }
         case 'SET_LOGIN':
           return state
       }

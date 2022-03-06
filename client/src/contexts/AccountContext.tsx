@@ -11,12 +11,13 @@ import {
   foldAccountState,
   logoutAction,
   reducer,
+  refreshTokenAction,
   setLoginAction
 } from './AccountContextState'
-import { option, readerTaskEither } from 'fp-ts'
+import { boolean, option, readerTaskEither, taskEither } from 'fp-ts'
 import { DateFromISOString, NonEmptyString } from 'io-ts-types'
 import { EmailString, LocalizedString } from '../globalDomain'
-import { makeRequest } from '../effects/api/useApi'
+import { CoolerError, makeRequest, Request } from '../effects/api/useApi'
 import { useStorage } from '../effects/useStorage'
 import { IO } from 'fp-ts/IO'
 import { FormData, LoginForm } from '../components/Form/Forms/LoginForm'
@@ -24,8 +25,8 @@ import { foldCoolerErrorType } from '../misc/Connection'
 import { a18n } from '../a18n'
 import { commonErrors } from '../misc/commonErrors'
 import { ReaderTaskEither } from 'fp-ts/ReaderTaskEither'
-import { Option } from 'fp-ts/Option'
 import { Content } from '../components/Content/Content'
+import { TaskEither } from 'fp-ts/TaskEither'
 
 const LoginInput = t.type(
   {
@@ -35,6 +36,13 @@ const LoginInput = t.type(
   'LoginInput'
 )
 type LoginInput = t.TypeOf<typeof LoginInput>
+
+const RefreshTokenInput = t.type(
+  {
+    refreshToken: NonEmptyString
+  },
+  'RefreshTokenInput'
+)
 
 export const LoginOutput = t.type(
   {
@@ -47,12 +55,18 @@ export const LoginOutput = t.type(
 export type LoginOutput = t.TypeOf<typeof LoginOutput>
 
 interface AccountContext {
-  token: Option<LoginOutput>
+  withLogin: <I, II, O, OO>(
+    request: Request<I, II, O, OO>,
+    input: I
+  ) => TaskEither<CoolerError, O>
   logout: IO<void>
 }
 
 const AccountContext = createContext<AccountContext>({
-  token: option.none,
+  withLogin: readerTaskEither.fromIO(constVoid) as () => TaskEither<
+    CoolerError,
+    never
+  >,
   logout: constVoid
 })
 
@@ -81,6 +95,18 @@ export function AccountProvider(props: PropsWithChildren<{}>) {
       input
     )
 
+  const refreshTokenCommand = (refreshToken: NonEmptyString) =>
+    makeRequest(
+      {
+        method: 'POST',
+        url: '/profile/refreshToken',
+        inputCodec: RefreshTokenInput,
+        outputCodec: LoginOutput
+      },
+      option.none,
+      { refreshToken }
+    )
+
   const login: ReaderTaskEither<FormData, LocalizedString, void> = pipe(
     loginCommand,
     readerTaskEither.bimap(
@@ -102,6 +128,33 @@ export function AccountProvider(props: PropsWithChildren<{}>) {
     )
   )
 
+  const withLogin = <I, II, O, OO>(request: Request<I, II, O, OO>, input: I) =>
+    pipe(
+      state,
+      foldAccountState({
+        ANONYMOUS: () => {
+          throw new Error('Called withLogin while anonymous.')
+        },
+        LOGGED_IN: state =>
+          pipe(
+            state.token.expiration.getTime() < Date.now(),
+            boolean.fold(
+              () => makeRequest(request, option.some(state.token), input),
+              () =>
+                pipe(
+                  refreshTokenCommand(state.token.refreshToken),
+                  taskEither.chain(response => {
+                    writeStorage('account', response)
+                    dispatch(refreshTokenAction(response))
+
+                    return makeRequest(request, option.some(response), input)
+                  })
+                )
+            )
+          )
+      })
+    )
+
   useEffect(() => {
     pipe(
       readStorage('account'),
@@ -109,16 +162,8 @@ export function AccountProvider(props: PropsWithChildren<{}>) {
     )
   }, [readStorage])
 
-  const token: Option<LoginOutput> = pipe(
-    state,
-    foldAccountState({
-      ANONYMOUS: () => option.none,
-      LOGGED_IN: ({ token }) => option.some(token)
-    })
-  )
-
   return (
-    <AccountContext.Provider value={{ token, logout }}>
+    <AccountContext.Provider value={{ withLogin, logout }}>
       {pipe(
         state,
         foldAccountState({
