@@ -7,11 +7,14 @@ import { ErrorPanel } from '../../components/ErrorPanel/ErrorPanel'
 import { List } from '../../components/List/List'
 import { LoadingBlock } from '../../components/Loading/LoadingBlock'
 import { Panel } from '../../components/Panel/Panel'
+import { tasksRoute, useRouter } from '../../components/Router'
 import { query } from '../../effects/api/api'
 import { useGet } from '../../effects/api/useApi'
 import { getTasksDueTodayRequest } from './domain'
 
 export function TasksDueToday() {
+  const { setRoute } = useRouter()
+
   const input = useMemo(() => {
     const now = new Date()
 
@@ -44,7 +47,7 @@ export function TasksDueToday() {
                     label: option.some(task.project.name),
                     content: task.name,
                     description: task.description,
-                    action: () => console.log('TODO: navigate to task'),
+                    action: () => setRoute(tasksRoute(task.id)),
                     details: true
                   }))}
                 />

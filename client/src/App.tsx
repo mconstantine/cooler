@@ -28,7 +28,8 @@ export function App() {
                         foldLocation({
                           Home: () => <Profile />,
                           Clients: () => <p>Clients</p>,
-                          Projects: () => <p>Projects</p>
+                          Projects: () => <p>Projects</p>,
+                          Tasks: () => <p>Tasks</p>
                         })
                       )}
                     </Content>

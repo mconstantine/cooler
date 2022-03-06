@@ -51,7 +51,12 @@ interface Projects {
   readonly subject: RouteSubject
 }
 
-export type Location = Home | Clients | Projects
+interface Tasks {
+  readonly _tag: 'Tasks'
+  readonly subject: RouteSubject
+}
+
+export type Location = Home | Clients | Projects | Tasks
 
 export function homeRoute(): Home {
   return {
@@ -73,6 +78,13 @@ export function projectsRoute(subject: RouteSubject): Projects {
   }
 }
 
+export function tasksRoute(subject: RouteSubject): Tasks {
+  return {
+    _tag: 'Tasks',
+    subject
+  }
+}
+
 export function isHomeRoute(location: Location): boolean {
   return location._tag === 'Home'
 }
@@ -85,6 +97,10 @@ export function isProjectsRoute(location: Location): boolean {
   return location._tag === 'Projects'
 }
 
+export function isTasksRoute(location: Location): boolean {
+  return location._tag === 'Tasks'
+}
+
 export function foldLocation<T>(matches: {
   [K in Location['_tag']]: (
     args: Omit<Extract<Location, { _tag: K }>, '_tag'>
@@ -94,12 +110,16 @@ export function foldLocation<T>(matches: {
 }
 
 const homeMatch = end
+
 const clientsMatch = lit('clients')
   .then(type('subject', RouteSubject))
   .then(end)
+
 const projectsMatch = lit('projects')
   .then(type('subject', RouteSubject))
   .then(end)
+
+const tasksMatch = lit('tasks').then(type('subject', RouteSubject)).then(end)
 
 const router = zero<Location>()
   .alt(homeMatch.parser.map(homeRoute))
@@ -120,7 +140,8 @@ function formatLocation(location: Location): string {
     foldLocation({
       Home: location => format(homeMatch.formatter, location),
       Clients: location => format(clientsMatch.formatter, location),
-      Projects: location => format(projectsMatch.formatter, location)
+      Projects: location => format(projectsMatch.formatter, location),
+      Tasks: location => format(tasksMatch.formatter, location)
     })
   )
 }
