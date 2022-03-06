@@ -250,8 +250,8 @@ export function getUserProjects(
 }
 
 export function getUserCashedBalance(
-  user: DatabaseUser,
-  since: Option<Date>
+  since: Option<Date>,
+  user: DatabaseUser
 ): TaskEither<CoolerError, NonNegativeNumber> {
   const sql = SQL`
     SELECT IFNULL(SUM(project.cashed_balance), 0) AS balance

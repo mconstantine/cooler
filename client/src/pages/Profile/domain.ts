@@ -94,3 +94,26 @@ export const getTasksDueTodayRequest = makeGetRequest({
   inputCodec: TasksDueTodayInput,
   outputCodec: t.array(Task)
 })
+
+const CashedBalanceRequestInput = t.type(
+  {
+    since: DateFromISOString
+  },
+  'CashedBalanceRequestInput'
+)
+export type CashedBalanceRequestInput = t.TypeOf<
+  typeof CashedBalanceRequestInput
+>
+
+const CashedBalanceRequestOutput = t.type(
+  {
+    balance: NonNegativeNumber
+  },
+  'CashedBalanceRequestOutput'
+)
+
+export const getCashedBalanceRequest = makeGetRequest({
+  url: '/projects/cashedBalance',
+  inputCodec: CashedBalanceRequestInput,
+  outputCodec: CashedBalanceRequestOutput
+})

@@ -57,7 +57,7 @@ describe('project resolvers', () => {
               taskEither.chain(taskEither.fromOption(testError))
             )
           ),
-          taskEither.chain(user => getUserCashedBalance(user, option.none)),
+          taskEither.chain(user => getUserCashedBalance(option.none, user)),
           testTaskEither(result => {
             expect(result).toBe(40)
           })
