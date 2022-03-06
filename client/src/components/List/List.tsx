@@ -17,7 +17,7 @@ import {
 import { composeClassName } from '../../misc/composeClassName'
 import { Icon } from '../Icon/Icon'
 import './List.scss'
-import { chevronDown } from 'ionicons/icons'
+import { chevronForward } from 'ionicons/icons'
 import { Heading } from '../Heading/Heading'
 import { Body } from '../Body/Body'
 import { IO } from 'fp-ts/IO'
@@ -334,7 +334,7 @@ export function List(props: Props) {
 
                 {hasDetails ? (
                   <div className="routeArrow">
-                    <Icon src={chevronDown} size="medium" />
+                    <Icon src={chevronForward} size="medium" />
                   </div>
                 ) : null}
               </div>
