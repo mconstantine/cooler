@@ -1,6 +1,9 @@
 import faker from 'faker'
-import { NonEmptyString } from 'io-ts-types'
-import { Percentage, PositiveInteger } from '../misc/Types'
+import {
+  Percentage,
+  PositiveInteger,
+  unsafeNonEmptyString
+} from '../misc/Types'
 import { TaxCreationInput } from '../tax/interface'
 
 export function getFakeTax(
@@ -8,7 +11,7 @@ export function getFakeTax(
   data: Partial<TaxCreationInput> = {}
 ): TaxCreationInput & { user: PositiveInteger } {
   return {
-    label: faker.lorem.word() as NonEmptyString,
+    label: unsafeNonEmptyString(faker.lorem.word()),
     value: (Math.floor(Math.random() * 10000) / 10000) as Percentage,
     user,
     ...data

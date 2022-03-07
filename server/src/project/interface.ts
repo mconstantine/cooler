@@ -462,3 +462,41 @@ export const ProjectUpdateInput = new t.Type<
     )
 )
 export type ProjectUpdateInput = t.TypeOf<typeof ProjectUpdateInput>
+
+export const FullProject = t.intersection(
+  [
+    Project,
+    t.type({
+      expectedWorkingHours: NonNegativeNumber,
+      actualWorkingHours: NonNegativeNumber,
+      budget: NonNegativeNumber,
+      balance: NonNegativeNumber,
+      client: t.type({
+        id: PositiveInteger,
+        name: NonEmptyString,
+        user: PositiveInteger
+      })
+    })
+  ],
+  'FullProject'
+)
+export type FullProject = t.TypeOf<typeof FullProject>
+
+export const FullDatabaseProject = t.intersection(
+  [
+    DatabaseProject,
+    t.type({
+      expectedWorkingHours: NonNegativeNumber,
+      actualWorkingHours: NonNegativeNumber,
+      budget: NonNegativeNumber,
+      balance: NonNegativeNumber,
+      client: t.type({
+        id: PositiveInteger,
+        name: NonEmptyString,
+        user: PositiveInteger
+      })
+    })
+  ],
+  'FullProject'
+)
+export type FullDatabaseProject = t.TypeOf<typeof FullDatabaseProject>

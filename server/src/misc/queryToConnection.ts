@@ -5,7 +5,8 @@ import {
   coolerError,
   PositiveInteger,
   NonNegativeInteger,
-  CoolerError
+  CoolerError,
+  unsafeNonEmptyString
 } from './Types'
 import { TaskEither } from 'fp-ts/TaskEither'
 import { nonEmptyArray, option, taskEither } from 'fp-ts'
@@ -152,7 +153,9 @@ export function queryToConnection<
 }
 
 export function toCursor(value: number): NonEmptyString {
-  return Buffer.from(value.toString(10)).toString('base64') as NonEmptyString
+  return unsafeNonEmptyString(
+    Buffer.from(value.toString(10)).toString('base64')
+  )
 }
 
 function fromCursor(cursor: NonEmptyString): PositiveInteger {

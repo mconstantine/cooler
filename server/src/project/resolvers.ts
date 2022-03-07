@@ -1,11 +1,17 @@
-import { Project, ProjectCreationInput, ProjectUpdateInput } from './interface'
+import {
+  FullProject,
+  Project,
+  ProjectCreationInput,
+  ProjectUpdateInput
+} from './interface'
 import {
   createProject,
   listProjects,
   updateProject,
   deleteProject,
   getProject,
-  getUserCashedBalance
+  getUserCashedBalance,
+  getUserProjects
 } from './model'
 import { ConnectionQueryArgs } from '../misc/ConnectionQueryArgs'
 import { ensureUser } from '../misc/ensureUser'
@@ -123,6 +129,18 @@ const getCashedBalanceResolver = createResolver(
     )
 )
 
+const getLatestProjectsResolver = createResolver(
+  {
+    query: ConnectionQueryArgs,
+    output: Connection(FullProject)
+  },
+  ({ query }, context) =>
+    pipe(
+      ensureUser(context),
+      taskEither.chain(user => getUserProjects(query, user))
+    )
+)
+
 const resolvers: Resolvers = [
   {
     path: '/projects',
@@ -137,6 +155,7 @@ const resolvers: Resolvers = [
     },
     GET: {
       '/cashedBalance': getCashedBalanceResolver,
+      '/latest': getLatestProjectsResolver,
       '/:id': getProjectResolver,
       '/': getProjectsResolver
     }

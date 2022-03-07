@@ -4,8 +4,8 @@ import { pipe } from 'fp-ts/function'
 import * as t from 'io-ts'
 import { dbExec, insert } from './dbUtils'
 import { option, taskEither } from 'fp-ts'
-import { PositiveInteger } from './Types'
-import { NonEmptyString, optionFromNullable } from 'io-ts-types'
+import { PositiveInteger, unsafeNonEmptyString } from './Types'
+import { optionFromNullable } from 'io-ts-types'
 import { getDatabase } from './getDatabase'
 import { testError, testTaskEither } from '../test/util'
 import { getConnectionNodes } from '../test/getConnectionNodes'
@@ -118,7 +118,7 @@ describe('queryToConnection', () => {
           {
             first: 2 as PositiveInteger,
             after: toCursor(3),
-            orderBy: 'number ASC' as NonEmptyString
+            orderBy: unsafeNonEmptyString('number ASC')
           },
           ['id', 'char', 'number'],
           'queryToConnectionUsage',
@@ -147,7 +147,7 @@ describe('queryToConnection', () => {
           {
             first: 1 as PositiveInteger,
             after: toCursor(3),
-            orderBy: 'number ASC' as NonEmptyString
+            orderBy: unsafeNonEmptyString('number ASC')
           },
           ['id', 'char', 'number'],
           'queryToConnectionUsage',
@@ -176,7 +176,7 @@ describe('queryToConnection', () => {
           {
             last: 1 as PositiveInteger,
             before: toCursor(2),
-            orderBy: 'char ASC' as NonEmptyString
+            orderBy: unsafeNonEmptyString('char ASC')
           },
           ['id', 'char', 'number'],
           'queryToConnectionUsage',
@@ -207,7 +207,7 @@ describe('queryToConnection', () => {
           {
             last: 2 as PositiveInteger,
             before: toCursor(2),
-            orderBy: 'char ASC' as NonEmptyString
+            orderBy: unsafeNonEmptyString('char ASC')
           },
           ['id', 'char', 'number'],
           'queryToConnectionUsage',

@@ -16,7 +16,12 @@ import { NonEmptyString } from 'io-ts-types'
 import { Option } from 'fp-ts/Option'
 import { boolean, option, taskEither } from 'fp-ts'
 import { pipe } from 'fp-ts/function'
-import { CoolerError, coolerError, PositiveInteger } from '../misc/Types'
+import {
+  CoolerError,
+  coolerError,
+  PositiveInteger,
+  unsafeNonEmptyString
+} from '../misc/Types'
 import { TaskEither } from 'fp-ts/TaskEither'
 import {
   getUserByEmail,
@@ -76,7 +81,7 @@ export function createUser(
       insertUser({
         name,
         email,
-        password: hashSync(password, 10) as NonEmptyString
+        password: unsafeNonEmptyString(hashSync(password, 10))
       })
     ),
     taskEither.map(generateTokens)
@@ -186,7 +191,7 @@ export function updateUser(
         password: option.isSome(password || option.none)
           ? pipe(
               password as option.Some<NonEmptyString>,
-              option.map(p => hashSync(p, 10) as NonEmptyString)
+              option.map(p => unsafeNonEmptyString(hashSync(p, 10)))
             )
           : undefined
       })

@@ -1,9 +1,8 @@
 import { option, taskEither } from 'fp-ts'
 import { constVoid, pipe } from 'fp-ts/function'
-import { NonEmptyString } from 'io-ts-types'
 import { init } from '../init'
 import { remove } from '../misc/dbUtils'
-import { EmailString } from '../misc/Types'
+import { EmailString, unsafeNonEmptyString } from '../misc/Types'
 import { getFakeUser } from '../test/getFakeUser'
 import {
   pipeTestTaskEither,
@@ -135,7 +134,7 @@ describe('userModel', () => {
       await pipe(
         loginUser({
           email: user.email,
-          password: (user.password + 'not') as NonEmptyString
+          password: unsafeNonEmptyString(user.password + 'not')
         }),
         testTaskEitherError(error => {
           expect(error.code).toBe('COOLER_400')
@@ -175,7 +174,7 @@ describe('userModel', () => {
     it('should fail if token is invalid', async () => {
       await pipe(
         refreshToken({
-          refreshToken: 'fake' as NonEmptyString
+          refreshToken: unsafeNonEmptyString('fake')
         }),
         testTaskEitherError(error => {
           expect(error.code).toBe('COOLER_400')
@@ -212,7 +211,7 @@ describe('userModel', () => {
         taskEither.chain(taskEither.fromOption(testError)),
         taskEither.chain(user =>
           updateUser(user.id, {
-            name: (user.name + ' Jr') as NonEmptyString
+            name: unsafeNonEmptyString(user.name + ' Jr')
           })
         ),
         testTaskEither(updatedUser => {

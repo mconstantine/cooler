@@ -13,7 +13,6 @@ import {
   deleteTask,
   getTask,
   createTasksBatch,
-  UserTasksConnectionQueryArgs,
   getUserTasks
 } from './model'
 import { ConnectionQueryArgs } from '../misc/ConnectionQueryArgs'
@@ -21,7 +20,11 @@ import { ensureUser } from '../misc/ensureUser'
 import { Connection } from '../misc/Connection'
 import { createResolver } from '../misc/createResolver'
 import * as t from 'io-ts'
-import { NonEmptyString, optionFromNullable } from 'io-ts-types'
+import {
+  DateFromISOString,
+  NonEmptyString,
+  optionFromNullable
+} from 'io-ts-types'
 import { pipe } from 'fp-ts/function'
 import { taskEither } from 'fp-ts'
 import { IdInput } from '../misc/Types'
@@ -108,9 +111,18 @@ const getTasksResolver = createResolver(
     )
 )
 
+export const GetTasksDueQueryArgs = t.type(
+  {
+    from: optionFromNullable(DateFromISOString),
+    to: optionFromNullable(DateFromISOString)
+  },
+  'GetTasksDueQueryArgs'
+)
+export type GetTasksDueQueryArgs = t.TypeOf<typeof GetTasksDueQueryArgs>
+
 const getTasksDueResolver = createResolver(
   {
-    query: UserTasksConnectionQueryArgs,
+    query: GetTasksDueQueryArgs,
     output: t.array(TaskWithProject)
   },
   ({ query }, context) =>

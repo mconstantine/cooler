@@ -15,6 +15,7 @@ import {
 import { testError, testTaskEither } from '../test/util'
 import { NonEmptyString } from 'io-ts-types'
 import { sleep } from '../test/sleep'
+import { unsafeNonEmptyString } from '../misc/Types'
 
 describe('initClient', () => {
   describe('happy path', () => {
@@ -77,7 +78,7 @@ describe('initClient', () => {
             update(
               'client',
               client.id,
-              { address_city: 'Milan' as NonEmptyString },
+              { address_city: unsafeNonEmptyString('Milan') },
               ClientUpdateInput
             ),
             taskEither.chain(() =>

@@ -5,7 +5,7 @@ import { verifyToken } from './misc/jsonWebToken'
 import { NonEmptyString } from 'io-ts-types'
 import { option, task, taskEither } from 'fp-ts'
 import { getUserById } from './user/database'
-import { coolerError } from './misc/Types'
+import { coolerError, unsafeNonEmptyString } from './misc/Types'
 import { a18n } from './misc/a18n'
 import { Request } from 'express'
 
@@ -45,7 +45,9 @@ export const getContext = async (req: Request): Promise<Context> => {
     return {}
   }
 
-  const accessToken = req.headers.authorization.substring(7) as NonEmptyString
+  const accessToken = unsafeNonEmptyString(
+    req.headers.authorization.substring(7)
+  )
 
   return await validateToken(accessToken)()
 }

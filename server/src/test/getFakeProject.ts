@@ -1,8 +1,11 @@
 import faker from 'faker'
 import { boolean, option } from 'fp-ts'
 import { pipe } from 'fp-ts/function'
-import { NonEmptyString } from 'io-ts-types'
-import { NonNegativeNumber, PositiveInteger } from '../misc/Types'
+import {
+  NonNegativeNumber,
+  PositiveInteger,
+  unsafeNonEmptyString
+} from '../misc/Types'
 import { ProjectCreationInput } from '../project/interface'
 
 export function getFakeProject(
@@ -26,12 +29,12 @@ export function getFakeProject(
   )
 
   return {
-    name: faker.commerce.productName() as NonEmptyString,
+    name: unsafeNonEmptyString(faker.commerce.productName()),
     description: pipe(
       Math.random() < 0.5,
       boolean.fold(
         () => option.none,
-        () => option.some(faker.lorem.sentence() as NonEmptyString)
+        () => option.some(unsafeNonEmptyString(faker.lorem.sentence()))
       )
     ),
     cashed,

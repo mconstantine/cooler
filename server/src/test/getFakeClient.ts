@@ -11,7 +11,11 @@ import {
   BusinessClientCreationInput,
   ClientCreationCommonInput
 } from '../client/interface'
-import { EmailString, PositiveInteger } from '../misc/Types'
+import {
+  EmailString,
+  PositiveInteger,
+  unsafeNonEmptyString
+} from '../misc/Types'
 
 export function getFakeClient(
   user: PositiveInteger,
@@ -35,11 +39,11 @@ export function getFakeClient(
       country_code !== 'IT'
         ? 'EE'
         : (faker.random.arrayElement(Object.keys(Province)) as Province),
-    address_city: faker.address.city() as NonEmptyString,
-    address_zip: faker.address.zipCode() as NonEmptyString,
-    address_street: faker.address.streetName() as NonEmptyString,
+    address_city: unsafeNonEmptyString(faker.address.city()),
+    address_zip: unsafeNonEmptyString(faker.address.zipCode()),
+    address_street: unsafeNonEmptyString(faker.address.streetName()),
     address_street_number: option.some(
-      (1 + Math.round(Math.random() * 199)).toString(10) as NonEmptyString
+      unsafeNonEmptyString((1 + Math.round(Math.random() * 199)).toString(10))
     ),
     address_email: faker.internet.email() as EmailString
   }
@@ -52,16 +56,16 @@ export function getFakeClient(
         ...data,
         type: 'PRIVATE',
         fiscal_code: generateFiscalCode(),
-        first_name: faker.name.firstName() as NonEmptyString,
-        last_name: faker.name.lastName() as NonEmptyString
+        first_name: unsafeNonEmptyString(faker.name.firstName()),
+        last_name: unsafeNonEmptyString(faker.name.lastName())
       }),
       () => ({
         ...commonData,
         // @ts-ignore
         type: 'BUSINESS',
         country_code: country_code,
-        vat_number: faker.finance.mask(11) as NonEmptyString,
-        business_name: faker.company.companyName() as NonEmptyString
+        vat_number: unsafeNonEmptyString(faker.finance.mask(11)),
+        business_name: unsafeNonEmptyString(faker.company.companyName())
       })
     )
   )
@@ -72,11 +76,13 @@ function generateFiscalCode(): NonEmptyString {
   const numbers = '1234567890'
   const format = 'aaaaaaddaddaddda'
 
-  return format
-    .split('')
-    .map(char => {
-      const target = (char === 'a' ? letters : numbers).split('')
-      return target[Math.round(Math.random() * (target.length - 1))]
-    })
-    .join('') as NonEmptyString
+  return unsafeNonEmptyString(
+    format
+      .split('')
+      .map(char => {
+        const target = (char === 'a' ? letters : numbers).split('')
+        return target[Math.round(Math.random() * (target.length - 1))]
+      })
+      .join('')
+  )
 }

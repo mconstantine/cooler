@@ -23,7 +23,7 @@ import { UnknownRecord } from 'io-ts'
 import { sleep } from '../test/sleep'
 import { NonEmptyString } from 'io-ts-types'
 import { User } from '../user/interface'
-import { PositiveInteger } from '../misc/Types'
+import { PositiveInteger, unsafeNonEmptyString } from '../misc/Types'
 
 describe('initTask', () => {
   let user: User
@@ -108,7 +108,7 @@ describe('initTask', () => {
     })
 
     it('should keep track of the time of the last update', async () => {
-      const updateData = { name: 'Some weird name' as NonEmptyString }
+      const updateData = { name: unsafeNonEmptyString('Some weird name') }
 
       await pipe(
         insert('task', getFakeTask(project.id), TaskCreationInput),

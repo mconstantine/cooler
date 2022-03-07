@@ -12,8 +12,6 @@ import {
   NonNegativeNumber,
   PositiveInteger
 } from '../globalDomain'
-import { Connection } from '../misc/Connection'
-import { Tax } from './Tax'
 
 const CashData = t.type({
   at: DateFromISOString,
@@ -21,18 +19,11 @@ const CashData = t.type({
 })
 export type CashData = t.TypeOf<typeof CashData>
 
-const User = t.type(
-  {
-    taxes: Connection(Tax)
-  },
-  'User'
-)
-
 const Client = t.type(
   {
     id: PositiveInteger,
     name: LocalizedString,
-    user: User
+    user: PositiveInteger
   },
   'Client'
 )

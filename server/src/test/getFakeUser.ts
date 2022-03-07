@@ -1,7 +1,6 @@
 import { UserCreationInput } from '../user/interface'
 import faker from 'faker'
-import { NonEmptyString } from 'io-ts-types'
-import { EmailString } from '../misc/Types'
+import { unsafeEmailString, unsafeNonEmptyString } from '../misc/Types'
 
 export function getFakeUser(
   data: Partial<UserCreationInput> = {}
@@ -10,9 +9,9 @@ export function getFakeUser(
   const lastName = faker.name.lastName()
 
   return {
-    name: `${firstName} ${lastName}` as NonEmptyString,
-    email: faker.internet.email(firstName, lastName) as EmailString,
-    password: faker.internet.password() as NonEmptyString,
+    name: unsafeNonEmptyString(`${firstName} ${lastName}`),
+    email: unsafeEmailString(faker.internet.email(firstName, lastName)),
+    password: unsafeNonEmptyString(faker.internet.password()),
     ...data
   }
 }

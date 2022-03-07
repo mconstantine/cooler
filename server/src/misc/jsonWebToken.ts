@@ -4,9 +4,10 @@ import { Option } from 'fp-ts/Option'
 import { NonEmptyString } from 'io-ts-types'
 import { sign, SignOptions, verify, VerifyOptions } from 'jsonwebtoken'
 import { Token } from '../user/interface'
+import { unsafeNonEmptyString } from './Types'
 
 export function signToken(token: Token, options?: SignOptions): NonEmptyString {
-  return sign(token, process.env.SECRET!, options) as NonEmptyString
+  return unsafeNonEmptyString(sign(token, process.env.SECRET!, options))
 }
 
 export function verifyToken(

@@ -17,8 +17,12 @@ import {
 } from './interface'
 import { testError, testTaskEither } from '../test/util'
 import { sleep } from '../test/sleep'
-import { NonEmptyString } from 'io-ts-types'
-import { CoolerError, NonNegativeNumber, PositiveInteger } from '../misc/Types'
+import {
+  CoolerError,
+  NonNegativeNumber,
+  PositiveInteger,
+  unsafeNonEmptyString
+} from '../misc/Types'
 import { TaskEither } from 'fp-ts/TaskEither'
 import * as t from 'io-ts'
 
@@ -77,7 +81,7 @@ describe('initProject', () => {
               update(
                 'project',
                 before.id,
-                { name: 'Some weird name' as NonEmptyString },
+                { name: unsafeNonEmptyString('Some weird name') },
                 ProjectUpdateInput
               )
             ),

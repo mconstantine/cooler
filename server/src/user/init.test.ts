@@ -7,7 +7,7 @@ import { taskEither } from 'fp-ts'
 import { getUserById, insertUser, updateUser } from './database'
 import { testError, testTaskEither } from '../test/util'
 import { sleep } from '../test/sleep'
-import { NonEmptyString } from 'io-ts-types'
+import { unsafeNonEmptyString } from '../misc/Types'
 
 describe('initUser', () => {
   describe('happy path', () => {
@@ -40,7 +40,7 @@ describe('initUser', () => {
         taskEither.chain(user =>
           pipe(
             updateUser(user.id, {
-              name: (user.name + ' Jr') as NonEmptyString
+              name: unsafeNonEmptyString(user.name + ' Jr')
             }),
             taskEither.chain(() => getUserById(user.id)),
             taskEither.chain(taskEither.fromOption(testError)),

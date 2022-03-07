@@ -28,9 +28,9 @@ import {
 import {
   NonNegativeInteger,
   NonNegativeNumber,
-  PositiveInteger
+  PositiveInteger,
+  unsafeNonEmptyString
 } from '../misc/Types'
-import { NonEmptyString } from 'io-ts-types'
 import SQL from 'sql-template-strings'
 import { getConnectionNodes } from '../test/getConnectionNodes'
 
@@ -178,9 +178,7 @@ describe('getTodayTasks', () => {
         },
         user1
       ),
-      testTaskEither(connection => {
-        const tasks = getConnectionNodes(connection)
-
+      testTaskEither(tasks => {
         expect(tasks).toContainEqual(
           expect.objectContaining({
             id: task1.id
@@ -240,7 +238,7 @@ describe('createTasksBatch', () => {
     await pipe(
       createTasksBatch(
         {
-          name: 'Task #' as NonEmptyString,
+          name: unsafeNonEmptyString('Task #'),
           expectedWorkingHours: 8 as NonNegativeNumber,
           hourlyCost: 1 as NonNegativeNumber,
           project,
@@ -280,7 +278,9 @@ describe('createTasksBatch', () => {
     await pipe(
       createTasksBatch(
         {
-          name: 'D-DD-DDD-DDDD, M/MM/MMM/MMMM, YY / YYYY ADAMY' as NonEmptyString,
+          name: unsafeNonEmptyString(
+            'D-DD-DDD-DDDD, M/MM/MMM/MMMM, YY / YYYY ADAMY'
+          ),
           start_time: new Date(1990, 0, 1, 10, 42),
           from: new Date(1990, 0, 1, 10, 0),
           to: new Date(1990, 0, 1, 10, 0),
@@ -316,7 +316,7 @@ describe('createTasksBatch', () => {
     await pipe(
       createTasksBatch(
         {
-          name: 'Task #' as NonEmptyString,
+          name: unsafeNonEmptyString('Task #'),
           start_time: new Date(1990, 0, 1, 10, 42),
           from: new Date(1990, 0, 1, 10, 0),
           to: new Date(1990, 0, 5, 10, 0),
@@ -354,7 +354,7 @@ describe('createTasksBatch', () => {
     await pipe(
       createTasksBatch(
         {
-          name: 'Task #' as NonEmptyString,
+          name: unsafeNonEmptyString('Task #'),
           start_time: new Date(1990, 0, 1, 10, 42),
           from: new Date(1990, 0, 1, 10, 0),
           to: new Date(1990, 0, 7, 10, 0),
@@ -417,7 +417,7 @@ describe('createTasksBatch', () => {
       taskEither.chain(() =>
         createTasksBatch(
           {
-            name: 'Task #' as NonEmptyString,
+            name: unsafeNonEmptyString('Task #'),
             start_time: new Date(1990, 0, 1, 10, 42),
             from: new Date(1990, 0, 1, 10, 0),
             to: new Date(1990, 0, 7, 10, 0),

@@ -21,7 +21,8 @@ import {
   CoolerError,
   coolerError,
   DateFromSQLDate,
-  PositiveInteger
+  PositiveInteger,
+  unsafeNonEmptyString
 } from '../misc/Types'
 import {
   getTaskById,
@@ -29,30 +30,12 @@ import {
   updateTask as updateDatabaseTask,
   deleteTask as deleteDatabasetask
 } from './database'
-import {
-  DateFromISOString,
-  NonEmptyString,
-  optionFromNullable
-} from 'io-ts-types'
+import { NonEmptyString } from 'io-ts-types'
 import * as t from 'io-ts'
-import { TasksConnectionQueryArgs } from './resolvers'
+import { GetTasksDueQueryArgs, TasksConnectionQueryArgs } from './resolvers'
 import { a18n } from '../misc/a18n'
 import { sequenceS } from 'fp-ts/Apply'
 import { getTaskActualWorkingHours } from '../session/model'
-
-export const UserTasksConnectionQueryArgs = t.intersection(
-  [
-    ConnectionQueryArgs,
-    t.type({
-      from: optionFromNullable(DateFromISOString),
-      to: optionFromNullable(DateFromISOString)
-    })
-  ],
-  'UserTasksConnectionQueryArgs'
-)
-type UserTasksConnectionQueryArgs = t.TypeOf<
-  typeof UserTasksConnectionQueryArgs
->
 
 export function createTask(
   input: TaskCreationInput,
@@ -247,27 +230,29 @@ function formatTaskName(
     YY: () => date.getFullYear().toString(10).substring(2)
   }
 
-  return name
-    .split(/\b/)
-    .map(s => {
-      if (!taskNamePattern.test(s)) {
-        return s
-      }
-
-      didMatch = false
-      const entries = Object.entries(matches)
-
-      for (let [target, replacement] of entries) {
-        s = s.replace(target, match(replacement))
-
-        if (didMatch) {
+  return unsafeNonEmptyString(
+    name
+      .split(/\b/)
+      .map(s => {
+        if (!taskNamePattern.test(s)) {
           return s
         }
-      }
 
-      return s
-    })
-    .join('') as NonEmptyString
+        didMatch = false
+        const entries = Object.entries(matches)
+
+        for (let [target, replacement] of entries) {
+          s = s.replace(target, match(replacement))
+
+          if (didMatch) {
+            return s
+          }
+        }
+
+        return s
+      })
+      .join('')
+  )
 }
 
 export function getTask(
@@ -418,7 +403,7 @@ export function getTaskProject(
 }
 
 export function getUserTasks(
-  args: UserTasksConnectionQueryArgs,
+  args: GetTasksDueQueryArgs,
   user: User
 ): TaskEither<CoolerError, TaskWithProject[]> {
   let query = SQL`

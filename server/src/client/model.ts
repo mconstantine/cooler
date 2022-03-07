@@ -27,7 +27,12 @@ import {
   updateClient as updateDatabaseClient,
   deleteClient as deleteDatabaseClient
 } from './database'
-import { CoolerError, coolerError, PositiveInteger } from '../misc/Types'
+import {
+  CoolerError,
+  coolerError,
+  PositiveInteger,
+  unsafeNonEmptyString
+} from '../misc/Types'
 import { NonEmptyString } from 'io-ts-types'
 import { getUserById } from '../user/database'
 import { ClientConnectionQuerysArgs } from './resolvers'
@@ -227,7 +232,8 @@ export function getClientName(client: Client): NonEmptyString {
   return pipe(
     client,
     foldClient(
-      client => `${client.first_name} ${client.last_name}` as NonEmptyString,
+      client =>
+        unsafeNonEmptyString(`${client.first_name} ${client.last_name}`),
       client => client.business_name
     )
   )

@@ -561,7 +561,7 @@ export function getTaskBalance(
 
 export function getProjectExpectedWorkingHours(
   project: DatabaseProject
-): TaskEither<CoolerError, number> {
+): TaskEither<CoolerError, NonNegativeNumber> {
   return pipe(
     dbGet(
       SQL`
@@ -570,7 +570,7 @@ export function getProjectExpectedWorkingHours(
         WHERE project = ${project.id}
       `,
       t.type({
-        expectedWorkingHours: t.number
+        expectedWorkingHours: NonNegativeNumber
       })
     ),
     taskEither.chain(
@@ -584,7 +584,7 @@ export function getProjectExpectedWorkingHours(
 
 export function getProjectActualWorkingHours(
   project: DatabaseProject
-): TaskEither<CoolerError, number> {
+): TaskEither<CoolerError, NonNegativeNumber> {
   return pipe(
     dbGet(
       SQL`
@@ -596,7 +596,7 @@ export function getProjectActualWorkingHours(
         WHERE task.project = ${project.id} AND session.end_time IS NOT NULL
       `,
       t.type({
-        actualWorkingHours: t.number
+        actualWorkingHours: NonNegativeNumber
       })
     ),
     taskEither.chain(
@@ -610,7 +610,7 @@ export function getProjectActualWorkingHours(
 
 export function getProjectBudget(
   project: DatabaseProject
-): TaskEither<CoolerError, number> {
+): TaskEither<CoolerError, NonNegativeNumber> {
   return pipe(
     dbGet(
       SQL`
@@ -619,7 +619,7 @@ export function getProjectBudget(
         WHERE project = ${project.id}
       `,
       t.type({
-        budget: t.number
+        budget: NonNegativeNumber
       })
     ),
     taskEither.chain(
@@ -633,7 +633,7 @@ export function getProjectBudget(
 
 export function getProjectBalance(
   project: DatabaseProject
-): TaskEither<CoolerError, number> {
+): TaskEither<CoolerError, NonNegativeNumber> {
   return pipe(
     dbGet(
       SQL`
@@ -645,7 +645,7 @@ export function getProjectBalance(
         WHERE task.project = ${project.id}
       `,
       t.type({
-        balance: t.number
+        balance: NonNegativeNumber
       })
     ),
     taskEither.chain(

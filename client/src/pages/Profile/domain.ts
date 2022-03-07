@@ -16,6 +16,8 @@ import {
   PositiveInteger
 } from '../../globalDomain'
 import { Task } from '../../entities/Task'
+import { Connection, ConnectionQueryInput } from '../../misc/Connection'
+import { Project } from '../../entities/Project'
 
 const Profile = t.type(
   {
@@ -116,4 +118,10 @@ export const getCashedBalanceRequest = makeGetRequest({
   url: '/projects/cashedBalance',
   inputCodec: CashedBalanceRequestInput,
   outputCodec: CashedBalanceRequestOutput
+})
+
+export const getLatestProjectsRequest = makeGetRequest({
+  url: '/projects/latest',
+  inputCodec: ConnectionQueryInput,
+  outputCodec: Connection(Project)
 })

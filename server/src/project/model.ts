@@ -1,5 +1,6 @@
 import {
   DatabaseProject,
+  FullDatabaseProject,
   Project,
   ProjectCreationInput,
   ProjectUpdateInput
@@ -15,12 +16,13 @@ import {
   coolerError,
   DateFromSQLDate,
   NonNegativeNumber,
-  PositiveInteger
+  PositiveInteger,
+  unsafeNonEmptyString
 } from '../misc/Types'
 import { TaskEither } from 'fp-ts/TaskEither'
 import { constVoid, pipe } from 'fp-ts/function'
 import { getClientById } from '../client/database'
-import { boolean, option, taskEither } from 'fp-ts'
+import { array, boolean, option, taskEither } from 'fp-ts'
 import { getProjectById } from './database'
 import * as t from 'io-ts'
 import {
@@ -32,6 +34,55 @@ import { Option } from 'fp-ts/Option'
 import { dbGet } from '../misc/dbUtils'
 import { ProjectConnectionQueryArgs } from './resolvers'
 import { a18n } from '../misc/a18n'
+import { getClientName } from '../client/model'
+import { getConnectionNodes } from '../test/getConnectionNodes'
+import { sequenceS } from 'fp-ts/Apply'
+import {
+  getProjectActualWorkingHours,
+  getProjectBalance,
+  getProjectBudget,
+  getProjectExpectedWorkingHours
+} from '../session/model'
+import { NonEmptyString } from 'io-ts-types'
+
+function projectToFullProject(
+  project: DatabaseProject
+): TaskEither<CoolerError, FullDatabaseProject> {
+  return pipe(
+    {
+      client: getProjectClient(project),
+      expectedWorkingHours: getProjectExpectedWorkingHours(project),
+      actualWorkingHours: getProjectActualWorkingHours(project),
+      budget: getProjectBudget(project),
+      balance: getProjectBalance(project)
+    },
+    sequenceS(taskEither.taskEither),
+    taskEither.map(
+      ({
+        client,
+        expectedWorkingHours,
+        actualWorkingHours,
+        budget,
+        balance
+      }) => ({
+        ...project,
+        expectedWorkingHours,
+        actualWorkingHours,
+        budget,
+        balance,
+        client: {
+          id: client.id,
+          name: getClientName(client),
+          user: client.user
+        } as PositiveInteger & {
+          id: PositiveInteger
+          name: NonEmptyString
+          user: PositiveInteger
+        }
+      })
+    )
+  )
+}
 
 export function createProject(
   { name, description, client }: ProjectCreationInput,
@@ -234,18 +285,37 @@ export function getProjectClient(
 }
 
 export function getUserProjects(
-  user: DatabaseUser,
-  args: ConnectionQueryArgs
-): TaskEither<CoolerError, Connection<DatabaseProject>> {
-  return queryToConnection(
-    args,
-    ['project.*', 'client.user'],
-    'project',
-    DatabaseProject,
-    SQL`
+  args: ConnectionQueryArgs,
+  user: DatabaseUser
+): TaskEither<CoolerError, Connection<FullDatabaseProject>> {
+  return pipe(
+    queryToConnection(
+      {
+        ...args,
+        orderBy: unsafeNonEmptyString('updated_at DESC')
+      },
+      ['project.*', 'client.user'],
+      'project',
+      DatabaseProject,
+      SQL`
       JOIN client ON client.id = project.client
       WHERE client.user = ${user.id}
     `
+    ),
+    taskEither.chain(connection =>
+      pipe(
+        getConnectionNodes(connection),
+        array.map(projectToFullProject),
+        array.sequence(taskEither.taskEither),
+        taskEither.map(projectsWithClient => ({
+          ...connection,
+          edges: connection.edges.map((edge, index) => ({
+            ...edge,
+            node: projectsWithClient[index]
+          }))
+        }))
+      )
+    )
   )
 }
 

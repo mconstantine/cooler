@@ -1,6 +1,11 @@
-import { pipe } from 'fp-ts/function'
+import { identity, pipe } from 'fp-ts/function'
 import * as t from 'io-ts'
-import { date, IntFromString, option as tOption } from 'io-ts-types'
+import {
+  date,
+  IntFromString,
+  NonEmptyString,
+  option as tOption
+} from 'io-ts-types'
 import { either, option } from 'fp-ts'
 import { validate as isEmail } from 'isemail'
 import { Option } from 'fp-ts/Option'
@@ -70,6 +75,16 @@ export const EmailString = t.brand(
   'EmailString'
 )
 export type EmailString = t.TypeOf<typeof EmailString>
+
+export function unsafeEmailString(string: string): EmailString {
+  return pipe(
+    string,
+    EmailString.decode,
+    either.fold(() => {
+      throw new Error('Called unsafeEmailString on invalid email')
+    }, identity)
+  )
+}
 
 interface NonNegativeNumberBrand {
   readonly NonNegativeNumber: unique symbol
@@ -224,3 +239,13 @@ export const IdInput = t.type(
   },
   'IdInput'
 )
+
+export function unsafeNonEmptyString(string: string): NonEmptyString {
+  return pipe(
+    string,
+    NonEmptyString.decode,
+    either.fold(() => {
+      throw new Error('Called unsafeNonEmptyString on empty string')
+    }, identity)
+  )
+}
