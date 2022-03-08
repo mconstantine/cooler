@@ -6,7 +6,6 @@ import { Theme } from '../contexts/ThemeContext'
 import { LoginOutput } from '../contexts/AccountContext'
 
 interface StorageMap {
-  theme: Theme
   account: LoginOutput
 }
 
@@ -15,8 +14,6 @@ function storageValueToString<K extends keyof StorageMap>(
   value: StorageMap[K]
 ): string {
   switch (key) {
-    case 'theme':
-      return value as Theme
     case 'account':
       return pipe(value as LoginOutput, LoginOutput.encode, JSON.stringify)
     default:

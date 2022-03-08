@@ -1,5 +1,4 @@
-import { option } from 'fp-ts'
-import { constVoid, pipe } from 'fp-ts/function'
+import { constVoid } from 'fp-ts/function'
 import { Reader } from 'fp-ts/Reader'
 import {
   createContext,
@@ -8,7 +7,6 @@ import {
   useEffect,
   useState
 } from 'react'
-import { useStorage } from '../effects/useStorage'
 import * as t from 'io-ts'
 
 export const Theme = t.keyof(
@@ -45,20 +43,39 @@ const ThemeContext = createContext<ThemeContext>({
 })
 
 export function ThemeProvider(props: PropsWithChildren<{}>) {
-  const { readStorage, writeStorage } = useStorage()
-
   const [theme, setTheme] = useState<Theme>(
-    pipe(
-      readStorage('theme'),
-      option.getOrElse<Theme>(() => 'dark')
-    )
+    window.matchMedia &&
+      window.matchMedia('(prefers-color-scheme: dark)').matches
+      ? 'dark'
+      : 'light'
   )
+
+  useEffect(() => {
+    const onPreferredColorSchemeChange: Reader<
+      MediaQueryListEvent,
+      void
+    > = e => {
+      const newTheme: Theme = e.matches ? 'dark' : 'light'
+      setTheme(newTheme)
+    }
+
+    window.matchMedia &&
+      window
+        .matchMedia('(prefers-color-scheme: dark)')
+        .addEventListener('change', onPreferredColorSchemeChange)
+
+    return () => {
+      window.matchMedia &&
+        window
+          .matchMedia('(prefers-color-scheme: dark)')
+          .removeEventListener('change', onPreferredColorSchemeChange)
+    }
+  }, [])
 
   useEffect(() => {
     window.document.body.classList.remove('dark', 'light')
     window.document.body.classList.add(theme)
-    writeStorage('theme', theme)
-  }, [theme, writeStorage])
+  }, [theme])
 
   return (
     <ThemeContext.Provider value={{ theme, setTheme }}>
