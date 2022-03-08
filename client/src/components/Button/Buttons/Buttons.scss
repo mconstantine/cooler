@@ -11,6 +11,10 @@
   .Button {
     margin-top: 16px;
   }
+
+  .Button + .Button {
+    margin-left: 16px;
+  }
 }
 
 * + .Buttons {
