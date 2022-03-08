@@ -29,7 +29,8 @@ export function App() {
                           Home: () => <Profile />,
                           Clients: () => <p>Clients</p>,
                           Projects: () => <p>Projects</p>,
-                          Tasks: () => <p>Tasks</p>
+                          Tasks: () => <p>Tasks</p>,
+                          Settings: () => <p>Settings</p>
                         })
                       )}
                     </Content>

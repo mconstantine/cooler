@@ -9,11 +9,13 @@ type ButtonElement = ReactElement<ComponentProps<typeof Button>>
 interface ButtonsRowProps {
   spacing?: 'start'
   children: ButtonElement | ButtonElement[]
+  className?: string
 }
 
 interface SpreadButtonsProps {
   spacing: 'spread'
   children: ButtonElement[]
+  className?: string
 }
 
 type Props = ButtonsRowProps | SpreadButtonsProps
@@ -35,7 +37,13 @@ function foldProps<T>(
 
 export const Buttons: FC<Props> = props => {
   return (
-    <div className={composeClassName('Buttons', props.spacing || 'start')}>
+    <div
+      className={composeClassName(
+        'Buttons',
+        props.spacing || 'start',
+        props.className || ''
+      )}
+    >
       {pipe(
         props,
         foldProps<any>(

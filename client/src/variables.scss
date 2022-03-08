@@ -59,6 +59,9 @@ $list-icons-space-details: $icon-size-large + $icon-size-medium + 48px;
 $list-max-width: $max-width-text + $list-icons-space;
 $list-max-width-details: $max-width-text + $list-icons-space-details;
 
+$menu-height-mobile: 66px;
+$menu-height-desktop: 88px;
+
 @mixin label {
   font-size: 14px;
   letter-spacing: 1px;

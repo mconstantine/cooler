@@ -8,11 +8,74 @@
   left: 0;
   background-color: $color-grey-soft-dark;
   display: flex;
-  justify-content: flex-end;
-  align-items: center;
+  flex-direction: column;
+  box-sizing: border-box;
+  height: 0%;
+  min-height: $menu-height-mobile;
+  overflow: hidden;
+  transition: height $transition-medium ease;
   @include ss('padding', $spacing-medium-mobile, $spacing-medium-desktop);
+
+  &.open {
+    height: 100%;
+  }
+}
+
+.Menu .Buttons {
+  margin-top: 0;
 }
 
 .light .Menu {
   background-color: $color-grey-soft-light;
+}
+
+.Menu {
+  .menuButtons {
+    flex-direction: column;
+
+    transition: opacity $transition-fast linear,
+      visibility $transition-fast linear,
+      transform $transition-fast ease;
+
+    opacity: 0;
+    visibility: hidden;
+    transform: translate3d(0, 20px, 0);
+  }
+
+  &.open .menuButtons {
+    transition: opacity $transition-fast linear $transition-medium,
+      transform $transition-fast ease $transition-medium;
+
+    opacity: 1;
+    visibility: visible;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@media all and (min-width: 430px) {
+  .Menu {
+    min-height: 0;
+    flex-direction: row;
+    justify-content: flex-end;
+    align-items: center;
+  }
+
+  .Menu, .Menu.open {
+    height: $menu-height-desktop;
+  }
+
+  .Menu .menuIcon {
+    display: none;
+  }
+
+  .Menu .menuButtons {
+    flex-direction: row;
+    opacity: 1;
+    visibility: visible;
+    transform: translate3d(0, 0, 0);
+  }
+
+  .Menu .menuButtons .Button {
+    margin-top: 0;
+  }
 }
