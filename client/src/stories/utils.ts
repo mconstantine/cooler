@@ -8,12 +8,10 @@ import { Tax } from '../entities/Tax'
 import {
   LocalizedString,
   PositiveInteger,
-  unsafeNonNegativeInteger,
   unsafeNonNegativeNumber,
   unsafePercentage,
   unsafePositiveInteger
 } from '../globalDomain'
-import { Connection, unsafeCursor } from '../misc/Connection'
 
 export const fakeTaxes: Tax[] = [
   {
@@ -31,37 +29,19 @@ export const fakeTaxes: Tax[] = [
 interface FakeClient {
   id: PositiveInteger
   name: LocalizedString
-  user: {
-    taxes: Connection<Tax>
-  }
-}
-
-const fakeTaxConnection: Connection<Tax> = {
-  totalCount: unsafeNonNegativeInteger(fakeTaxes.length),
-  pageInfo: {
-    startCursor: option.some(unsafeCursor(fakeTaxes[0].id.toString())),
-    endCursor: option.some(
-      unsafeCursor(fakeTaxes[fakeTaxes.length - 1].id.toString())
-    ),
-    hasPreviousPage: false,
-    hasNextPage: false
-  },
-  edges: fakeTaxes.map(tax => ({
-    cursor: unsafeCursor(tax.id.toString()),
-    node: tax
-  }))
+  user: PositiveInteger
 }
 
 export const fakeClients: FakeClient[] = [
   {
     id: unsafePositiveInteger(1),
     name: unsafeLocalizedString('John Doe'),
-    user: { taxes: fakeTaxConnection }
+    user: unsafePositiveInteger(1)
   },
   {
     id: unsafePositiveInteger(2),
     name: unsafeLocalizedString('Some Company'),
-    user: { taxes: fakeTaxConnection }
+    user: unsafePositiveInteger(1)
   }
 ]
 
