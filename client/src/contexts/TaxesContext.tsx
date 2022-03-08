@@ -15,7 +15,11 @@ import {
   useReactiveCommand
 } from '../effects/api/useApi'
 import { Tax, TaxCreationInput, TaxUpdateInput } from '../entities/Tax'
-import { PositiveInteger, unsafePositiveInteger } from '../globalDomain'
+import {
+  LocalizedString,
+  PositiveInteger,
+  unsafePositiveInteger
+} from '../globalDomain'
 import {
   addToConnection,
   Connection,
@@ -29,12 +33,12 @@ import { useAccount } from './AccountContext'
 
 interface TaxesContext {
   taxes: Query<CoolerError, Tax[]>
-  createTax: ReaderTaskEither<TaxCreationInput, CoolerError, void>
+  createTax: ReaderTaskEither<TaxCreationInput, LocalizedString, void>
   updateTax: Reader<
     PositiveInteger,
-    ReaderTaskEither<TaxUpdateInput, CoolerError, void>
+    ReaderTaskEither<TaxUpdateInput, LocalizedString, void>
   >
-  deleteTax: ReaderTaskEither<PositiveInteger, CoolerError, void>
+  deleteTax: ReaderTaskEither<PositiveInteger, LocalizedString, void>
 }
 
 const TaxesContext = createContext<TaxesContext>({
@@ -83,25 +87,27 @@ export function TaxesProvider(props: PropsWithChildren<{}>) {
 
   const taxes = pipe(taxesConnection, query.map(getConnectionNodes))
 
-  const createTax = pipe(
-    createTaxCommand,
-    readerTaskEither.chain(tax =>
-      readerTaskEither.fromIO(() => {
-        pipe(
-          taxesConnection,
-          query.chain(connection =>
-            query.fromIO(() =>
-              pipe(addToConnection(connection, tax), setTaxesConnection)
+  const createTax: ReaderTaskEither<TaxCreationInput, LocalizedString, void> =
+    pipe(
+      createTaxCommand,
+      readerTaskEither.chain(tax =>
+        readerTaskEither.fromIO(() => {
+          pipe(
+            taxesConnection,
+            query.chain(connection =>
+              query.fromIO(() =>
+                pipe(addToConnection(connection, tax), setTaxesConnection)
+              )
             )
           )
-        )
-      })
+        })
+      ),
+      readerTaskEither.mapLeft(error => error.message)
     )
-  )
 
   const updateTax: Reader<
     PositiveInteger,
-    ReaderTaskEither<TaxUpdateInput, CoolerError, void>
+    ReaderTaskEither<TaxUpdateInput, LocalizedString, void>
   > = id => {
     const updateTaxCommand = makeUpdateTaxRequest(id)
 
@@ -122,13 +128,14 @@ export function TaxesProvider(props: PropsWithChildren<{}>) {
               )
             )
           })
-        )
+        ),
+        taskEither.mapLeft(error => error.message)
       )
   }
 
   const deleteTax: ReaderTaskEither<
     PositiveInteger,
-    CoolerError,
+    LocalizedString,
     void
   > = id => {
     const deleteTaxCommand = makeDeleteTaxRequest(id)
@@ -149,7 +156,8 @@ export function TaxesProvider(props: PropsWithChildren<{}>) {
             )
           )
         })
-      )
+      ),
+      taskEither.mapLeft(error => error.message)
     )
   }
 

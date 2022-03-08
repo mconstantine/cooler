@@ -10,6 +10,7 @@ import { Menu } from './components/Menu/Menu'
 import { Content } from './components/Content/Content'
 
 const Profile = lazy(() => import('./pages/Profile/Profile'))
+const Settings = lazy(() => import('./pages/Settings/Settings'))
 
 export function App() {
   return (
@@ -30,7 +31,7 @@ export function App() {
                           Clients: () => <p>Clients</p>,
                           Projects: () => <p>Projects</p>,
                           Tasks: () => <p>Tasks</p>,
-                          Settings: () => <p>Settings</p>
+                          Settings: () => <Settings />
                         })
                       )}
                     </Content>
