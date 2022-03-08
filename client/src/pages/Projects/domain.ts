@@ -31,7 +31,7 @@ const ProjectForList = t.type(
 )
 export type ProjectForList = t.TypeOf<typeof ProjectForList>
 
-export const projectsQuery = makeGetRequest({
+export const getProjectsRequest = makeGetRequest({
   url: '/projects',
   inputCodec: ConnectionQueryInput,
   outputCodec: Connection(ProjectForList)

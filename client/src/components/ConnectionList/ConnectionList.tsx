@@ -27,7 +27,7 @@ interface Props<T> {
   query: Query<any, Connection<T>>
   renderListItem: Reader<T, Item>
   onSearchQueryChange: Reader<string, unknown>
-  onLoadMore: IO<unknown>
+  onLoadMore: Option<IO<unknown>>
 }
 
 export function ConnectionList<T>(props: Props<T>) {
@@ -76,16 +76,21 @@ export function ConnectionList<T>(props: Props<T>) {
               />
               {pipe(
                 connection.pageInfo.hasNextPage,
-                boolean.fold(constNull, () => (
-                  <Buttons>
-                    <Button
-                      type="button"
-                      label={a18n`Load more`}
-                      action={props.onLoadMore}
-                      icon={option.some(refresh)}
-                    />
-                  </Buttons>
-                ))
+                boolean.fold(constNull, () =>
+                  pipe(
+                    props.onLoadMore,
+                    option.fold(constNull, onLoadMore => (
+                      <Buttons>
+                        <Button
+                          type="button"
+                          label={a18n`Load more`}
+                          action={onLoadMore}
+                          icon={option.some(refresh)}
+                        />
+                      </Buttons>
+                    ))
+                  )
+                )
               )}
             </>
           )

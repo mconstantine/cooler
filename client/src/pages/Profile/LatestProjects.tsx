@@ -16,10 +16,12 @@ import { getLatestProjectsRequest } from './domain'
 
 export function LatestProjects() {
   const { setRoute } = useRouter()
+
   const input: ConnectionQueryInput = useMemo(
     () => ({
       name: option.none,
-      first: unsafePositiveInteger(10)
+      first: unsafePositiveInteger(10),
+      after: option.none
     }),
     []
   )

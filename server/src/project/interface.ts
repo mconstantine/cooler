@@ -463,6 +463,21 @@ export const ProjectUpdateInput = new t.Type<
 )
 export type ProjectUpdateInput = t.TypeOf<typeof ProjectUpdateInput>
 
+export const ProjectWithClient = t.intersection(
+  [
+    Project,
+    t.type({
+      client: t.type({
+        id: PositiveInteger,
+        name: NonEmptyString,
+        user: PositiveInteger
+      })
+    })
+  ],
+  'ProjectWithClient'
+)
+export type ProjectWithClient = t.TypeOf<typeof ProjectWithClient>
+
 export const FullProject = t.intersection(
   [
     Project,
@@ -481,6 +496,23 @@ export const FullProject = t.intersection(
   'FullProject'
 )
 export type FullProject = t.TypeOf<typeof FullProject>
+
+export const DatabaseProjectWithClient = t.intersection(
+  [
+    DatabaseProject,
+    t.type({
+      client: t.type({
+        id: PositiveInteger,
+        name: NonEmptyString,
+        user: PositiveInteger
+      })
+    })
+  ],
+  'DatabaseProjectWithClient'
+)
+export type DatabaseProjectWithClient = t.TypeOf<
+  typeof DatabaseProjectWithClient
+>
 
 export const FullDatabaseProject = t.intersection(
   [

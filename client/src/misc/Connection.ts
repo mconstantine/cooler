@@ -70,7 +70,8 @@ export interface Connection<T> {
 export const ConnectionQueryInput = t.type(
   {
     name: optionFromNullable(NonEmptyString),
-    first: PositiveInteger
+    first: PositiveInteger,
+    after: optionFromNullable(Cursor)
   },
   'ConnectionQueryInput'
 )

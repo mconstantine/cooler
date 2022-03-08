@@ -170,7 +170,7 @@ const ConnectionListTemplate: Story<Args> = props => {
           })}
           query={request}
           onSearchQueryChange={onQuerySearchChange}
-          onLoadMore={onLoadMore}
+          onLoadMore={option.some(onLoadMore)}
           renderListItem={renderListItem}
         />
       </Content>

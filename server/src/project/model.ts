@@ -3,14 +3,15 @@ import {
   FullDatabaseProject,
   Project,
   ProjectCreationInput,
-  ProjectUpdateInput
+  ProjectUpdateInput,
+  ProjectWithClient
 } from './interface'
 import SQL from 'sql-template-strings'
 import { ConnectionQueryArgs } from '../misc/ConnectionQueryArgs'
 import { queryToConnection } from '../misc/queryToConnection'
 import { DatabaseUser, User } from '../user/interface'
 import { DatabaseClient } from '../client/interface'
-import { Connection } from '../misc/Connection'
+import { Connection, swapConnectionNodes } from '../misc/Connection'
 import {
   CoolerError,
   coolerError,
@@ -146,7 +147,7 @@ export function getProject(
 export function listProjects(
   args: ProjectConnectionQueryArgs,
   user: User
-): TaskEither<CoolerError, Connection<Project>> {
+): TaskEither<CoolerError, Connection<ProjectWithClient>> {
   const sql = SQL`
     JOIN client ON project.client = client.id
     WHERE client.user = ${user.id}
@@ -159,12 +160,48 @@ export function listProjects(
     )
   )
 
-  return queryToConnection(
-    args,
-    ['project.*, client.user'],
-    'project',
-    DatabaseProject,
-    sql
+  return pipe(
+    queryToConnection(
+      {
+        ...args,
+        orderBy: unsafeNonEmptyString('updated_at DESC')
+      },
+      ['project.*, client.user'],
+      'project',
+      DatabaseProject,
+      sql
+    ),
+    taskEither.chain(connection =>
+      pipe(
+        getConnectionNodes(connection),
+        array.map(project =>
+          pipe(
+            getProjectClient(project),
+            taskEither.map(
+              (client): ProjectWithClient => ({
+                ...project,
+                client: {
+                  id: client.id,
+                  name: getClientName(client),
+                  user: client.user
+                } as PositiveInteger & {
+                  id: PositiveInteger
+                  name: NonEmptyString
+                  user: PositiveInteger
+                }
+              })
+            )
+          )
+        ),
+        array.sequence(taskEither.taskEither),
+        taskEither.chain(projectsWithClient =>
+          pipe(
+            swapConnectionNodes(connection, projectsWithClient),
+            taskEither.fromEither
+          )
+        )
+      )
+    )
   )
 }
 
