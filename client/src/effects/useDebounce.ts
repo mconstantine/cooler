@@ -16,7 +16,8 @@ export function useDebounce<F extends (...args: any[]) => void>(
         timeout.current = undefined
       }, time)
     },
-    [callback, time]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [time]
   )
 
   return debounced as F

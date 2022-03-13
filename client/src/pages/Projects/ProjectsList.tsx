@@ -2,7 +2,7 @@ import { option } from 'fp-ts'
 import { pipe } from 'fp-ts/function'
 import { Reader } from 'fp-ts/Reader'
 import { NonEmptyString } from 'io-ts-types'
-import { useCallback, useState } from 'react'
+import { useState } from 'react'
 import { a18n } from '../../a18n'
 import { ConnectionList } from '../../components/ConnectionList/ConnectionList'
 import { RoutedItem } from '../../components/List/List'
@@ -22,13 +22,10 @@ export default function ProjectsList() {
   const [projects] = useGet(getProjectsRequest, input)
   const { setRoute } = useRouter()
 
-  const onSearchQueryChange: Reader<string, void> = useCallback(
-    query =>
-      pipe(query, NonEmptyString.decode, option.fromEither, name =>
-        setInput(input => ({ ...input, name }))
-      ),
-    []
-  )
+  const onSearchQueryChange: Reader<string, void> = query =>
+    pipe(query, NonEmptyString.decode, option.fromEither, name =>
+      setInput(input => ({ ...input, name }))
+    )
 
   const renderProjectItem: Reader<ProjectForList, RoutedItem> = project => ({
     type: 'routed',

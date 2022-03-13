@@ -1,7 +1,6 @@
 import { boolean, option, taskEither } from 'fp-ts'
 import { constNull, constUndefined, pipe } from 'fp-ts/function'
 import { Option } from 'fp-ts/Option'
-import { TaskEither } from 'fp-ts/TaskEither'
 import { a18n } from '../../../a18n'
 import {
   LocalizedString,
@@ -22,13 +21,16 @@ import { Input } from '../Input/Input/Input'
 import { AsyncSelect } from '../Input/AsyncSelect'
 import { Project, ProjectCreationInput } from '../../../entities/Project'
 import { IO } from 'fp-ts/IO'
+import { ReaderTaskEither } from 'fp-ts/ReaderTaskEither'
 
 interface Props {
   project: Option<Project>
-  findClients: (
-    input: string
-  ) => TaskEither<LocalizedString, Record<PositiveInteger, LocalizedString>>
-  onSubmit: (data: ProjectCreationInput) => TaskEither<LocalizedString, unknown>
+  findClients: ReaderTaskEither<
+    string,
+    LocalizedString,
+    Record<PositiveInteger, LocalizedString>
+  >
+  onSubmit: ReaderTaskEither<ProjectCreationInput, LocalizedString, unknown>
   onCancel: IO<void>
 }
 

@@ -44,7 +44,7 @@ const updateProjectResolver = createResolver(
   {
     params: IdInput,
     body: ProjectUpdateInput,
-    output: Project
+    output: FullProject
   },
   ({ params: { id }, body }, context) =>
     pipe(
@@ -56,7 +56,7 @@ const updateProjectResolver = createResolver(
 const deleteProjectResolver = createResolver(
   {
     params: IdInput,
-    output: Project
+    output: FullProject
   },
   ({ params: { id } }, context) =>
     pipe(
@@ -68,7 +68,7 @@ const deleteProjectResolver = createResolver(
 const getProjectResolver = createResolver(
   {
     params: IdInput,
-    output: Project
+    output: FullProject
   },
   ({ params: { id } }, context) =>
     pipe(

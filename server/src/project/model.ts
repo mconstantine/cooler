@@ -1,6 +1,7 @@
 import {
   DatabaseProject,
   FullDatabaseProject,
+  FullProject,
   Project,
   ProjectCreationInput,
   ProjectUpdateInput,
@@ -124,7 +125,7 @@ export function createProject(
 export function getProject(
   id: PositiveInteger,
   user: User
-): TaskEither<CoolerError, Project> {
+): TaskEither<CoolerError, FullProject> {
   return pipe(
     getProjectById(id),
     taskEither.chain(
@@ -140,7 +141,8 @@ export function getProject(
         project => project.user === user.id,
         () => coolerError('COOLER_403', a18n`You cannot see this project`)
       )
-    )
+    ),
+    taskEither.chain(projectToFullProject)
   )
 }
 
@@ -209,7 +211,7 @@ export function updateProject(
   id: PositiveInteger,
   project: ProjectUpdateInput,
   user: User
-): TaskEither<CoolerError, Project> {
+): TaskEither<CoolerError, FullProject> {
   const { name, description, client, cashed } = project
 
   return pipe(
@@ -270,7 +272,8 @@ export function updateProject(
               a18n`Unable to retrieve the project after update`
             )
           )
-        )
+        ),
+        taskEither.chain(projectToFullProject)
       )
     )
   )
@@ -279,7 +282,7 @@ export function updateProject(
 export function deleteProject(
   id: PositiveInteger,
   user: User
-): TaskEither<CoolerError, Project> {
+): TaskEither<CoolerError, FullProject> {
   return pipe(
     getProjectById(id),
     taskEither.chain(
@@ -299,7 +302,7 @@ export function deleteProject(
     taskEither.chain(project =>
       pipe(
         deleteDatabaseProject(project.id),
-        taskEither.map(() => project)
+        taskEither.chain(() => projectToFullProject(project))
       )
     )
   )
