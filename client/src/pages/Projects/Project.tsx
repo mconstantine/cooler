@@ -4,12 +4,14 @@ import { useEffect } from 'react'
 import { ErrorPanel } from '../../components/ErrorPanel/ErrorPanel'
 import { LoadingBlock } from '../../components/Loading/LoadingBlock'
 import { projectsRoute, useRouter } from '../../components/Router'
+import { TaxesProvider } from '../../contexts/TaxesContext'
 import { query } from '../../effects/api/api'
 import { useReactiveCommand } from '../../effects/api/useApi'
 import { Project as ProjectType } from '../../entities/Project'
 import { PositiveInteger } from '../../globalDomain'
 import { makeProjectQuery } from './domain'
 import { ProjectData } from './ProjectData'
+import { ProjectProgress } from './ProjectProgress'
 
 interface Props {
   id: PositiveInteger
@@ -38,13 +40,14 @@ export default function Project(props: Props) {
       () => <LoadingBlock />,
       error => <ErrorPanel error={error.message} />,
       project => (
-        <>
+        <TaxesProvider>
           <ProjectData
             project={project}
             onUpdate={onUpdate}
             onDelete={onDelete}
           />
-        </>
+          <ProjectProgress project={project} />
+        </TaxesProvider>
       )
     )
   )

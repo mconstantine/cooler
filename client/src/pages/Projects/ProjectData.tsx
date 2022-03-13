@@ -6,6 +6,7 @@ import { NonEmptyString } from 'io-ts-types'
 import { useState } from 'react'
 import {
   a18n,
+  formatDate,
   formatDateTime,
   formatMoneyAmount,
   unsafeLocalizedString
@@ -32,6 +33,11 @@ import { skull } from 'ionicons/icons'
 import { useDialog } from '../../effects/useDialog'
 import { Option } from 'fp-ts/Option'
 import { Reader } from 'fp-ts/Reader'
+import { useTaxes } from '../../contexts/TaxesContext'
+import { query } from '../../effects/api/api'
+import { LoadingBlock } from '../../components/Loading/LoadingBlock'
+import { List } from '../../components/List/List'
+import { calculateNetValue, renderTaxItem } from '../Profile/utils'
 
 interface Props {
   project: Project
@@ -40,6 +46,7 @@ interface Props {
 }
 
 export function ProjectData(props: Props) {
+  const { taxes } = useTaxes()
   const findClientsCommand = useLazyGet(clientsQuery)
   const [isEditing, setIsEditing] = useState(false)
   const updateProjectCommand = usePut(
@@ -150,20 +157,53 @@ export function ProjectData(props: Props) {
                   value={a18n`Not cashed`}
                 />
               ),
-              ({ at, balance }) => (
-                <>
-                  <ReadOnlyInput
-                    name="cashed_at"
-                    label={a18n`Cashed at`}
-                    value={formatDateTime(at)}
-                  />
-                  <ReadOnlyInput
-                    name="cashed_balance"
-                    label={a18n`Cashed balance`}
-                    value={formatMoneyAmount(balance)}
-                  />
-                </>
-              )
+              ({ at, balance }) =>
+                pipe(
+                  taxes,
+                  query.fold(
+                    () => <LoadingBlock />,
+                    error => <ErrorPanel error={error.message} />,
+                    taxes => (
+                      <List
+                        heading={option.some(a18n`Cashed`)}
+                        items={[
+                          {
+                            key: 'cashedAt',
+                            type: 'valued',
+                            label: option.none,
+                            content: a18n`Cashed at`,
+                            description: option.none,
+                            value: formatDate(at),
+                            progress: option.none
+                          },
+                          {
+                            key: 'grossCashedBalance',
+                            type: 'valued',
+                            label: option.none,
+                            content: a18n`Cashed balance (gross)`,
+                            description: option.none,
+                            value: formatMoneyAmount(balance),
+                            progress: option.none
+                          },
+                          ...taxes.map(tax =>
+                            renderTaxItem('cashedBalance', balance, tax)
+                          ),
+                          {
+                            key: 'netCashedBalance',
+                            type: 'valued',
+                            label: option.none,
+                            content: a18n`Cashed balance (net)`,
+                            description: option.none,
+                            value: formatMoneyAmount(
+                              calculateNetValue(balance, taxes)
+                            ),
+                            progress: option.none
+                          }
+                        ]}
+                      />
+                    )
+                  )
+                )
             )
           )}
           {pipe(
