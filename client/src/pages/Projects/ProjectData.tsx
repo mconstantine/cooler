@@ -3,7 +3,7 @@ import { constNull, flow, pipe } from 'fp-ts/function'
 import { IO } from 'fp-ts/IO'
 import { ReaderTaskEither } from 'fp-ts/ReaderTaskEither'
 import { NonEmptyString } from 'io-ts-types'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import {
   a18n,
   formatDateTime,
@@ -15,17 +15,10 @@ import { Buttons } from '../../components/Button/Buttons/Buttons'
 import { ErrorPanel } from '../../components/ErrorPanel/ErrorPanel'
 import { ProjectForm } from '../../components/Form/Forms/ProjectForm'
 import { ReadOnlyInput } from '../../components/Form/Input/ReadOnlyInput/ReadOnlyInput'
-import { LoadingBlock } from '../../components/Loading/LoadingBlock'
 import { Panel } from '../../components/Panel/Panel'
-import { query } from '../../effects/api/api'
-import {
-  useDelete,
-  useLazyGet,
-  usePut,
-  useReactiveCommand
-} from '../../effects/api/useApi'
+import { useDelete, useLazyGet, usePut } from '../../effects/api/useApi'
 import { getClientName } from '../../entities/Client'
-import { ProjectCreationInput } from '../../entities/Project'
+import { Project, ProjectCreationInput } from '../../entities/Project'
 import {
   LocalizedString,
   PositiveInteger,
@@ -33,32 +26,29 @@ import {
 } from '../../globalDomain'
 import { getConnectionNodes } from '../../misc/Connection'
 import { clientsQuery } from '../Client/domain'
-import {
-  makeDeleteProjectRequest,
-  makeProjectQuery,
-  makeUpdateProjectRequest
-} from './domain'
+import { makeDeleteProjectRequest, makeUpdateProjectRequest } from './domain'
 import { LoadingButton } from '../../components/Button/LoadingButton/LoadingButton'
 import { skull } from 'ionicons/icons'
 import { useDialog } from '../../effects/useDialog'
 import { Option } from 'fp-ts/Option'
-import { projectsRoute, useRouter } from '../../components/Router'
+import { Reader } from 'fp-ts/Reader'
 
 interface Props {
-  id: PositiveInteger
+  project: Project
+  onUpdate: Reader<Project, void>
+  onDelete: Reader<Project, void>
 }
 
 export function ProjectData(props: Props) {
-  const { setRoute } = useRouter()
   const findClientsCommand = useLazyGet(clientsQuery)
   const [isEditing, setIsEditing] = useState(false)
-  const updateProjectCommand = usePut(makeUpdateProjectRequest(props.id))
-  const deleteProjectCommand = useDelete(makeDeleteProjectRequest(props.id))
-  const [error, setError] = useState<Option<LocalizedString>>(option.none)
-
-  const [project, setProject, getProjectCommand] = useReactiveCommand(
-    makeProjectQuery(props.id)
+  const updateProjectCommand = usePut(
+    makeUpdateProjectRequest(props.project.id)
   )
+  const deleteProjectCommand = useDelete(
+    makeDeleteProjectRequest(props.project.id)
+  )
+  const [error, setError] = useState<Option<LocalizedString>>(option.none)
 
   const [Dialog, deleteProject] = useDialog<void, void, void>(
     () =>
@@ -67,7 +57,7 @@ export function ProjectData(props: Props) {
         taskEither.chain(deleteProjectCommand),
         taskEither.bimap(
           error => pipe(error.message, option.some, setError),
-          () => setRoute(projectsRoute('all'))
+          props.onDelete
         )
       ),
     {
@@ -112,115 +102,102 @@ export function ProjectData(props: Props) {
       error => error.message,
       project => {
         setIsEditing(false)
-        setProject(project)
+        props.onUpdate(project)
       }
     )
   )
 
-  useEffect(() => {
-    const fetchProject = getProjectCommand()
-    fetchProject()
-  }, [getProjectCommand])
-
   return pipe(
-    project,
-    query.fold(
-      () => <LoadingBlock />,
-      error => <ErrorPanel error={error.message} />,
-      project =>
-        pipe(
-          isEditing,
-          boolean.fold(
-            () => (
-              <Panel title={project.name} framed action={option.none}>
+    isEditing,
+    boolean.fold(
+      () => (
+        <Panel title={props.project.name} framed action={option.none}>
+          <ReadOnlyInput
+            name="name"
+            label={a18n`Name`}
+            value={props.project.name}
+          />
+          <ReadOnlyInput
+            name="description"
+            label={a18n`Description`}
+            value={pipe(
+              props.project.description,
+              option.getOrElse(() => unsafeLocalizedString(''))
+            )}
+          />
+          <ReadOnlyInput
+            name="client"
+            label={a18n`Client`}
+            value={props.project.client.name}
+          />
+          <ReadOnlyInput
+            name="created_at"
+            label={a18n`Created at`}
+            value={formatDateTime(props.project.created_at)}
+          />
+          <ReadOnlyInput
+            name="updated_at"
+            label={a18n`Last updated at`}
+            value={formatDateTime(props.project.updated_at)}
+          />
+          {pipe(
+            props.project.cashed,
+            option.fold(
+              () => (
                 <ReadOnlyInput
-                  name="name"
-                  label={a18n`Name`}
-                  value={project.name}
+                  name="cashed_status"
+                  label={a18n`Cashed status`}
+                  value={a18n`Not cashed`}
                 />
-                <ReadOnlyInput
-                  name="description"
-                  label={a18n`Description`}
-                  value={pipe(
-                    project.description,
-                    option.getOrElse(() => unsafeLocalizedString(''))
-                  )}
-                />
-                <ReadOnlyInput
-                  name="client"
-                  label={a18n`Client`}
-                  value={project.client.name}
-                />
-                <ReadOnlyInput
-                  name="created_at"
-                  label={a18n`Created at`}
-                  value={formatDateTime(project.created_at)}
-                />
-                <ReadOnlyInput
-                  name="updated_at"
-                  label={a18n`Last updated at`}
-                  value={formatDateTime(project.updated_at)}
-                />
-                {pipe(
-                  project.cashed,
-                  option.fold(
-                    () => (
-                      <ReadOnlyInput
-                        name="cashed_status"
-                        label={a18n`Cashed status`}
-                        value={a18n`Not cashed`}
-                      />
-                    ),
-                    ({ at, balance }) => (
-                      <>
-                        <ReadOnlyInput
-                          name="cashed_at"
-                          label={a18n`Cashed at`}
-                          value={formatDateTime(at)}
-                        />
-                        <ReadOnlyInput
-                          name="cashed_balance"
-                          label={a18n`Cashed balance`}
-                          value={formatMoneyAmount(balance)}
-                        />
-                      </>
-                    )
-                  )
-                )}
-                {pipe(
-                  error,
-                  option.fold(constNull, error => <ErrorPanel error={error} />)
-                )}
-                <Buttons spacing="spread">
-                  <Button
-                    type="button"
-                    color="primary"
-                    label={a18n`Edit`}
-                    action={() => setIsEditing(true)}
-                    icon={option.none}
+              ),
+              ({ at, balance }) => (
+                <>
+                  <ReadOnlyInput
+                    name="cashed_at"
+                    label={a18n`Cashed at`}
+                    value={formatDateTime(at)}
                   />
-                  <LoadingButton
-                    type="button"
-                    label={a18n`Delete project`}
-                    color="danger"
-                    flat
-                    action={deleteProject()}
-                    icon={skull}
+                  <ReadOnlyInput
+                    name="cashed_balance"
+                    label={a18n`Cashed balance`}
+                    value={formatMoneyAmount(balance)}
                   />
-                </Buttons>
-                <Dialog />
-              </Panel>
-            ),
-            () => (
-              <ProjectForm
-                project={option.some(project)}
-                findClients={findClients}
-                onSubmit={onSubmit}
-                onCancel={onCancel}
-              />
+                </>
+              )
             )
-          )
-        )
+          )}
+          {pipe(
+            error,
+            option.fold(constNull, error => <ErrorPanel error={error} />)
+          )}
+          <Buttons spacing="spread">
+            <Button
+              type="button"
+              color="primary"
+              label={a18n`Edit`}
+              action={() => setIsEditing(true)}
+              icon={option.none}
+            />
+            <LoadingButton
+              type="button"
+              label={a18n`Delete project`}
+              color="danger"
+              flat
+              action={deleteProject()}
+              icon={skull}
+            />
+          </Buttons>
+          <Dialog />
+        </Panel>
+      ),
+      () => (
+        <ProjectForm
+          project={option.some(props.project)}
+          findClients={findClients}
+          onSubmit={onSubmit}
+          onCancel={onCancel}
+        />
+      )
     )
   )
 }
