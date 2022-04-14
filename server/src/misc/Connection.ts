@@ -3,7 +3,7 @@ import { Either } from 'fp-ts/Either'
 import { Reader } from 'fp-ts/Reader'
 import { Option } from 'fp-ts/Option'
 import * as t from 'io-ts'
-import { NonEmptyString, optionFromNullable } from 'io-ts-types'
+import { optionFromNullable } from 'io-ts-types'
 import { a18n } from './a18n'
 import { coolerError, CoolerError, NonNegativeInteger } from './Types'
 
@@ -11,13 +11,13 @@ export const Edge = <T extends t.Mixed>(T: T) =>
   t.type(
     {
       node: T,
-      cursor: NonEmptyString
+      cursor: NonNegativeInteger
     },
     `Edge<${T.name}>`
   )
 export interface Edge<T> {
   node: T
-  cursor: NonEmptyString
+  cursor: NonNegativeInteger
 }
 
 export const Connection = <T extends t.Mixed>(T: T) =>
@@ -27,8 +27,8 @@ export const Connection = <T extends t.Mixed>(T: T) =>
       edges: t.array(Edge(T)),
       pageInfo: t.type(
         {
-          startCursor: optionFromNullable(NonEmptyString),
-          endCursor: optionFromNullable(NonEmptyString),
+          startCursor: optionFromNullable(NonNegativeInteger),
+          endCursor: optionFromNullable(NonNegativeInteger),
           hasNextPage: t.boolean,
           hasPreviousPage: t.boolean
         },
@@ -76,8 +76,8 @@ export interface Connection<T> {
   totalCount: NonNegativeInteger
   edges: Edge<T>[]
   pageInfo: {
-    startCursor: Option<NonEmptyString>
-    endCursor: Option<NonEmptyString>
+    startCursor: Option<NonNegativeInteger>
+    endCursor: Option<NonNegativeInteger>
     hasNextPage: boolean
     hasPreviousPage: boolean
   }

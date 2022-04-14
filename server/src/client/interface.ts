@@ -1,15 +1,23 @@
+import { either, option } from 'fp-ts'
+import { Either } from 'fp-ts/Either'
+import { flow, pipe } from 'fp-ts/function'
+import { sequenceS } from 'fp-ts/Apply'
+import { Reader } from 'fp-ts/Reader'
 import * as t from 'io-ts'
 import {
   DateFromISOString,
   NonEmptyString,
-  optionFromNullable
+  optionFromNullable,
+  date
 } from 'io-ts-types'
 import {
-  DateFromSQLDate,
-  EmailString,
-  optionFromNull,
-  PositiveInteger
-} from '../misc/Types'
+  makeCollection,
+  ObjectId,
+  ObjectIdFromString,
+  WithIdC
+} from '../misc/Entity'
+import { EmailString, optionFromNull } from '../misc/Types'
+import { WithId } from 'mongodb'
 
 export const ClientType = t.keyof({
   PRIVATE: true,
@@ -390,103 +398,188 @@ export const Country = t.keyof(
 )
 export type Country = t.TypeOf<typeof Country>
 
+// FIXME: these are used to create partials, so a custom codec is not feasible
+// The solution is a double codec
+const DatabaseClientProps = {
+  type: ClientType,
+  fiscalCode: optionFromNullable(NonEmptyString),
+  firstName: optionFromNullable(NonEmptyString),
+  lastName: optionFromNullable(NonEmptyString),
+  countryCode: optionFromNullable(Country),
+  vatNumber: optionFromNullable(NonEmptyString),
+  businessName: optionFromNullable(NonEmptyString),
+  addressCountry: Country,
+  addressProvince: Province,
+  addressCity: NonEmptyString,
+  addressZip: NonEmptyString,
+  addressStreet: NonEmptyString,
+  addressStreetNumber: optionFromNullable(NonEmptyString),
+  addressEmail: EmailString,
+  user: ObjectId,
+  createdAt: date,
+  updatedAt: date
+}
+
+export const DatabaseClient = t.type(DatabaseClientProps, 'DatabaseClient')
+export type DatabaseClient = t.TypeOf<typeof DatabaseClient>
+
 const ClientCommonData = t.type(
   {
-    id: PositiveInteger,
-    address_country: Country,
-    address_province: Province,
-    address_city: NonEmptyString,
-    address_zip: NonEmptyString,
-    address_street: NonEmptyString,
-    address_street_number: optionFromNullable(NonEmptyString),
-    address_email: EmailString,
-    user: PositiveInteger
+    _id: ObjectIdFromString,
+    addressCountry: Country,
+    addressProvince: Province,
+    addressCity: NonEmptyString,
+    addressZip: NonEmptyString,
+    addressStreet: NonEmptyString,
+    addressStreetNumber: optionFromNullable(NonEmptyString),
+    addressEmail: EmailString,
+    user: ObjectId,
+    createdAt: DateFromISOString,
+    updatedAt: DateFromISOString
   },
   'ClientCommonData'
 )
 
-const ClientData = t.intersection(
+const PrivateClient = t.intersection(
   [
     ClientCommonData,
     t.type({
-      created_at: DateFromISOString,
-      updated_at: DateFromISOString
+      type: t.literal('PRIVATE'),
+      fiscalCode: NonEmptyString,
+      firstName: NonEmptyString,
+      lastName: NonEmptyString
     })
   ],
-  'ClientData'
-)
-
-const DatabaseClientData = t.intersection(
-  [
-    ClientCommonData,
-    t.type({
-      created_at: DateFromSQLDate,
-      updated_at: DateFromSQLDate
-    })
-  ],
-  'DatabaseClientData'
-)
-
-export const PrivateClientData = t.type(
-  {
-    type: t.literal('PRIVATE'),
-    fiscal_code: NonEmptyString,
-    first_name: NonEmptyString,
-    last_name: NonEmptyString
-  },
-  'PrivateClientData'
-)
-
-export const BusinessClientData = t.type(
-  {
-    type: t.literal('BUSINESS'),
-    country_code: Country,
-    vat_number: NonEmptyString,
-    business_name: NonEmptyString
-  },
-  'BusinessClientData'
-)
-
-export const PrivateClient = t.intersection(
-  [ClientData, PrivateClientData],
   'PrivateClient'
 )
-export type PrivateClient = t.TypeOf<typeof PrivateClient>
 
-export const BusinessClient = t.intersection(
-  [ClientData, BusinessClientData],
+const BusinessClient = t.intersection(
+  [
+    ClientCommonData,
+    t.type({
+      type: t.literal('BUSINESS'),
+      countryCode: Country,
+      vatNumber: NonEmptyString,
+      businessName: NonEmptyString
+    })
+  ],
   'BusinessClient'
-)
-export type BusinessClient = t.TypeOf<typeof BusinessClient>
-
-export const PrivateDatabaseClient = t.intersection(
-  [DatabaseClientData, PrivateClientData],
-  'PrivateDatabaseClient'
-)
-
-export const BusinessDatabaseClient = t.intersection(
-  [DatabaseClientData, BusinessClientData],
-  'BusinessDatabaseClient'
 )
 
 export const Client = t.union([PrivateClient, BusinessClient], 'Client')
 export type Client = t.TypeOf<typeof Client>
 
-export const DatabaseClient = t.union(
-  [PrivateDatabaseClient, BusinessDatabaseClient],
-  'DatabaseClient'
+function getCommonData(client: Client | WithId<DatabaseClient>) {
+  return {
+    _id: client._id,
+    addressCountry: client.addressCountry,
+    addressProvince: client.addressProvince,
+    addressCity: client.addressCity,
+    addressZip: client.addressZip,
+    addressStreet: client.addressStreet,
+    addressStreetNumber: client.addressStreetNumber,
+    addressEmail: client.addressEmail,
+    user: client.user,
+    createdAt: client.createdAt,
+    updatedAt: client.updatedAt
+  }
+}
+
+const ClientFromDatabase = new t.Type<Client, WithId<DatabaseClient>>(
+  'ClientFromDatabase',
+  Client.is,
+  (u, c) =>
+    pipe(
+      WithIdC(DatabaseClient).decode(u),
+      either.chain(databaseClient => {
+        const commonData = getCommonData(databaseClient)
+
+        switch (databaseClient.type) {
+          case 'PRIVATE':
+            return pipe(
+              {
+                fiscalCode: databaseClient.fiscalCode,
+                firstName: databaseClient.firstName,
+                lastName: databaseClient.lastName
+              },
+              sequenceS(option.option),
+              option.fold(
+                () => t.failure(u, c),
+                data =>
+                  t.success({
+                    type: 'PRIVATE',
+                    ...commonData,
+                    ...data
+                  })
+              )
+            )
+          case 'BUSINESS':
+            return pipe(
+              {
+                countryCode: databaseClient.countryCode,
+                vatNumber: databaseClient.vatNumber,
+                businessName: databaseClient.businessName
+              },
+              sequenceS(option.option),
+              option.fold(
+                () => t.failure(u, c),
+                data =>
+                  t.success({
+                    type: 'BUSINESS',
+                    ...commonData,
+                    ...data
+                  })
+              )
+            )
+        }
+      })
+    ),
+  client => {
+    const commonData = getCommonData(client)
+
+    switch (client.type) {
+      case 'PRIVATE':
+        return {
+          ...commonData,
+          type: 'PRIVATE',
+          fiscalCode: option.some(client.fiscalCode),
+          firstName: option.some(client.firstName),
+          lastName: option.some(client.lastName),
+          countryCode: option.none,
+          vatNumber: option.none,
+          businessName: option.none
+        }
+      case 'BUSINESS':
+        return {
+          ...commonData,
+          type: 'BUSINESS',
+          countryCode: option.some(client.countryCode),
+          vatNumber: option.some(client.vatNumber),
+          businessName: option.some(client.businessName),
+          fiscalCode: option.none,
+          firstName: option.none,
+          lastName: option.none
+        }
+    }
+  }
 )
-export type DatabaseClient = t.TypeOf<typeof DatabaseClient>
+type ClientFromDatabase = t.TypeOf<typeof ClientFromDatabase>
+
+export const clientCollection = makeCollection(
+  'clients',
+  DatabaseClientProps,
+  ClientFromDatabase
+)
 
 export const ClientCreationCommonInput = t.type(
   {
-    address_country: Country,
-    address_province: Province,
-    address_city: NonEmptyString,
-    address_zip: NonEmptyString,
-    address_street: NonEmptyString,
-    address_street_number: optionFromNullable(NonEmptyString),
-    address_email: EmailString
+    addressCountry: Country,
+    addressProvince: Province,
+    addressCity: NonEmptyString,
+    addressZip: NonEmptyString,
+    addressStreet: NonEmptyString,
+    addressStreetNumber: optionFromNullable(NonEmptyString),
+    addressEmail: EmailString
   },
   'ClientCreationCommonInput'
 )
@@ -499,9 +592,9 @@ export const PrivateClientCreationInput = t.intersection([
   t.type(
     {
       type: t.literal('PRIVATE'),
-      fiscal_code: NonEmptyString,
-      first_name: NonEmptyString,
-      last_name: NonEmptyString
+      fiscalCode: NonEmptyString,
+      firstName: NonEmptyString,
+      lastName: NonEmptyString
     },
     'PrivateClientCreationInput'
   )
@@ -515,9 +608,9 @@ export const BusinessClientCreationInput = t.intersection(
     ClientCreationCommonInput,
     t.type({
       type: t.literal('BUSINESS'),
-      country_code: Country,
-      vat_number: NonEmptyString,
-      business_name: NonEmptyString
+      countryCode: Country,
+      vatNumber: NonEmptyString,
+      businessName: NonEmptyString
     })
   ],
   'BusinessClientCreationInput'
@@ -532,16 +625,89 @@ export const ClientCreationInput = t.union(
 )
 export type ClientCreationInput = t.TypeOf<typeof ClientCreationInput>
 
+// This actually returns a DatabaseClient.
+export function clientCreationInputToDatabaseClient(
+  input: ClientCreationInput,
+  user: ObjectId
+): ClientFromDatabase {
+  const client = { ...input, user }
+
+  return {
+    ...client,
+    ...pipe(
+      client,
+      foldClientType<
+        ClientCreationInput & { user: ObjectId },
+        Partial<DatabaseClient>
+      >({
+        PRIVATE: client => ({
+          fiscalCode: option.some(client.fiscalCode),
+          firstName: option.some(client.firstName),
+          lastName: option.some(client.lastName),
+          countryCode: option.none,
+          businessName: option.none,
+          vatNumber: option.none
+        }),
+        BUSINESS: client => ({
+          fiscalCode: option.none,
+          firstName: option.none,
+          lastName: option.none,
+          countryCode: option.some(client.countryCode),
+          businessName: option.some(client.businessName),
+          vatNumber: option.some(client.vatNumber)
+        })
+      })
+    )
+  } as ClientFromDatabase
+}
+
+// This actually returns a Partial<DatabaseClient>, but we are using two different codecs and io-ts
+// is pretty confused by that.
+export function clientUpdateInputToDatabaseClient(
+  input: ClientUpdateInput
+): Partial<ClientFromDatabase> {
+  return {
+    ...input,
+    fiscalCode:
+      input.type === 'PRIVATE' && input.fiscalCode
+        ? option.fromNullable(input.fiscalCode)
+        : undefined,
+    firstName:
+      input.type === 'PRIVATE' && input.firstName
+        ? option.fromNullable(input.firstName)
+        : undefined,
+    lastName:
+      input.type === 'PRIVATE' && input.lastName
+        ? option.fromNullable(input.lastName)
+        : undefined,
+    // @ts-ignore
+    countryCode:
+      input.type === 'BUSINESS' && input.countryCode
+        ? option.fromNullable(input.countryCode)
+        : undefined,
+    // @ts-ignore
+    businessName:
+      input.type === 'BUSINESS' && input.businessName
+        ? option.fromNullable(input.businessName)
+        : undefined,
+    // @ts-ignore
+    vatNumber:
+      input.type === 'BUSINESS' && input.vatNumber
+        ? option.fromNullable(input.vatNumber)
+        : undefined
+  }
+}
+
 export const ClientUpdateCommonInput = t.partial(
   {
-    user: PositiveInteger,
-    address_country: Country,
-    address_province: Province,
-    address_city: NonEmptyString,
-    address_zip: NonEmptyString,
-    address_street: NonEmptyString,
-    address_street_number: optionFromNull(NonEmptyString),
-    address_email: EmailString
+    user: ObjectIdFromString,
+    addressCountry: Country,
+    addressProvince: Province,
+    addressCity: NonEmptyString,
+    addressZip: NonEmptyString,
+    addressStreet: NonEmptyString,
+    addressStreetNumber: optionFromNull(NonEmptyString),
+    addressEmail: EmailString
   },
   'ClientUpdateCommonInput'
 )
@@ -552,9 +718,9 @@ export const PrivateClientUpdateInput = t.intersection(
     ClientUpdateCommonInput,
     t.partial({
       type: t.literal('PRIVATE'),
-      fiscal_code: NonEmptyString,
-      first_name: NonEmptyString,
-      last_name: NonEmptyString
+      fiscalCode: NonEmptyString,
+      firstName: NonEmptyString,
+      lastName: NonEmptyString
     })
   ],
   'PrivateClientUpdateInput'
@@ -566,16 +732,16 @@ export const BusinessClientUpdateInput = t.intersection(
     ClientUpdateCommonInput,
     t.partial({
       type: t.literal('BUSINESS'),
-      country_code: Country,
-      vat_number: NonEmptyString,
-      business_name: NonEmptyString,
-      address_country: Country,
-      address_province: Province,
-      address_city: NonEmptyString,
-      address_zip: NonEmptyString,
-      address_street: NonEmptyString,
-      address_street_number: optionFromNullable(NonEmptyString),
-      address_email: EmailString
+      countryCode: Country,
+      vatNumber: NonEmptyString,
+      businessName: NonEmptyString,
+      addressCountry: Country,
+      addressProvince: Province,
+      addressCity: NonEmptyString,
+      addressZip: NonEmptyString,
+      addressStreet: NonEmptyString,
+      addressStreetNumber: optionFromNullable(NonEmptyString),
+      addressEmail: EmailString
     })
   ],
   'BusinessClientUpdateInput'
@@ -590,44 +756,14 @@ export const ClientUpdateInput = t.union(
 )
 export type ClientUpdateInput = t.TypeOf<typeof ClientUpdateInput>
 
-export function foldClientCreationInput<T>(
-  whenPrivate: (input: PrivateClientCreationInput) => T,
-  whenBusiness: (input: BusinessClientCreationInput) => T
-): (input: ClientCreationInput) => T {
-  return input => {
-    switch (input.type) {
-      case 'PRIVATE':
-        return whenPrivate(input)
-      case 'BUSINESS':
-        return whenBusiness(input)
-    }
-  }
-}
-
-export function foldClientUpdateInput<T>(
-  whenPrivate: (input: PrivateClientUpdateInput) => T,
-  whenBusiness: (input: BusinessClientUpdateInput) => T
-): (input: ClientUpdateInput & { type: ClientType }) => T {
-  return input => {
-    switch (input.type) {
-      case 'PRIVATE':
-        return whenPrivate(input)
-      case 'BUSINESS':
-        return whenBusiness(input)
-    }
-  }
-}
-
 export function foldClient<T>(
-  whenPrivate: (client: PrivateClient) => T,
-  whenBusiness: (client: BusinessClient) => T
-): (client: Client) => T {
-  return client => {
-    switch (client.type) {
-      case 'PRIVATE':
-        return whenPrivate(client)
-      case 'BUSINESS':
-        return whenBusiness(client)
-    }
-  }
+  cases: { [k in ClientType]: Reader<Extract<Client, { type: k }>, T> }
+): Reader<Client, T> {
+  return client => cases[client.type](client as any)
+}
+
+export function foldClientType<I extends { type: ClientType }, O>(
+  cases: { [k in ClientType]: Reader<Extract<I, { type: k }>, O> }
+): Reader<I, O> {
+  return client => cases[client.type](client as any)
 }

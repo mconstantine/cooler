@@ -1,9 +1,9 @@
 import userResolvers from './user/resolvers'
-import clientResolvers from './client/resolvers'
-import projectResolvers from './project/resolvers'
-import taskResolvers from './task/resolvers'
-import sessionResolvers from './session/resolvers'
-import taxResolvers from './tax/resolvers'
+// import clientResolvers from './client/resolvers'
+// import projectResolvers from './project/resolvers'
+// import taskResolvers from './task/resolvers'
+// import sessionResolvers from './session/resolvers'
+// import taxResolvers from './tax/resolvers'
 import { HttpMethod, Resolver } from './misc/createResolver'
 import express, { Express, Router } from 'express'
 
@@ -15,12 +15,12 @@ export type Resolvers = Array<
 
 export function assignResolvers(app: Express) {
   const rootResolvers = [
-    userResolvers,
-    clientResolvers,
-    projectResolvers,
-    taskResolvers,
-    sessionResolvers,
-    taxResolvers
+    userResolvers
+    // clientResolvers,
+    // projectResolvers,
+    // taskResolvers,
+    // sessionResolvers,
+    // taxResolvers
   ]
 
   rootResolvers.forEach(resolvers =>

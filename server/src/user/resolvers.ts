@@ -54,7 +54,7 @@ const updateProfileResolver = createResolver(
   ({ body }, context) =>
     pipe(
       ensureUser(context),
-      taskEither.chain(contextUser => updateUser(contextUser.id, body))
+      taskEither.chain(contextUser => updateUser(contextUser._id, body))
     )
 )
 
@@ -65,7 +65,7 @@ const deleteProfileResolver = createResolver(
   (_args, context) =>
     pipe(
       ensureUser(context),
-      taskEither.chain(user => deleteUser(user.id))
+      taskEither.chain(user => deleteUser(user._id))
     )
 )
 

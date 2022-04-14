@@ -1,32 +1,31 @@
 import * as t from 'io-ts'
 import {
+  date,
   DateFromISOString,
   NonEmptyString,
   optionFromNullable
 } from 'io-ts-types'
-import { DateFromSQLDate, EmailString, PositiveInteger } from '../misc/Types'
+import { makeCollection, ObjectIdFromString, WithIdC } from '../misc/Entity'
+import { EmailString } from '../misc/Types'
 
-export const User = t.type(
-  {
-    id: PositiveInteger,
-    name: NonEmptyString,
-    email: EmailString,
-    password: NonEmptyString,
-    created_at: DateFromISOString,
-    updated_at: DateFromISOString
-  },
-  'User'
-)
+const userProps = {
+  name: NonEmptyString,
+  email: EmailString,
+  password: NonEmptyString,
+  createdAt: DateFromISOString,
+  updatedAt: DateFromISOString
+}
+
+export const User = t.type(userProps, 'User')
 export type User = t.TypeOf<typeof User>
 
 export const DatabaseUser = t.type(
   {
-    id: PositiveInteger,
     name: NonEmptyString,
     email: EmailString,
     password: NonEmptyString,
-    created_at: DateFromSQLDate,
-    updated_at: DateFromSQLDate
+    createdAt: date,
+    updatedAt: date
   },
   'DatabaseUser'
 )
@@ -44,7 +43,7 @@ export type TokenType = t.TypeOf<typeof TokenType>
 export const Token = t.type(
   {
     type: TokenType,
-    id: PositiveInteger
+    _id: ObjectIdFromString
   },
   'Token'
 )
@@ -52,7 +51,7 @@ export type Token = t.TypeOf<typeof Token>
 
 export const UserContext = t.type(
   {
-    user: User
+    user: WithIdC(User)
   },
   'UserContext'
 )
@@ -107,3 +106,5 @@ export const UserUpdateInput = t.partial(
   'UserUpdateInput'
 )
 export type UserUpdateInput = t.TypeOf<typeof UserUpdateInput>
+
+export const userCollection = makeCollection('users', userProps, DatabaseUser)

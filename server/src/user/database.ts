@@ -1,37 +1,55 @@
+import { ObjectId } from 'bson'
+import { option, taskEither } from 'fp-ts'
+import { pipe } from 'fp-ts/function'
 import { Option } from 'fp-ts/Option'
 import { TaskEither } from 'fp-ts/TaskEither'
-import SQL from 'sql-template-strings'
-import { dbGet, insert, remove, update } from '../misc/dbUtils'
-import { CoolerError, EmailString, PositiveInteger } from '../misc/Types'
-import { DatabaseUser, UserCreationInput, UserUpdateInput } from './interface'
+import { DeleteResult, UpdateResult, WithId } from 'mongodb'
+import { dbGet, deleteOne, insertOne, updateOne } from '../misc/dbUtils'
+import { removeUndefined } from '../misc/removeUndefined'
+import { CoolerError, EmailString } from '../misc/Types'
+import {
+  DatabaseUser,
+  User,
+  userCollection,
+  UserCreationInput,
+  UserUpdateInput
+} from './interface'
 
 export function getUserByEmail(
   email: EmailString
-): TaskEither<CoolerError, Option<DatabaseUser>> {
-  return dbGet(SQL`SELECT * FROM user WHERE email = ${email}`, DatabaseUser)
+): TaskEither<CoolerError, Option<WithId<DatabaseUser>>> {
+  return dbGet(userCollection, { email })
 }
 
 export function getUserById(
-  id: PositiveInteger
-): TaskEither<CoolerError, Option<DatabaseUser>> {
-  return dbGet(SQL`SELECT * FROM user WHERE id = ${id}`, DatabaseUser)
+  _id: ObjectId
+): TaskEither<CoolerError, Option<WithId<DatabaseUser>>> {
+  return dbGet(userCollection, { _id })
 }
 
 export function insertUser(
   user: UserCreationInput
-): TaskEither<CoolerError, PositiveInteger> {
-  return insert('user', user, UserCreationInput)
+): TaskEither<CoolerError, ObjectId> {
+  return pipe(
+    insertOne(userCollection, user),
+    taskEither.map(result => result.insertedId)
+  )
 }
 
 export function updateUser(
-  id: PositiveInteger,
+  _id: ObjectId,
   user: UserUpdateInput
-): TaskEither<CoolerError, PositiveInteger> {
-  return update('user', id, user, UserUpdateInput)
+): TaskEither<CoolerError, UpdateResult> {
+  const data = removeUndefined({
+    ...user,
+    password: user.password ? option.toUndefined(user.password) : undefined
+  }) as Partial<User>
+
+  return updateOne(userCollection, { _id }, data)
 }
 
 export function deleteUser(
-  id: PositiveInteger
-): TaskEither<CoolerError, PositiveInteger> {
-  return remove('user', { id })
+  _id: ObjectId
+): TaskEither<CoolerError, DeleteResult> {
+  return deleteOne(userCollection, { _id })
 }

@@ -2,78 +2,31 @@ import {
   Client,
   ClientCreationInput,
   ClientUpdateInput,
-  foldClientCreationInput,
-  ClientCreationCommonInput,
-  PrivateClientCreationInput,
-  BusinessClientCreationInput,
-  DatabaseClient,
-  ClientUpdateCommonInput,
-  foldClientUpdateInput,
-  PrivateClientUpdateInput,
-  BusinessClientUpdateInput,
-  foldClient
+  DatabaseClient
 } from './interface'
-import SQL from 'sql-template-strings'
-import { ConnectionQueryArgs } from '../misc/ConnectionQueryArgs'
-import { queryToConnection } from '../misc/queryToConnection'
-import { DatabaseUser, User } from '../user/interface'
-import { Connection } from '../misc/Connection'
 import { TaskEither } from 'fp-ts/TaskEither'
-import { constVoid, pipe } from 'fp-ts/function'
-import { option, taskEither } from 'fp-ts'
+import { pipe } from 'fp-ts/function'
+import { taskEither } from 'fp-ts'
 import {
   getClientById,
   insertClient,
   updateClient as updateDatabaseClient,
   deleteClient as deleteDatabaseClient
 } from './database'
-import {
-  CoolerError,
-  coolerError,
-  PositiveInteger,
-  unsafeNonEmptyString
-} from '../misc/Types'
+import { CoolerError, coolerError, unsafeNonEmptyString } from '../misc/Types'
 import { NonEmptyString } from 'io-ts-types'
 import { getUserById } from '../user/database'
-import { ClientConnectionQuerysArgs } from './resolvers'
 import { a18n } from '../misc/a18n'
+import { ObjectId, WithId } from 'mongodb'
+import { User } from '../user/interface'
 
 export function createClient(
   input: ClientCreationInput,
-  user: User
-): TaskEither<CoolerError, Client> {
-  const commonInput: ClientCreationCommonInput & { user: PositiveInteger } = {
-    address_city: input.address_city,
-    address_country: input.address_country,
-    address_email: input.address_email,
-    address_province: input.address_province,
-    address_street: input.address_street,
-    address_street_number: input.address_street_number,
-    address_zip: input.address_zip,
-    user: user.id
-  }
-
+  user: WithId<User>
+): TaskEither<CoolerError, WithId<Client>> {
   return pipe(
-    input,
-    foldClientCreationInput(
-      (input): PrivateClientCreationInput => ({
-        ...commonInput,
-        type: input.type,
-        first_name: input.first_name,
-        last_name: input.last_name,
-        fiscal_code: input.fiscal_code
-      }),
-      (input): BusinessClientCreationInput => ({
-        ...commonInput,
-        // @ts-ignore
-        type: input.type,
-        country_code: input.country_code,
-        business_name: input.business_name,
-        vat_number: input.vat_number
-      })
-    ),
-    insertClient,
-    taskEither.chain(id => getClientById(id)),
+    insertClient(input, user._id),
+    taskEither.chain(({ insertedId }) => getClientById(insertedId)),
     taskEither.chain(
       taskEither.fromOption(() =>
         coolerError(
@@ -86,11 +39,11 @@ export function createClient(
 }
 
 export function getClient(
-  id: PositiveInteger,
-  user: User
-): TaskEither<CoolerError, Client> {
+  _id: ObjectId,
+  user: WithId<User>
+): TaskEither<CoolerError, WithId<Client>> {
   return pipe(
-    getClientById(id),
+    getClientById(_id),
     taskEither.chain(
       taskEither.fromOption(() =>
         coolerError(
@@ -101,40 +54,40 @@ export function getClient(
     ),
     taskEither.chain(
       taskEither.fromPredicate(
-        client => client.user === user.id,
+        client => client.user.equals(user._id),
         () => coolerError('COOLER_403', a18n`You cannot see this client`)
       )
     )
   )
 }
 
-export function listClients(
-  args: ClientConnectionQuerysArgs,
-  user: User
-): TaskEither<CoolerError, Connection<Client>> {
-  const where = SQL`WHERE user = ${user.id}`
+// export function listClients(
+//   args: ClientConnectionQuerysArgs,
+//   user: User
+// ): TaskEither<CoolerError, Connection<Client>> {
+//   const where = SQL`WHERE user = ${user.id}`
 
-  pipe(
-    args.name,
-    option.fold(constVoid, name =>
-      where.append(SQL`
-        AND (
-          (type = 'BUSINESS' AND business_name LIKE ${`%${name}%`}) OR
-          (type = 'PRIVATE' AND first_name || ' ' || last_name LIKE ${`%${name}%`})
-        )`)
-    )
-  )
+//   pipe(
+//     args.name,
+//     option.fold(constVoid, name =>
+//       where.append(SQL`
+//         AND (
+//           (type = 'BUSINESS' AND business_name LIKE ${`%${name}%`}) OR
+//           (type = 'PRIVATE' AND first_name || ' ' || last_name LIKE ${`%${name}%`})
+//         )`)
+//     )
+//   )
 
-  return queryToConnection(args, ['*'], 'client', DatabaseClient, where)
-}
+//   return queryToConnection(args, ['*'], 'client', DatabaseClient, where)
+// }
 
 export function updateClient(
-  id: PositiveInteger,
+  _id: ObjectId,
   input: ClientUpdateInput,
-  user: User
-): TaskEither<CoolerError, Client> {
+  user: WithId<User>
+): TaskEither<CoolerError, WithId<Client>> {
   return pipe(
-    getClientById(id),
+    getClientById(_id),
     taskEither.chain(
       taskEither.fromOption(() =>
         coolerError(
@@ -145,49 +98,17 @@ export function updateClient(
     ),
     taskEither.chain(
       taskEither.fromPredicate(
-        client => (input.user || client.user) === user.id,
+        client => (input.user || client.user).equals(user._id),
         () => coolerError('COOLER_403', a18n`You cannot update this client`)
       )
     ),
-    taskEither.chain(client => {
-      const commonInput: ClientUpdateCommonInput = {
-        address_country: input.address_country,
-        address_province: input.address_province,
-        address_city: input.address_city,
-        address_zip: input.address_zip,
-        address_street: input.address_street,
-        address_street_number: input.address_street_number,
-        address_email: input.address_email,
-        user: user.id
-      }
-
-      const update: ClientUpdateInput = pipe(
-        { ...input, type: input.type || client.type },
-        foldClientUpdateInput(
-          (input): PrivateClientUpdateInput => ({
-            ...commonInput,
-            type: input.type,
-            first_name: input.first_name,
-            last_name: input.last_name,
-            fiscal_code: input.fiscal_code
-          }),
-          (input): BusinessClientUpdateInput => ({
-            ...commonInput,
-            // @ts-ignore
-            type: input.type,
-            country_code: input.country_code,
-            business_name: input.business_name,
-            vat_number: input.vat_number
-          })
-        )
-      )
-
-      return pipe(
-        updateDatabaseClient(client.id, update),
+    taskEither.chain(client =>
+      pipe(
+        updateDatabaseClient(client._id, { ...input, user: user._id }),
         taskEither.map(() => client)
       )
-    }),
-    taskEither.chain(client => getClientById(client.id)),
+    ),
+    taskEither.chain(client => getClientById(client._id)),
     taskEither.chain(
       taskEither.fromOption(() =>
         coolerError(
@@ -200,11 +121,11 @@ export function updateClient(
 }
 
 export function deleteClient(
-  id: PositiveInteger,
-  user: User
-): TaskEither<CoolerError, Client> {
+  _id: ObjectId,
+  user: WithId<User>
+): TaskEither<CoolerError, WithId<Client>> {
   return pipe(
-    getClientById(id),
+    getClientById(_id),
     taskEither.chain(
       taskEither.fromOption(() =>
         coolerError(
@@ -215,13 +136,13 @@ export function deleteClient(
     ),
     taskEither.chain(
       taskEither.fromPredicate(
-        client => client.user === user.id,
+        client => client.user.equals(user._id),
         () => coolerError('COOLER_403', a18n`You cannot delete this client`)
       )
     ),
     taskEither.chain(client =>
       pipe(
-        deleteDatabaseClient(client.id),
+        deleteDatabaseClient(client._id),
         taskEither.map(() => client)
       )
     )
@@ -229,14 +150,12 @@ export function deleteClient(
 }
 
 export function getClientName(client: Client): NonEmptyString {
-  return pipe(
-    client,
-    foldClient(
-      client =>
-        unsafeNonEmptyString(`${client.first_name} ${client.last_name}`),
-      client => client.business_name
-    )
-  )
+  switch (client.type) {
+    case 'PRIVATE':
+      return unsafeNonEmptyString(`${client.firstName} ${client.lastName}`)
+    case 'BUSINESS':
+      return client.businessName
+  }
 }
 
 export function getClientUser(
@@ -252,15 +171,16 @@ export function getClientUser(
   )
 }
 
-export function getUserClients(
-  user: DatabaseUser,
-  args: ConnectionQueryArgs
-): TaskEither<CoolerError, Connection<Client>> {
-  return queryToConnection(
-    args,
-    ['*'],
-    'client',
-    Client,
-    SQL`WHERE user = ${user.id}`
-  )
-}
+// TODO:
+// export function getUserClients(
+//   user: DatabaseUser,
+//   args: ConnectionQueryArgs
+// ): TaskEither<CoolerError, Connection<Client>> {
+//   return queryToConnection(
+//     args,
+//     ['*'],
+//     'client',
+//     Client,
+//     SQL`WHERE user = ${user.id}`
+//   )
+// }

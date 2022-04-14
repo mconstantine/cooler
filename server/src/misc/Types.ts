@@ -1,52 +1,11 @@
 import { identity, pipe } from 'fp-ts/function'
 import * as t from 'io-ts'
-import {
-  date,
-  IntFromString,
-  NonEmptyString,
-  option as tOption
-} from 'io-ts-types'
+import { IntFromString, NonEmptyString, option as tOption } from 'io-ts-types'
 import { either, option } from 'fp-ts'
 import { validate as isEmail } from 'isemail'
 import { Option } from 'fp-ts/Option'
 import { IO } from 'fp-ts/IO'
 import { Reader } from 'fp-ts/Reader'
-
-const sqlDatePattern = /^(\d{4})-(\d{2})-(\d{2})\s(\d{2}):(\d{2}):(\d{2})$/
-
-export const DateFromSQLDate: t.Type<Date, string> = new t.Type(
-  'DateFromSQLDate',
-  date.is,
-  (u, c) =>
-    pipe(
-      t.string.validate(u, c),
-      either.chain(s => {
-        if (!sqlDatePattern.test(s)) {
-          return t.failure(u, c)
-        }
-
-        const [, year, month, day, hours, minutes, seconds] = s
-          .match(sqlDatePattern)!
-          .map(s => parseInt(s))
-
-        return t.success(
-          new Date(year, month - 1, day, hours, minutes, seconds)
-        )
-      })
-    ),
-  date => {
-    const leadZero = (n: number): string => (n < 10 ? '0' : '') + n
-    const year = date.getFullYear()
-    const month = leadZero(date.getMonth() + 1)
-    const day = leadZero(date.getDate())
-    const hours = leadZero(date.getHours())
-    const minutes = leadZero(date.getMinutes())
-    const seconds = leadZero(date.getSeconds())
-
-    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
-  }
-)
-export type DateFromSQLDate = t.TypeOf<typeof DateFromSQLDate>
 
 interface PositiveIntegerBrand {
   readonly PositiveInteger: unique symbol
@@ -59,11 +18,31 @@ export const PositiveInteger = t.brand(
 )
 export type PositiveInteger = t.TypeOf<typeof PositiveInteger>
 
+export function unsafePositiveInteger(u: unknown): PositiveInteger {
+  return pipe(
+    PositiveInteger.decode(u),
+    either.fold(() => {
+      throw new Error(`Called unsafePositiveInteger with invalid value: ${u}`)
+    }, identity)
+  )
+}
+
 export const NonNegativeInteger = t.union(
   [PositiveInteger, t.literal(0)],
   'NonNegativeInteger'
 )
 export type NonNegativeInteger = t.TypeOf<typeof NonNegativeInteger>
+
+export function unsafeNonNegativeInteger(u: unknown): NonNegativeInteger {
+  return pipe(
+    NonNegativeInteger.decode(u),
+    either.fold(() => {
+      throw new Error(
+        `Called unsafeNonNegativeInteger with invalid value: ${u}`
+      )
+    }, identity)
+  )
+}
 
 interface EmailStringBrand {
   readonly EmailString: unique symbol
@@ -232,13 +211,6 @@ export const NonNegativeIntegerFromString: t.Type<
 export type NonNegativeIntegerFromString = t.TypeOf<
   typeof NonNegativeIntegerFromString
 >
-
-export const IdInput = t.type(
-  {
-    id: PositiveIntegerFromString
-  },
-  'IdInput'
-)
 
 export function unsafeNonEmptyString(string: string): NonEmptyString {
   return pipe(

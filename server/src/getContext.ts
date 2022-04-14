@@ -16,7 +16,7 @@ export function validateToken(accessToken: NonEmptyString): Task<Context> {
     taskEither.fromOption(() =>
       coolerError('COOLER_400', a18n`Token is invalid`)
     ),
-    taskEither.chain(token => getUserById(token.id)),
+    taskEither.chain(token => getUserById(token._id)),
     taskEither.chain(taskEither.fromOption(() => ({}))),
     taskEither.fold(
       context => task.fromIO(() => context),

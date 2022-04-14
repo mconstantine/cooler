@@ -26,6 +26,10 @@ export function testTaskEither<E, A, B>(
   return async te => {
     const result = await te()
 
+    if (either.isLeft(result)) {
+      console.log(result.left)
+    }
+
     expect(either.isRight(result)).toBe(true)
 
     return pipe(

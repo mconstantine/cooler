@@ -1,10 +1,8 @@
 import { assignResolvers } from './assignResolvers'
-import { init } from './init'
 import dotenv from 'dotenv'
 import express, { Express } from 'express'
 import path from 'path'
 import { taskEither } from 'fp-ts'
-import { pipe } from 'fp-ts/function'
 import { TaskEither } from 'fp-ts/TaskEither'
 import { initI18n } from './misc/a18n'
 import { CoolerError } from './misc/Types'
@@ -43,25 +41,20 @@ export function startServer(): TaskEither<
   dotenv.config()
   initI18n()
 
-  return pipe(
-    init(),
-    taskEither.chain(() =>
-      taskEither.fromTask(() => {
-        const app = express()
+  return taskEither.fromTask(() => {
+    const app = express()
 
-        app.use(cors({ origin: '*' }))
+    app.use(cors({ origin: '*' }))
 
-        assignResolvers(app)
+    assignResolvers(app)
 
-        app
-          .use('/public', express.static(path.join(process.cwd(), '/public')))
-          .use('/', express.static(path.join(process.cwd(), '../cooler/build')))
-          .use('*', (_req, res) =>
-            res.sendFile(path.join(process.cwd(), '../cooler/build/index.html'))
-          )
+    app
+      .use('/public', express.static(path.join(process.cwd(), '/public')))
+      .use('/', express.static(path.join(process.cwd(), '../cooler/build')))
+      .use('*', (_req, res) =>
+        res.sendFile(path.join(process.cwd(), '../cooler/build/index.html'))
+      )
 
-        return listen(app)
-      })
-    )
-  )
+    return listen(app)
+  })
 }

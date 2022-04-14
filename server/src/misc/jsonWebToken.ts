@@ -15,10 +15,11 @@ export function verifyToken(
   options?: VerifyOptions
 ): Option<Token> {
   return pipe(
-    either.tryCatch(
-      () => verify(token, process.env.SECRET!, options) as Token,
+    either.tryCatch<any, Record<string, any>>(
+      () => verify(token, process.env.SECRET!, options) as Record<string, any>,
       constVoid
     ),
+    either.chain(Token.decode),
     option.fromEither
   )
 }

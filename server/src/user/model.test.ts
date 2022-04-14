@@ -1,7 +1,6 @@
 import { option, taskEither } from 'fp-ts'
 import { constVoid, pipe } from 'fp-ts/function'
-import { init } from '../init'
-import { remove } from '../misc/dbUtils'
+import { deleteMany, deleteOne } from '../misc/dbUtils'
 import { EmailString, unsafeNonEmptyString } from '../misc/Types'
 import { getFakeUser } from '../test/getFakeUser'
 import {
@@ -11,7 +10,7 @@ import {
   testTaskEitherError
 } from '../test/util'
 import { getUserByEmail } from './database'
-import { AccessTokenResponse, User } from './interface'
+import { AccessTokenResponse, User, userCollection } from './interface'
 import {
   createUser,
   deleteUser,
@@ -23,7 +22,6 @@ import {
 describe('userModel', () => {
   beforeAll(async () => {
     process.env.SECRET = 'shhhhh'
-    await init()()
   })
 
   afterAll(() => {
@@ -32,7 +30,7 @@ describe('userModel', () => {
 
   describe('createUser', () => {
     afterEach(async () => {
-      await remove('user')()
+      await deleteMany(userCollection, {})()
     })
 
     it('should work', async () => {
@@ -103,7 +101,7 @@ describe('userModel', () => {
     })
 
     afterAll(async () => {
-      await remove('user', { email: user.email })()
+      await deleteOne(userCollection, { email: user.email })()
     })
 
     it('should work', async () => {
@@ -143,7 +141,7 @@ describe('userModel', () => {
     })
   })
 
-  describe('refreskToken', () => {
+  describe('refreshToken', () => {
     const user = getFakeUser()
     let response: AccessTokenResponse
 
@@ -157,7 +155,7 @@ describe('userModel', () => {
     })
 
     afterAll(async () => {
-      await remove('user')()
+      await deleteMany(userCollection, {})()
     })
 
     it('should work', async () => {
@@ -202,7 +200,7 @@ describe('userModel', () => {
     })
 
     afterAll(async () => {
-      await remove('user', { email: user.email })()
+      await deleteOne(userCollection, { email: user.email })()
     })
 
     it('should work', async () => {
@@ -210,7 +208,7 @@ describe('userModel', () => {
         getUserByEmail(user.email),
         taskEither.chain(taskEither.fromOption(testError)),
         taskEither.chain(user =>
-          updateUser(user.id, {
+          updateUser(user._id, {
             name: unsafeNonEmptyString(user.name + ' Jr')
           })
         ),
@@ -231,7 +229,7 @@ describe('userModel', () => {
           pipe(
             createUser(user2, { user }),
             taskEither.chain(() =>
-              updateUser(user.id, {
+              updateUser(user._id, {
                 email: user2.email
               })
             )
@@ -243,7 +241,7 @@ describe('userModel', () => {
       )
 
       await pipe(
-        remove('user', { email: user2.email }),
+        deleteOne(userCollection, { email: user2.email }),
         testTaskEither(constVoid)
       )
     })
@@ -257,14 +255,14 @@ describe('userModel', () => {
     })
 
     afterAll(async () => {
-      await remove('user', {})()
+      await deleteMany(userCollection, {})()
     })
 
     it('should work', async () => {
       await pipe(
         getUserByEmail(user.email),
         taskEither.chain(taskEither.fromOption(testError)),
-        taskEither.chain(user => deleteUser(user.id)),
+        taskEither.chain(user => deleteUser(user._id)),
         pipeTestTaskEither(deletedUser => {
           expect(deletedUser.email).toBe(user.email)
         }),

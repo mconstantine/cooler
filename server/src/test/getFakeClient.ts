@@ -2,6 +2,7 @@ import faker from 'faker'
 import { boolean, option } from 'fp-ts'
 import { pipe } from 'fp-ts/function'
 import { NonEmptyString } from 'io-ts-types'
+import { ObjectId } from 'mongodb'
 import {
   Province,
   Country,
@@ -11,41 +12,37 @@ import {
   BusinessClientCreationInput,
   ClientCreationCommonInput
 } from '../client/interface'
-import {
-  EmailString,
-  PositiveInteger,
-  unsafeNonEmptyString
-} from '../misc/Types'
+import { EmailString, unsafeNonEmptyString } from '../misc/Types'
 
 export function getFakeClient(
-  user: PositiveInteger,
+  userId: ObjectId,
   data?: Partial<PrivateClientCreationInput>
-): PrivateClientCreationInput & { user: PositiveInteger }
+): PrivateClientCreationInput & { user: ObjectId }
 export function getFakeClient(
-  user: PositiveInteger,
+  userId: ObjectId,
   data?: Partial<BusinessClientCreationInput>
-): BusinessClientCreationInput & { user: PositiveInteger }
+): BusinessClientCreationInput & { user: ObjectId }
 export function getFakeClient(
-  user: PositiveInteger,
+  userId: ObjectId,
   data: Partial<ClientCreationInput> = {}
-): ClientCreationInput & { user: PositiveInteger } {
+): ClientCreationInput & { user: ObjectId } {
   const type = data.type || faker.random.arrayElement(Object.values(ClientType))
-  const country_code = faker.address.countryCode() as Country
+  const countryCode = faker.address.countryCode() as Country
 
-  const commonData: ClientCreationCommonInput & { user: PositiveInteger } = {
-    user,
-    address_country: country_code,
-    address_province:
-      country_code !== 'IT'
+  const commonData: ClientCreationCommonInput & { user: ObjectId } = {
+    user: userId,
+    addressCountry: countryCode,
+    addressProvince:
+      countryCode !== 'IT'
         ? 'EE'
         : (faker.random.arrayElement(Object.keys(Province)) as Province),
-    address_city: unsafeNonEmptyString(faker.address.city()),
-    address_zip: unsafeNonEmptyString(faker.address.zipCode()),
-    address_street: unsafeNonEmptyString(faker.address.streetName()),
-    address_street_number: option.some(
+    addressCity: unsafeNonEmptyString(faker.address.city()),
+    addressZip: unsafeNonEmptyString(faker.address.zipCode()),
+    addressStreet: unsafeNonEmptyString(faker.address.streetName()),
+    addressStreetNumber: option.some(
       unsafeNonEmptyString((1 + Math.round(Math.random() * 199)).toString(10))
     ),
-    address_email: faker.internet.email() as EmailString
+    addressEmail: faker.internet.email() as EmailString
   }
 
   return pipe(
@@ -55,17 +52,17 @@ export function getFakeClient(
         ...commonData,
         ...data,
         type: 'PRIVATE',
-        fiscal_code: generateFiscalCode(),
-        first_name: unsafeNonEmptyString(faker.name.firstName()),
-        last_name: unsafeNonEmptyString(faker.name.lastName())
+        fiscalCode: generateFiscalCode(),
+        firstName: unsafeNonEmptyString(faker.name.firstName()),
+        lastName: unsafeNonEmptyString(faker.name.lastName())
       }),
       () => ({
         ...commonData,
         // @ts-ignore
         type: 'BUSINESS',
-        country_code: country_code,
-        vat_number: unsafeNonEmptyString(faker.finance.mask(11)),
-        business_name: unsafeNonEmptyString(faker.company.companyName())
+        countryCode: countryCode,
+        vatNumber: unsafeNonEmptyString(faker.finance.mask(11)),
+        businessName: unsafeNonEmptyString(faker.company.companyName())
       })
     )
   )

@@ -4,8 +4,11 @@ import { pipe } from 'fp-ts/function'
 import { boolean, taskEither } from 'fp-ts'
 import { CoolerError, coolerError } from './Types'
 import { a18n } from './a18n'
+import { WithId } from 'mongodb'
 
-export function ensureUser(context: Context): TaskEither<CoolerError, User> {
+export function ensureUser(
+  context: Context
+): TaskEither<CoolerError, WithId<User>> {
   return pipe(
     isUserContext(context),
     boolean.fold(

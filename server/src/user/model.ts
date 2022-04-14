@@ -5,23 +5,17 @@ import {
   UserCreationInput,
   UserLoginInput,
   RefreshTokenInput,
-  UserUpdateInput
+  UserUpdateInput,
+  userCollection
 } from './interface'
-import SQL from 'sql-template-strings'
 import { dbGet } from '../misc/dbUtils'
 import { hashSync, compareSync } from 'bcryptjs'
 import { isUserContext } from '../misc/ensureUser'
-import { removeUndefined } from '../misc/removeUndefined'
 import { NonEmptyString } from 'io-ts-types'
 import { Option } from 'fp-ts/Option'
 import { boolean, option, taskEither } from 'fp-ts'
 import { pipe } from 'fp-ts/function'
-import {
-  CoolerError,
-  coolerError,
-  PositiveInteger,
-  unsafeNonEmptyString
-} from '../misc/Types'
+import { CoolerError, coolerError, unsafeNonEmptyString } from '../misc/Types'
 import { TaskEither } from 'fp-ts/TaskEither'
 import {
   getUserByEmail,
@@ -30,9 +24,10 @@ import {
   updateUser as updateDatabaseUser,
   deleteUser as deleteDatabaseUser
 } from './database'
-import { Int, type } from 'io-ts'
 import { signToken, verifyToken } from '../misc/jsonWebToken'
 import { a18n } from '../misc/a18n'
+import { withCollection } from '../misc/withDatabase'
+import { ObjectId } from 'bson'
 
 export function createUser(
   input: UserCreationInput,
@@ -45,15 +40,16 @@ export function createUser(
     boolean.fold(
       () =>
         pipe(
-          dbGet(SQL`SELECT COUNT(id) as count FROM user`, type({ count: Int })),
-          taskEither.chain(
-            taskEither.fromOption(() =>
-              coolerError('COOLER_500', a18n`Unable to count existing users`)
+          withCollection(userCollection, users =>
+            taskEither.tryCatch(
+              () => users.countDocuments(),
+              () =>
+                coolerError('COOLER_500', a18n`Unable to count existing users`)
             )
           ),
           taskEither.chain(
             taskEither.fromPredicate(
-              ({ count }) => count === 0,
+              count => count === 0,
               () =>
                 coolerError(
                   'COOLER_403',
@@ -62,7 +58,7 @@ export function createUser(
             )
           )
         ),
-      () => taskEither.fromIO(() => ({ count: 0 }))
+      () => taskEither.fromIO(() => 0)
     ),
     taskEither.chain(() => getUserByEmail(email)),
     taskEither.chain(
@@ -109,7 +105,7 @@ export function loginUser(
         () => coolerError('COOLER_400', a18n`Wrong password`)
       )
     ),
-    taskEither.map(({ id }) => generateTokens(id))
+    taskEither.map(({ _id }) => generateTokens(_id))
   )
 }
 
@@ -123,7 +119,7 @@ export function refreshToken(
       ignoreExpiration: true
     }),
     taskEither.fromOption(() =>
-      coolerError('COOLER_400', a18n`The refresk token is invalid`)
+      coolerError('COOLER_400', a18n`The refresh token is invalid`)
     ),
     taskEither.chain(
       taskEither.fromPredicate(
@@ -131,18 +127,18 @@ export function refreshToken(
         () => coolerError('COOLER_400', a18n`This is not a refresh token`)
       )
     ),
-    taskEither.chain(token => getUserById(token.id)),
+    taskEither.chain(token => getUserById(token._id)),
     taskEither.chain(
       taskEither.fromOption(() =>
         coolerError('COOLER_404', a18n`No user was found for this token`)
       )
     ),
-    taskEither.map(user => generateTokens(user.id, refreshToken))
+    taskEither.map(user => generateTokens(user._id, refreshToken))
   )
 }
 
 export function updateUser(
-  id: PositiveInteger,
+  _id: ObjectId,
   user: UserUpdateInput
 ): TaskEither<CoolerError, User> {
   const { name, email, password } = user
@@ -154,9 +150,8 @@ export function updateUser(
       () => taskEither.right(null),
       email =>
         pipe(
-          dbGet(
-            SQL`SELECT id FROM user WHERE email = ${email} AND id != ${id}`,
-            type({ id: PositiveInteger })
+          dbGet(userCollection, collection =>
+            collection.findOne({ email, _id: { $ne: _id } })
           ),
           taskEither.chain(user =>
             pipe(
@@ -175,7 +170,7 @@ export function updateUser(
           )
         )
     ),
-    taskEither.chain(() => getUserById(id)),
+    taskEither.chain(() => getUserById(_id)),
     taskEither.chain(
       taskEither.fromOption(() =>
         coolerError(
@@ -184,21 +179,19 @@ export function updateUser(
         )
       )
     ),
-    taskEither.chain(user => {
-      const args: UserUpdateInput = removeUndefined({
+    taskEither.chain(user =>
+      updateDatabaseUser(user._id, {
         name,
         email,
-        password: option.isSome(password || option.none)
+        password: password
           ? pipe(
-              password as option.Some<NonEmptyString>,
+              password,
               option.map(p => unsafeNonEmptyString(hashSync(p, 10)))
             )
           : undefined
       })
-
-      return updateDatabaseUser(user.id, args)
-    }),
-    taskEither.chain(() => getUserById(id)),
+    ),
+    taskEither.chain(() => getUserById(_id)),
     taskEither.chain(
       taskEither.fromOption(() =>
         coolerError(
@@ -210,9 +203,9 @@ export function updateUser(
   )
 }
 
-export function deleteUser(id: PositiveInteger): TaskEither<CoolerError, User> {
+export function deleteUser(_id: ObjectId): TaskEither<CoolerError, User> {
   return pipe(
-    getUserById(id),
+    getUserById(_id),
     taskEither.chain(
       taskEither.fromOption(() =>
         coolerError(
@@ -223,7 +216,7 @@ export function deleteUser(id: PositiveInteger): TaskEither<CoolerError, User> {
     ),
     taskEither.chain(user =>
       pipe(
-        deleteDatabaseUser(user.id),
+        deleteDatabaseUser(user._id),
         taskEither.map(() => user)
       )
     )
@@ -241,7 +234,7 @@ export function getUserFromContext<C extends Context>(
 }
 
 function generateTokens(
-  userId: PositiveInteger,
+  userId: ObjectId,
   oldRefreshToken?: NonEmptyString
 ): AccessTokenResponse {
   const expiration = new Date(Date.now() + 86400000)
@@ -249,7 +242,7 @@ function generateTokens(
   const accessToken = signToken(
     {
       type: 'ACCESS',
-      id: userId
+      _id: userId
     },
     {
       expiresIn: 86400
@@ -260,7 +253,7 @@ function generateTokens(
     oldRefreshToken ||
     signToken({
       type: 'REFRESH',
-      id: userId
+      _id: userId
     })
 
   return {
