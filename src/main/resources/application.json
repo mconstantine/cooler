@@ -2,5 +2,8 @@
   "server": {
     "host": "localhost",
     "port": 5000
+  },
+  "database": {
+    "uri": "mongodb://localhost:27017/cooler?maxPoolSize=20&w=majority&readPreference=primary&directConnection=true&ssl=false"
   }
 }

@@ -18,8 +18,11 @@ object CoolerConfig extends App {
       port: Int
   )
 
+  case class DatabaseConfig(uri: String)
+
   private case class Config(
-      server: ServerConfig
+      server: ServerConfig,
+      database: DatabaseConfig
   )
 
   private val configContent = open("src/main/resources/application.json").read()
@@ -41,4 +44,5 @@ object CoolerConfig extends App {
   }
 
   val server = config.server
+  val database = config.database
 }
