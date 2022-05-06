@@ -43,7 +43,7 @@ object Server extends IOApp {
       .default[IO]
       .withHost(
         Host
-          .fromString(CoolerConfig.serverConfig.host) match {
+          .fromString(CoolerConfig.server.host) match {
           case Some(host) => host
           case None =>
             throw new IllegalArgumentException(
@@ -51,7 +51,7 @@ object Server extends IOApp {
             )
         }
       )
-      .withPort(Port.fromInt(CoolerConfig.serverConfig.port.number) match {
+      .withPort(Port.fromInt(CoolerConfig.server.port) match {
         case Some(port) => port
         case None =>
           throw new IllegalArgumentException(

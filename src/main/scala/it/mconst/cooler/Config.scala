@@ -1,20 +1,44 @@
 package it.mconst.cooler
 
-import pureconfig.ConfigSource
-import pureconfig._
+import io.circe.generic.auto._
+import io.circe.parser._
+import io.circe.syntax._
+import java.io.File
+import scala.io.Source
 
-object CoolerConfig {
-  case class Port(number: Int) extends AnyVal
+object CoolerConfig extends App {
+  private def open(path: String) = new File(path)
+
+  extension (file: File) {
+    def read() = Source.fromFile(file).getLines().mkString
+  }
 
   case class ServerConfig(
       host: String,
-      port: Port
+      port: Int
   )
 
-  given ConfigReader[Port] = ConfigReader[Int].map(Port(_))
+  private case class Config(
+      server: ServerConfig
+  )
 
-  given ConfigReader[ServerConfig] =
-    ConfigReader.forProduct2("host", "port")(ServerConfig(_, _))
+  private val configContent = open("src/main/resources/application.json").read()
 
-  val serverConfig = ConfigSource.default.at("server").loadOrThrow[ServerConfig]
+  private val configResult = parse(configContent) match {
+    case Right(json) => json.as[Config]
+    case Left(error) =>
+      throw new IllegalArgumentException(
+        s"""Invalid JSON in config file: $error"""
+      )
+  }
+
+  private val config = configResult match {
+    case Right(config) => config
+    case Left(error) =>
+      throw new IllegalArgumentException(
+        s"""Invalid JSON in config file: $error"""
+      )
+  }
+
+  val server = config.server
 }
