@@ -1,0 +1,3 @@
+error.person.notFound.afterInsert=Inserted person wasn''t found
+error.person.notFound.afterUpdate=Updated person wasn''t found
+error.person.notFound.beforeDelete=Person to be deleted was''t found

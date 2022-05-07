@@ -9,15 +9,16 @@ val mongo4catsVersion = "0.4.8"
 
 libraryDependencies ++= Seq(
   "com.github.pureconfig" %% "pureconfig" % "0.17.1" cross CrossVersion.for3Use2_13,
+  "com.osinka.i18n" %% "scala-i18n" % "1.0.3" cross CrossVersion.for3Use2_13,
   "io.circe" %% "circe-generic" % circeVersion,
   "io.circe" %% "circe-parser" % circeVersion,
+  "io.github.kirill5k" %% "mongo4cats-circe" % mongo4catsVersion,
+  "io.github.kirill5k" %% "mongo4cats-core" % mongo4catsVersion,
+  "io.github.kirill5k" %% "mongo4cats-embedded" % mongo4catsVersion % Test,
   "org.http4s" %% "http4s-circe" % http4sVersion,
   "org.http4s" %% "http4s-dsl" % http4sVersion,
   "org.http4s" %% "http4s-ember-client" % http4sVersion,
   "org.http4s" %% "http4s-ember-server" % http4sVersion,
   "org.scalactic" %% "scalactic" % scalaTestVersion,
-  "org.scalatest" %% "scalatest" % scalaTestVersion % "test",
-  "io.github.kirill5k" %% "mongo4cats-core" % mongo4catsVersion,
-  "io.github.kirill5k" %% "mongo4cats-circe" % mongo4catsVersion,
-  "io.github.kirill5k" %% "mongo4cats-embedded" % mongo4catsVersion % Test
+  "org.scalatest" %% "scalatest" % scalaTestVersion % "test"
 )
