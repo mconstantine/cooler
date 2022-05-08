@@ -13,17 +13,10 @@ object CoolerConfig extends App {
     def read() = Source.fromFile(file).getLines().mkString
   }
 
-  case class ServerConfig(
-      host: String,
-      port: Int
-  )
+  case class ServerConfig(host: String, port: Int)
+  case class DatabaseConfig(uri: String, name: String)
 
-  case class DatabaseConfig(uri: String)
-
-  private case class Config(
-      server: ServerConfig,
-      database: DatabaseConfig
-  )
+  private case class Config(server: ServerConfig, database: DatabaseConfig)
 
   private val configContent = open("src/main/resources/application.json").read()
 
