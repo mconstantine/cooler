@@ -8,7 +8,9 @@ val scalaTestVersion = "3.2.12"
 val mongo4catsVersion = "0.4.8"
 
 libraryDependencies ++= Seq(
+  "com.github.jwt-scala" %% "jwt-circe" % "9.0.5",
   "com.github.pureconfig" %% "pureconfig" % "0.17.1" cross CrossVersion.for3Use2_13,
+  "com.github.t3hnar" %% "scala-bcrypt" % "4.3.0" cross CrossVersion.for3Use2_13,
   "com.osinka.i18n" %% "scala-i18n" % "1.0.3" cross CrossVersion.for3Use2_13,
   "io.circe" %% "circe-generic" % circeVersion,
   "io.circe" %% "circe-parser" % circeVersion,

@@ -14,27 +14,25 @@ object CoolerConfig extends App {
   }
 
   case class ServerConfig(host: String, port: Int)
-  case class DatabaseConfig(uri: String, name: String)
+  case class DatabaseConfig(uri: String, name: String, encryptionKey: String)
 
   private case class Config(server: ServerConfig, database: DatabaseConfig)
 
   private val configContent = open("src/main/resources/application.json").read()
 
-  private val configResult = parse(configContent) match {
+  private val configResult = parse(configContent) match
     case Right(json) => json.as[Config]
     case Left(error) =>
       throw new IllegalArgumentException(
         s"""Invalid JSON in config file: $error"""
       )
-  }
 
-  private val config = configResult match {
+  private val config = configResult match
     case Right(config) => config
     case Left(error) =>
       throw new IllegalArgumentException(
         s"""Invalid JSON in config file: $error"""
       )
-  }
 
   val server = config.server
   val database = config.database

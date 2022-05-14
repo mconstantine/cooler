@@ -4,6 +4,7 @@ import org.scalatest._
 import matchers._
 import flatspec._
 
+import cats.effect.IO
 import cats.effect.unsafe.implicits.global
 import com.osinka.i18n.Lang
 import io.circe.generic.auto._
@@ -22,8 +23,7 @@ class CollectionTest extends AnyFlatSpec with should.Matchers {
 
   it should "create a document" in {
     val person = Person(new ObjectId(), "John", "Doe")
-    val result =
-      people.create(person).unsafeRunSync()
+    val result = people.create(person).unsafeRunSync()
 
     result shouldEqual Right(person)
   }
@@ -34,7 +34,10 @@ class CollectionTest extends AnyFlatSpec with should.Matchers {
 
     val result = people
       .create(person)
-      .chainIOEither(people.update(_, update))
+      .flatMap(_ match
+        case Right(person) => people.update(person, update)
+        case Left(error)   => IO(Left(error))
+      )
       .unsafeRunSync()
       .getOrElse(null)
 
@@ -48,14 +51,17 @@ class CollectionTest extends AnyFlatSpec with should.Matchers {
     val result =
       people
         .create(person)
-        .chainIOEither(people.delete(_))
+        .flatMap(_ match
+          case Left(error)   => IO(Left(error))
+          case Right(person) => people.delete(person)
+        )
         .unsafeRunSync()
         .getOrElse(null)
 
     result shouldEqual person
 
     val resultAfterDelete =
-      people.run(_.find(Filter.eq("_id", person._id)).first).unsafeRunSync()
+      people.use(_.find(Filter.eq("_id", person._id)).first).unsafeRunSync()
 
     resultAfterDelete shouldEqual None
   }

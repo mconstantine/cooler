@@ -29,10 +29,10 @@ object Server extends IOApp {
 
   val goodbyeService = HttpRoutes.of[IO] {
     case req @ POST -> Root / "goodbye" =>
-      for {
+      for
         user <- req.as[User]
         response <- Ok(Goodbye(s"Goodbye ${user.name}").asJson)
-      } yield (response)
+      yield response
   }
 
   val allServices = rootService <+> helloService <+> goodbyeService
@@ -43,21 +43,20 @@ object Server extends IOApp {
       .default[IO]
       .withHost(
         Host
-          .fromString(CoolerConfig.server.host) match {
+          .fromString(CoolerConfig.server.host) match
           case Some(host) => host
           case None =>
             throw new IllegalArgumentException(
               "Invalid host in configuration file"
             )
-        }
       )
-      .withPort(Port.fromInt(CoolerConfig.server.port) match {
+      .withPort(Port.fromInt(CoolerConfig.server.port) match
         case Some(port) => port
         case None =>
           throw new IllegalArgumentException(
             "Invalid port in configuration file"
           )
-      })
+      )
       .withHttpApp(app)
       .build
       .use(_ => IO.never)

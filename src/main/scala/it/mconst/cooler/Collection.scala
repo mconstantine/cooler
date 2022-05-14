@@ -2,7 +2,9 @@ package it.mconst.cooler
 
 import cats.effect._
 import cats.effect.unsafe.implicits.global
+import com.mongodb.client.model.{Filters, Updates}
 import com.osinka.i18n.Lang
+import io.circe.{Encoder, Decoder, Json, HCursor}
 import io.circe.generic.auto._
 import mongo4cats.bson.ObjectId
 import mongo4cats.circe._
@@ -10,11 +12,23 @@ import mongo4cats.client._
 import mongo4cats.codecs.MongoCodecProvider
 import mongo4cats.collection.MongoCollection
 import mongo4cats.collection.operations.{Filter, Update}
+import org.bson.BsonDateTime
+import org.bson.conversions.Bson
 import org.http4s.Status
 import scala.reflect.ClassTag
 
-abstract trait Document {
+abstract trait Document:
   val _id: ObjectId
+
+abstract trait Timestamps:
+  val createdAt: BsonDateTime
+  val updatedAt: BsonDateTime
+
+given Encoder[BsonDateTime] with Decoder[BsonDateTime] with {
+  override def apply(datetime: BsonDateTime): Json =
+    Encoder.encodeLong(datetime.getValue)
+  override def apply(cursor: HCursor): Decoder.Result[BsonDateTime] =
+    Decoder.decodeLong.map(BsonDateTime(_))(cursor)
 }
 
 extension [T](io: IO[T]) {
@@ -24,79 +38,72 @@ extension [T](io: IO[T]) {
   }
 }
 
-extension [E, T](option: Option[T]) {
-  def toEither(onNone: () => E): Either[E, T] = option match {
-    case Some(value) => Right(value)
-    case None        => Left(onNone())
-  }
-}
-
-extension [E, T](ioEither: IO[Either[E, T]]) {
-  def chainIOEither[R](
-      f: T => IO[Either[E, R]]
-  ): IO[Either[E, R]] =
-    ioEither.flatMap(result =>
-      result match {
-        case Right(value) => f(value)
-        case Left(error)  => IO.pure(Left(error))
-      }
-    )
-}
-
 case class Collection[Doc <: Document: ClassTag](name: String)(using Lang)(using
     MongoCodecProvider[Doc]
 ) {
-  def run[R](op: MongoCollection[IO, Doc] => IO[R]) = {
+  def use[R](op: MongoCollection[IO, Doc] => IO[R]) =
     MongoClient.fromConnectionString[IO](CoolerConfig.database.uri).use {
       connection =>
-        for {
+        for
           db <- connection.getDatabase(CoolerConfig.database.name)
           collection <- db.getCollectionWithCodec[Doc](name)
           result <- op(collection)
-        } yield (result)
+        yield result
     }
-  }
 
-  def create(doc: Doc) =
-    run { collection =>
-      for {
+  def create(doc: Doc): IO[Either[Error, Doc]] =
+    use { collection =>
+      for
         result <- collection.insertOne(doc)
         maybeDoc <- collection
           .find(Filter.eq("_id", result.getInsertedId))
           .first
-        doc <- IO(
-          maybeDoc.toEither(() =>
-            Error(Status.NotFound, Key.ErrorPersonNotFoundAfterInsert)
-          )
+        doc <- IO(maybeDoc match
+          case Some(doc) => Right(doc)
+          case None =>
+            Left(Error(Status.NotFound, Key.ErrorPersonNotFoundAfterInsert))
         )
-      } yield (doc)
+      yield doc
     }
 
-  def update(doc: Doc, update: Update) =
-    run { collection =>
-      for {
+  def update(doc: Doc, update: Bson): IO[Either[Error, Doc]] =
+    use { collection =>
+      for
+        result <- collection.updateOne(Filters.eq("_id", doc._id), update)
+        maybeDoc <- collection.find(Filter.eq("_id", doc._id)).first
+        updated <- IO(maybeDoc match
+          case Some(doc) => Right(doc)
+          case None =>
+            Left(Error(Status.NotFound, Key.ErrorPersonNotFoundAfterUpdate))
+        )
+      yield updated
+    }
+
+  def update(doc: Doc, update: Update): IO[Either[Error, Doc]] =
+    use { collection =>
+      for
         result <- collection.updateOne(Filter.eq("_id", doc._id), update)
         maybeDoc <- collection.find(Filter.eq("_id", doc._id)).first
-        updated <- IO(
-          maybeDoc.toEither(() =>
-            Error(Status.NotFound, Key.ErrorPersonNotFoundAfterUpdate)
-          )
+        updated <- IO(maybeDoc match
+          case Some(doc) => Right(doc)
+          case None =>
+            Left(Error(Status.NotFound, Key.ErrorPersonNotFoundAfterUpdate))
         )
-      } yield (updated)
+      yield updated
     }
 
-  def delete(doc: Doc) =
-    run { collection =>
-      for {
+  def delete(doc: Doc): IO[Either[Error, Doc]] =
+    use { collection =>
+      for
         maybeDoc <- collection.find(Filter.eq("_id", doc._id)).first
-        original <- IO(
-          maybeDoc.toEither(() =>
-            Error(Status.NotFound, Key.ErrorPersonNotFoundBeforeDelete)
-          )
+        original <- IO(maybeDoc match
+          case Some(doc) => Right(doc)
+          case None =>
+            Left(Error(Status.NotFound, Key.ErrorPersonNotFoundBeforeDelete))
         )
         result <- collection.deleteOne(Filter.eq("_id", doc._id))
-      } yield (original)
+      yield original
     }
 
-  def drop: IO[Unit] = run(_.drop)
+  def drop: IO[Unit] = use(_.drop)
 }

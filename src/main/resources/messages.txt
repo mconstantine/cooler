@@ -1,3 +1,8 @@
+error.auth.invalidAccessToken=Invalid access token
+error.auth.invalidEmailOrPassword=Invalid email or password
 error.person.notFound.afterInsert=Inserted person wasn''t found
 error.person.notFound.afterUpdate=Updated person wasn''t found
 error.person.notFound.beforeDelete=Person to be deleted was''t found
+error.user.conflict=A user with this e-mail address already exists
+error.user.notFound=User not found
+error.user.register.forbidden=Only existing users can create new users
