@@ -82,7 +82,7 @@ object JWT {
           then Right[Error, JwtClaim](claimResult)
           else
             Left[Error, JwtClaim](
-              Error(Status.Unauthorized, Key.ErrorInvalidAccessToken)
+              Error(Status.Forbidden, Key.ErrorInvalidAccessToken)
             )
         content <- decode[TokenContent](claimValidation.content)
         _id <- ObjectId.from(content._id)
@@ -90,14 +90,14 @@ object JWT {
 
     userId match
       case Left(_) =>
-        IO(Left(Error(Status.Unauthorized, Key.ErrorInvalidAccessToken)))
+        IO(Left(Error(Status.Forbidden, Key.ErrorInvalidAccessToken)))
       case Right(userId) =>
         users.collection
           .use(_.find(Filter.eq("_id", userId)).first)
           .map(_ match
             case Some(user) => Right(user)
             case None =>
-              Left(Error(Status.Unauthorized, Key.ErrorInvalidAccessToken))
+              Left(Error(Status.Forbidden, Key.ErrorInvalidAccessToken))
           )
   }
 }

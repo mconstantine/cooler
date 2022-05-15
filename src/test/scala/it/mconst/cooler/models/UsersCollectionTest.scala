@@ -34,7 +34,7 @@ class UsersCollectionTest extends AnyFlatSpec with should.Matchers {
     val user = registration.unsafeRunSync()
 
     user match
-      case Left(error) => throw new RuntimeException(error.message.toString)
+      case Left(error) => fail(error.message.toString)
       case Right(user) =>
         user.email shouldBe userData.email
         user.password shouldNot be(userData.password)
@@ -99,7 +99,7 @@ class UsersCollectionTest extends AnyFlatSpec with should.Matchers {
     val secondUser = result.unsafeRunSync()
 
     secondUser match
-      case Left(error) => throw new RuntimeException(error.message.toString)
+      case Left(error) => fail(error.message.toString)
       case Right(user) => user.email shouldBe secondUserData.email
   }
 
@@ -150,8 +150,7 @@ class UsersCollectionTest extends AnyFlatSpec with should.Matchers {
           users
             .register(userData)
             .flatMap(_ match
-              case Left(error) =>
-                throw new RuntimeException(error.message.toString)
+              case Left(error) => fail(error.message.toString)
               case Right(user) => {
                 given User = user
                 users.findById()
@@ -230,7 +229,7 @@ class UsersCollectionTest extends AnyFlatSpec with should.Matchers {
         updated.password shouldNot be(update.password.get)
         update.password.get.isBcryptedBounded(updated.password) shouldBe true
       }
-      case _ => throw new RuntimeException("Unable to execute update")
+      case _ => fail("Unable to execute update")
   }
 
   it should "reject the update if another user has the new email address" in {
@@ -279,9 +278,7 @@ class UsersCollectionTest extends AnyFlatSpec with should.Matchers {
       case Left(error) =>
         error shouldEqual Error(Status.Conflict, Key.ErrorUserConflict)
       case Right(user) =>
-        throw new RuntimeException(
-          "A user was updated with an email that already exists"
-        )
+        fail("A user was updated with an email that already exists")
   }
 
   it should "log a user in" in {
@@ -308,7 +305,7 @@ class UsersCollectionTest extends AnyFlatSpec with should.Matchers {
       yield user
 
     loggedInUserResult.unsafeRunSync() match
-      case Left(error) => throw new RuntimeException(error.message.toString)
+      case Left(error) => fail(error.message.toString)
       case Right(user) => user.email shouldBe userData.email
   }
 
@@ -318,7 +315,7 @@ class UsersCollectionTest extends AnyFlatSpec with should.Matchers {
       "Made up user",
       "madeup-user@example.com",
       "Whatever".bcryptSafeBounded.getOrElse({
-        throw new RuntimeException("Unable to encrypt password")
+        fail("Unable to encrypt password")
         null
       }),
       BsonDateTime(System.currentTimeMillis),
@@ -413,7 +410,7 @@ class UsersCollectionTest extends AnyFlatSpec with should.Matchers {
         authTokens.accessToken shouldNot be(freshTokens.accessToken)
         authTokens.refreshToken shouldNot be(freshTokens.refreshToken)
       }
-      case _ => throw new RuntimeException(s"Unable to refresh tokens")
+      case _ => fail(s"Unable to refresh tokens")
   }
 
   it should "not refresh an access token" in {
@@ -441,7 +438,7 @@ class UsersCollectionTest extends AnyFlatSpec with should.Matchers {
       yield freshTokens
 
     result.unsafeRunSync() shouldEqual Left(
-      Error(Status.Unauthorized, Key.ErrorInvalidAccessToken)
+      Error(Status.Forbidden, Key.ErrorInvalidAccessToken)
     )
   }
 
@@ -480,6 +477,6 @@ class UsersCollectionTest extends AnyFlatSpec with should.Matchers {
 
     (deletionResult, userAfterDeletionResult) match
       case (Right(user), None) => user.email shouldBe userData.email
-      case _ => throw new RuntimeException("Unable to delete user")
+      case _                   => fail("Unable to delete user")
   }
 }
