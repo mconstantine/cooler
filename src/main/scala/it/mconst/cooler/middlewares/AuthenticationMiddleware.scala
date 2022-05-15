@@ -1,10 +1,13 @@
-package it.mconst.cooler
+package it.mconst.cooler.middlewares
 
 import cats._
 import cats.data._
 import cats.effect._
 import cats.implicits._
 import com.osinka.i18n.Lang
+import it.mconst.cooler.models.user.{JWT, User}
+import it.mconst.cooler.utils.{Error, Translations}
+import it.mconst.cooler.utils.given
 import org.http4s._
 import org.http4s.dsl.io._
 import org.http4s.headers._
@@ -24,7 +27,7 @@ object AuthenticationMiddleware {
 
           request.headers
             .get[Authorization]
-            .toRight(Error(Forbidden, Key.ErrorInvalidAccessToken))
+            .toRight(Error(Forbidden, Translations.Key.ErrorInvalidAccessToken))
         })
         token <- IO(header.flatMap { header =>
           given Lang = lang
@@ -35,14 +38,14 @@ object AuthenticationMiddleware {
             case _ => None
 
           token.toRight(
-            Error(Forbidden, Key.ErrorInvalidAccessToken)
+            Error(Forbidden, Translations.Key.ErrorInvalidAccessToken)
           )
         })
         user <- token match
           case Left(error) => IO(Left(error))
           case Right(token) => {
             given Lang = lang
-            JWT.decodeToken(token, UserAccess)
+            JWT.decodeToken(token, JWT.UserAccess)
           }
       yield (user)
     )

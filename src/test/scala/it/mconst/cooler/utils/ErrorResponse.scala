@@ -1,4 +1,4 @@
-package it.mconst.cooler
+package it.mconst.cooler.utils
 
 import cats.effect.IO
 import io.circe.Decoder

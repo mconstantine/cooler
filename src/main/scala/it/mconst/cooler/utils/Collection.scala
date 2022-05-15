@@ -1,4 +1,4 @@
-package it.mconst.cooler
+package it.mconst.cooler.utils
 
 import cats.effect._
 import cats.effect.unsafe.implicits.global
@@ -6,6 +6,7 @@ import com.mongodb.client.model.{Filters, Updates}
 import com.osinka.i18n.Lang
 import io.circe.{Encoder, Decoder, Json, HCursor}
 import io.circe.generic.auto._
+import it.mconst.cooler.utils.{Config, Error, Translations}
 import mongo4cats.bson.ObjectId
 import mongo4cats.circe._
 import mongo4cats.client._
@@ -42,10 +43,10 @@ case class Collection[Doc <: Document: ClassTag](name: String)(using Lang)(using
     MongoCodecProvider[Doc]
 ) {
   def use[R](op: MongoCollection[IO, Doc] => IO[R]) =
-    MongoClient.fromConnectionString[IO](CoolerConfig.database.uri).use {
+    MongoClient.fromConnectionString[IO](Config.database.uri).use {
       connection =>
         for
-          db <- connection.getDatabase(CoolerConfig.database.name)
+          db <- connection.getDatabase(Config.database.name)
           collection <- db.getCollectionWithCodec[Doc](name)
           result <- op(collection)
         yield result
@@ -61,7 +62,12 @@ case class Collection[Doc <: Document: ClassTag](name: String)(using Lang)(using
         doc <- IO(maybeDoc match
           case Some(doc) => Right(doc)
           case None =>
-            Left(Error(Status.NotFound, Key.ErrorPersonNotFoundAfterInsert))
+            Left(
+              Error(
+                Status.NotFound,
+                Translations.Key.ErrorPersonNotFoundAfterInsert
+              )
+            )
         )
       yield doc
     }
@@ -74,7 +80,12 @@ case class Collection[Doc <: Document: ClassTag](name: String)(using Lang)(using
         updated <- IO(maybeDoc match
           case Some(doc) => Right(doc)
           case None =>
-            Left(Error(Status.NotFound, Key.ErrorPersonNotFoundAfterUpdate))
+            Left(
+              Error(
+                Status.NotFound,
+                Translations.Key.ErrorPersonNotFoundAfterUpdate
+              )
+            )
         )
       yield updated
     }
@@ -87,7 +98,12 @@ case class Collection[Doc <: Document: ClassTag](name: String)(using Lang)(using
         updated <- IO(maybeDoc match
           case Some(doc) => Right(doc)
           case None =>
-            Left(Error(Status.NotFound, Key.ErrorPersonNotFoundAfterUpdate))
+            Left(
+              Error(
+                Status.NotFound,
+                Translations.Key.ErrorPersonNotFoundAfterUpdate
+              )
+            )
         )
       yield updated
     }
@@ -99,7 +115,12 @@ case class Collection[Doc <: Document: ClassTag](name: String)(using Lang)(using
         original <- IO(maybeDoc match
           case Some(doc) => Right(doc)
           case None =>
-            Left(Error(Status.NotFound, Key.ErrorPersonNotFoundBeforeDelete))
+            Left(
+              Error(
+                Status.NotFound,
+                Translations.Key.ErrorPersonNotFoundBeforeDelete
+              )
+            )
         )
         result <- collection.deleteOne(Filter.eq("_id", doc._id))
       yield original

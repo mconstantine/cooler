@@ -1,4 +1,4 @@
-package it.mconst.cooler
+package it.mconst.cooler.middlewares
 
 import org.scalatest._
 import matchers._

@@ -1,12 +1,13 @@
-package it.mconst.cooler
+package it.mconst.cooler.utils
 
 import cats.effect.IO
 import com.osinka.i18n.Lang
 import io.circe.{Encoder, Json}
+import it.mconst.cooler.utils.Translations
 import org.http4s.{EntityEncoder, Status}
 import org.http4s.circe._
 
-case class Error(status: Status, messageKey: Key)(using Lang):
+case class Error(status: Status, messageKey: Translations.Key)(using Lang):
   def message = Translations.t(messageKey)
 
 given Encoder[Error] with {

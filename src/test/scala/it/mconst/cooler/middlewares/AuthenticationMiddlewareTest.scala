@@ -1,4 +1,4 @@
-package it.mconst.cooler
+package it.mconst.cooler.middlewares
 
 import org.scalatest._
 import matchers._
@@ -9,6 +9,9 @@ import cats.effect.kernel.Resource
 import cats.effect.unsafe.implicits.global
 import cats.syntax.all._
 import com.osinka.i18n.Lang
+import it.mconst.cooler.models.user.{User, Users, UserCreationData}
+import it.mconst.cooler.utils.{ErrorResponse, Translations}
+import it.mconst.cooler.utils.given
 import org.http4s.{
   AuthedRoutes,
   AuthScheme,
@@ -97,7 +100,7 @@ class CoolerAuthMiddlewareTest extends AnyFlatSpec with should.Matchers {
 
     body.status shouldEqual Forbidden
     body.message shouldBe Translations
-      .t(Key.ErrorInvalidAccessToken)
+      .t(Translations.Key.ErrorInvalidAccessToken)
       .toString
   }
 
@@ -117,7 +120,7 @@ class CoolerAuthMiddlewareTest extends AnyFlatSpec with should.Matchers {
 
     body.status shouldEqual Forbidden
     body.message shouldBe Translations
-      .t(Key.ErrorInvalidAccessToken)
+      .t(Translations.Key.ErrorInvalidAccessToken)
       .toString
   }
 }

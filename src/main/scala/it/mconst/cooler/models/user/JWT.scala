@@ -1,31 +1,32 @@
-package it.mconst.cooler
+package it.mconst.cooler.models.user
 
 import cats.effect.IO
 import com.osinka.i18n.Lang
 import io.circe.generic.auto.{deriveDecoder, deriveEncoder}
 import io.circe.parser.decode
 import io.circe.syntax.EncoderOps
+import it.mconst.cooler.utils.{Config, Error, Translations}
 import java.time.Instant
 import mongo4cats.bson.ObjectId
 import mongo4cats.collection.operations.Filter
 import org.http4s.Status
 import pdi.jwt.{JwtCirce, JwtAlgorithm, JwtClaim, JwtOptions}
 
-sealed trait TokenType:
-  def name: String
-
-case object UserAccess extends TokenType:
-  val name = "user_access"
-
-case object UserRefresh extends TokenType:
-  val name = "user_refresh"
-
-case class UnknownTokenType(name: String) extends TokenType
-case class AuthTokens(val accessToken: String, val refreshToken: String)
-
 object JWT {
+  sealed trait TokenType:
+    def name: String
+
+  case object UserAccess extends TokenType:
+    val name = "user_access"
+
+  case object UserRefresh extends TokenType:
+    val name = "user_refresh"
+
+  case class UnknownTokenType(name: String) extends TokenType
+  case class AuthTokens(val accessToken: String, val refreshToken: String)
+
   private val issuer = "cooler"
-  private val encryptionKey = CoolerConfig.database.encryptionKey
+  private val encryptionKey = Config.database.encryptionKey
   private val algorithm = JwtAlgorithm.HS256
 
   private case class TokenContent(_id: String)
@@ -82,7 +83,7 @@ object JWT {
           then Right[Error, JwtClaim](claimResult)
           else
             Left[Error, JwtClaim](
-              Error(Status.Forbidden, Key.ErrorInvalidAccessToken)
+              Error(Status.Forbidden, Translations.Key.ErrorInvalidAccessToken)
             )
         content <- decode[TokenContent](claimValidation.content)
         _id <- ObjectId.from(content._id)
@@ -90,14 +91,23 @@ object JWT {
 
     userId match
       case Left(_) =>
-        IO(Left(Error(Status.Forbidden, Key.ErrorInvalidAccessToken)))
+        IO(
+          Left(
+            Error(Status.Forbidden, Translations.Key.ErrorInvalidAccessToken)
+          )
+        )
       case Right(userId) =>
         users.collection
           .use(_.find(Filter.eq("_id", userId)).first)
           .map(_ match
             case Some(user) => Right(user)
             case None =>
-              Left(Error(Status.Forbidden, Key.ErrorInvalidAccessToken))
+              Left(
+                Error(
+                  Status.Forbidden,
+                  Translations.Key.ErrorInvalidAccessToken
+                )
+              )
           )
   }
 }

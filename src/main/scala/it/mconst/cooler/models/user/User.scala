@@ -1,10 +1,19 @@
-package it.mconst.cooler
+package it.mconst.cooler.models.user
 
 import cats.effect.IO
 import com.github.t3hnar.bcrypt._
 import com.mongodb.client.model.{Filters, Updates}
 import com.osinka.i18n.Lang
 import io.circe.generic.auto._
+import it.mconst.cooler.models.user.JWT
+import it.mconst.cooler.utils.{
+  Collection,
+  Document,
+  Error,
+  Timestamps,
+  Translations
+}
+import it.mconst.cooler.utils.given
 import mongo4cats.bson.ObjectId
 import mongo4cats.circe._
 import mongo4cats.codecs.MongoCodecProvider
@@ -51,14 +60,23 @@ case class Users()(using Lang) {
             .map(_ match
               case None => None
               case Some(_) =>
-                Some(Error(Status.Forbidden, Key.ErrorUserRegisterForbidden))
+                Some(
+                  Error(
+                    Status.Forbidden,
+                    Translations.Key.ErrorUserRegisterForbidden
+                  )
+                )
             )
       userExists <- firstUserOrCustomer match
         case Some(error) => IO(Some(error))
         case None =>
           collection
             .use(_.find(Filter.eq("email", user.email)).first)
-            .map(_.map(user => Error(Status.Conflict, Key.ErrorUserConflict)))
+            .map(
+              _.map(user =>
+                Error(Status.Conflict, Translations.Key.ErrorUserConflict)
+              )
+            )
       user <- userExists match
         case Some(error) => IO(Left(error))
         case None =>
@@ -103,7 +121,11 @@ case class Users()(using Lang) {
             .flatMap(_ match
               case None => IO(None)
               case Some(_) =>
-                IO(Some(Error(Status.Conflict, Key.ErrorUserConflict)))
+                IO(
+                  Some(
+                    Error(Status.Conflict, Translations.Key.ErrorUserConflict)
+                  )
+                )
             )
       result <- existingEmailError match
         case Some(error) => IO(Left(error))
@@ -117,28 +139,41 @@ case class Users()(using Lang) {
           collection.update(customer, Updates.combine(updates.asJava))
     yield result
 
-  def login(email: String, password: String): IO[Either[Error, AuthTokens]] =
+  def login(
+      email: String,
+      password: String
+  ): IO[Either[Error, JWT.AuthTokens]] =
     collection
       .use(_.find(Filter.eq("email", email)).first)
       .map { user =>
         for
           userWithValidatedEmail <- user match
             case None =>
-              Left(Error(Status.NotFound, Key.ErrorInvalidEmailOrPassword))
+              Left(
+                Error(
+                  Status.NotFound,
+                  Translations.Key.ErrorInvalidEmailOrPassword
+                )
+              )
             case Some(user) => Right(user)
           userWithValidatedPassword <- password.isBcryptedSafeBounded(
             userWithValidatedEmail.password
           ) match
             case Success(_) => Right(userWithValidatedEmail)
             case Failure(_) =>
-              Left(Error(Status.Unauthorized, Key.ErrorInvalidEmailOrPassword))
+              Left(
+                Error(
+                  Status.Unauthorized,
+                  Translations.Key.ErrorInvalidEmailOrPassword
+                )
+              )
           authTokens <- Right(JWT.generateAuthTokens(userWithValidatedPassword))
         yield authTokens
       }
 
-  def refreshToken(token: String): IO[Either[Error, AuthTokens]] =
+  def refreshToken(token: String): IO[Either[Error, JWT.AuthTokens]] =
     for
-      userResult <- JWT.decodeToken(token, UserRefresh)
+      userResult <- JWT.decodeToken(token, JWT.UserRefresh)
       authTokens <- IO(
         userResult.flatMap(user => Right(JWT.generateAuthTokens(user)))
       )

@@ -1,4 +1,4 @@
-package it.mconst.cooler
+package it.mconst.cooler.models.user
 
 import org.scalatest._
 import matchers._
@@ -8,6 +8,8 @@ import cats.effect.IO
 import cats.effect.unsafe.implicits.global
 import com.github.t3hnar.bcrypt._
 import com.osinka.i18n.Lang
+import it.mconst.cooler.models.user.JWT
+import it.mconst.cooler.utils.{Error, Translations}
 import mongo4cats.bson.ObjectId
 import org.bson.BsonDateTime
 import org.http4s.Status
@@ -64,7 +66,7 @@ class UsersCollectionTest extends AnyFlatSpec with should.Matchers {
       yield result
 
     result.unsafeRunSync() shouldEqual Left(
-      Error(Status.Forbidden, Key.ErrorUserRegisterForbidden)
+      Error(Status.Forbidden, Translations.Key.ErrorUserRegisterForbidden)
     )
   }
 
@@ -132,7 +134,7 @@ class UsersCollectionTest extends AnyFlatSpec with should.Matchers {
       yield secondUserResult
 
     result.unsafeRunSync() shouldEqual Left(
-      Error(Status.Conflict, Key.ErrorUserConflict)
+      Error(Status.Conflict, Translations.Key.ErrorUserConflict)
     )
   }
 
@@ -276,7 +278,10 @@ class UsersCollectionTest extends AnyFlatSpec with should.Matchers {
 
     update match
       case Left(error) =>
-        error shouldEqual Error(Status.Conflict, Key.ErrorUserConflict)
+        error shouldEqual Error(
+          Status.Conflict,
+          Translations.Key.ErrorUserConflict
+        )
       case Right(user) =>
         fail("A user was updated with an email that already exists")
   }
@@ -300,7 +305,7 @@ class UsersCollectionTest extends AnyFlatSpec with should.Matchers {
         user <- authTokens match
           case Left(error) => IO(Left(error))
           case Right(authTokens) =>
-            JWT.decodeToken(authTokens.accessToken, UserAccess)
+            JWT.decodeToken(authTokens.accessToken, JWT.UserAccess)
         _ <- users.collection.drop
       yield user
 
@@ -325,7 +330,7 @@ class UsersCollectionTest extends AnyFlatSpec with should.Matchers {
     val result = users.login(fakeUser.email, fakeUser.password).unsafeRunSync()
 
     result shouldEqual Left(
-      Error(Status.NotFound, Key.ErrorInvalidEmailOrPassword)
+      Error(Status.NotFound, Translations.Key.ErrorInvalidEmailOrPassword)
     )
   }
 
@@ -350,7 +355,7 @@ class UsersCollectionTest extends AnyFlatSpec with should.Matchers {
       yield login
 
     result.unsafeRunSync() shouldEqual Left(
-      Error(Status.NotFound, Key.ErrorInvalidEmailOrPassword)
+      Error(Status.NotFound, Translations.Key.ErrorInvalidEmailOrPassword)
     )
   }
 
@@ -375,7 +380,7 @@ class UsersCollectionTest extends AnyFlatSpec with should.Matchers {
       yield login
 
     result.unsafeRunSync() shouldEqual Left(
-      Error(Status.NotFound, Key.ErrorInvalidEmailOrPassword)
+      Error(Status.NotFound, Translations.Key.ErrorInvalidEmailOrPassword)
     )
   }
 
@@ -438,7 +443,7 @@ class UsersCollectionTest extends AnyFlatSpec with should.Matchers {
       yield freshTokens
 
     result.unsafeRunSync() shouldEqual Left(
-      Error(Status.Forbidden, Key.ErrorInvalidAccessToken)
+      Error(Status.Forbidden, Translations.Key.ErrorInvalidAccessToken)
     )
   }
 

@@ -5,6 +5,7 @@ import cats.syntax.all._
 import com.comcast.ip4s.{Host, Port}
 import io.circe.generic.auto.{deriveDecoder, deriveEncoder}
 import io.circe.syntax.EncoderOps
+import it.mconst.cooler.utils.Config
 import org.http4s.{EntityDecoder, HttpRoutes, HttpApp}
 import org.http4s.circe._
 import org.http4s.dsl.io._
@@ -43,14 +44,14 @@ object Server extends IOApp {
       .default[IO]
       .withHost(
         Host
-          .fromString(CoolerConfig.server.host) match
+          .fromString(Config.server.host) match
           case Some(host) => host
           case None =>
             throw new IllegalArgumentException(
               "Invalid host in configuration file"
             )
       )
-      .withPort(Port.fromInt(CoolerConfig.server.port) match
+      .withPort(Port.fromInt(Config.server.port) match
         case Some(port) => port
         case None =>
           throw new IllegalArgumentException(

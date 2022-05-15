@@ -1,4 +1,4 @@
-package it.mconst.cooler
+package it.mconst.cooler.utils
 
 import io.circe.generic.auto._
 import io.circe.parser._
@@ -6,7 +6,7 @@ import io.circe.syntax._
 import java.io.File
 import scala.io.Source
 
-object CoolerConfig extends App {
+object Config extends App {
   private def open(path: String) = new File(path)
 
   extension (file: File) {

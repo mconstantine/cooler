@@ -1,10 +1,11 @@
-package it.mconst.cooler
+package it.mconst.cooler.middlewares
 
 import cats.{Applicative, Monad}
 import cats.data.{Kleisli, OptionT}
 import cats.effect.IO
 import cats.syntax.all._
 import com.osinka.i18n.Lang
+import it.mconst.cooler.utils.Translations
 import org.http4s.{
   ContextRequest,
   ContextRoutes,
