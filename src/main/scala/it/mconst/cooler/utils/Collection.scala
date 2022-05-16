@@ -59,15 +59,13 @@ case class Collection[Doc <: Document: ClassTag](name: String)(using Lang)(using
         maybeDoc <- collection
           .find(Filter.eq("_id", result.getInsertedId))
           .first
-        doc <- IO(maybeDoc match
-          case Some(doc) => Right(doc)
-          case None =>
-            Left(
-              Error(
-                Status.NotFound,
-                Translations.Key.ErrorPersonNotFoundAfterInsert
-              )
+        doc <- IO(
+          maybeDoc.toRight(
+            Error(
+              Status.NotFound,
+              Translations.Key.ErrorPersonNotFoundAfterInsert
             )
+          )
         )
       yield doc
     }
@@ -77,15 +75,13 @@ case class Collection[Doc <: Document: ClassTag](name: String)(using Lang)(using
       for
         result <- collection.updateOne(Filters.eq("_id", doc._id), update)
         maybeDoc <- collection.find(Filter.eq("_id", doc._id)).first
-        updated <- IO(maybeDoc match
-          case Some(doc) => Right(doc)
-          case None =>
-            Left(
-              Error(
-                Status.NotFound,
-                Translations.Key.ErrorPersonNotFoundAfterUpdate
-              )
+        updated <- IO(
+          maybeDoc.toRight(
+            Error(
+              Status.NotFound,
+              Translations.Key.ErrorPersonNotFoundAfterUpdate
             )
+          )
         )
       yield updated
     }
@@ -95,15 +91,13 @@ case class Collection[Doc <: Document: ClassTag](name: String)(using Lang)(using
       for
         result <- collection.updateOne(Filter.eq("_id", doc._id), update)
         maybeDoc <- collection.find(Filter.eq("_id", doc._id)).first
-        updated <- IO(maybeDoc match
-          case Some(doc) => Right(doc)
-          case None =>
-            Left(
-              Error(
-                Status.NotFound,
-                Translations.Key.ErrorPersonNotFoundAfterUpdate
-              )
+        updated <- IO(
+          maybeDoc.toRight(
+            Error(
+              Status.NotFound,
+              Translations.Key.ErrorPersonNotFoundAfterUpdate
             )
+          )
         )
       yield updated
     }
@@ -112,15 +106,13 @@ case class Collection[Doc <: Document: ClassTag](name: String)(using Lang)(using
     use { collection =>
       for
         maybeDoc <- collection.find(Filter.eq("_id", doc._id)).first
-        original <- IO(maybeDoc match
-          case Some(doc) => Right(doc)
-          case None =>
-            Left(
-              Error(
-                Status.NotFound,
-                Translations.Key.ErrorPersonNotFoundBeforeDelete
-              )
+        original <- IO(
+          maybeDoc.toRight(
+            Error(
+              Status.NotFound,
+              Translations.Key.ErrorPersonNotFoundBeforeDelete
             )
+          )
         )
         result <- collection.deleteOne(Filter.eq("_id", doc._id))
       yield original

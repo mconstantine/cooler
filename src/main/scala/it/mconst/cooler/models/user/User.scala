@@ -4,6 +4,7 @@ import cats.effect.IO
 import com.github.t3hnar.bcrypt._
 import com.mongodb.client.model.{Filters, Updates}
 import com.osinka.i18n.Lang
+import io.circe.{Decoder, DecodingFailure, Encoder}
 import io.circe.generic.auto._
 import it.mconst.cooler.models.user.JWT
 import it.mconst.cooler.utils.{
@@ -22,9 +23,6 @@ import org.bson.BsonDateTime
 import org.http4s.Status
 import scala.collection.JavaConverters._
 import scala.util.{Success, Failure}
-import io.circe.Encoder
-import io.circe.Decoder
-import io.circe.DecodingFailure
 
 case class UserCreationData(
     name: String,
@@ -41,8 +39,7 @@ case class UserUpdateData(
 opaque type NonEmptyString = String
 
 object NonEmptyString {
-  def fromString(s: String): Option[NonEmptyString] =
-    if s.isEmpty then None else Some(s)
+  def fromString(s: String): Option[NonEmptyString] = Option.when(s.isEmpty)(s)
 
   given Encoder[NonEmptyString] = Encoder.encodeString
 
@@ -62,10 +59,9 @@ object Email {
   private def pattern =
     """^[a-zA-Z0-9\.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$""".r
 
-  def fromString(s: String): Option[Email] = s match
-    case null                                 => None
-    case e if e.trim.isEmpty                  => None
-    case e if pattern.unapplySeq(e).isDefined => Some(e)
+  def fromString(s: String): Option[Email] = NonEmptyString
+    .fromString(s)
+    .flatMap(Option.when(pattern.unapplySeq(s).isDefined))
 
   given Encoder[Email] = Encoder.encodeString
 
@@ -83,7 +79,7 @@ opaque type Password = String
 
 object Password {
   def fromString(s: String): Option[Password] =
-    if s.trim.isEmpty then None else s.bcryptSafeBounded.toOption
+    NonEmptyString.fromString(s).flatMap(_.toString.bcryptSafeBounded.toOption)
 
   given Encoder[Password] = Encoder.encodeString
   given Decoder[Password] = Decoder.decodeString
@@ -152,15 +148,13 @@ case class Users()(using Lang) {
         case None =>
           collection
             .use(_.find.first)
-            .map(_ match
-              case None => None
-              case Some(_) =>
-                Some(
-                  Error(
-                    Status.Forbidden,
-                    Translations.Key.ErrorUserRegisterForbidden
-                  )
+            .map(
+              _.map(_ =>
+                Error(
+                  Status.Forbidden,
+                  Translations.Key.ErrorUserRegisterForbidden
                 )
+              )
             )
       userExists <- firstUserOrCustomer match
         case Some(error) => IO(Some(error))
@@ -206,14 +200,10 @@ case class Users()(using Lang) {
                 Filter.eq("email", email).and(Filter.ne("_id", customer._id))
               ).first
             )
-            .flatMap(_ match
-              case None => IO(None)
-              case Some(_) =>
-                IO(
-                  Some(
-                    Error(Status.Conflict, Translations.Key.ErrorUserConflict)
-                  )
-                )
+            .map(
+              _.map(_ =>
+                Error(Status.Conflict, Translations.Key.ErrorUserConflict)
+              )
             )
       result <- existingEmailError match
         case Some(error) => IO(Left(error))
@@ -254,14 +244,14 @@ case class Users()(using Lang) {
               )
             )
           case Right(isSamePassword) =>
-            if isSamePassword then Right(user)
-            else
-              Left(
-                Error(
-                  Status.BadRequest,
-                  Translations.Key.ErrorInvalidEmailOrPassword
-                )
+            Either.cond(
+              isSamePassword,
+              user,
+              Error(
+                Status.BadRequest,
+                Translations.Key.ErrorInvalidEmailOrPassword
               )
+            )
       })
       authTokens <- IO(
         userWithRightPassword.map(JWT.generateAuthTokens(_))
@@ -271,9 +261,7 @@ case class Users()(using Lang) {
   def refreshToken(token: String): IO[Either[Error, JWT.AuthTokens]] =
     for
       userResult <- JWT.decodeToken(token, JWT.UserRefresh)
-      authTokens <- IO(
-        userResult.flatMap(user => Right(JWT.generateAuthTokens(user)))
-      )
+      authTokens <- IO(userResult.map(JWT.generateAuthTokens(_)))
     yield authTokens
 
   def delete()(using customer: User): IO[Either[Error, User]] =

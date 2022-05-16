@@ -20,19 +20,19 @@ object Config extends App {
 
   private val configContent = open("src/main/resources/application.json").read()
 
-  private val configResult = parse(configContent) match
-    case Right(json) => json.as[Config]
-    case Left(error) =>
+  private val configResult = parse(configContent)
+    .map(_.as[Config])
+    .getOrElse(
       throw new IllegalArgumentException(
-        s"""Invalid JSON in config file: $error"""
+        s"""Invalid JSON in config file"""
       )
+    )
 
-  private val config = configResult match
-    case Right(config) => config
-    case Left(error) =>
-      throw new IllegalArgumentException(
-        s"""Invalid JSON in config file: $error"""
-      )
+  private val config = configResult.getOrElse(
+    throw new IllegalArgumentException(
+      s"""Invalid JSON in config file: $configResult"""
+    )
+  )
 
   val server = config.server
   val database = config.database

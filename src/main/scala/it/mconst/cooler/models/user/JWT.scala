@@ -78,13 +78,11 @@ object JWT {
         claimResult <- JwtCirce
           .decode(token, encryptionKey, Seq(algorithm))
           .toEither
-        claimValidation <-
-          if validateClaim(claimResult, tokenType)
-          then Right[Error, JwtClaim](claimResult)
-          else
-            Left[Error, JwtClaim](
-              Error(Status.Forbidden, Translations.Key.ErrorInvalidAccessToken)
-            )
+        claimValidation <- Either.cond(
+          validateClaim(claimResult, tokenType),
+          claimResult,
+          Error(Status.Forbidden, Translations.Key.ErrorInvalidAccessToken)
+        )
         content <- decode[TokenContent](claimValidation.content)
         _id <- ObjectId.from(content._id)
       yield _id
@@ -99,15 +97,13 @@ object JWT {
       case Right(userId) =>
         users.collection
           .use(_.find(Filter.eq("_id", userId)).first)
-          .map(_ match
-            case Some(user) => Right(user)
-            case None =>
-              Left(
-                Error(
-                  Status.Forbidden,
-                  Translations.Key.ErrorInvalidAccessToken
-                )
+          .map(
+            _.toRight(
+              Error(
+                Status.Forbidden,
+                Translations.Key.ErrorInvalidAccessToken
               )
+            )
           )
   }
 }

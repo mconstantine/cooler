@@ -39,14 +39,12 @@ object LanguageRoutes {
 object LanguageMiddleware {
   type LanguageMiddleware = ContextMiddleware[IO, Lang]
 
-  private def getLanguage(request: Request[IO]): Lang =
-    Translations.getLanguageFromHeader(
-      request.headers.get[`Accept-Language`]
-    )
-
   private def middleware: LanguageMiddleware = { service =>
     Kleisli { request =>
-      val lang = getLanguage(request)
+      val lang = Translations.getLanguageFromHeader(
+        request.headers.get[`Accept-Language`]
+      )
+
       val languageRequest: LanguageRequest = ContextRequest(lang, request)
 
       val response =
