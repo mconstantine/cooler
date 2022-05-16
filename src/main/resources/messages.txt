@@ -6,3 +6,6 @@ error.person.notFound.beforeDelete=Person to be deleted was''t found
 error.user.conflict=A user with this e-mail address already exists
 error.user.notFound=User not found
 error.user.register.forbidden=Only existing users can create new users
+error.user.register.emptyName=The name of a user cannot be empty
+error.user.register.invalidEmailFormat=Invalid e-mail address format
+error.user.register.invalidPasswordFormat=Invalid password format

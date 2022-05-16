@@ -20,6 +20,11 @@ object Translations {
     case ErrorUserConflict extends Key("error.user.conflict")
     case ErrorUserNotFound extends Key("error.user.notFound")
     case ErrorUserRegisterForbidden extends Key("error.user.register.forbidden")
+    case ErrorUserRegisterEmptyName extends Key("error.user.register.emptyName")
+    case ErrorUserRegisterInvalidEmailFormat
+        extends Key("error.user.register.invalidEmailFormat")
+    case ErrorUserRegisterInvalidPasswordFormat
+        extends Key("error.user.register.invalidPasswordFormat")
 
   private val supportedLangs: List[LanguageTag] =
     List(LanguageTag("en"), LanguageTag("it"))

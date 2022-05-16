@@ -40,7 +40,10 @@ class UsersCollectionTest extends AnyFlatSpec with should.Matchers {
       case Right(user) =>
         user.email shouldBe userData.email
         user.password shouldNot be(userData.password)
-        userData.password.isBcryptedBounded(user.password) should be(true)
+
+        userData.password.isBcryptedBounded(
+          user.password.toString
+        ) shouldBe true
   }
 
   it should "reject registration if there is a user already registered and no customer" in {
@@ -226,10 +229,13 @@ class UsersCollectionTest extends AnyFlatSpec with should.Matchers {
 
     (original, updated) match
       case (Right(original), Right(updated)) => {
-        updated.name shouldBe update.name.get
+        updated.name.toString shouldBe update.name.get
         updated.email shouldBe userData.email
         updated.password shouldNot be(update.password.get)
-        update.password.get.isBcryptedBounded(updated.password) shouldBe true
+
+        update.password.get.isBcryptedBounded(
+          updated.password.toString
+        ) shouldBe true
       }
       case _ => fail("Unable to execute update")
   }
@@ -315,22 +321,21 @@ class UsersCollectionTest extends AnyFlatSpec with should.Matchers {
   }
 
   it should "reject the login if the user is not registered" in {
-    val fakeUser = User(
-      new ObjectId,
-      "Made up user",
-      "madeup-user@example.com",
-      "Whatever".bcryptSafeBounded.getOrElse({
-        fail("Unable to encrypt password")
-        null
-      }),
-      BsonDateTime(System.currentTimeMillis),
-      BsonDateTime(System.currentTimeMillis)
-    )
+    val fakeUser = User
+      .fromCreationData(
+        UserCreationData(
+          "Made up user",
+          "madeup-user@example.com",
+          "Whatever"
+        )
+      )
+      .getOrElse(fail(""))
 
-    val result = users.login(fakeUser.email, fakeUser.password).unsafeRunSync()
+    val result =
+      users.login(fakeUser.email, fakeUser.password.toString).unsafeRunSync()
 
     result shouldEqual Left(
-      Error(Status.NotFound, Translations.Key.ErrorInvalidEmailOrPassword)
+      Error(Status.BadRequest, Translations.Key.ErrorInvalidEmailOrPassword)
     )
   }
 
@@ -350,12 +355,17 @@ class UsersCollectionTest extends AnyFlatSpec with should.Matchers {
         login <- registration match
           case Left(error) => IO(Left(error))
           case Right(user) =>
-            users.login("some-other-email@example.com", userData.password)
+            users.login(
+              Email
+                .fromString("some-other-email@example.com")
+                .getOrElse(fail("")),
+              userData.password
+            )
         _ <- users.collection.drop
       yield login
 
     result.unsafeRunSync() shouldEqual Left(
-      Error(Status.NotFound, Translations.Key.ErrorInvalidEmailOrPassword)
+      Error(Status.BadRequest, Translations.Key.ErrorInvalidEmailOrPassword)
     )
   }
 
@@ -375,12 +385,12 @@ class UsersCollectionTest extends AnyFlatSpec with should.Matchers {
         login <- registration match
           case Left(error) => IO(Left(error))
           case Right(user) =>
-            users.login(userData.password, "someOtherPassword")
+            users.login(user.email, "someOtherPassword")
         _ <- users.collection.drop
       yield login
 
     result.unsafeRunSync() shouldEqual Left(
-      Error(Status.NotFound, Translations.Key.ErrorInvalidEmailOrPassword)
+      Error(Status.BadRequest, Translations.Key.ErrorInvalidEmailOrPassword)
     )
   }
 

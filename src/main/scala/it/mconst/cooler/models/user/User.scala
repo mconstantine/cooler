@@ -22,6 +22,9 @@ import org.bson.BsonDateTime
 import org.http4s.Status
 import scala.collection.JavaConverters._
 import scala.util.{Success, Failure}
+import io.circe.Encoder
+import io.circe.Decoder
+import io.circe.DecodingFailure
 
 case class UserCreationData(
     name: String,
@@ -35,15 +38,107 @@ case class UserUpdateData(
     password: Option[String]
 )
 
+opaque type NonEmptyString = String
+
+object NonEmptyString {
+  def fromString(s: String): Option[NonEmptyString] =
+    if s.isEmpty then None else Some(s)
+
+  given Encoder[NonEmptyString] = Encoder.encodeString
+
+  given Decoder[NonEmptyString] =
+    Decoder.decodeString.flatMap { s =>
+      Decoder.instance(_ =>
+        fromString(s).toRight(DecodingFailure("NonEmptyString", List.empty))
+      )
+    }
+}
+
+given CanEqual[NonEmptyString, String] = CanEqual.derived
+
+opaque type Email = String
+
+object Email {
+  private def pattern =
+    """^[a-zA-Z0-9\.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$""".r
+
+  def fromString(s: String): Option[Email] = s match
+    case null                                 => None
+    case e if e.trim.isEmpty                  => None
+    case e if pattern.unapplySeq(e).isDefined => Some(e)
+
+  given Encoder[Email] = Encoder.encodeString
+
+  given Decoder[Email] =
+    Decoder.decodeString.flatMap { s =>
+      Decoder.instance(_ =>
+        fromString(s).toRight(DecodingFailure("Email", List.empty))
+      )
+    }
+}
+
+given CanEqual[Email, String] = CanEqual.derived
+
+opaque type Password = String
+
+object Password {
+  def fromString(s: String): Option[Password] =
+    if s.trim.isEmpty then None else s.bcryptSafeBounded.toOption
+
+  given Encoder[Password] = Encoder.encodeString
+  given Decoder[Password] = Decoder.decodeString
+}
+
+given CanEqual[Password, String] = CanEqual.derived
+
 case class User(
     _id: ObjectId,
-    name: String,
-    email: String,
-    password: String,
+    name: NonEmptyString,
+    email: Email,
+    password: Password,
     createdAt: BsonDateTime,
     updatedAt: BsonDateTime
 ) extends Document
     with Timestamps
+
+object User {
+  def fromCreationData(
+      data: UserCreationData
+  )(using Lang): Either[Error, User] =
+    for
+      name <- NonEmptyString
+        .fromString(data.name)
+        .toRight(
+          Error(
+            Status.BadRequest,
+            Translations.Key.ErrorUserRegisterInvalidPasswordFormat
+          )
+        )
+      email <- Email
+        .fromString(data.email)
+        .toRight(
+          Error(
+            Status.BadRequest,
+            Translations.Key.ErrorUserRegisterInvalidEmailFormat
+          )
+        )
+      password <- Password
+        .fromString(data.password)
+        .toRight(
+          Error(Status.BadRequest, Translations.Key.ErrorUserRegisterEmptyName)
+        )
+      user <- Right(
+        User(
+          _id = ObjectId(),
+          name = name,
+          email = email,
+          password = password,
+          createdAt = BsonDateTime(System.currentTimeMillis()),
+          updatedAt = BsonDateTime(System.currentTimeMillis())
+        )
+      )
+    yield user
+}
 
 case class Users()(using Lang) {
   val collection = Collection[User]("users")
@@ -81,17 +176,10 @@ case class Users()(using Lang) {
         case Some(error) => IO(Left(error))
         case None =>
           for
-            hashedPassword <- IO.fromTry(user.password.bcryptSafeBounded)
-            user <- collection.create(
-              User(
-                new ObjectId(),
-                user.name,
-                user.email,
-                hashedPassword,
-                BsonDateTime(System.currentTimeMillis()),
-                BsonDateTime(System.currentTimeMillis())
-              )
-            )
+            userData <- IO(User.fromCreationData(user))
+            user <- userData match
+              case Right(userData) => collection.create(userData)
+              case Left(error)     => IO(Left(error))
           yield user
     yield user
 
@@ -140,36 +228,45 @@ case class Users()(using Lang) {
     yield result
 
   def login(
-      email: String,
+      email: Email,
       password: String
   ): IO[Either[Error, JWT.AuthTokens]] =
-    collection
-      .use(_.find(Filter.eq("email", email)).first)
-      .map { user =>
-        for
-          userWithValidatedEmail <- user match
-            case None =>
+    for
+      user <- collection
+        .use(_.find(Filter.eq("email", email)).first)
+        .map(
+          _.toRight(
+            Error(
+              Status.BadRequest,
+              Translations.Key.ErrorInvalidEmailOrPassword
+            )
+          )
+        )
+      userWithRightPassword <- IO(user.flatMap { user =>
+        password
+          .isBcryptedSafeBounded(user.password.toString)
+          .toEither match
+          case Left(_) =>
+            Left(
+              Error(
+                Status.BadRequest,
+                Translations.Key.ErrorInvalidEmailOrPassword
+              )
+            )
+          case Right(isSamePassword) =>
+            if isSamePassword then Right(user)
+            else
               Left(
                 Error(
-                  Status.NotFound,
+                  Status.BadRequest,
                   Translations.Key.ErrorInvalidEmailOrPassword
                 )
               )
-            case Some(user) => Right(user)
-          userWithValidatedPassword <- password.isBcryptedSafeBounded(
-            userWithValidatedEmail.password
-          ) match
-            case Success(_) => Right(userWithValidatedEmail)
-            case Failure(_) =>
-              Left(
-                Error(
-                  Status.Unauthorized,
-                  Translations.Key.ErrorInvalidEmailOrPassword
-                )
-              )
-          authTokens <- Right(JWT.generateAuthTokens(userWithValidatedPassword))
-        yield authTokens
-      }
+      })
+      authTokens <- IO(
+        userWithRightPassword.map(JWT.generateAuthTokens(_))
+      )
+    yield authTokens
 
   def refreshToken(token: String): IO[Either[Error, JWT.AuthTokens]] =
     for
