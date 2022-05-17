@@ -71,8 +71,6 @@ object JWT {
   def decodeToken(token: String, tokenType: TokenType)(using
       Lang
   ): IO[Either[Error, User]] = {
-    val users = Users()
-
     val userId =
       for
         claimResult <- JwtCirce
@@ -95,7 +93,7 @@ object JWT {
           )
         )
       case Right(userId) =>
-        users.collection
+        Users.collection
           .use(_.find(Filter.eq("_id", userId)).first)
           .map(
             _.toRight(

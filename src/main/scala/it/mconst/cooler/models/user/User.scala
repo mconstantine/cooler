@@ -24,22 +24,11 @@ import org.http4s.Status
 import scala.collection.JavaConverters._
 import scala.util.{Success, Failure}
 
-case class UserCreationData(
-    name: String,
-    email: String,
-    password: String
-)
-
-case class UserUpdateData(
-    name: Option[String],
-    email: Option[String],
-    password: Option[String]
-)
-
 opaque type NonEmptyString = String
 
 object NonEmptyString {
-  def fromString(s: String): Option[NonEmptyString] = Option.when(s.isEmpty)(s)
+  def fromString(s: String): Option[NonEmptyString] =
+    Option.unless(s.isEmpty)(s)
 
   given Encoder[NonEmptyString] = Encoder.encodeString
 
@@ -79,7 +68,9 @@ opaque type Password = String
 
 object Password {
   def fromString(s: String): Option[Password] =
-    NonEmptyString.fromString(s).flatMap(_.toString.bcryptSafeBounded.toOption)
+    NonEmptyString
+      .fromString(s)
+      .flatMap(_.toString.bcryptSafeBounded.toOption)
 
   given Encoder[Password] = Encoder.encodeString
   given Decoder[Password] = Decoder.decodeString
@@ -98,8 +89,22 @@ case class User(
     with Timestamps
 
 object User {
+  case class CreationData(
+      name: String,
+      email: String,
+      password: String
+  )
+
+  case class UpdateData(
+      name: Option[String],
+      email: Option[String],
+      password: Option[String]
+  )
+
+  case class LoginData(email: Email, password: String)
+
   def fromCreationData(
-      data: UserCreationData
+      data: CreationData
   )(using Lang): Either[Error, User] =
     for
       name <- NonEmptyString
@@ -107,7 +112,7 @@ object User {
         .toRight(
           Error(
             Status.BadRequest,
-            Translations.Key.ErrorUserRegisterInvalidPasswordFormat
+            Translations.Key.ErrorUserRegisterEmptyName
           )
         )
       email <- Email
@@ -118,11 +123,15 @@ object User {
             Translations.Key.ErrorUserRegisterInvalidEmailFormat
           )
         )
-      password <- Password
-        .fromString(data.password)
-        .toRight(
-          Error(Status.BadRequest, Translations.Key.ErrorUserRegisterEmptyName)
-        )
+      password <-
+        Password
+          .fromString(data.password)
+          .toRight(
+            Error(
+              Status.BadRequest,
+              Translations.Key.ErrorUserRegisterInvalidPasswordFormat
+            )
+          )
       user <- Right(
         User(
           _id = ObjectId(),
@@ -136,12 +145,12 @@ object User {
     yield user
 }
 
-case class Users()(using Lang) {
+object Users {
   val collection = Collection[User]("users")
 
   def register(
-      user: UserCreationData
-  )(using customer: Option[User]): IO[Either[Error, User]] =
+      user: User.CreationData
+  )(using customer: Option[User])(using Lang): IO[Either[Error, User]] =
     for
       firstUserOrCustomer <- customer match
         case Some(_) => IO(None)
@@ -184,8 +193,8 @@ case class Users()(using Lang) {
     collection.use(_.find(Filter.eq("email", customer.email)).first)
 
   def update(
-      data: UserUpdateData
-  )(using customer: User): IO[Either[Error, User]] =
+      data: User.UpdateData
+  )(using customer: User)(using Lang): IO[Either[Error, User]] =
     for
       password <- data.password match
         case None => IO(None)
@@ -218,12 +227,11 @@ case class Users()(using Lang) {
     yield result
 
   def login(
-      email: Email,
-      password: String
-  ): IO[Either[Error, JWT.AuthTokens]] =
+      data: User.LoginData
+  )(using Lang): IO[Either[Error, JWT.AuthTokens]] =
     for
       user <- collection
-        .use(_.find(Filter.eq("email", email)).first)
+        .use(_.find(Filter.eq("email", data.email)).first)
         .map(
           _.toRight(
             Error(
@@ -233,7 +241,7 @@ case class Users()(using Lang) {
           )
         )
       userWithRightPassword <- IO(user.flatMap { user =>
-        password
+        data.password
           .isBcryptedSafeBounded(user.password.toString)
           .toEither match
           case Left(_) =>
@@ -258,12 +266,14 @@ case class Users()(using Lang) {
       )
     yield authTokens
 
-  def refreshToken(token: String): IO[Either[Error, JWT.AuthTokens]] =
+  def refreshToken(
+      token: String
+  )(using Lang): IO[Either[Error, JWT.AuthTokens]] =
     for
       userResult <- JWT.decodeToken(token, JWT.UserRefresh)
       authTokens <- IO(userResult.map(JWT.generateAuthTokens(_)))
     yield authTokens
 
-  def delete()(using customer: User): IO[Either[Error, User]] =
+  def delete()(using customer: User)(using Lang): IO[Either[Error, User]] =
     collection.delete(customer)
 }

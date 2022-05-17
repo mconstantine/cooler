@@ -28,10 +28,10 @@ class LanguageMiddlewareTest extends AnyFlatSpec with should.Matchers {
       case GET -> Root as lang =>
         given Lang = lang
         Ok(Translations.t(Translations.Key.Test).toString)
-      case req @ POST -> Root as lang =>
+      case contextRequest @ POST -> Root as lang =>
         given Lang = lang
         for
-          body <- req.req.as[Test]
+          body <- contextRequest.req.as[Test]
           response <- Ok(Translations.t(Translations.Key.Test).toString)
         yield response
     }

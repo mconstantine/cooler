@@ -9,7 +9,7 @@ import cats.effect.kernel.Resource
 import cats.effect.unsafe.implicits.global
 import cats.syntax.all._
 import com.osinka.i18n.Lang
-import it.mconst.cooler.models.user.{User, Users, UserCreationData}
+import it.mconst.cooler.models.user.{User, Users}
 import it.mconst.cooler.utils.{ErrorResponse, Translations}
 import it.mconst.cooler.utils.given
 import org.http4s.{
@@ -54,9 +54,7 @@ class CoolerAuthMiddlewareTest extends AnyFlatSpec with should.Matchers {
   }
 
   it should "work with authorized user" in {
-    val users = Users()
-
-    val userData = UserCreationData(
+    val userData = User.CreationData(
       name = "John Doe",
       email = "john.doe@example.com",
       password = "Abc123?!"
@@ -66,11 +64,12 @@ class CoolerAuthMiddlewareTest extends AnyFlatSpec with should.Matchers {
       for
         user <- {
           given Option[User] = None
-          users.register(userData)
+          Users.register(userData)
         }
         login <- user match
           case Left(error) => IO(Left(error))
-          case Right(user) => users.login(user.email, userData.password)
+          case Right(user) =>
+            Users.login(User.LoginData(user.email, userData.password))
       yield (login)
 
     val authTokens = login.unsafeRunSync() match
@@ -86,7 +85,7 @@ class CoolerAuthMiddlewareTest extends AnyFlatSpec with should.Matchers {
     val response = client.expect[String](request).unsafeRunSync()
     response shouldBe s"Welcome, ${userData.name}"
 
-    users.collection.use(_.drop).unsafeRunSync()
+    Users.collection.use(_.drop).unsafeRunSync()
   }
 
   it should "return 403 if auth header is missing" in {

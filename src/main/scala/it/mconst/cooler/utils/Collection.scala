@@ -39,7 +39,7 @@ extension [T](io: IO[T]) {
   }
 }
 
-case class Collection[Doc <: Document: ClassTag](name: String)(using Lang)(using
+case class Collection[Doc <: Document: ClassTag](name: String)(using
     MongoCodecProvider[Doc]
 ) {
   def use[R](op: MongoCollection[IO, Doc] => IO[R]) =
@@ -52,7 +52,7 @@ case class Collection[Doc <: Document: ClassTag](name: String)(using Lang)(using
         yield result
     }
 
-  def create(doc: Doc): IO[Either[Error, Doc]] =
+  def create(doc: Doc)(using Lang): IO[Either[Error, Doc]] =
     use { collection =>
       for
         result <- collection.insertOne(doc)
@@ -70,7 +70,7 @@ case class Collection[Doc <: Document: ClassTag](name: String)(using Lang)(using
       yield doc
     }
 
-  def update(doc: Doc, update: Bson): IO[Either[Error, Doc]] =
+  def update(doc: Doc, update: Bson)(using Lang): IO[Either[Error, Doc]] =
     use { collection =>
       for
         result <- collection.updateOne(Filters.eq("_id", doc._id), update)
@@ -86,7 +86,7 @@ case class Collection[Doc <: Document: ClassTag](name: String)(using Lang)(using
       yield updated
     }
 
-  def update(doc: Doc, update: Update): IO[Either[Error, Doc]] =
+  def update(doc: Doc, update: Update)(using Lang): IO[Either[Error, Doc]] =
     use { collection =>
       for
         result <- collection.updateOne(Filter.eq("_id", doc._id), update)
@@ -102,7 +102,7 @@ case class Collection[Doc <: Document: ClassTag](name: String)(using Lang)(using
       yield updated
     }
 
-  def delete(doc: Doc): IO[Either[Error, Doc]] =
+  def delete(doc: Doc)(using Lang): IO[Either[Error, Doc]] =
     use { collection =>
       for
         maybeDoc <- collection.find(Filter.eq("_id", doc._id)).first

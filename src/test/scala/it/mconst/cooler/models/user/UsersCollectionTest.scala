@@ -8,7 +8,6 @@ import cats.effect.IO
 import cats.effect.unsafe.implicits.global
 import com.github.t3hnar.bcrypt._
 import com.osinka.i18n.Lang
-import it.mconst.cooler.models.user.JWT
 import it.mconst.cooler.utils.{Error, Translations}
 import mongo4cats.bson.ObjectId
 import org.bson.BsonDateTime
@@ -16,10 +15,9 @@ import org.http4s.Status
 
 class UsersCollectionTest extends AnyFlatSpec with should.Matchers {
   given Lang = Lang.Default
-  val users = Users()
 
   it should "register a user" in {
-    val userData = UserCreationData(
+    val userData = User.CreationData(
       "Registration test",
       "registration-test@example.com",
       "Abc123!?"
@@ -29,8 +27,8 @@ class UsersCollectionTest extends AnyFlatSpec with should.Matchers {
 
     val registration =
       for
-        user <- users.register(userData)
-        _ <- users.collection.drop
+        user <- Users.register(userData)
+        _ <- Users.collection.drop
       yield user
 
     val user = registration.unsafeRunSync()
@@ -47,13 +45,13 @@ class UsersCollectionTest extends AnyFlatSpec with should.Matchers {
   }
 
   it should "reject registration if there is a user already registered and no customer" in {
-    val firstUser = UserCreationData(
+    val firstUser = User.CreationData(
       "First user rejection test",
       "first-user-rejection-test@example.com",
       "Abc123!?"
     )
 
-    val secondUser = UserCreationData(
+    val secondUser = User.CreationData(
       "Second user rejection test",
       "second-user-rejection-test@example.com",
       "Abc123!?"
@@ -63,9 +61,9 @@ class UsersCollectionTest extends AnyFlatSpec with should.Matchers {
 
     val result =
       for
-        _ <- users.register(firstUser)
-        result <- users.register(secondUser)
-        _ <- users.collection.drop
+        _ <- Users.register(firstUser)
+        result <- Users.register(secondUser)
+        _ <- Users.collection.drop
       yield result
 
     result.unsafeRunSync() shouldEqual Left(
@@ -74,13 +72,13 @@ class UsersCollectionTest extends AnyFlatSpec with should.Matchers {
   }
 
   it should "register an nth user if a customer requests it" in {
-    val firstUserData = UserCreationData(
+    val firstUserData = User.CreationData(
       "First user acceptance test",
       "first-user-acceptance-test@example.com",
       "Abc123!?"
     )
 
-    val secondUserData = UserCreationData(
+    val secondUserData = User.CreationData(
       "Second user acceptance test",
       "second-user-acceptance-test@example.com",
       "Abc123!?"
@@ -90,15 +88,15 @@ class UsersCollectionTest extends AnyFlatSpec with should.Matchers {
       for
         firstUserResult <- {
           given Option[User] = None
-          users.register(firstUserData)
+          Users.register(firstUserData)
         }
         secondUserResult <- firstUserResult match
           case Left(error) => IO(Left(error))
           case Right(user) => {
             given Option[User] = Some(user)
-            users.register(secondUserData)
+            Users.register(secondUserData)
           }
-        _ <- users.collection.drop
+        _ <- Users.collection.drop
       yield secondUserResult
 
     val secondUser = result.unsafeRunSync()
@@ -109,13 +107,13 @@ class UsersCollectionTest extends AnyFlatSpec with should.Matchers {
   }
 
   it should "reject registration if a user with the same email already exists" in {
-    val firstUserData = UserCreationData(
+    val firstUserData = User.CreationData(
       "First user same email test",
       "first-user-same-email-test@example.com",
       "Abc123!?"
     )
 
-    val secondUserData = UserCreationData(
+    val secondUserData = User.CreationData(
       "Second user same email test",
       "first-user-same-email-test@example.com",
       "Abc123!?"
@@ -125,15 +123,15 @@ class UsersCollectionTest extends AnyFlatSpec with should.Matchers {
       for
         firstUserResult <- {
           given Option[User] = None
-          users.register(firstUserData)
+          Users.register(firstUserData)
         }
         secondUserResult <- firstUserResult match
           case Left(error) => IO(Left(error))
           case Right(user) => {
             given Option[User] = Some(user)
-            users.register(secondUserData)
+            Users.register(secondUserData)
           }
-        _ <- users.collection.drop
+        _ <- Users.collection.drop
       yield secondUserResult
 
     result.unsafeRunSync() shouldEqual Left(
@@ -142,7 +140,7 @@ class UsersCollectionTest extends AnyFlatSpec with should.Matchers {
   }
 
   it should "find a user by id" in {
-    val userData = UserCreationData(
+    val userData = User.CreationData(
       "Fetching by _id test",
       "fetching-by-id-test@example.com",
       "Abc123!?"
@@ -152,17 +150,17 @@ class UsersCollectionTest extends AnyFlatSpec with should.Matchers {
       for
         user <- {
           given Option[User] = None
-          users
+          Users
             .register(userData)
             .flatMap(_ match
               case Left(error) => fail(error.message.toString)
               case Right(user) => {
                 given User = user
-                users.findById()
+                Users.findById()
               }
             )
         }
-        _ <- users.collection.drop
+        _ <- Users.collection.drop
       yield user
 
     val user = fetching.unsafeRunSync()
@@ -170,7 +168,7 @@ class UsersCollectionTest extends AnyFlatSpec with should.Matchers {
   }
 
   it should "find a user by email" in {
-    val userData = UserCreationData(
+    val userData = User.CreationData(
       "Fetching by email test",
       "fetching-by-email-test@example.com",
       "Abc123!?"
@@ -180,17 +178,17 @@ class UsersCollectionTest extends AnyFlatSpec with should.Matchers {
       for
         user <- {
           given Option[User] = None
-          users
+          Users
             .register(userData)
             .flatMap(_ match
               case Left(_) => IO(None)
               case Right(user) => {
                 given User = user
-                users.findByEmail()
+                Users.findByEmail()
               }
             )
         }
-        _ <- users.collection.drop
+        _ <- Users.collection.drop
       yield user
 
     val user = fetching.unsafeRunSync()
@@ -198,13 +196,13 @@ class UsersCollectionTest extends AnyFlatSpec with should.Matchers {
   }
 
   it should "update a user" in {
-    val userData = UserCreationData(
+    val userData = User.CreationData(
       "Update test",
       "update-test@example.com",
       "Abc123!?"
     )
 
-    val update = UserUpdateData(
+    val update = User.UpdateData(
       Some("Updated name"),
       None,
       Some("Upd4t3dP4ssw0rd!")
@@ -214,15 +212,15 @@ class UsersCollectionTest extends AnyFlatSpec with should.Matchers {
       for
         original <- {
           given Option[User] = None
-          users.register(userData)
+          Users.register(userData)
         }
         updated <- original match
           case Left(error) => IO(Left(error))
           case Right(user) => {
             given User = user
-            users.update(update)
+            Users.update(update)
           }
-        _ <- users.collection.drop
+        _ <- Users.collection.drop
       yield (original, updated)
 
     val (original, updated) = operation.unsafeRunSync()
@@ -241,13 +239,13 @@ class UsersCollectionTest extends AnyFlatSpec with should.Matchers {
   }
 
   it should "reject the update if another user has the new email address" in {
-    val firstUserData = UserCreationData(
+    val firstUserData = User.CreationData(
       "First user update test",
       "first-user-update-test@example.com",
       "Abc123!?"
     )
 
-    val secondUserData = UserCreationData(
+    val secondUserData = User.CreationData(
       "Second user update test",
       "second-user-update-test@example.com",
       "Abc123!?"
@@ -257,27 +255,27 @@ class UsersCollectionTest extends AnyFlatSpec with should.Matchers {
       for
         firstUserResult <- {
           given Option[User] = None
-          users.register(firstUserData)
+          Users.register(firstUserData)
         }
         secondUserResult <- firstUserResult match
           case Left(error) => IO(Left(error))
           case Right(user) => {
             given Option[User] = Some(user)
-            users.register(secondUserData)
+            Users.register(secondUserData)
           }
         update <- secondUserResult match
           case Left(error) => IO(Left(error))
           case Right(user) => {
             given User = user
-            users.update(
-              UserUpdateData(
+            Users.update(
+              User.UpdateData(
                 None,
                 Some(firstUserData.email),
                 None
               )
             )
           }
-        _ <- users.collection.drop
+        _ <- Users.collection.drop
       yield update
 
     val update = result.unsafeRunSync()
@@ -293,7 +291,7 @@ class UsersCollectionTest extends AnyFlatSpec with should.Matchers {
   }
 
   it should "log a user in" in {
-    val userData = UserCreationData(
+    val userData = User.CreationData(
       "Login test",
       "login-test@example.com",
       "Abc123!?"
@@ -303,16 +301,17 @@ class UsersCollectionTest extends AnyFlatSpec with should.Matchers {
       for
         registration <- {
           given Option[User] = None
-          users.register(userData)
+          Users.register(userData)
         }
         authTokens <- registration match
           case Left(error) => IO(Left(error))
-          case Right(user) => users.login(user.email, userData.password)
+          case Right(user) =>
+            Users.login(User.LoginData(user.email, userData.password))
         user <- authTokens match
           case Left(error) => IO(Left(error))
           case Right(authTokens) =>
             JWT.decodeToken(authTokens.accessToken, JWT.UserAccess)
-        _ <- users.collection.drop
+        _ <- Users.collection.drop
       yield user
 
     loggedInUserResult.unsafeRunSync() match
@@ -323,7 +322,7 @@ class UsersCollectionTest extends AnyFlatSpec with should.Matchers {
   it should "reject the login if the user is not registered" in {
     val fakeUser = User
       .fromCreationData(
-        UserCreationData(
+        User.CreationData(
           "Made up user",
           "madeup-user@example.com",
           "Whatever"
@@ -332,7 +331,9 @@ class UsersCollectionTest extends AnyFlatSpec with should.Matchers {
       .getOrElse(fail(""))
 
     val result =
-      users.login(fakeUser.email, fakeUser.password.toString).unsafeRunSync()
+      Users
+        .login(User.LoginData(fakeUser.email, fakeUser.password.toString))
+        .unsafeRunSync()
 
     result shouldEqual Left(
       Error(Status.BadRequest, Translations.Key.ErrorInvalidEmailOrPassword)
@@ -340,7 +341,7 @@ class UsersCollectionTest extends AnyFlatSpec with should.Matchers {
   }
 
   it should "reject the login if the user has an invalid email address" in {
-    val userData = UserCreationData(
+    val userData = User.CreationData(
       "Login invalid email test",
       "login-invalid-email-test@example.com",
       "Abc123!?"
@@ -350,18 +351,20 @@ class UsersCollectionTest extends AnyFlatSpec with should.Matchers {
       for
         registration <- {
           given Option[User] = None
-          users.register(userData)
+          Users.register(userData)
         }
         login <- registration match
           case Left(error) => IO(Left(error))
           case Right(user) =>
-            users.login(
-              Email
-                .fromString("some-other-email@example.com")
-                .getOrElse(fail("")),
-              userData.password
+            Users.login(
+              User.LoginData(
+                Email
+                  .fromString("some-other-email@example.com")
+                  .getOrElse(fail("")),
+                userData.password
+              )
             )
-        _ <- users.collection.drop
+        _ <- Users.collection.drop
       yield login
 
     result.unsafeRunSync() shouldEqual Left(
@@ -370,7 +373,7 @@ class UsersCollectionTest extends AnyFlatSpec with should.Matchers {
   }
 
   it should "reject the login if the user has an invalid password" in {
-    val userData = UserCreationData(
+    val userData = User.CreationData(
       "Login invalid password test",
       "login-invalid-password-test@example.com",
       "Abc123!?"
@@ -380,13 +383,13 @@ class UsersCollectionTest extends AnyFlatSpec with should.Matchers {
       for
         registration <- {
           given Option[User] = None
-          users.register(userData)
+          Users.register(userData)
         }
         login <- registration match
           case Left(error) => IO(Left(error))
           case Right(user) =>
-            users.login(user.email, "someOtherPassword")
-        _ <- users.collection.drop
+            Users.login(User.LoginData(user.email, "someOtherPassword"))
+        _ <- Users.collection.drop
       yield login
 
     result.unsafeRunSync() shouldEqual Left(
@@ -395,7 +398,7 @@ class UsersCollectionTest extends AnyFlatSpec with should.Matchers {
   }
 
   it should "refresh a token" in {
-    val userData = UserCreationData(
+    val userData = User.CreationData(
       "Refresh token test",
       "refresh-token-test@example.com",
       "Abc123!?"
@@ -405,17 +408,18 @@ class UsersCollectionTest extends AnyFlatSpec with should.Matchers {
       for
         registration <- {
           given Option[User] = None
-          users.register(userData)
+          Users.register(userData)
         }
         authTokens <- registration match
           case Left(error) => IO(Left(error))
-          case Right(user) => users.login(user.email, userData.password)
+          case Right(user) =>
+            Users.login(User.LoginData(user.email, userData.password))
         // expiration must be different in order for the tokens to be different
         _ <- IO.delay(Thread.sleep(1000))
         freshTokens <- authTokens match
           case Left(error)       => IO(Left(error))
-          case Right(authTokens) => users.refreshToken(authTokens.refreshToken)
-        _ <- users.collection.drop
+          case Right(authTokens) => Users.refreshToken(authTokens.refreshToken)
+        _ <- Users.collection.drop
       yield (authTokens, freshTokens)
 
     val (authTokens, freshTokens) = result.unsafeRunSync()
@@ -429,7 +433,7 @@ class UsersCollectionTest extends AnyFlatSpec with should.Matchers {
   }
 
   it should "not refresh an access token" in {
-    val userData = UserCreationData(
+    val userData = User.CreationData(
       "Refresh access token test",
       "refresh-access-token-test@example.com",
       "Abc123!?"
@@ -439,17 +443,18 @@ class UsersCollectionTest extends AnyFlatSpec with should.Matchers {
       for
         registration <- {
           given Option[User] = None
-          users.register(userData)
+          Users.register(userData)
         }
         authTokens <- registration match
           case Left(error) => IO(Left(error))
-          case Right(user) => users.login(user.email, userData.password)
+          case Right(user) =>
+            Users.login(User.LoginData(user.email, userData.password))
         // expiration must be different in order for the tokens to be different
         _ <- IO.delay(Thread.sleep(1000))
         freshTokens <- authTokens match
           case Left(error)       => IO(Left(error))
-          case Right(authTokens) => users.refreshToken(authTokens.accessToken)
-        _ <- users.collection.drop
+          case Right(authTokens) => Users.refreshToken(authTokens.accessToken)
+        _ <- Users.collection.drop
       yield freshTokens
 
     result.unsafeRunSync() shouldEqual Left(
@@ -458,7 +463,7 @@ class UsersCollectionTest extends AnyFlatSpec with should.Matchers {
   }
 
   it should "delete a user" in {
-    val userData = UserCreationData(
+    val userData = User.CreationData(
       "Delete user test",
       "delete-user-test@example.com",
       "Abc123!?"
@@ -468,13 +473,13 @@ class UsersCollectionTest extends AnyFlatSpec with should.Matchers {
       for
         registration <- {
           given Option[User] = None
-          users.register(userData)
+          Users.register(userData)
         }
         deletion <- registration match
           case Left(error) => IO(Left(error))
           case Right(user) => {
             given User = user
-            users.delete()
+            Users.delete()
           }
         userAfterDeletion <- deletion match
           case Left(error) =>
@@ -483,9 +488,9 @@ class UsersCollectionTest extends AnyFlatSpec with should.Matchers {
             )
           case Right(user) => {
             given User = user
-            users.findById()
+            Users.findById()
           }
-        _ <- users.collection.drop
+        _ <- Users.collection.drop
       yield (deletion, userAfterDeletion)
 
     val (deletionResult, userAfterDeletionResult) = operation.unsafeRunSync()
