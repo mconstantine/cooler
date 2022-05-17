@@ -8,6 +8,7 @@ object Translations {
   opaque type LocalizedString = String
 
   enum Key(val key: String):
+    case Test extends Key("test")
     case ErrorInvalidAccessToken extends Key("error.auth.invalidAccessToken")
     case ErrorInvalidEmailOrPassword
         extends Key("error.auth.invalidEmailOrPassword")

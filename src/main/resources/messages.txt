@@ -1,3 +1,4 @@
+test=This is a test message
 error.auth.invalidAccessToken=Invalid access token
 error.auth.invalidEmailOrPassword=Invalid email or password
 error.person.notFound.afterInsert=Inserted person wasn''t found

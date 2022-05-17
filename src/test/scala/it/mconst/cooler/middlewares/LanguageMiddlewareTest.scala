@@ -8,7 +8,10 @@ import cats.data.NonEmptyList
 import cats.effect.IO
 import cats.effect.unsafe.implicits.global
 import com.osinka.i18n.Lang
+import io.circe.generic.auto._
+import it.mconst.cooler.utils.Translations
 import org.http4s._
+import org.http4s.circe._
 import org.http4s.client.Client
 import org.http4s.client.dsl.io._
 import org.http4s.dsl.io._
@@ -17,13 +20,24 @@ import org.http4s.implicits._
 import org.typelevel.ci._
 
 class LanguageMiddlewareTest extends AnyFlatSpec with should.Matchers {
-  val localizedRoutes: LanguageRoutes = LanguageRoutes.of {
-    case GET -> Root as language =>
-      Ok("Localized")
+  case class Test(message: String)
+  given EntityDecoder[IO, Test] = jsonOf[IO, Test]
+
+  val localizedRoutes: LanguageRoutes[IO] = {
+    LanguageRoutes.of {
+      case GET -> Root as lang =>
+        given Lang = lang
+        Ok(Translations.t(Translations.Key.Test).toString)
+      case req @ POST -> Root as lang =>
+        given Lang = lang
+        for
+          body <- req.req.as[Test]
+          response <- Ok(Translations.t(Translations.Key.Test).toString)
+        yield response
+    }
   }
 
   val service: HttpRoutes[IO] = LanguageMiddleware(localizedRoutes)
-
   val app: HttpApp[IO] = service.orNotFound
   val client = Client.fromHttpApp(app)
 
@@ -36,8 +50,7 @@ class LanguageMiddlewareTest extends AnyFlatSpec with should.Matchers {
     )
 
     val body = response.as[String].unsafeRunSync()
-
-    body should equal("Localized")
+    body should equal("This is a test message")
   }
 
   it should "return a supported language if available" in {
@@ -47,5 +60,8 @@ class LanguageMiddlewareTest extends AnyFlatSpec with should.Matchers {
     response.headers.get(ci"Content-Language") shouldBe Some(
       NonEmptyList(Header.Raw(ci"Content-Language", "it"), List.empty)
     )
+
+    val body = response.as[String].unsafeRunSync()
+    body should equal("Questo è un messaggio di test")
   }
 }

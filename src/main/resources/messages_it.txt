@@ -1,0 +1,1 @@
+test=Questo è un messaggio di test

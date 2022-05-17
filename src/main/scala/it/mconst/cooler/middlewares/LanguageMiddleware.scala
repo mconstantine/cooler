@@ -1,6 +1,6 @@
 package it.mconst.cooler.middlewares
 
-import cats.{Applicative, Monad}
+import cats.{Applicative, Functor, Monad}
 import cats.data.{Kleisli, OptionT}
 import cats.effect.IO
 import cats.syntax.all._
@@ -17,38 +17,38 @@ import org.http4s.{
 import org.http4s.headers.{`Accept-Language`, `Content-Language`}
 import org.http4s.server.ContextMiddleware
 
-type LanguageRequest = ContextRequest[IO, Lang]
+type LanguageRequest[F[_]] = ContextRequest[F, Lang]
 
-type LanguageRoutes =
-  Kleisli[[T] =>> OptionT[IO, T], LanguageRequest, Response[IO]]
+type LanguageRoutes[F[_]] =
+  Kleisli[[T] =>> OptionT[F, T], LanguageRequest[F], Response[F]]
 
 object LanguageRoutes {
-  def apply(
-      run: LanguageRequest => OptionT[IO, Response[IO]]
-  ): LanguageRoutes =
-    Kleisli(req => OptionT(IO.unit >> run(req).value))
+  def apply[F[_]](
+      run: LanguageRequest[F] => OptionT[F, Response[F]]
+  )(using F: Monad[F]): LanguageRoutes[F] =
+    Kleisli(req => OptionT(F.unit >> run(req).value))
 
-  def of(
-      pf: PartialFunction[LanguageRequest, IO[Response[IO]]]
-  ): LanguageRoutes =
-    Kleisli(req => OptionT(IO.unit >> pf.lift(req).sequence))
+  def of[F[_]](
+      pf: PartialFunction[LanguageRequest[F], F[Response[F]]]
+  )(using FA: Monad[F]): LanguageRoutes[F] =
+    Kleisli(req => OptionT(FA.unit >> pf.lift(req).sequence))
 
-  def empty: LanguageRoutes = Kleisli.liftF(OptionT.none)
+  def empty[F[_]: Applicative]: LanguageRoutes[F] = Kleisli.liftF(OptionT.none)
 }
 
 object LanguageMiddleware {
-  type LanguageMiddleware = ContextMiddleware[IO, Lang]
+  type LanguageMiddleware[F[_]] = ContextMiddleware[F, Lang]
 
-  private def middleware: LanguageMiddleware = { service =>
+  private def middleware[F[_]: Functor]: LanguageMiddleware[F] = { service =>
     Kleisli { request =>
       val lang = Translations.getLanguageFromHeader(
         request.headers.get[`Accept-Language`]
       )
 
-      val languageRequest: LanguageRequest = ContextRequest(lang, request)
+      val languageRequest: LanguageRequest[F] = ContextRequest(lang, request)
 
       val response =
-        service(languageRequest).getOrElse(Response[IO](Status.NotFound)).map {
+        service(languageRequest).getOrElse(Response[F](Status.NotFound)).map {
           case Status.Successful(response) =>
             response.putHeaders(
               `Content-Language`(LanguageTag(lang.language))
@@ -60,5 +60,5 @@ object LanguageMiddleware {
     }
   }
 
-  def apply(routes: LanguageRoutes) = middleware(routes)
+  def apply(routes: LanguageRoutes[IO]) = middleware.apply(routes)
 }
