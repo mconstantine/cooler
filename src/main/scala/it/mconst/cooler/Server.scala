@@ -3,40 +3,41 @@ package it.mconst.cooler
 import cats.effect.{ExitCode, IO, IOApp}
 import cats.syntax.all._
 import com.comcast.ip4s.{Host, Port}
+import com.osinka.i18n.Lang
 import io.circe.generic.auto.{deriveDecoder, deriveEncoder}
 import io.circe.syntax.EncoderOps
-import it.mconst.cooler.utils.Config
+import it.mconst.cooler.middlewares.{LanguageMiddleware, LanguageRoutes}
+import it.mconst.cooler.models.user._
+import it.mconst.cooler.utils.{Config, Error}
+import it.mconst.cooler.utils.given
 import org.http4s.{EntityDecoder, HttpRoutes, HttpApp}
-import org.http4s.circe._
+import org.http4s.{EntityEncoder, Response}
 import org.http4s.dsl.io._
 import org.http4s.ember.server.EmberServerBuilder
 import org.http4s.server.Router
 
+def toResponse[T](result: Either[Error, T])(using
+    we: EntityEncoder[IO, Error],
+    wr: EntityEncoder[IO, T]
+): IO[Response[IO]] = result match
+  case Right(value) => Ok.apply(wr.toEntity(value).body)
+  case Left(error) =>
+    IO.pure(Response(status = error.status, body = we.toEntity(error).body))
+
 object Server extends IOApp {
-  case class Hello(greeting: String)
-  case class Goodbye(farewell: String)
-  case class User(name: String)
+  val publicRoutes: LanguageRoutes[IO] = {
+    LanguageRoutes.of { case ctxReq @ POST -> Root / "login" as lang =>
+      given Lang = lang
 
-  given EntityDecoder[IO, User] = jsonOf[IO, User]
-  given EntityDecoder[IO, Hello] = jsonOf[IO, Hello]
-
-  val rootService = HttpRoutes.of[IO] { case GET -> Root =>
-    Ok()
-  }
-
-  val helloService = HttpRoutes.of[IO] { case GET -> Root / "hello" / name =>
-    Ok(Hello(s"Hello, $name").asJson)
-  }
-
-  val goodbyeService = HttpRoutes.of[IO] {
-    case req @ POST -> Root / "goodbye" =>
       for
-        user <- req.as[User]
-        response <- Ok(Goodbye(s"Goodbye ${user.name}").asJson)
+        context <- ctxReq.req.as[User.LoginData]
+        result <- Users.login(context)
+        response <- toResponse(result)
       yield response
+    }
   }
 
-  val allServices = rootService <+> helloService <+> goodbyeService
+  val allServices = LanguageMiddleware(publicRoutes)
   val app = Router("/api" -> allServices).orNotFound
 
   override def run(args: List[String]) = {

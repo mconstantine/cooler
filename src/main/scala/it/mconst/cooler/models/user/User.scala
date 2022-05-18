@@ -7,20 +7,15 @@ import com.osinka.i18n.Lang
 import io.circe.{Decoder, DecodingFailure, Encoder}
 import io.circe.generic.auto._
 import it.mconst.cooler.models.user.JWT
-import it.mconst.cooler.utils.{
-  Collection,
-  Document,
-  Error,
-  Timestamps,
-  Translations
-}
+import it.mconst.cooler.utils.{ Collection, Document, Error, Timestamps, Translations }
 import it.mconst.cooler.utils.given
 import mongo4cats.bson.ObjectId
 import mongo4cats.circe._
 import mongo4cats.codecs.MongoCodecProvider
 import mongo4cats.collection.operations.Filter
 import org.bson.BsonDateTime
-import org.http4s.Status
+import org.http4s.circe._
+import org.http4s.{EntityDecoder, Status}
 import scala.collection.JavaConverters._
 import scala.util.{Success, Failure}
 
@@ -102,6 +97,7 @@ object User {
   )
 
   case class LoginData(email: Email, password: String)
+  given EntityDecoder[IO, User.LoginData] = jsonOf[IO, User.LoginData]
 
   def fromCreationData(
       data: CreationData

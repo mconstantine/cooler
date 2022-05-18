@@ -9,7 +9,8 @@ import it.mconst.cooler.utils.{Config, Error, Translations}
 import java.time.Instant
 import mongo4cats.bson.ObjectId
 import mongo4cats.collection.operations.Filter
-import org.http4s.Status
+import org.http4s.circe._
+import org.http4s.{EntityEncoder, Status}
 import pdi.jwt.{JwtCirce, JwtAlgorithm, JwtClaim, JwtOptions}
 
 object JWT {
@@ -24,6 +25,8 @@ object JWT {
 
   case class UnknownTokenType(name: String) extends TokenType
   case class AuthTokens(val accessToken: String, val refreshToken: String)
+
+  given EntityEncoder[IO, AuthTokens] = jsonEncoderOf[IO, AuthTokens]
 
   private val issuer = "cooler"
   private val encryptionKey = Config.database.encryptionKey

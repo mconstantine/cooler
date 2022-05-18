@@ -35,20 +35,21 @@ extension (request: Request[IO])(using client: Client[IO]) {
 class ServerTest extends AnyFlatSpec with should.Matchers {
   given Client[IO] = Client.fromHttpApp(Server.app)
 
+  // TODO:
   // it should "aknowledge the root path" in {
   //   val request = GET(uri"/api")
   //   request shouldRespond None
   // }
 
-  it should "say hello" in {
-    val request = GET(uri"/api/hello/World")
-    val expected = Server.Hello("Hello, World")
-    request shouldRespond Some(expected)
-  }
+  // it should "say hello" in {
+  //   val request = GET(uri"/api/hello/World")
+  //   val expected = Server.Hello("Hello, World")
+  //   request shouldRespond Some(expected)
+  // }
 
-  it should "say goodbye" in {
-    val request = POST(Server.User("Moon man").asJson, uri"/api/goodbye")
-    val expected = Server.Goodbye(s"Goodbye Moon man")
-    request shouldRespond Some(expected)
-  }
+  // it should "say goodbye" in {
+  //   val request = POST(Server.User("Moon man").asJson, uri"/api/goodbye")
+  //   val expected = Server.Goodbye(s"Goodbye Moon man")
+  //   request shouldRespond Some(expected)
+  // }
 }
