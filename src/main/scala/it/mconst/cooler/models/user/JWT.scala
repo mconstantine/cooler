@@ -5,12 +5,13 @@ import com.osinka.i18n.Lang
 import io.circe.generic.auto.{deriveDecoder, deriveEncoder}
 import io.circe.parser.decode
 import io.circe.syntax.EncoderOps
-import it.mconst.cooler.utils.{Config, Error, Translations}
+import it.mconst.cooler.utils.{__, Config, Error}
 import java.time.Instant
 import mongo4cats.bson.ObjectId
 import mongo4cats.collection.operations.Filter
 import org.http4s.circe._
-import org.http4s.{EntityEncoder, Status}
+import org.http4s.dsl.io._
+import org.http4s.{EntityEncoder}
 import pdi.jwt.{JwtCirce, JwtAlgorithm, JwtClaim, JwtOptions}
 
 object JWT {
@@ -82,29 +83,17 @@ object JWT {
         claimValidation <- Either.cond(
           validateClaim(claimResult, tokenType),
           claimResult,
-          Error(Status.Forbidden, Translations.Key.ErrorInvalidAccessToken)
+          Error(Forbidden, __.ErrorInvalidAccessToken)
         )
         content <- decode[TokenContent](claimValidation.content)
         _id <- ObjectId.from(content._id)
       yield _id
 
     userId match
-      case Left(_) =>
-        IO(
-          Left(
-            Error(Status.Forbidden, Translations.Key.ErrorInvalidAccessToken)
-          )
-        )
+      case Left(_) => IO(Left(Error(Forbidden, __.ErrorInvalidAccessToken)))
       case Right(userId) =>
         Users.collection
           .use(_.find(Filter.eq("_id", userId)).first)
-          .map(
-            _.toRight(
-              Error(
-                Status.Forbidden,
-                Translations.Key.ErrorInvalidAccessToken
-              )
-            )
-          )
+          .map(_.toRight(Error(Forbidden, __.ErrorInvalidAccessToken)))
   }
 }

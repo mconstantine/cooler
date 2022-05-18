@@ -7,7 +7,7 @@ import com.osinka.i18n.Lang
 import io.circe.{Decoder, DecodingFailure, Encoder}
 import io.circe.generic.auto._
 import it.mconst.cooler.models.user.JWT
-import it.mconst.cooler.utils.{ Collection, Document, Error, Timestamps, Translations }
+import it.mconst.cooler.utils.{__, Collection, Document, Error, Timestamps}
 import it.mconst.cooler.utils.given
 import mongo4cats.bson.ObjectId
 import mongo4cats.circe._
@@ -15,7 +15,8 @@ import mongo4cats.codecs.MongoCodecProvider
 import mongo4cats.collection.operations.Filter
 import org.bson.BsonDateTime
 import org.http4s.circe._
-import org.http4s.{EntityDecoder, Status}
+import org.http4s.dsl.io._
+import org.http4s.{EntityDecoder}
 import scala.collection.JavaConverters._
 import scala.util.{Success, Failure}
 
@@ -105,29 +106,14 @@ object User {
     for
       name <- NonEmptyString
         .fromString(data.name)
-        .toRight(
-          Error(
-            Status.BadRequest,
-            Translations.Key.ErrorUserRegisterEmptyName
-          )
-        )
+        .toRight(Error(BadRequest, __.ErrorUserRegisterEmptyName))
       email <- Email
         .fromString(data.email)
-        .toRight(
-          Error(
-            Status.BadRequest,
-            Translations.Key.ErrorUserRegisterInvalidEmailFormat
-          )
-        )
+        .toRight(Error(BadRequest, __.ErrorUserRegisterInvalidEmailFormat))
       password <-
         Password
           .fromString(data.password)
-          .toRight(
-            Error(
-              Status.BadRequest,
-              Translations.Key.ErrorUserRegisterInvalidPasswordFormat
-            )
-          )
+          .toRight(Error(BadRequest, __.ErrorUserRegisterInvalidPasswordFormat))
       user <- Right(
         User(
           _id = ObjectId(),
@@ -153,24 +139,13 @@ object Users {
         case None =>
           collection
             .use(_.find.first)
-            .map(
-              _.map(_ =>
-                Error(
-                  Status.Forbidden,
-                  Translations.Key.ErrorUserRegisterForbidden
-                )
-              )
-            )
+            .map(_.map(_ => Error(Forbidden, __.ErrorUserRegisterForbidden)))
       userExists <- firstUserOrCustomer match
         case Some(error) => IO(Some(error))
         case None =>
           collection
             .use(_.find(Filter.eq("email", user.email)).first)
-            .map(
-              _.map(user =>
-                Error(Status.Conflict, Translations.Key.ErrorUserConflict)
-              )
-            )
+            .map(_.map(user => Error(Conflict, __.ErrorUserConflict)))
       user <- userExists match
         case Some(error) => IO(Left(error))
         case None =>
@@ -205,11 +180,7 @@ object Users {
                 Filter.eq("email", email).and(Filter.ne("_id", customer._id))
               ).first
             )
-            .map(
-              _.map(_ =>
-                Error(Status.Conflict, Translations.Key.ErrorUserConflict)
-              )
-            )
+            .map(_.map(_ => Error(Conflict, __.ErrorUserConflict)))
       result <- existingEmailError match
         case Some(error) => IO(Left(error))
         case None =>
@@ -228,33 +199,18 @@ object Users {
     for
       user <- collection
         .use(_.find(Filter.eq("email", data.email)).first)
-        .map(
-          _.toRight(
-            Error(
-              Status.BadRequest,
-              Translations.Key.ErrorInvalidEmailOrPassword
-            )
-          )
-        )
+        .map(_.toRight(Error(BadRequest, __.ErrorInvalidEmailOrPassword)))
       userWithRightPassword <- IO(user.flatMap { user =>
         data.password
           .isBcryptedSafeBounded(user.password.toString)
           .toEither match
           case Left(_) =>
-            Left(
-              Error(
-                Status.BadRequest,
-                Translations.Key.ErrorInvalidEmailOrPassword
-              )
-            )
+            Left(Error(BadRequest, __.ErrorInvalidEmailOrPassword))
           case Right(isSamePassword) =>
             Either.cond(
               isSamePassword,
               user,
-              Error(
-                Status.BadRequest,
-                Translations.Key.ErrorInvalidEmailOrPassword
-              )
+              Error(BadRequest, __.ErrorInvalidEmailOrPassword)
             )
       })
       authTokens <- IO(

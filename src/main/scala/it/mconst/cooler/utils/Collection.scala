@@ -15,7 +15,7 @@ import mongo4cats.collection.MongoCollection
 import mongo4cats.collection.operations.{Filter, Update}
 import org.bson.BsonDateTime
 import org.bson.conversions.Bson
-import org.http4s.Status
+import org.http4s.dsl.io._
 import scala.reflect.ClassTag
 
 abstract trait Document:
@@ -60,12 +60,7 @@ case class Collection[Doc <: Document: ClassTag](name: String)(using
           .find(Filter.eq("_id", result.getInsertedId))
           .first
         doc <- IO(
-          maybeDoc.toRight(
-            Error(
-              Status.NotFound,
-              Translations.Key.ErrorPersonNotFoundAfterInsert
-            )
-          )
+          maybeDoc.toRight(Error(NotFound, __.ErrorPersonNotFoundAfterInsert))
         )
       yield doc
     }
@@ -76,12 +71,7 @@ case class Collection[Doc <: Document: ClassTag](name: String)(using
         result <- collection.updateOne(Filters.eq("_id", doc._id), update)
         maybeDoc <- collection.find(Filter.eq("_id", doc._id)).first
         updated <- IO(
-          maybeDoc.toRight(
-            Error(
-              Status.NotFound,
-              Translations.Key.ErrorPersonNotFoundAfterUpdate
-            )
-          )
+          maybeDoc.toRight(Error(NotFound, __.ErrorPersonNotFoundAfterUpdate))
         )
       yield updated
     }
@@ -92,12 +82,7 @@ case class Collection[Doc <: Document: ClassTag](name: String)(using
         result <- collection.updateOne(Filter.eq("_id", doc._id), update)
         maybeDoc <- collection.find(Filter.eq("_id", doc._id)).first
         updated <- IO(
-          maybeDoc.toRight(
-            Error(
-              Status.NotFound,
-              Translations.Key.ErrorPersonNotFoundAfterUpdate
-            )
-          )
+          maybeDoc.toRight(Error(NotFound, __.ErrorPersonNotFoundAfterUpdate))
         )
       yield updated
     }
@@ -107,12 +92,7 @@ case class Collection[Doc <: Document: ClassTag](name: String)(using
       for
         maybeDoc <- collection.find(Filter.eq("_id", doc._id)).first
         original <- IO(
-          maybeDoc.toRight(
-            Error(
-              Status.NotFound,
-              Translations.Key.ErrorPersonNotFoundBeforeDelete
-            )
-          )
+          maybeDoc.toRight(Error(NotFound, __.ErrorPersonNotFoundBeforeDelete))
         )
         result <- collection.deleteOne(Filter.eq("_id", doc._id))
       yield original

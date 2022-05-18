@@ -6,7 +6,7 @@ import cats.effect._
 import cats.implicits._
 import com.osinka.i18n.Lang
 import it.mconst.cooler.models.user.{JWT, User}
-import it.mconst.cooler.utils.{Error, Translations}
+import it.mconst.cooler.utils.{__, Error, Translations}
 import it.mconst.cooler.utils.given
 import org.http4s._
 import org.http4s.dsl.io._
@@ -27,7 +27,7 @@ object AuthenticationMiddleware {
 
           request.headers
             .get[Authorization]
-            .toRight(Error(Forbidden, Translations.Key.ErrorInvalidAccessToken))
+            .toRight(Error(Forbidden, __.ErrorInvalidAccessToken))
         })
         token <- IO(header.flatMap { header =>
           given Lang = lang
@@ -38,7 +38,7 @@ object AuthenticationMiddleware {
             case _ => None
 
           token.toRight(
-            Error(Forbidden, Translations.Key.ErrorInvalidAccessToken)
+            Error(Forbidden, __.ErrorInvalidAccessToken)
           )
         })
         user <- token match

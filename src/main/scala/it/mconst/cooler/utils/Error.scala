@@ -7,7 +7,7 @@ import it.mconst.cooler.utils.Translations
 import org.http4s.{EntityEncoder, Status}
 import org.http4s.circe._
 
-case class Error(status: Status, messageKey: Translations.Key)(using Lang) {
+case class Error(status: Status, messageKey: __)(using Lang) {
   def message = Translations.t(messageKey)
 }
 
