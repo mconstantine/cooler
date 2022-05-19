@@ -9,7 +9,7 @@ import cats.effect.IO
 import cats.effect.unsafe.implicits.global
 import com.osinka.i18n.Lang
 import io.circe.generic.auto._
-import it.mconst.cooler.utils.Translations
+import it.mconst.cooler.utils.{__, Translations}
 import org.http4s._
 import org.http4s.circe._
 import org.http4s.client.Client
@@ -27,12 +27,12 @@ class LanguageMiddlewareTest extends AnyFlatSpec with should.Matchers {
     LanguageRoutes.of {
       case GET -> Root as lang =>
         given Lang = lang
-        Ok(Translations.t(Translations.Key.Test).toString)
+        Ok(Translations.t(__.Test).toString)
       case contextRequest @ POST -> Root as lang =>
         given Lang = lang
         for
           body <- contextRequest.req.as[Test]
-          response <- Ok(Translations.t(Translations.Key.Test).toString)
+          response <- Ok(Translations.t(__.Test).toString)
         yield response
     }
   }

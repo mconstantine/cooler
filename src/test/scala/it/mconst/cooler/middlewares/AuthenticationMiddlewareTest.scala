@@ -10,7 +10,7 @@ import cats.effect.unsafe.implicits.global
 import cats.syntax.all._
 import com.osinka.i18n.Lang
 import it.mconst.cooler.models.user.{User, Users}
-import it.mconst.cooler.utils.{ErrorResponse, Translations}
+import it.mconst.cooler.utils.{__, ErrorResponse, Translations}
 import it.mconst.cooler.utils.given
 import org.http4s.{
   AuthedRoutes,
@@ -98,9 +98,7 @@ class CoolerAuthMiddlewareTest extends AnyFlatSpec with should.Matchers {
     val body = response.as[ErrorResponse].unsafeRunSync()
 
     body.status shouldEqual Forbidden
-    body.message shouldBe Translations
-      .t(Translations.Key.ErrorInvalidAccessToken)
-      .toString
+    body.message shouldBe Translations.t(__.ErrorInvalidAccessToken).toString
   }
 
   it should "return 403 if the token is invalid" in {
@@ -118,8 +116,6 @@ class CoolerAuthMiddlewareTest extends AnyFlatSpec with should.Matchers {
     val body = response.as[ErrorResponse].unsafeRunSync()
 
     body.status shouldEqual Forbidden
-    body.message shouldBe Translations
-      .t(Translations.Key.ErrorInvalidAccessToken)
-      .toString
+    body.message shouldBe Translations.t(__.ErrorInvalidAccessToken).toString
   }
 }

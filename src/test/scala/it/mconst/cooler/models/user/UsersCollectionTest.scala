@@ -8,7 +8,7 @@ import cats.effect.IO
 import cats.effect.unsafe.implicits.global
 import com.github.t3hnar.bcrypt._
 import com.osinka.i18n.Lang
-import it.mconst.cooler.utils.{Error, Translations}
+import it.mconst.cooler.utils.{__, Error}
 import mongo4cats.bson.ObjectId
 import org.bson.BsonDateTime
 import org.http4s.Status
@@ -67,7 +67,7 @@ class UsersCollectionTest extends AnyFlatSpec with should.Matchers {
       yield result
 
     result.unsafeRunSync() shouldEqual Left(
-      Error(Status.Forbidden, Translations.Key.ErrorUserRegisterForbidden)
+      Error(Status.Forbidden, __.ErrorUserRegisterForbidden)
     )
   }
 
@@ -135,7 +135,7 @@ class UsersCollectionTest extends AnyFlatSpec with should.Matchers {
       yield secondUserResult
 
     result.unsafeRunSync() shouldEqual Left(
-      Error(Status.Conflict, Translations.Key.ErrorUserConflict)
+      Error(Status.Conflict, __.ErrorUserConflict)
     )
   }
 
@@ -282,10 +282,7 @@ class UsersCollectionTest extends AnyFlatSpec with should.Matchers {
 
     update match
       case Left(error) =>
-        error shouldEqual Error(
-          Status.Conflict,
-          Translations.Key.ErrorUserConflict
-        )
+        error shouldEqual Error(Status.Conflict, __.ErrorUserConflict)
       case Right(user) =>
         fail("A user was updated with an email that already exists")
   }
@@ -336,7 +333,7 @@ class UsersCollectionTest extends AnyFlatSpec with should.Matchers {
         .unsafeRunSync()
 
     result shouldEqual Left(
-      Error(Status.BadRequest, Translations.Key.ErrorInvalidEmailOrPassword)
+      Error(Status.BadRequest, __.ErrorInvalidEmailOrPassword)
     )
   }
 
@@ -368,7 +365,7 @@ class UsersCollectionTest extends AnyFlatSpec with should.Matchers {
       yield login
 
     result.unsafeRunSync() shouldEqual Left(
-      Error(Status.BadRequest, Translations.Key.ErrorInvalidEmailOrPassword)
+      Error(Status.BadRequest, __.ErrorInvalidEmailOrPassword)
     )
   }
 
@@ -393,7 +390,7 @@ class UsersCollectionTest extends AnyFlatSpec with should.Matchers {
       yield login
 
     result.unsafeRunSync() shouldEqual Left(
-      Error(Status.BadRequest, Translations.Key.ErrorInvalidEmailOrPassword)
+      Error(Status.BadRequest, __.ErrorInvalidEmailOrPassword)
     )
   }
 
@@ -458,7 +455,7 @@ class UsersCollectionTest extends AnyFlatSpec with should.Matchers {
       yield freshTokens
 
     result.unsafeRunSync() shouldEqual Left(
-      Error(Status.Forbidden, Translations.Key.ErrorInvalidAccessToken)
+      Error(Status.Forbidden, __.ErrorInvalidAccessToken)
     )
   }
 
