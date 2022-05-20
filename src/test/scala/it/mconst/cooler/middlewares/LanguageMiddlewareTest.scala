@@ -1,8 +1,6 @@
 package it.mconst.cooler.middlewares
 
-import org.scalatest._
-import matchers._
-import flatspec._
+import munit.CatsEffectSuite
 
 import cats.data.NonEmptyList
 import cats.effect.IO
@@ -19,9 +17,9 @@ import org.http4s.headers.{`Accept-Language`}
 import org.http4s.implicits._
 import org.typelevel.ci._
 
-class LanguageMiddlewareTest extends AnyFlatSpec with should.Matchers {
-  case class Test(message: String)
-  given EntityDecoder[IO, Test] = jsonOf[IO, Test]
+class LanguageMiddlewareTest extends CatsEffectSuite {
+  case class TestData(message: String)
+  given EntityDecoder[IO, TestData] = jsonOf[IO, TestData]
 
   val localizedRoutes: LanguageRoutes[IO] = {
     LanguageRoutes.of {
@@ -31,7 +29,7 @@ class LanguageMiddlewareTest extends AnyFlatSpec with should.Matchers {
       case contextRequest @ POST -> Root as lang =>
         given Lang = lang
         for
-          body <- contextRequest.req.as[Test]
+          body <- contextRequest.req.as[TestData]
           response <- Ok(Translations.t(__.Test).toString)
         yield response
     }
@@ -41,27 +39,26 @@ class LanguageMiddlewareTest extends AnyFlatSpec with should.Matchers {
   val app: HttpApp[IO] = service.orNotFound
   val client = Client.fromHttpApp(app)
 
-  it should "return the default by default" in {
-    val request = GET(uri"/")
-    val response = app.run(request).unsafeRunSync()
-
-    response.headers.get(ci"Content-Language") shouldBe Some(
-      NonEmptyList(Header.Raw(ci"Content-Language", "en"), List.empty)
-    )
-
-    val body = response.as[String].unsafeRunSync()
-    body should equal("This is a test message")
+  test("should return the default by default") {
+    for
+      response <- app.run(GET(uri"/"))
+      language = response.headers.get(ci"Content-Language")
+      body <- response.as[String].assertEquals("This is a test message")
+      _ <- IO(language).assertEquals(
+        Some(NonEmptyList(Header.Raw(ci"Content-Language", "en"), List.empty))
+      )
+    yield ()
   }
 
-  it should "return a supported language if available" in {
+  test("should return a supported language if available") {
     val request = GET(uri"/").putHeaders(`Accept-Language`(LanguageTag("it")))
-    val response = app.run(request).unsafeRunSync()
 
-    response.headers.get(ci"Content-Language") shouldBe Some(
-      NonEmptyList(Header.Raw(ci"Content-Language", "it"), List.empty)
-    )
-
-    val body = response.as[String].unsafeRunSync()
-    body should equal("Questo è un messaggio di test")
+    for
+      response <- app.run(request)
+      _ <- IO(response.headers.get(ci"Content-Language")).assertEquals(
+        Some(NonEmptyList(Header.Raw(ci"Content-Language", "it"), List.empty))
+      )
+      _ <- response.as[String].assertEquals("Questo è un messaggio di test")
+    yield ()
   }
 }

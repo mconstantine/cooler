@@ -1,10 +1,9 @@
 package it.mconst.cooler.utils
 
-import org.scalatest._
-import matchers._
-import flatspec._
+import it.mconst.cooler.utils.TestUtils._
+import munit.{Assertions, CatsEffectSuite}
 
-import cats.effect.IO
+import cats.effect.{IO, Resource}
 import cats.effect.unsafe.implicits.global
 import com.osinka.i18n.Lang
 import io.circe.generic.auto._
@@ -13,60 +12,48 @@ import mongo4cats.circe._
 import mongo4cats.codecs.MongoCodecProvider
 import mongo4cats.collection.operations.{Filter, Update}
 
-class CollectionTest extends AnyFlatSpec with should.Matchers {
+class CollectionTest extends CatsEffectSuite {
   given Lang = Lang.Default
+  given Assertions = this
 
   case class Person(_id: ObjectId, firstName: String, lastName: String)
       extends Document
 
   val people = Collection[Person]("people")
 
-  it should "create a document" in {
-    val person = Person(new ObjectId(), "John", "Doe")
-    val result = people.create(person).unsafeRunSync()
+  val dropFixture =
+    ResourceSuiteLocalFixture("drop", Resource.make(IO.unit)(_ => people.drop))
 
-    result shouldEqual Right(person)
+  override val munitFixtures = List(dropFixture)
+
+  test("should create a document") {
+    val person = Person(new ObjectId(), "John", "Doe")
+    people.create(person).assertEquals(Right(person))
   }
 
-  it should "update a document" in {
+  test("should update a document") {
     val person = Person(new ObjectId(), "John", "Doe")
     val update = Update.set("firstName", "Mario").set("lastName", "Martino")
 
-    val result = people
-      .create(person)
-      .flatMap(_ match
-        case Right(person) => people.update(person, update)
-        case Left(error)   => IO(Left(error))
-      )
-      .unsafeRunSync()
-      .getOrElse(null)
-
-    result.firstName shouldBe "Mario"
-    result.lastName shouldBe "Martino"
+    for
+      update <- people
+        .create(person)
+        .orFail
+        .flatMap(people.update(_, update).orFail)
+      _ = assertEquals(update.firstName, "Mario")
+      _ = assertEquals(update.lastName, "Martino")
+    yield ()
   }
 
-  it should "delete a document" in {
+  test("should delete a document") {
     val person = Person(new ObjectId(), "John", "Doe")
 
-    val result =
-      people
-        .create(person)
-        .flatMap(_ match
-          case Left(error)   => IO(Left(error))
-          case Right(person) => people.delete(person)
-        )
-        .unsafeRunSync()
-        .getOrElse(null)
-
-    result shouldEqual person
-
-    val resultAfterDelete =
-      people.use(_.find(Filter.eq("_id", person._id)).first).unsafeRunSync()
-
-    resultAfterDelete shouldEqual None
-  }
-
-  it should "drop a collection" in {
-    people.drop.unsafeRunSync()
+    for
+      _ <- people.create(person)
+      result <- people.delete(person).assertEquals(Right(person))
+      _ <- people
+        .use(_.find(Filter.eq("_id", person._id)).first)
+        .assertEquals(None)
+    yield ()
   }
 }

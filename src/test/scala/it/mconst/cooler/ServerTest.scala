@@ -1,38 +1,11 @@
 package it.mconst.cooler
 
-import org.scalatest._
-import matchers._
-import flatspec._
+import munit.CatsEffectSuite
 
 import cats.effect.IO
-import cats.effect.unsafe.implicits.global
-import io.circe.{Encoder, Json}
-import io.circe.generic.auto.{deriveDecoder, deriveEncoder}
-import io.circe.syntax.EncoderOps
-import org.http4s.circe._
 import org.http4s.client.Client
-import org.http4s.client.dsl.io._
-import org.http4s.dsl.io._
-import org.http4s.implicits._
-import org.http4s.Request
 
-extension (request: Request[IO])(using client: Client[IO]) {
-  def shouldRespond[A](expected: Option[A])(using Encoder[A]): Assertion = {
-    import org.scalatest.matchers.should.Matchers.{shouldEqual, shouldBe}
-
-    expected match
-      case Some(a) => {
-        val response = client.expect[Json](request).unsafeRunSync()
-        response.asJson shouldEqual expected.asJson
-      }
-      case None => {
-        val response = client.expect[String](request).unsafeRunSync()
-        response.isEmpty shouldBe true
-      }
-  }
-}
-
-class ServerTest extends AnyFlatSpec with should.Matchers {
+class ServerTest extends CatsEffectSuite {
   given Client[IO] = Client.fromHttpApp(Server.app)
 
   // TODO:

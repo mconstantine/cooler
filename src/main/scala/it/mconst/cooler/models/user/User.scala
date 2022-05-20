@@ -13,10 +13,11 @@ import mongo4cats.bson.ObjectId
 import mongo4cats.circe._
 import mongo4cats.codecs.MongoCodecProvider
 import mongo4cats.collection.operations.Filter
+import munit.Assertions
 import org.bson.BsonDateTime
+import org.http4s.{EntityDecoder}
 import org.http4s.circe._
 import org.http4s.dsl.io._
-import org.http4s.{EntityDecoder}
 import scala.collection.JavaConverters._
 import scala.util.{Success, Failure}
 
@@ -25,6 +26,9 @@ opaque type NonEmptyString = String
 object NonEmptyString {
   def fromString(s: String): Option[NonEmptyString] =
     Option.unless(s.isEmpty)(s)
+
+  def unsafeFromString(s: String)(using a: Assertions): NonEmptyString =
+    fromString(s).getOrElse(a.fail(s"Invalid NonEmptyString: $s"))
 
   given Encoder[NonEmptyString] = Encoder.encodeString
 
@@ -48,6 +52,9 @@ object Email {
     .fromString(s)
     .flatMap(Option.when(pattern.unapplySeq(s).isDefined))
 
+  def unsafeFromString(s: String)(using a: Assertions): Email =
+    fromString(s).getOrElse(a.fail(s"Invalid Email: $s"))
+
   given Encoder[Email] = Encoder.encodeString
 
   given Decoder[Email] =
@@ -67,6 +74,9 @@ object Password {
     NonEmptyString
       .fromString(s)
       .flatMap(_.toString.bcryptSafeBounded.toOption)
+
+  def unsafeFromString(s: String)(using a: Assertions): Password =
+    fromString(s).getOrElse(a.fail(s"Invalid Password: $s"))
 
   given Encoder[Password] = Encoder.encodeString
   given Decoder[Password] = Decoder.decodeString

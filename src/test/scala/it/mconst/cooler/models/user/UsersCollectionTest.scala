@@ -1,499 +1,426 @@
 package it.mconst.cooler.models.user
 
-import org.scalatest._
-import matchers._
-import flatspec._
+import munit.{Assertions, CatsEffectSuite}
+import it.mconst.cooler.utils.TestUtils._
 
 import cats.effect.IO
+import cats.effect.kernel.Resource
 import cats.effect.unsafe.implicits.global
+import cats.syntax._
 import com.github.t3hnar.bcrypt._
 import com.osinka.i18n.Lang
 import it.mconst.cooler.utils.{__, Error}
 import mongo4cats.bson.ObjectId
+import mongo4cats.collection.operations.Filter
 import org.bson.BsonDateTime
 import org.http4s.Status
 
-class UsersCollectionTest extends AnyFlatSpec with should.Matchers {
+class UsersCollectionTest extends CatsEffectSuite {
   given Lang = Lang.Default
+  given Assertions = this
 
-  it should "register a user" in {
-    val userData = User.CreationData(
-      "Registration test",
-      "registration-test@example.com",
-      "Abc123!?"
+  val cleanUsersCollection =
+    Resource.make(IO.unit)(_ =>
+      Users.collection.use(c => c.deleteMany(Filter.empty).void)
     )
 
-    given Option[User] = None
+  test("should register a user") {
+    cleanUsersCollection.use { _ =>
+      val userData = User.CreationData(
+        "Registration test",
+        "registration-test@example.com",
+        "Abc123!?"
+      )
 
-    val registration =
+      given Option[User] = None
+
       for
-        user <- Users.register(userData)
-        _ <- Users.collection.drop
-      yield user
-
-    val user = registration.unsafeRunSync()
-
-    user match
-      case Left(error) => fail(error.message.toString)
-      case Right(user) =>
-        user.email shouldBe userData.email
-        user.password shouldNot be(userData.password)
-
-        userData.password.isBcryptedBounded(
-          user.password.toString
-        ) shouldBe true
+        user <- Users.register(userData).orFail
+        _ = assertEquals(user.email.toString, userData.email)
+        _ = assert(user.password != userData.password)
+        _ = assert(
+          userData.password
+            .isBcryptedSafeBounded(user.password.toString)
+            .getOrElse(fail("Unable to verify password"))
+        )
+      yield ()
+    }
   }
 
-  it should "reject registration if there is a user already registered and no customer" in {
-    val firstUser = User.CreationData(
-      "First user rejection test",
-      "first-user-rejection-test@example.com",
-      "Abc123!?"
-    )
+  test(
+    "should reject registration if there is a user already registered and no customer"
+  ) {
+    cleanUsersCollection.use { _ =>
+      val firstUser = User.CreationData(
+        "First user rejection test",
+        "first-user-rejection-test@example.com",
+        "Abc123!?"
+      )
 
-    val secondUser = User.CreationData(
-      "Second user rejection test",
-      "second-user-rejection-test@example.com",
-      "Abc123!?"
-    )
+      val secondUser = User.CreationData(
+        "Second user rejection test",
+        "second-user-rejection-test@example.com",
+        "Abc123!?"
+      )
 
-    given Option[User] = None
+      given Option[User] = None
 
-    val result =
       for
         _ <- Users.register(firstUser)
-        result <- Users.register(secondUser)
-        _ <- Users.collection.drop
-      yield result
-
-    result.unsafeRunSync() shouldEqual Left(
-      Error(Status.Forbidden, __.ErrorUserRegisterForbidden)
-    )
+        result <- Users
+          .register(secondUser)
+          .assertEquals(
+            Left(Error(Status.Forbidden, __.ErrorUserRegisterForbidden))
+          )
+      yield ()
+    }
   }
 
-  it should "register an nth user if a customer requests it" in {
-    val firstUserData = User.CreationData(
-      "First user acceptance test",
-      "first-user-acceptance-test@example.com",
-      "Abc123!?"
-    )
+  test("should register an nth user if a customer requests it") {
+    cleanUsersCollection.use { _ =>
+      val firstUserData = User.CreationData(
+        "First user acceptance test",
+        "first-user-acceptance-test@example.com",
+        "Abc123!?"
+      )
 
-    val secondUserData = User.CreationData(
-      "Second user acceptance test",
-      "second-user-acceptance-test@example.com",
-      "Abc123!?"
-    )
+      val secondUserData = User.CreationData(
+        "Second user acceptance test",
+        "second-user-acceptance-test@example.com",
+        "Abc123!?"
+      )
 
-    val result =
       for
-        firstUserResult <- {
+        firstUser <- {
           given Option[User] = None
-          Users.register(firstUserData)
+          Users.register(firstUserData).orFail
         }
-        secondUserResult <- firstUserResult match
-          case Left(error) => IO(Left(error))
-          case Right(user) => {
-            given Option[User] = Some(user)
-            Users.register(secondUserData)
-          }
-        _ <- Users.collection.drop
-      yield secondUserResult
+        secondUser <- {
+          given Option[User] = Some(firstUser)
 
-    val secondUser = result.unsafeRunSync()
-
-    secondUser match
-      case Left(error) => fail(error.message.toString)
-      case Right(user) => user.email shouldBe secondUserData.email
-  }
-
-  it should "reject registration if a user with the same email already exists" in {
-    val firstUserData = User.CreationData(
-      "First user same email test",
-      "first-user-same-email-test@example.com",
-      "Abc123!?"
-    )
-
-    val secondUserData = User.CreationData(
-      "Second user same email test",
-      "first-user-same-email-test@example.com",
-      "Abc123!?"
-    )
-
-    val result =
-      for
-        firstUserResult <- {
-          given Option[User] = None
-          Users.register(firstUserData)
-        }
-        secondUserResult <- firstUserResult match
-          case Left(error) => IO(Left(error))
-          case Right(user) => {
-            given Option[User] = Some(user)
-            Users.register(secondUserData)
-          }
-        _ <- Users.collection.drop
-      yield secondUserResult
-
-    result.unsafeRunSync() shouldEqual Left(
-      Error(Status.Conflict, __.ErrorUserConflict)
-    )
-  }
-
-  it should "find a user by id" in {
-    val userData = User.CreationData(
-      "Fetching by _id test",
-      "fetching-by-id-test@example.com",
-      "Abc123!?"
-    )
-
-    val fetching =
-      for
-        user <- {
-          given Option[User] = None
           Users
-            .register(userData)
-            .flatMap(_ match
-              case Left(error) => fail(error.message.toString)
-              case Right(user) => {
-                given User = user
-                Users.findById()
-              }
-            )
+            .register(secondUserData)
+            .orFail
+            .map(_.email)
+            .assertEquals(secondUserData.email)
         }
-        _ <- Users.collection.drop
-      yield user
-
-    val user = fetching.unsafeRunSync()
-    user.map(_.email) shouldBe Some(userData.email)
+      yield ()
+    }
   }
 
-  it should "find a user by email" in {
-    val userData = User.CreationData(
-      "Fetching by email test",
-      "fetching-by-email-test@example.com",
-      "Abc123!?"
-    )
+  test(
+    "should reject registration if a user with the same email already exists"
+  ) {
+    cleanUsersCollection.use { _ =>
+      val firstUserData = User.CreationData(
+        "First user same email test",
+        "first-user-same-email-test@example.com",
+        "Abc123!?"
+      )
 
-    val fetching =
+      val secondUserData = User.CreationData(
+        "Second user same email test",
+        "first-user-same-email-test@example.com",
+        "Abc123!?"
+      )
+
       for
-        user <- {
+        firstUser <- {
           given Option[User] = None
-          Users
-            .register(userData)
-            .flatMap(_ match
-              case Left(_) => IO(None)
-              case Right(user) => {
-                given User = user
-                Users.findByEmail()
-              }
-            )
+          Users.register(firstUserData).orFail
         }
-        _ <- Users.collection.drop
-      yield user
-
-    val user = fetching.unsafeRunSync()
-    user.map(_.email) shouldBe Some(userData.email)
+        secondUser <- {
+          given Option[User] = Some(firstUser)
+          Users
+            .register(secondUserData)
+            .assertEquals(Left(Error(Status.Conflict, __.ErrorUserConflict)))
+        }
+      yield ()
+    }
   }
 
-  it should "update a user" in {
-    val userData = User.CreationData(
-      "Update test",
-      "update-test@example.com",
-      "Abc123!?"
-    )
+  test("should find a user by id") {
+    cleanUsersCollection.use { _ =>
+      val userData = User.CreationData(
+        "Fetching by _id test",
+        "fetching-by-id-test@example.com",
+        "Abc123!?"
+      )
 
-    val update = User.UpdateData(
-      Some("Updated name"),
-      None,
-      Some("Upd4t3dP4ssw0rd!")
-    )
+      given Option[User] = None
 
-    val operation =
+      Users
+        .register(userData)
+        .orFail
+        .flatMap({ user =>
+          given User = user
+          Users.findById()
+        })
+        .map(_.map(_.email))
+        .assertEquals(Some(userData.email))
+    }
+  }
+
+  test("should find a user by email") {
+    cleanUsersCollection.use { _ =>
+      val userData = User.CreationData(
+        "Fetching by email test",
+        "fetching-by-email-test@example.com",
+        "Abc123!?"
+      )
+
+      given Option[User] = None
+
+      Users
+        .register(userData)
+        .orFail
+        .flatMap({ user =>
+          given User = user
+          Users.findByEmail()
+        })
+        .map(_.map(_.email))
+        .assertEquals(Some(userData.email))
+    }
+  }
+
+  test("should update a user") {
+    cleanUsersCollection.use { _ =>
+      val userData = User.CreationData(
+        "Update test",
+        "update-test@example.com",
+        "Abc123!?"
+      )
+
+      val update = User.UpdateData(
+        Some("Updated name"),
+        None,
+        Some("Upd4t3dP4ssw0rd!")
+      )
+
       for
         original <- {
           given Option[User] = None
-          Users.register(userData)
+          Users.register(userData).orFail
         }
-        updated <- original match
-          case Left(error) => IO(Left(error))
-          case Right(user) => {
-            given User = user
-            Users.update(update)
-          }
-        _ <- Users.collection.drop
-      yield (original, updated)
-
-    val (original, updated) = operation.unsafeRunSync()
-
-    (original, updated) match
-      case (Right(original), Right(updated)) => {
-        updated.name.toString shouldBe update.name.get
-        updated.email shouldBe userData.email
-        updated.password shouldNot be(update.password.get)
-
-        update.password.get.isBcryptedBounded(
-          updated.password.toString
-        ) shouldBe true
-      }
-      case _ => fail("Unable to execute update")
-  }
-
-  it should "reject the update if another user has the new email address" in {
-    val firstUserData = User.CreationData(
-      "First user update test",
-      "first-user-update-test@example.com",
-      "Abc123!?"
-    )
-
-    val secondUserData = User.CreationData(
-      "Second user update test",
-      "second-user-update-test@example.com",
-      "Abc123!?"
-    )
-
-    val result =
-      for
-        firstUserResult <- {
-          given Option[User] = None
-          Users.register(firstUserData)
+        updated <- {
+          given User = original
+          Users.update(update).orFail
         }
-        secondUserResult <- firstUserResult match
-          case Left(error) => IO(Left(error))
-          case Right(user) => {
-            given Option[User] = Some(user)
-            Users.register(secondUserData)
-          }
-        update <- secondUserResult match
-          case Left(error) => IO(Left(error))
-          case Right(user) => {
-            given User = user
-            Users.update(
-              User.UpdateData(
-                None,
-                Some(firstUserData.email),
-                None
-              )
-            )
-          }
-        _ <- Users.collection.drop
-      yield update
-
-    val update = result.unsafeRunSync()
-
-    update match
-      case Left(error) =>
-        error shouldEqual Error(Status.Conflict, __.ErrorUserConflict)
-      case Right(user) =>
-        fail("A user was updated with an email that already exists")
-  }
-
-  it should "log a user in" in {
-    val userData = User.CreationData(
-      "Login test",
-      "login-test@example.com",
-      "Abc123!?"
-    )
-
-    val loggedInUserResult =
-      for
-        registration <- {
-          given Option[User] = None
-          Users.register(userData)
-        }
-        authTokens <- registration match
-          case Left(error) => IO(Left(error))
-          case Right(user) =>
-            Users.login(User.LoginData(user.email, userData.password))
-        user <- authTokens match
-          case Left(error) => IO(Left(error))
-          case Right(authTokens) =>
-            JWT.decodeToken(authTokens.accessToken, JWT.UserAccess)
-        _ <- Users.collection.drop
-      yield user
-
-    loggedInUserResult.unsafeRunSync() match
-      case Left(error) => fail(error.message.toString)
-      case Right(user) => user.email shouldBe userData.email
-  }
-
-  it should "reject the login if the user is not registered" in {
-    val fakeUser = User
-      .fromCreationData(
-        User.CreationData(
-          "Made up user",
-          "madeup-user@example.com",
-          "Whatever"
+        _ = assertEquals(updated.name.toString, update.name.get)
+        _ = assertEquals(updated.email.toString, userData.email)
+        _ = assert(updated.password != update.password.get)
+        _ = assert(
+          update.password.get.isBcryptedBounded(
+            updated.password.toString
+          )
         )
-      )
-      .getOrElse(fail(""))
+      yield ()
+    }
+  }
 
-    val result =
+  test("should reject the update if another user has the new email address") {
+    cleanUsersCollection.use { _ =>
+      val firstUserData = User.CreationData(
+        "First user update test",
+        "first-user-update-test@example.com",
+        "Abc123!?"
+      )
+
+      val secondUserData = User.CreationData(
+        "Second user update test",
+        "second-user-update-test@example.com",
+        "Abc123!?"
+      )
+
+      for
+        firstUser <- {
+          given Option[User] = None
+          Users.register(firstUserData).orFail
+        }
+        secondUser <- {
+          given Option[User] = Some(firstUser)
+          Users.register(secondUserData).orFail
+        }
+        update <- {
+          given User = secondUser
+          Users
+            .update(User.UpdateData(None, Some(firstUserData.email), None))
+            .assertEquals(Left(Error(Status.Conflict, __.ErrorUserConflict)))
+        }
+      yield ()
+    }
+  }
+
+  test("should log a user in") {
+    cleanUsersCollection.use { _ =>
+      val userData = User.CreationData(
+        "Login test",
+        "login-test@example.com",
+        "Abc123!?"
+      )
+
+      for
+        user <- {
+          given Option[User] = None
+          Users.register(userData).orFail
+        }
+        authTokens <- Users
+          .login(User.LoginData(user.email, userData.password))
+          .orFail
+        _ <- JWT
+          .decodeToken(authTokens.accessToken, JWT.UserAccess)
+          .orFail
+          .map(_.email)
+          .assertEquals(userData.email)
+      yield ()
+    }
+  }
+
+  test("should reject the login if the user is not registered") {
+    cleanUsersCollection.use { _ =>
+      val fakeUser = User
+        .fromCreationData(
+          User.CreationData(
+            "Made up user",
+            "made-up-user@example.com",
+            "Whatever"
+          )
+        )
+        .getOrElse(fail(""))
+
       Users
         .login(User.LoginData(fakeUser.email, fakeUser.password.toString))
-        .unsafeRunSync()
-
-    result shouldEqual Left(
-      Error(Status.BadRequest, __.ErrorInvalidEmailOrPassword)
-    )
+        .assertEquals(
+          Left(Error(Status.BadRequest, __.ErrorInvalidEmailOrPassword))
+        )
+    }
   }
 
-  it should "reject the login if the user has an invalid email address" in {
-    val userData = User.CreationData(
-      "Login invalid email test",
-      "login-invalid-email-test@example.com",
-      "Abc123!?"
-    )
+  test("should reject the login if the user has an invalid email address") {
+    cleanUsersCollection.use { _ =>
+      val userData = User.CreationData(
+        "Login invalid email test",
+        "login-invalid-email-test@example.com",
+        "Abc123!?"
+      )
 
-    val result =
       for
-        registration <- {
+        user <- {
           given Option[User] = None
-          Users.register(userData)
+          Users.register(userData).orFail
         }
-        login <- registration match
-          case Left(error) => IO(Left(error))
-          case Right(user) =>
-            Users.login(
-              User.LoginData(
-                Email
-                  .fromString("some-other-email@example.com")
-                  .getOrElse(fail("")),
-                userData.password
-              )
+        _ <- Users
+          .login(
+            User.LoginData(
+              Email.unsafeFromString("some-other-email@example.com"),
+              userData.password
             )
-        _ <- Users.collection.drop
-      yield login
-
-    result.unsafeRunSync() shouldEqual Left(
-      Error(Status.BadRequest, __.ErrorInvalidEmailOrPassword)
-    )
+          )
+          .assertEquals(
+            Left(Error(Status.BadRequest, __.ErrorInvalidEmailOrPassword))
+          )
+      yield ()
+    }
   }
 
-  it should "reject the login if the user has an invalid password" in {
-    val userData = User.CreationData(
-      "Login invalid password test",
-      "login-invalid-password-test@example.com",
-      "Abc123!?"
-    )
+  test("should reject the login if the user has an invalid password") {
+    cleanUsersCollection.use { _ =>
+      val userData = User.CreationData(
+        "Login invalid password test",
+        "login-invalid-password-test@example.com",
+        "Abc123!?"
+      )
 
-    val result =
       for
-        registration <- {
+        user <- {
           given Option[User] = None
-          Users.register(userData)
+          Users.register(userData).orFail
         }
-        login <- registration match
-          case Left(error) => IO(Left(error))
-          case Right(user) =>
-            Users.login(User.LoginData(user.email, "someOtherPassword"))
-        _ <- Users.collection.drop
-      yield login
-
-    result.unsafeRunSync() shouldEqual Left(
-      Error(Status.BadRequest, __.ErrorInvalidEmailOrPassword)
-    )
+        _ <- Users
+          .login(User.LoginData(user.email, "someOtherPassword"))
+          .assertEquals(
+            Left(Error(Status.BadRequest, __.ErrorInvalidEmailOrPassword))
+          )
+      yield ()
+    }
   }
 
-  it should "refresh a token" in {
-    val userData = User.CreationData(
-      "Refresh token test",
-      "refresh-token-test@example.com",
-      "Abc123!?"
-    )
+  test("should refresh a token") {
+    cleanUsersCollection.use { _ =>
+      val userData = User.CreationData(
+        "Refresh token test",
+        "refresh-token-test@example.com",
+        "Abc123!?"
+      )
 
-    val result =
       for
-        registration <- {
+        user <- {
           given Option[User] = None
-          Users.register(userData)
+          Users.register(userData).orFail
         }
-        authTokens <- registration match
-          case Left(error) => IO(Left(error))
-          case Right(user) =>
-            Users.login(User.LoginData(user.email, userData.password))
+        authTokens <- Users
+          .login(User.LoginData(user.email, userData.password))
+          .orFail
         // expiration must be different in order for the tokens to be different
         _ <- IO.delay(Thread.sleep(1000))
-        freshTokens <- authTokens match
-          case Left(error)       => IO(Left(error))
-          case Right(authTokens) => Users.refreshToken(authTokens.refreshToken)
-        _ <- Users.collection.drop
-      yield (authTokens, freshTokens)
-
-    val (authTokens, freshTokens) = result.unsafeRunSync()
-
-    (authTokens, freshTokens) match
-      case (Right(authTokens), Right(freshTokens)) => {
-        authTokens.accessToken shouldNot be(freshTokens.accessToken)
-        authTokens.refreshToken shouldNot be(freshTokens.refreshToken)
-      }
-      case _ => fail(s"Unable to refresh tokens")
+        freshTokens <- Users.refreshToken(authTokens.refreshToken).orFail
+        _ = {
+          assert(authTokens.accessToken != freshTokens.accessToken)
+          assert(authTokens.refreshToken != freshTokens.refreshToken)
+        }
+      yield ()
+    }
   }
 
-  it should "not refresh an access token" in {
-    val userData = User.CreationData(
-      "Refresh access token test",
-      "refresh-access-token-test@example.com",
-      "Abc123!?"
-    )
+  test("should not refresh an access token") {
+    cleanUsersCollection.use { _ =>
+      val userData = User.CreationData(
+        "Refresh access token test",
+        "refresh-access-token-test@example.com",
+        "Abc123!?"
+      )
 
-    val result =
       for
-        registration <- {
+        user <- {
           given Option[User] = None
-          Users.register(userData)
+          Users.register(userData).orFail
         }
-        authTokens <- registration match
-          case Left(error) => IO(Left(error))
-          case Right(user) =>
-            Users.login(User.LoginData(user.email, userData.password))
+        authTokens <- Users
+          .login(User.LoginData(user.email, userData.password))
+          .orFail
         // expiration must be different in order for the tokens to be different
         _ <- IO.delay(Thread.sleep(1000))
-        freshTokens <- authTokens match
-          case Left(error)       => IO(Left(error))
-          case Right(authTokens) => Users.refreshToken(authTokens.accessToken)
-        _ <- Users.collection.drop
-      yield freshTokens
-
-    result.unsafeRunSync() shouldEqual Left(
-      Error(Status.Forbidden, __.ErrorInvalidAccessToken)
-    )
+        _ <- Users
+          .refreshToken(authTokens.accessToken)
+          .assertEquals(
+            Left(Error(Status.Forbidden, __.ErrorInvalidAccessToken))
+          )
+      yield ()
+    }
   }
 
-  it should "delete a user" in {
-    val userData = User.CreationData(
-      "Delete user test",
-      "delete-user-test@example.com",
-      "Abc123!?"
-    )
+  test("should delete a user") {
+    cleanUsersCollection.use { _ =>
+      val userData = User.CreationData(
+        "Delete user test",
+        "delete-user-test@example.com",
+        "Abc123!?"
+      )
 
-    val operation: IO[(Either[Error, User], Option[User])] =
       for
-        registration <- {
+        user <- {
           given Option[User] = None
-          Users.register(userData)
+          Users.register(userData).orFail
         }
-        deletion <- registration match
-          case Left(error) => IO(Left(error))
-          case Right(user) => {
-            given User = user
-            Users.delete()
-          }
-        userAfterDeletion <- deletion match
-          case Left(error) =>
-            IO.raiseError(
-              new RuntimeException("Unable to fetch users after deletion")
-            )
-          case Right(user) => {
-            given User = user
-            Users.findById()
-          }
-        _ <- Users.collection.drop
-      yield (deletion, userAfterDeletion)
-
-    val (deletionResult, userAfterDeletionResult) = operation.unsafeRunSync()
-
-    (deletionResult, userAfterDeletionResult) match
-      case (Right(user), None) => user.email shouldBe userData.email
-      case _                   => fail("Unable to delete user")
+        _ <- {
+          given User = user
+          Users.delete().orFail.map(_.email).assertEquals(userData.email)
+        }
+        _ <- {
+          given User = user
+          Users.findById().assertEquals(None)
+        }
+      yield ()
+    }
   }
 }
