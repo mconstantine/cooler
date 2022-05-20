@@ -21,6 +21,8 @@ libraryDependencies ++= Seq(
   "org.http4s" %% "http4s-dsl" % http4sVersion,
   "org.http4s" %% "http4s-ember-client" % http4sVersion,
   "org.http4s" %% "http4s-ember-server" % http4sVersion,
-  "org.scalactic" %% "scalactic" % scalaTestVersion,
+  "org.typelevel" %% "munit-cats-effect-3" % "1.0.7",
   "org.scalatest" %% "scalatest" % scalaTestVersion % "test"
 )
+
+testFrameworks += new TestFramework("munit.Framework")

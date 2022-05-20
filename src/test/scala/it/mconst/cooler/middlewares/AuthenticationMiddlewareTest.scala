@@ -1,8 +1,6 @@
 package it.mconst.cooler.middlewares
 
-import org.scalatest._
-import matchers._
-import flatspec._
+import munit.CatsEffectSuite
 
 import cats.effect.IO
 import cats.effect.kernel.Resource
@@ -28,7 +26,7 @@ import org.http4s.dsl.io._
 import org.http4s.headers.Authorization
 import org.http4s.implicits._
 
-class CoolerAuthMiddlewareTest extends AnyFlatSpec with should.Matchers {
+class AuthenticationMiddlewareTest extends CatsEffectSuite {
   given Lang = Lang.Default
 
   val publicRoutes: HttpRoutes[IO] = HttpRoutes.of[IO] { case GET -> Root =>
@@ -46,21 +44,15 @@ class CoolerAuthMiddlewareTest extends AnyFlatSpec with should.Matchers {
   val app: HttpApp[IO] = service.orNotFound
   val client = Client.fromHttpApp(app)
 
-  it should "always respond to public routes" in {
-    val request = GET(uri"/")
-    val response = client.expect[String](request).unsafeRunSync()
+  val userData = User.CreationData(
+    name = "John Doe",
+    email = "john.doe@example.com",
+    password = "Abc123?!"
+  )
 
-    response shouldBe "Public"
-  }
-
-  it should "work with authorized user" in {
-    val userData = User.CreationData(
-      name = "John Doe",
-      email = "john.doe@example.com",
-      password = "Abc123?!"
-    )
-
-    val login =
+  val authTokensFixture = ResourceSuiteLocalFixture(
+    "authTokens",
+    Resource.make(
       for
         user <- {
           given Option[User] = None
@@ -70,11 +62,21 @@ class CoolerAuthMiddlewareTest extends AnyFlatSpec with should.Matchers {
           case Left(error) => IO(Left(error))
           case Right(user) =>
             Users.login(User.LoginData(user.email, userData.password))
-      yield (login)
+        authTokens = login match
+          case Left(error)       => fail(error.toString)
+          case Right(authTokens) => authTokens
+      yield (authTokens)
+    )(_ => Users.collection.use(_.drop))
+  )
 
-    val authTokens = login.unsafeRunSync() match
-      case Left(error)       => fail(error.toString)
-      case Right(authTokens) => authTokens
+  override val munitFixtures = List(authTokensFixture)
+
+  test("should always respond to public routes") {
+    client.expect[String](GET(uri"/")).assertEquals("Public")
+  }
+
+  test("should work with authorized user") {
+    val authTokens = authTokensFixture()
 
     val request = GET(uri"/me").putHeaders(
       Authorization(
@@ -82,40 +84,20 @@ class CoolerAuthMiddlewareTest extends AnyFlatSpec with should.Matchers {
       )
     )
 
-    val response = client.expect[String](request).unsafeRunSync()
-    response shouldBe s"Welcome, ${userData.name}"
-
-    Users.collection.use(_.drop).unsafeRunSync()
+    client.expect[String](request).assertEquals(s"Welcome, ${userData.name}")
   }
 
-  it should "return 403 if auth header is missing" in {
-    val request = GET(uri"/me")
-    val response = app.run(request).unsafeRunSync()
-    val status = response.status
-
-    status shouldEqual Forbidden
-
-    val body = response.as[ErrorResponse].unsafeRunSync()
-
-    body.status shouldEqual Forbidden
-    body.message shouldBe Translations.t(__.ErrorInvalidAccessToken).toString
+  test("should return 403 if auth header is missing") {
+    app.assertError(GET(uri"/me"), Forbidden, __.ErrorInvalidAccessToken)
   }
 
-  it should "return 403 if the token is invalid" in {
+  test("should return 403 if the token is invalid") {
     val request = GET(uri"/me").putHeaders(
       Authorization(
         Credentials.Token(AuthScheme.Bearer, "invalid-token")
       )
     )
 
-    val response = app.run(request).unsafeRunSync()
-    val status = response.status
-
-    status shouldEqual Forbidden
-
-    val body = response.as[ErrorResponse].unsafeRunSync()
-
-    body.status shouldEqual Forbidden
-    body.message shouldBe Translations.t(__.ErrorInvalidAccessToken).toString
+    app.assertError(request, Forbidden, __.ErrorInvalidAccessToken)
   }
 }
