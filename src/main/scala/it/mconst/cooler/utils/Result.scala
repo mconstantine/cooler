@@ -8,6 +8,11 @@ import org.http4s.dsl.io._
 object Result {
   type Result[T] = Either[Error, T]
 
+  def validateOptional[I, O](
+      data: Option[I],
+      f: I => Result[O]
+  ): Result[Option[O]] = data.map(f(_).map(Some(_))).getOrElse(Right(None))
+
   extension [T](result: Result[T]) {
 
     /** Lifts a `Left` to the effect `F`, while you can `flatMap` and lift a
@@ -18,6 +23,13 @@ object Result {
     ): F[Result[R]] =
       result match
         case Left(error) => a.pure(Left(error))
+        case Right(r)    => f(r)
+
+    def liftValidate[F[_]](f: T => F[Option[Error]])(using
+        a: Applicative[F]
+    ): F[Option[Error]] =
+      result match
+        case Left(error) => a.pure(Some(error))
         case Right(r)    => f(r)
 
     def toResponse[R](using

@@ -107,6 +107,12 @@ object User {
   given EntityDecoder[IO, CreationData] = jsonOf[IO, CreationData]
   given EntityEncoder[IO, CreationData] = jsonEncoderOf[IO, CreationData]
 
+  case class ValidCreationData(
+      name: NonEmptyString,
+      email: Email,
+      password: Password
+  )
+
   case class UpdateData(
       name: Option[String],
       email: Option[String],
@@ -114,6 +120,12 @@ object User {
   )
   given EntityDecoder[IO, UpdateData] = jsonOf[IO, UpdateData]
   given EntityEncoder[IO, UpdateData] = jsonEncoderOf[IO, UpdateData]
+
+  case class ValidUpdateData(
+      name: Option[NonEmptyString],
+      email: Option[Email],
+      password: Option[Password]
+  )
 
   case class RefreshTokenData(refreshToken: String)
   given EntityDecoder[IO, RefreshTokenData] = jsonOf[IO, RefreshTokenData]
@@ -124,9 +136,9 @@ object User {
   given EntityDecoder[IO, LoginData] = jsonOf[IO, LoginData]
   given EntityEncoder[IO, LoginData] = jsonEncoderOf[IO, LoginData]
 
-  def fromCreationData(
+  def validateCreationData(
       data: CreationData
-  )(using Lang): Result[User] =
+  )(using Lang): Result[ValidCreationData] =
     for
       name <- NonEmptyString
         .fromString(data.name)
@@ -138,12 +150,46 @@ object User {
         Password
           .fromString(data.password)
           .toRight(Error(BadRequest, __.ErrorUserRegisterInvalidPasswordFormat))
+      validatedData <- Right(ValidCreationData(name, email, password))
+    yield validatedData
+
+  def validateUpdateData(
+      data: UpdateData
+  )(using Lang): Result[ValidUpdateData] = {
+    for
+      name <- validateOptional(
+        data.name,
+        NonEmptyString
+          .fromString(_)
+          .toRight(Error(BadRequest, __.ErrorUserRegisterEmptyName))
+      )
+      email <- validateOptional(
+        data.email,
+        Email
+          .fromString(_)
+          .toRight(Error(BadRequest, __.ErrorUserRegisterInvalidEmailFormat))
+      )
+      password <- validateOptional(
+        data.password,
+        Password
+          .fromString(_)
+          .toRight(Error(BadRequest, __.ErrorUserRegisterInvalidPasswordFormat))
+      )
+      validatedData <- Right(ValidUpdateData(name, email, password))
+    yield validatedData
+  }
+
+  def fromCreationData(
+      data: CreationData
+  )(using Lang): Result[User] =
+    for
+      validatedData <- validateCreationData(data)
       user <- Right(
         User(
           _id = ObjectId(),
-          name = name,
-          email = email,
-          password = password,
+          name = validatedData.name,
+          email = validatedData.email,
+          password = validatedData.password,
           createdAt = BsonDateTime(System.currentTimeMillis()),
           updatedAt = BsonDateTime(System.currentTimeMillis())
         )
@@ -183,30 +229,42 @@ object Users {
 
   def update(
       data: User.UpdateData
-  )(using customer: User)(using Lang): IO[Result[User]] =
+  )(using customer: User)(using Lang): IO[Result[User]] = {
     for
-      password <- data.password.lift(p =>
-        IO.fromTry(p.bcryptSafeBounded).map(Some(_))
-      )
-      existingEmailError <- data.email.lift(e =>
-        collection
-          .use(
-            _.find(
-              Filter.eq("email", e).and(Filter.ne("_id", customer._id))
-            ).first
+      validatedData <- IO(User.validateUpdateData(data))
+      existingUserError <- validatedData
+        .liftValidate(data =>
+          data.email.lift(email =>
+            collection
+              .use(
+                _.find(
+                  Filter.eq("email", email).and(Filter.ne("_id", customer._id))
+                ).first
+              )
+              .map(_.map(_ => Error(Conflict, __.ErrorUserConflict)))
           )
-          .map(_.map(_ => Error(Conflict, __.ErrorUserConflict)))
-      )
-      result <- existingEmailError.toLeftLift {
-        val updates = List(
-          data.name.map(name => Updates.set("name", name)).toList,
-          data.email.map(email => Updates.set("email", email)).toList,
-          password.map(password => Updates.set("password", password)).toList
-        ).flatten
+        )
+      result <- validatedData.lift(data =>
+        existingUserError.toLeftLift {
+          val updates = List(
+            data.name.map(name => Updates.set("name", name)).toList,
+            data.email.map(email => Updates.set("email", email)).toList,
+            data.password
+              .map(password => Updates.set("password", password))
+              .toList,
+            Some(
+              Updates.set(
+                "updatedAt",
+                BsonDateTime(System.currentTimeMillis).getValue
+              )
+            ).toList
+          ).flatten
 
-        collection.update(customer, Updates.combine(updates.asJava))
-      }
+          collection.update(customer, Updates.combine(updates.asJava))
+        }
+      )
     yield result
+  }
 
   def login(
       data: User.LoginData
@@ -216,14 +274,13 @@ object Users {
         .use(_.find(Filter.eq("email", data.email)).first)
         .map(_.toRight(Error(BadRequest, __.ErrorInvalidEmailOrPassword)))
       userWithRightPassword = user.flatMap(user =>
-        data.password
-          .isBcryptedSafeBounded(user.password.toString)
-          .toEither
-          .mapLeft(Error(BadRequest, __.ErrorInvalidEmailOrPassword))
-          .flatMap(
-            Either
-              .cond(_, user, Error(BadRequest, __.ErrorInvalidEmailOrPassword))
-          )
+        Either.cond(
+          data.password
+            .isBcryptedSafeBounded(user.password.toString)
+            .getOrElse(false),
+          user,
+          Error(BadRequest, __.ErrorInvalidEmailOrPassword)
+        )
       )
       authTokens = userWithRightPassword.map(JWT.generateAuthTokens(_))
     yield authTokens

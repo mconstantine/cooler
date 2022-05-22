@@ -1,6 +1,7 @@
 package it.mconst.cooler.middlewares
 
 import munit.CatsEffectSuite
+import it.mconst.cooler.utils.TestUtils._
 
 import cats.effect.IO
 import cats.effect.kernel.Resource
@@ -8,26 +9,16 @@ import cats.effect.unsafe.implicits.global
 import cats.syntax.all._
 import com.osinka.i18n.Lang
 import it.mconst.cooler.middlewares.UserMiddleware._
-import it.mconst.cooler.models.user.{User, Users}
-import it.mconst.cooler.utils.{__, ErrorResponse, Translations}
+import it.mconst.cooler.models.user.{JWT, User, Users}
+import it.mconst.cooler.utils.{__, Translations}
 import it.mconst.cooler.utils.given
-import org.http4s.{
-  AuthedRoutes,
-  AuthScheme,
-  Credentials,
-  Headers,
-  HttpApp,
-  HttpRoutes,
-  Request,
-  Response
-}
+import org.http4s.{AuthedRoutes, HttpApp, HttpRoutes}
 import org.http4s.client.Client
 import org.http4s.client.dsl.io._
 import org.http4s.dsl.io._
-import org.http4s.headers.Authorization
 import org.http4s.implicits._
 
-class AuthenticationMiddlewareTest extends CatsEffectSuite {
+class UserMiddlewareTest extends CatsEffectSuite {
   given Lang = Lang.Default
 
   val publicRoutes: HttpRoutes[IO] = HttpRoutes.of[IO] { case GET -> Root =>
@@ -44,6 +35,8 @@ class AuthenticationMiddlewareTest extends CatsEffectSuite {
 
   val app: HttpApp[IO] = service.orNotFound
   val client = Client.fromHttpApp(app)
+
+  given Client[IO] = client
 
   val userData = User.CreationData(
     name = "John Doe",
@@ -78,12 +71,7 @@ class AuthenticationMiddlewareTest extends CatsEffectSuite {
 
   test("should work with authorized user") {
     val authTokens = authTokensFixture()
-
-    val request = GET(uri"/me").putHeaders(
-      Authorization(
-        Credentials.Token(AuthScheme.Bearer, authTokens.accessToken)
-      )
-    )
+    val request = GET(uri"/me").sign(authTokens)
 
     client.expect[String](request).assertEquals(s"Welcome, ${userData.name}")
   }
@@ -93,11 +81,8 @@ class AuthenticationMiddlewareTest extends CatsEffectSuite {
   }
 
   test("should return 403 if the token is invalid") {
-    val request = GET(uri"/me").putHeaders(
-      Authorization(
-        Credentials.Token(AuthScheme.Bearer, "invalid-token")
-      )
-    )
+    val request =
+      GET(uri"/me").sign(JWT.AuthTokens("invalid-token", "invalid-token"))
 
     app.assertError(request, Forbidden, __.ErrorInvalidAccessToken)
   }

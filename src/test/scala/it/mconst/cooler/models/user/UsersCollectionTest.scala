@@ -41,7 +41,7 @@ class UsersCollectionTest extends CatsEffectSuite {
         _ = assert(
           userData.password
             .isBcryptedSafeBounded(user.password.toString)
-            .getOrElse(fail("Unable to verify password"))
+            .getOrElse(false)
         )
       yield ()
     }
@@ -362,7 +362,7 @@ class UsersCollectionTest extends CatsEffectSuite {
           .login(User.LoginData(user.email, userData.password))
           .orFail
         // expiration must be different in order for the tokens to be different
-        _ <- IO.delay(Thread.sleep(1000))
+        _ <- IO.delay(Thread.sleep(100))
         freshTokens <- Users
           .refreshToken(User.RefreshTokenData(authTokens.refreshToken))
           .orFail
@@ -391,7 +391,7 @@ class UsersCollectionTest extends CatsEffectSuite {
           .login(User.LoginData(user.email, userData.password))
           .orFail
         // expiration must be different in order for the tokens to be different
-        _ <- IO.delay(Thread.sleep(1000))
+        _ <- IO.delay(Thread.sleep(100))
         _ <- Users
           .refreshToken(User.RefreshTokenData(authTokens.accessToken))
           .assertEquals(
