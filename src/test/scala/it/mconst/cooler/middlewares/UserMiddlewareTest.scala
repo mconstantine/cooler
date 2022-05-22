@@ -7,6 +7,7 @@ import cats.effect.kernel.Resource
 import cats.effect.unsafe.implicits.global
 import cats.syntax.all._
 import com.osinka.i18n.Lang
+import it.mconst.cooler.middlewares.UserMiddleware._
 import it.mconst.cooler.models.user.{User, Users}
 import it.mconst.cooler.utils.{__, ErrorResponse, Translations}
 import it.mconst.cooler.utils.given
@@ -33,13 +34,13 @@ class AuthenticationMiddlewareTest extends CatsEffectSuite {
     Ok("Public")
   }
 
-  val authedRoutes: AuthedRoutes[User, IO] =
-    AuthedRoutes.of { case GET -> Root / "me" as user =>
-      Ok(s"Welcome, ${user.name}")
+  val authedRoutes: AuthedRoutes[UserContext, IO] =
+    AuthedRoutes.of { case GET -> Root / "me" as context =>
+      Ok(s"Welcome, ${context.user.name}")
     }
 
   val service: HttpRoutes[IO] =
-    publicRoutes <+> AuthenticationMiddleware(authedRoutes)
+    publicRoutes <+> UserMiddleware(authedRoutes)
 
   val app: HttpApp[IO] = service.orNotFound
   val client = Client.fromHttpApp(app)

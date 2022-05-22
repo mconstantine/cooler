@@ -8,15 +8,15 @@ import io.circe.{Decoder, DecodingFailure, Encoder}
 import io.circe.generic.auto._
 import it.mconst.cooler.models.user.JWT
 import it.mconst.cooler.utils.{__, Collection, Document, Error, Timestamps}
-import it.mconst.cooler.utils.Result._
 import it.mconst.cooler.utils.given
+import it.mconst.cooler.utils.Result._
 import mongo4cats.bson.ObjectId
 import mongo4cats.circe._
 import mongo4cats.codecs.MongoCodecProvider
 import mongo4cats.collection.operations.Filter
 import munit.Assertions
 import org.bson.BsonDateTime
-import org.http4s.{EntityDecoder}
+import org.http4s.{EntityDecoder, EntityEncoder}
 import org.http4s.circe._
 import org.http4s.dsl.io._
 import scala.collection.JavaConverters._
@@ -95,25 +95,32 @@ case class User(
 ) extends Document
     with Timestamps
 
+given EntityEncoder[IO, User] = jsonEncoderOf[IO, User]
+
 object User {
   case class CreationData(
       name: String,
       email: String,
       password: String
   )
+  given EntityDecoder[IO, CreationData] = jsonOf[IO, CreationData]
 
   case class UpdateData(
       name: Option[String],
       email: Option[String],
       password: Option[String]
   )
+  given EntityDecoder[IO, UpdateData] = jsonOf[IO, UpdateData]
+
+  case class RefreshTokenData(refreshToken: String)
+  given EntityDecoder[IO, RefreshTokenData] = jsonOf[IO, RefreshTokenData]
 
   case class LoginData(email: Email, password: String)
-  given EntityDecoder[IO, User.LoginData] = jsonOf[IO, User.LoginData]
+  given EntityDecoder[IO, LoginData] = jsonOf[IO, LoginData]
 
   def fromCreationData(
       data: CreationData
-  )(using Lang): Either[Error, User] =
+  )(using Lang): Result[User] =
     for
       name <- NonEmptyString
         .fromString(data.name)
@@ -170,7 +177,7 @@ object Users {
 
   def update(
       data: User.UpdateData
-  )(using customer: User)(using Lang): IO[Either[Error, User]] =
+  )(using customer: User)(using Lang): IO[Result[User]] =
     for
       password <- data.password.lift(p =>
         IO.fromTry(p.bcryptSafeBounded).map(Some(_))
@@ -197,7 +204,7 @@ object Users {
 
   def login(
       data: User.LoginData
-  )(using Lang): IO[Either[Error, JWT.AuthTokens]] =
+  )(using Lang): IO[Result[JWT.AuthTokens]] =
     for
       user <- collection
         .use(_.find(Filter.eq("email", data.email)).first)
@@ -216,13 +223,13 @@ object Users {
     yield authTokens
 
   def refreshToken(
-      token: String
-  )(using Lang): IO[Either[Error, JWT.AuthTokens]] =
+      data: User.RefreshTokenData
+  )(using Lang): IO[Result[JWT.AuthTokens]] =
     for
-      userResult <- JWT.decodeToken(token, JWT.UserRefresh)
+      userResult <- JWT.decodeToken(data.refreshToken, JWT.UserRefresh)
       authTokens = userResult.map(JWT.generateAuthTokens(_))
     yield authTokens
 
-  def delete()(using customer: User)(using Lang): IO[Either[Error, User]] =
+  def delete(using customer: User)(using Lang): IO[Result[User]] =
     collection.delete(customer)
 }

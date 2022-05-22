@@ -7,6 +7,7 @@ import com.osinka.i18n.Lang
 import io.circe.{Encoder, Decoder, Json, HCursor}
 import io.circe.generic.auto._
 import it.mconst.cooler.utils.{Config, Error, Translations}
+import it.mconst.cooler.utils.Result._
 import mongo4cats.bson.ObjectId
 import mongo4cats.circe._
 import mongo4cats.client._
@@ -52,7 +53,7 @@ case class Collection[Doc <: Document: ClassTag](name: String)(using
         yield result
     }
 
-  def create(doc: Doc)(using Lang): IO[Either[Error, Doc]] =
+  def create(doc: Doc)(using Lang): IO[Result[Doc]] =
     use { collection =>
       for
         result <- collection.insertOne(doc)
@@ -63,7 +64,7 @@ case class Collection[Doc <: Document: ClassTag](name: String)(using
       yield doc
     }
 
-  def update(doc: Doc, update: Bson)(using Lang): IO[Either[Error, Doc]] =
+  def update(doc: Doc, update: Bson)(using Lang): IO[Result[Doc]] =
     use { collection =>
       for
         result <- collection.updateOne(Filters.eq("_id", doc._id), update)
@@ -74,7 +75,7 @@ case class Collection[Doc <: Document: ClassTag](name: String)(using
       yield updated
     }
 
-  def update(doc: Doc, update: Update)(using Lang): IO[Either[Error, Doc]] =
+  def update(doc: Doc, update: Update)(using Lang): IO[Result[Doc]] =
     use { collection =>
       for
         result <- collection.updateOne(Filter.eq("_id", doc._id), update)
@@ -85,7 +86,7 @@ case class Collection[Doc <: Document: ClassTag](name: String)(using
       yield updated
     }
 
-  def delete(doc: Doc)(using Lang): IO[Either[Error, Doc]] =
+  def delete(doc: Doc)(using Lang): IO[Result[Doc]] =
     use { collection =>
       for
         original <- collection

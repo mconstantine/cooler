@@ -75,8 +75,8 @@ object JWT {
 
   def decodeToken(token: String, tokenType: TokenType)(using
       Lang
-  ): IO[Either[Error, User]] = {
-    val userId: Either[Error, ObjectId] =
+  ): IO[Result[User]] = {
+    val userId: Result[ObjectId] =
       for
         claimResult <- JwtCirce
           .decode(token, encryptionKey, Seq(algorithm))

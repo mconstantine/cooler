@@ -363,7 +363,9 @@ class UsersCollectionTest extends CatsEffectSuite {
           .orFail
         // expiration must be different in order for the tokens to be different
         _ <- IO.delay(Thread.sleep(1000))
-        freshTokens <- Users.refreshToken(authTokens.refreshToken).orFail
+        freshTokens <- Users
+          .refreshToken(User.RefreshTokenData(authTokens.refreshToken))
+          .orFail
         _ = {
           assert(authTokens.accessToken != freshTokens.accessToken)
           assert(authTokens.refreshToken != freshTokens.refreshToken)
@@ -391,7 +393,7 @@ class UsersCollectionTest extends CatsEffectSuite {
         // expiration must be different in order for the tokens to be different
         _ <- IO.delay(Thread.sleep(1000))
         _ <- Users
-          .refreshToken(authTokens.accessToken)
+          .refreshToken(User.RefreshTokenData(authTokens.accessToken))
           .assertEquals(
             Left(Error(Status.Forbidden, __.ErrorInvalidAccessToken))
           )
@@ -414,7 +416,7 @@ class UsersCollectionTest extends CatsEffectSuite {
         }
         _ <- {
           given User = user
-          Users.delete().orFail.map(_.email).assertEquals(userData.email)
+          Users.delete.orFail.map(_.email).assertEquals(userData.email)
         }
         _ <- {
           given User = user
