@@ -56,12 +56,10 @@ case class Collection[Doc <: Document: ClassTag](name: String)(using
     use { collection =>
       for
         result <- collection.insertOne(doc)
-        maybeDoc <- collection
+        doc <- collection
           .find(Filter.eq("_id", result.getInsertedId))
           .first
-        doc <- IO(
-          maybeDoc.toRight(Error(NotFound, __.ErrorPersonNotFoundAfterInsert))
-        )
+          .map(_.toRight(Error(NotFound, __.ErrorPersonNotFoundAfterInsert)))
       yield doc
     }
 
@@ -69,10 +67,10 @@ case class Collection[Doc <: Document: ClassTag](name: String)(using
     use { collection =>
       for
         result <- collection.updateOne(Filters.eq("_id", doc._id), update)
-        maybeDoc <- collection.find(Filter.eq("_id", doc._id)).first
-        updated <- IO(
-          maybeDoc.toRight(Error(NotFound, __.ErrorPersonNotFoundAfterUpdate))
-        )
+        updated <- collection
+          .find(Filter.eq("_id", doc._id))
+          .first
+          .map(_.toRight(Error(NotFound, __.ErrorPersonNotFoundAfterUpdate)))
       yield updated
     }
 
@@ -80,20 +78,20 @@ case class Collection[Doc <: Document: ClassTag](name: String)(using
     use { collection =>
       for
         result <- collection.updateOne(Filter.eq("_id", doc._id), update)
-        maybeDoc <- collection.find(Filter.eq("_id", doc._id)).first
-        updated <- IO(
-          maybeDoc.toRight(Error(NotFound, __.ErrorPersonNotFoundAfterUpdate))
-        )
+        updated <- collection
+          .find(Filter.eq("_id", doc._id))
+          .first
+          .map(_.toRight(Error(NotFound, __.ErrorPersonNotFoundAfterUpdate)))
       yield updated
     }
 
   def delete(doc: Doc)(using Lang): IO[Either[Error, Doc]] =
     use { collection =>
       for
-        maybeDoc <- collection.find(Filter.eq("_id", doc._id)).first
-        original <- IO(
-          maybeDoc.toRight(Error(NotFound, __.ErrorPersonNotFoundBeforeDelete))
-        )
+        original <- collection
+          .find(Filter.eq("_id", doc._id))
+          .first
+          .map(_.toRight(Error(NotFound, __.ErrorPersonNotFoundBeforeDelete)))
         result <- collection.deleteOne(Filter.eq("_id", doc._id))
       yield original
     }

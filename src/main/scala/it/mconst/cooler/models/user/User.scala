@@ -8,6 +8,7 @@ import io.circe.{Decoder, DecodingFailure, Encoder}
 import io.circe.generic.auto._
 import it.mconst.cooler.models.user.JWT
 import it.mconst.cooler.utils.{__, Collection, Document, Error, Timestamps}
+import it.mconst.cooler.utils.Result._
 import it.mconst.cooler.utils.given
 import mongo4cats.bson.ObjectId
 import mongo4cats.circe._
@@ -142,29 +143,23 @@ object Users {
 
   def register(
       user: User.CreationData
-  )(using customer: Option[User])(using Lang): IO[Either[Error, User]] =
+  )(using customer: Option[User])(using Lang): IO[Result[User]] =
     for
-      firstUserOrCustomer <- customer match
-        case Some(_) => IO(None)
-        case None =>
-          collection
-            .use(_.find.first)
-            .map(_.map(_ => Error(Forbidden, __.ErrorUserRegisterForbidden)))
-      userExists <- firstUserOrCustomer match
-        case Some(error) => IO(Some(error))
-        case None =>
-          collection
-            .use(_.find(Filter.eq("email", user.email)).first)
-            .map(_.map(user => Error(Conflict, __.ErrorUserConflict)))
-      user <- userExists match
-        case Some(error) => IO(Left(error))
-        case None =>
-          for
-            userData <- IO(User.fromCreationData(user))
-            user <- userData match
-              case Right(userData) => collection.create(userData)
-              case Left(error)     => IO(Left(error))
-          yield user
+      firstUserOrCustomerError <- customer.swapLift(
+        collection
+          .use(_.count)
+          .map(n =>
+            Option.when(n > 0)(Error(Forbidden, __.ErrorUserRegisterForbidden))
+          )
+      )
+      userExistsError <- firstUserOrCustomerError.liftNone(
+        collection
+          .use(_.find(Filter.eq("email", user.email)).first)
+          .map(_.map(user => Error(Conflict, __.ErrorUserConflict)))
+      )
+      user <- userExistsError.toLeftLift(
+        User.fromCreationData(user).lift(collection.create(_))
+      )
     yield user
 
   def findById()(using customer: User): IO[Option[User]] =
@@ -177,30 +172,27 @@ object Users {
       data: User.UpdateData
   )(using customer: User)(using Lang): IO[Either[Error, User]] =
     for
-      password <- data.password match
-        case None => IO(None)
-        case Some(password) =>
-          IO.fromTry(password.bcryptSafeBounded).map(Some(_))
-      existingEmailError <- data.email match
-        case None => IO(None)
-        case Some(email) =>
-          collection
-            .use(
-              _.find(
-                Filter.eq("email", email).and(Filter.ne("_id", customer._id))
-              ).first
-            )
-            .map(_.map(_ => Error(Conflict, __.ErrorUserConflict)))
-      result <- existingEmailError match
-        case Some(error) => IO(Left(error))
-        case None =>
-          val updates = List(
-            data.name.map(name => Updates.set("name", name)).toList,
-            data.email.map(email => Updates.set("email", email)).toList,
-            password.map(password => Updates.set("password", password)).toList
-          ).flatten
+      password <- data.password.lift(p =>
+        IO.fromTry(p.bcryptSafeBounded).map(Some(_))
+      )
+      existingEmailError <- data.email.lift(e =>
+        collection
+          .use(
+            _.find(
+              Filter.eq("email", e).and(Filter.ne("_id", customer._id))
+            ).first
+          )
+          .map(_.map(_ => Error(Conflict, __.ErrorUserConflict)))
+      )
+      result <- existingEmailError.toLeftLift {
+        val updates = List(
+          data.name.map(name => Updates.set("name", name)).toList,
+          data.email.map(email => Updates.set("email", email)).toList,
+          password.map(password => Updates.set("password", password)).toList
+        ).flatten
 
-          collection.update(customer, Updates.combine(updates.asJava))
+        collection.update(customer, Updates.combine(updates.asJava))
+      }
     yield result
 
   def login(
@@ -210,22 +202,17 @@ object Users {
       user <- collection
         .use(_.find(Filter.eq("email", data.email)).first)
         .map(_.toRight(Error(BadRequest, __.ErrorInvalidEmailOrPassword)))
-      userWithRightPassword <- IO(user.flatMap { user =>
+      userWithRightPassword = user.flatMap(user =>
         data.password
           .isBcryptedSafeBounded(user.password.toString)
-          .toEither match
-          case Left(_) =>
-            Left(Error(BadRequest, __.ErrorInvalidEmailOrPassword))
-          case Right(isSamePassword) =>
-            Either.cond(
-              isSamePassword,
-              user,
-              Error(BadRequest, __.ErrorInvalidEmailOrPassword)
-            )
-      })
-      authTokens <- IO(
-        userWithRightPassword.map(JWT.generateAuthTokens(_))
+          .toEither
+          .mapLeft(Error(BadRequest, __.ErrorInvalidEmailOrPassword))
+          .flatMap(
+            Either
+              .cond(_, user, Error(BadRequest, __.ErrorInvalidEmailOrPassword))
+          )
       )
+      authTokens = userWithRightPassword.map(JWT.generateAuthTokens(_))
     yield authTokens
 
   def refreshToken(
@@ -233,7 +220,7 @@ object Users {
   )(using Lang): IO[Either[Error, JWT.AuthTokens]] =
     for
       userResult <- JWT.decodeToken(token, JWT.UserRefresh)
-      authTokens <- IO(userResult.map(JWT.generateAuthTokens(_)))
+      authTokens = userResult.map(JWT.generateAuthTokens(_))
     yield authTokens
 
   def delete()(using customer: User)(using Lang): IO[Either[Error, User]] =

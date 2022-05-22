@@ -20,7 +20,7 @@ def toResponse[T](result: Either[Error, T])(using
     we: EntityEncoder[IO, Error],
     wr: EntityEncoder[IO, T]
 ): IO[Response[IO]] = result match
-  case Right(value) => Ok.apply(wr.toEntity(value).body)
+  case Right(value) => Ok(wr.toEntity(value).body)
   case Left(error) =>
     IO.pure(Response(status = error.status, body = we.toEntity(error).body))
 
@@ -45,18 +45,20 @@ object Server extends IOApp {
       .default[IO]
       .withHost(
         Host
-          .fromString(Config.server.host) match
-          case Some(host) => host
-          case None =>
+          .fromString(Config.server.host)
+          .getOrElse(
             throw new IllegalArgumentException(
               "Invalid host in configuration file"
             )
+          )
       )
-      .withPort(Port.fromInt(Config.server.port) match
-        case Some(port) => port
-        case None =>
-          throw new IllegalArgumentException(
-            "Invalid port in configuration file"
+      .withPort(
+        Port
+          .fromInt(Config.server.port)
+          .getOrElse(
+            throw new IllegalArgumentException(
+              "Invalid port in configuration file"
+            )
           )
       )
       .withHttpApp(app)

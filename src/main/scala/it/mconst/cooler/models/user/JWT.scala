@@ -6,6 +6,7 @@ import io.circe.generic.auto.{deriveDecoder, deriveEncoder}
 import io.circe.parser.decode
 import io.circe.syntax.EncoderOps
 import it.mconst.cooler.utils.{__, Config, Error}
+import it.mconst.cooler.utils.Result._
 import java.time.Instant
 import mongo4cats.bson.ObjectId
 import mongo4cats.collection.operations.Filter
@@ -75,25 +76,28 @@ object JWT {
   def decodeToken(token: String, tokenType: TokenType)(using
       Lang
   ): IO[Either[Error, User]] = {
-    val userId =
+    val userId: Either[Error, ObjectId] =
       for
         claimResult <- JwtCirce
           .decode(token, encryptionKey, Seq(algorithm))
           .toEither
+          .mapLeft(Error(Forbidden, __.ErrorInvalidAccessToken))
         claimValidation <- Either.cond(
           validateClaim(claimResult, tokenType),
           claimResult,
           Error(Forbidden, __.ErrorInvalidAccessToken)
         )
         content <- decode[TokenContent](claimValidation.content)
-        _id <- ObjectId.from(content._id)
+          .mapLeft(Error(Forbidden, __.ErrorInvalidAccessToken))
+        _id <- ObjectId
+          .from(content._id)
+          .mapLeft(Error(Forbidden, __.ErrorInvalidAccessToken))
       yield _id
 
-    userId match
-      case Left(_) => IO(Left(Error(Forbidden, __.ErrorInvalidAccessToken)))
-      case Right(userId) =>
-        Users.collection
-          .use(_.find(Filter.eq("_id", userId)).first)
-          .map(_.toRight(Error(Forbidden, __.ErrorInvalidAccessToken)))
+    userId.lift(_id =>
+      Users.collection
+        .use(_.find(Filter.eq("_id", _id)).first)
+        .map(_.toRight(Error(Forbidden, __.ErrorInvalidAccessToken)))
+    )
   }
 }

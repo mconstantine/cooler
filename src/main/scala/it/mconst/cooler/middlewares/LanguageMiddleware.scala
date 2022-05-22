@@ -41,13 +41,13 @@ object LanguageMiddleware {
 
   private def middleware[F[_]: Functor]: LanguageMiddleware[F] = { service =>
     Kleisli { request =>
-      val lang = Translations.getLanguageFromHeader(
+      val lang: Lang = Translations.getLanguageFromHeader(
         request.headers.get[`Accept-Language`]
       )
 
       val languageRequest: LanguageRequest[F] = ContextRequest(lang, request)
 
-      val response =
+      val response: F[Response[F]] =
         service(languageRequest).getOrElse(Response[F](Status.NotFound)).map {
           case Status.Successful(response) =>
             response.putHeaders(
