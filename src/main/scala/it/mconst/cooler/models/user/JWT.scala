@@ -12,7 +12,7 @@ import mongo4cats.bson.ObjectId
 import mongo4cats.collection.operations.Filter
 import org.http4s.circe._
 import org.http4s.dsl.io._
-import org.http4s.{EntityEncoder}
+import org.http4s.{EntityDecoder, EntityEncoder}
 import pdi.jwt.{JwtCirce, JwtAlgorithm, JwtClaim, JwtOptions}
 
 object JWT {
@@ -29,6 +29,7 @@ object JWT {
   case class AuthTokens(val accessToken: String, val refreshToken: String)
 
   given EntityEncoder[IO, AuthTokens] = jsonEncoderOf[IO, AuthTokens]
+  given EntityDecoder[IO, AuthTokens] = jsonOf[IO, AuthTokens]
 
   private val issuer = "cooler"
   private val encryptionKey = Config.database.encryptionKey

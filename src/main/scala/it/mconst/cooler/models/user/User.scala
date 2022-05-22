@@ -96,6 +96,7 @@ case class User(
     with Timestamps
 
 given EntityEncoder[IO, User] = jsonEncoderOf[IO, User]
+given EntityDecoder[IO, User] = jsonOf[IO, User]
 
 object User {
   case class CreationData(
@@ -104,6 +105,7 @@ object User {
       password: String
   )
   given EntityDecoder[IO, CreationData] = jsonOf[IO, CreationData]
+  given EntityEncoder[IO, CreationData] = jsonEncoderOf[IO, CreationData]
 
   case class UpdateData(
       name: Option[String],
@@ -111,12 +113,16 @@ object User {
       password: Option[String]
   )
   given EntityDecoder[IO, UpdateData] = jsonOf[IO, UpdateData]
+  given EntityEncoder[IO, UpdateData] = jsonEncoderOf[IO, UpdateData]
 
   case class RefreshTokenData(refreshToken: String)
   given EntityDecoder[IO, RefreshTokenData] = jsonOf[IO, RefreshTokenData]
+  given EntityEncoder[IO, RefreshTokenData] =
+    jsonEncoderOf[IO, RefreshTokenData]
 
   case class LoginData(email: Email, password: String)
   given EntityDecoder[IO, LoginData] = jsonOf[IO, LoginData]
+  given EntityEncoder[IO, LoginData] = jsonEncoderOf[IO, LoginData]
 
   def fromCreationData(
       data: CreationData
