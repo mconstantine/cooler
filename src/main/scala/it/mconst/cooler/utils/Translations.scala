@@ -6,6 +6,16 @@ import org.http4s.LanguageTag
 
 enum __(val key: String):
   case Test extends __("test")
+  case ErrorDecodeEmptyString extends __("error.decode.emptyString")
+  case ErrorDecodeInvalidCountryCode
+      extends __("error.decode.invalidCountryCode")
+  case ErrorDecodeInvalidEmailFormat
+      extends __("error.decode.invalidEmailFormat")
+  case ErrorDecodeInvalidPasswordFormat
+      extends __("error.decode.invalidPasswordFormat")
+  case ErrorDecodeInvalidProvinceCode
+      extends __("error.decode.invalidProvinceCode")
+  case ErrorDecodeValidationErrors extends __("error.decode.validationErrors")
   case ErrorInvalidAccessToken extends __("error.auth.invalidAccessToken")
   case ErrorInvalidEmailOrPassword
       extends __("error.auth.invalidEmailOrPassword")
@@ -17,12 +27,7 @@ enum __(val key: String):
       extends __("error.person.notFound.beforeDelete")
   case ErrorUserConflict extends __("error.user.conflict")
   case ErrorUserNotFound extends __("error.user.notFound")
-  case ErrorUserRegisterEmptyName extends __("error.user.register.emptyName")
   case ErrorUserRegisterForbidden extends __("error.user.register.forbidden")
-  case ErrorUserRegisterInvalidEmailFormat
-      extends __("error.user.register.invalidEmailFormat")
-  case ErrorUserRegisterInvalidPasswordFormat
-      extends __("error.user.register.invalidPasswordFormat")
 
 object Translations {
   opaque type LocalizedString = String

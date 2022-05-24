@@ -9,6 +9,7 @@ import cats.effect.unsafe.implicits.global
 import cats.syntax._
 import com.github.t3hnar.bcrypt._
 import com.osinka.i18n.Lang
+import it.mconst.cooler.models.Email
 import it.mconst.cooler.utils.{__, Error}
 import mongo4cats.bson.ObjectId
 import mongo4cats.collection.operations.Filter
@@ -312,7 +313,7 @@ class UsersCollectionTest extends CatsEffectSuite {
         _ <- Users
           .login(
             User.LoginData(
-              Email.unsafeFromString("some-other-email@example.com"),
+              Email.unsafeDecode("some-other-email@example.com"),
               userData.password
             )
           )
@@ -362,7 +363,7 @@ class UsersCollectionTest extends CatsEffectSuite {
           .login(User.LoginData(user.email, userData.password))
           .orFail
         // expiration must be different in order for the tokens to be different
-        _ <- IO.delay(Thread.sleep(100))
+        _ <- IO.delay(Thread.sleep(500))
         freshTokens <- Users
           .refreshToken(User.RefreshTokenData(authTokens.refreshToken))
           .orFail
@@ -391,7 +392,7 @@ class UsersCollectionTest extends CatsEffectSuite {
           .login(User.LoginData(user.email, userData.password))
           .orFail
         // expiration must be different in order for the tokens to be different
-        _ <- IO.delay(Thread.sleep(100))
+        _ <- IO.delay(Thread.sleep(500))
         _ <- Users
           .refreshToken(User.RefreshTokenData(authTokens.accessToken))
           .assertEquals(

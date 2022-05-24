@@ -82,17 +82,20 @@ object JWT {
         claimResult <- JwtCirce
           .decode(token, encryptionKey, Seq(algorithm))
           .toEither
-          .mapLeft(Error(Forbidden, __.ErrorInvalidAccessToken))
+          .left
+          .map(_ => Error(Forbidden, __.ErrorInvalidAccessToken))
         claimValidation <- Either.cond(
           validateClaim(claimResult, tokenType),
           claimResult,
           Error(Forbidden, __.ErrorInvalidAccessToken)
         )
-        content <- decode[TokenContent](claimValidation.content)
-          .mapLeft(Error(Forbidden, __.ErrorInvalidAccessToken))
+        content <- decode[TokenContent](claimValidation.content).left.map(_ =>
+          Error(Forbidden, __.ErrorInvalidAccessToken)
+        )
         _id <- ObjectId
           .from(content._id)
-          .mapLeft(Error(Forbidden, __.ErrorInvalidAccessToken))
+          .left
+          .map(_ => Error(Forbidden, __.ErrorInvalidAccessToken))
       yield _id
 
     userId.lift(_id =>

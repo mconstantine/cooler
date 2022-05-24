@@ -33,13 +33,6 @@ given Encoder[BsonDateTime] with Decoder[BsonDateTime] with {
     Decoder.decodeLong.map(BsonDateTime(_))(cursor)
 }
 
-extension [T](io: IO[T]) {
-  def debug = io.map { value =>
-    println(value)
-    value
-  }
-}
-
 case class Collection[Doc <: Document: ClassTag](name: String)(using
     MongoCodecProvider[Doc]
 ) {
