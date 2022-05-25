@@ -180,12 +180,6 @@ object Users {
       )
     yield user
 
-  def findById()(using customer: User): IO[Option[User]] =
-    collection.use(_.find(Filter.eq("_id", customer._id)).first)
-
-  def findByEmail()(using customer: User): IO[Option[User]] =
-    collection.use(_.find(Filter.eq("email", customer.email)).first)
-
   def update(
       data: User.UpdateData
   )(using customer: User)(using Lang): IO[Result[User]] = {

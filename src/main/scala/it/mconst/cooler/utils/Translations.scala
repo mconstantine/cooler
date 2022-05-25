@@ -6,25 +6,27 @@ import org.http4s.LanguageTag
 
 enum __(val key: String):
   case Test extends __("test")
+  case ErrorClientNotFound extends __("error.client.notFound")
   case ErrorDecodeEmptyString extends __("error.decode.emptyString")
   case ErrorDecodeInvalidCountryCode
       extends __("error.decode.invalidCountryCode")
   case ErrorDecodeInvalidEmailFormat
       extends __("error.decode.invalidEmailFormat")
+  case ErrorDecodeInvalidObjectId extends __("error.decode.invalidObjectId")
   case ErrorDecodeInvalidPasswordFormat
       extends __("error.decode.invalidPasswordFormat")
   case ErrorDecodeInvalidProvinceCode
       extends __("error.decode.invalidProvinceCode")
   case ErrorDecodeValidationErrors extends __("error.decode.validationErrors")
+  case ErrorDocumentNotFoundAfterInsert
+      extends __("error.document.notFound.afterInsert")
+  case ErrorDocumentNotFoundAfterUpdate
+      extends __("error.document.notFound.afterUpdate")
+  case ErrorDocumentNotFoundBeforeDelete
+      extends __("error.document.notFound.beforeDelete")
   case ErrorInvalidAccessToken extends __("error.auth.invalidAccessToken")
   case ErrorInvalidEmailOrPassword
       extends __("error.auth.invalidEmailOrPassword")
-  case ErrorPersonNotFoundAfterInsert
-      extends __("error.person.notFound.afterInsert")
-  case ErrorPersonNotFoundAfterUpdate
-      extends __("error.person.notFound.afterUpdate")
-  case ErrorPersonNotFoundBeforeDelete
-      extends __("error.person.notFound.beforeDelete")
   case ErrorUserConflict extends __("error.user.conflict")
   case ErrorUserNotFound extends __("error.user.notFound")
   case ErrorUserRegisterForbidden extends __("error.user.register.forbidden")

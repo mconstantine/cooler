@@ -8,6 +8,7 @@ import cats.effect.kernel.Resource
 import com.osinka.i18n.Lang
 import it.mconst.cooler.middlewares.UserMiddleware
 import it.mconst.cooler.models.asBusiness
+import it.mconst.cooler.models.asPrivate
 import it.mconst.cooler.models.Client
 import it.mconst.cooler.models.Clients
 import it.mconst.cooler.models.given
@@ -18,6 +19,7 @@ import org.http4s.client.{Client as HttpClient}
 import org.http4s.client.dsl.io._
 import org.http4s.dsl.io._
 import org.http4s.implicits._
+import org.http4s.Uri
 
 class ClientRoutesTest extends CatsEffectSuite {
   val app = ClientRoutes().orNotFound
@@ -60,5 +62,23 @@ class ClientRoutesTest extends CatsEffectSuite {
         (c: Client) => c.asBusiness.addressEmail,
         data.addressEmail
       )
+  }
+
+  test("should find a client by id") {
+    val admin = adminFixture()
+    val data =
+      makeTestPrivateClient(addressEmail = "find-by-id-test@example.com")
+
+    given User = admin
+
+    for
+      client <- Clients.create(data).orFail
+      _ <- GET(Uri.fromString(s"/${client._id.toString}").getOrElse(fail("")))
+        .sign(admin)
+        .shouldRespondLike(
+          (c: Client) => c.asPrivate.addressEmail,
+          data.addressEmail
+        )
+    yield ()
   }
 }

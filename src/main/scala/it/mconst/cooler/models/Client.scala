@@ -20,6 +20,7 @@ import it.mconst.cooler.utils.Result._
 import it.mconst.cooler.utils.Timestamps
 import mongo4cats.bson.ObjectId
 import mongo4cats.circe._
+import mongo4cats.collection.operations.Filter
 import munit.Assertions
 import org.bson.BsonDateTime
 import org.http4s.circe._
@@ -592,6 +593,15 @@ object Clients {
       data: Client.CreationData
   )(using customer: User)(using Lang): IO[Result[Client]] =
     Client.fromCreationData(data, customer).lift(collection.create(_))
+
+  def findById(
+      _id: ObjectId
+  )(using customer: User)(using Lang): IO[Result[Client]] =
+    collection
+      .use(
+        _.find(Filter.eq("_id", _id).and(Filter.eq("user", customer._id))).first
+      )
+      .map(_.toRight(Error(NotFound, __.ErrorClientNotFound)))
 }
 
 given Encoder[Client] = new Encoder[Client]() {

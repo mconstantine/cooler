@@ -140,50 +140,6 @@ class UsersCollectionTest extends CatsEffectSuite {
     }
   }
 
-  test("should find a user by id") {
-    cleanUsersCollection.use { _ =>
-      val userData = User.CreationData(
-        "Fetching by _id test",
-        "fetching-by-id-test@example.com",
-        "Abc123!?"
-      )
-
-      given Option[User] = None
-
-      Users
-        .register(userData)
-        .orFail
-        .flatMap({ user =>
-          given User = user
-          Users.findById()
-        })
-        .map(_.map(_.email))
-        .assertEquals(Some(userData.email))
-    }
-  }
-
-  test("should find a user by email") {
-    cleanUsersCollection.use { _ =>
-      val userData = User.CreationData(
-        "Fetching by email test",
-        "fetching-by-email-test@example.com",
-        "Abc123!?"
-      )
-
-      given Option[User] = None
-
-      Users
-        .register(userData)
-        .orFail
-        .flatMap({ user =>
-          given User = user
-          Users.findByEmail()
-        })
-        .map(_.map(_.email))
-        .assertEquals(Some(userData.email))
-    }
-  }
-
   test("should update a user") {
     cleanUsersCollection.use { _ =>
       val userData = User.CreationData(
@@ -421,7 +377,9 @@ class UsersCollectionTest extends CatsEffectSuite {
         }
         _ <- {
           given User = user
-          Users.findById().assertEquals(None)
+          Users.collection
+            .use(_.find(Filter.eq("_id", user._id)).first)
+            .assertEquals(None)
         }
       yield ()
     }

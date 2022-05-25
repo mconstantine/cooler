@@ -53,7 +53,7 @@ case class Collection[Doc <: Document: ClassTag](name: String)(using
         doc <- collection
           .find(Filter.eq("_id", result.getInsertedId))
           .first
-          .map(_.toRight(Error(NotFound, __.ErrorPersonNotFoundAfterInsert)))
+          .map(_.toRight(Error(NotFound, __.ErrorDocumentNotFoundAfterInsert)))
       yield doc
     }
 
@@ -64,7 +64,7 @@ case class Collection[Doc <: Document: ClassTag](name: String)(using
         updated <- collection
           .find(Filter.eq("_id", doc._id))
           .first
-          .map(_.toRight(Error(NotFound, __.ErrorPersonNotFoundAfterUpdate)))
+          .map(_.toRight(Error(NotFound, __.ErrorDocumentNotFoundAfterUpdate)))
       yield updated
     }
 
@@ -75,7 +75,7 @@ case class Collection[Doc <: Document: ClassTag](name: String)(using
         updated <- collection
           .find(Filter.eq("_id", doc._id))
           .first
-          .map(_.toRight(Error(NotFound, __.ErrorPersonNotFoundAfterUpdate)))
+          .map(_.toRight(Error(NotFound, __.ErrorDocumentNotFoundAfterUpdate)))
       yield updated
     }
 
@@ -85,7 +85,7 @@ case class Collection[Doc <: Document: ClassTag](name: String)(using
         original <- collection
           .find(Filter.eq("_id", doc._id))
           .first
-          .map(_.toRight(Error(NotFound, __.ErrorPersonNotFoundBeforeDelete)))
+          .map(_.toRight(Error(NotFound, __.ErrorDocumentNotFoundBeforeDelete)))
         result <- collection.deleteOne(Filter.eq("_id", doc._id))
       yield original
     }
