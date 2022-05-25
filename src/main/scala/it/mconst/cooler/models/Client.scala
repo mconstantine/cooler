@@ -2,6 +2,7 @@ package it.mconst.cooler.models
 
 import cats.effect.IO
 import cats.syntax.apply._
+import com.mongodb.client.model.Updates
 import com.osinka.i18n.Lang
 import io.circe.Decoder
 import io.circe.DecodingFailure
@@ -10,6 +11,7 @@ import io.circe.generic.auto._
 import io.circe.HCursor
 import io.circe.Json
 import io.circe.syntax._
+import it.mconst.cooler.models.Client.PrivateUpdateData
 import it.mconst.cooler.models.user.User
 import it.mconst.cooler.utils.__
 import it.mconst.cooler.utils.Collection
@@ -27,6 +29,7 @@ import org.http4s.circe._
 import org.http4s.dsl.io._
 import org.http4s.EntityDecoder
 import org.http4s.EntityEncoder
+import scala.collection.JavaConverters._
 
 abstract trait Client(
     _id: ObjectId,
@@ -243,16 +246,16 @@ object Client {
   )
 
   case class PrivateUpdateData(
-      fiscalCode: Option[String],
-      firstName: Option[String],
-      lastName: Option[String],
-      addressCountry: Option[String],
-      addressProvince: Option[String],
-      addressZIP: Option[String],
-      addressCity: Option[String],
-      addressStreet: Option[String],
-      addressStreetNumber: Option[String],
-      addressEmail: Option[String]
+      fiscalCode: Option[String] = None,
+      firstName: Option[String] = None,
+      lastName: Option[String] = None,
+      addressCountry: Option[String] = None,
+      addressProvince: Option[String] = None,
+      addressZIP: Option[String] = None,
+      addressCity: Option[String] = None,
+      addressStreet: Option[String] = None,
+      addressStreetNumber: Option[String] = None,
+      addressEmail: Option[String] = None
   ) extends UpdateData(
         addressCountry,
         addressProvince,
@@ -264,16 +267,16 @@ object Client {
       )
 
   case class BusinessUpdateData(
-      countryCode: Option[String],
-      businessName: Option[String],
-      vatNumber: Option[String],
-      addressCountry: Option[String],
-      addressProvince: Option[String],
-      addressZIP: Option[String],
-      addressCity: Option[String],
-      addressStreet: Option[String],
-      addressStreetNumber: Option[String],
-      addressEmail: Option[String]
+      countryCode: Option[String] = None,
+      businessName: Option[String] = None,
+      vatNumber: Option[String] = None,
+      addressCountry: Option[String] = None,
+      addressProvince: Option[String] = None,
+      addressZIP: Option[String] = None,
+      addressCity: Option[String] = None,
+      addressStreet: Option[String] = None,
+      addressStreetNumber: Option[String] = None,
+      addressEmail: Option[String] = None
   ) extends UpdateData(
         addressCountry,
         addressProvince,
@@ -602,6 +605,55 @@ object Clients {
         _.find(Filter.eq("_id", _id).and(Filter.eq("user", customer._id))).first
       )
       .map(_.toRight(Error(NotFound, __.ErrorClientNotFound)))
+
+  def update(_id: ObjectId, data: Client.UpdateData)(using customer: User)(using
+      Lang
+  ): IO[Result[Client]] =
+    findById(_id).flatMap(_.lift { client =>
+      Client.validateUpdateData(data).toResult.lift { data =>
+        val updates = (data match
+          case d: Client.ValidPrivateUpdateData =>
+            List(
+              d.fiscalCode.map(Updates.set("fiscalCode", _)).toList,
+              d.firstName.map(Updates.set("firstName", _)).toList,
+              d.lastName.map(Updates.set("lastName", _)).toList,
+              d.addressCountry.map(Updates.set("addressCountry", _)).toList,
+              d.addressProvince.map(Updates.set("addressProvince", _)).toList,
+              d.addressZIP.map(Updates.set("addressZIP", _)).toList,
+              d.addressCity.map(Updates.set("addressCity", _)).toList,
+              d.addressStreet.map(Updates.set("addressStreet", _)).toList,
+              d.addressStreetNumber
+                .map(Updates.set("addressStreetNumber", _))
+                .toList,
+              d.addressEmail.map(Updates.set("addressEmail", _)).toList
+            )
+          case d: Client.ValidBusinessUpdateData =>
+            List(
+              d.countryCode.map(Updates.set("countryCode", _)).toList,
+              d.businessName.map(Updates.set("businessName", _)).toList,
+              d.vatNumber.map(Updates.set("vatNumber", _)).toList,
+              d.addressCountry.map(Updates.set("addressCountry", _)).toList,
+              d.addressProvince.map(Updates.set("addressProvince", _)).toList,
+              d.addressZIP.map(Updates.set("addressZIP", _)).toList,
+              d.addressCity.map(Updates.set("addressCity", _)).toList,
+              d.addressStreet.map(Updates.set("addressStreet", _)).toList,
+              d.addressStreetNumber
+                .map(Updates.set("addressStreetNumber", _))
+                .toList,
+              d.addressEmail.map(Updates.set("addressEmail", _)).toList
+            )
+        ).flatten ++ List(
+          Some(
+            Updates.set(
+              "updatedAt",
+              BsonDateTime(System.currentTimeMillis).getValue
+            )
+          ).toList
+        ).flatten
+
+        collection.update(client, Updates.combine(updates.asJava))
+      }
+    })
 }
 
 given Encoder[Client] = new Encoder[Client]() {

@@ -200,11 +200,9 @@ object Users {
       result <- validatedData.toResult.lift(data =>
         existingUserError.toLeftLift {
           val updates = List(
-            data.name.map(name => Updates.set("name", name)).toList,
-            data.email.map(email => Updates.set("email", email)).toList,
-            data.password
-              .map(password => Updates.set("password", password))
-              .toList,
+            data.name.map(Updates.set("name", _)).toList,
+            data.email.map(Updates.set("email", _)).toList,
+            data.password.map(Updates.set("password", _)).toList,
             Some(
               Updates.set(
                 "updatedAt",
