@@ -21,8 +21,7 @@ class UserRoutesTest extends CatsEffectSuite {
   given Lang = Lang.Default
   given Assertions = this
 
-  val routes = UserRoutes()
-  val app = routes.orNotFound
+  val app = UserRoutes().orNotFound
   val client: Client[IO] = Client.fromHttpApp(app)
 
   given Client[IO] = client

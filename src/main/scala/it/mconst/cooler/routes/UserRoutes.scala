@@ -4,7 +4,8 @@ import cats.effect.IO
 import com.osinka.i18n.Lang
 import it.mconst.cooler.middlewares.UserMiddleware
 import it.mconst.cooler.middlewares.UserMiddleware._
-import it.mconst.cooler.models.user.{User, Users}
+import it.mconst.cooler.models.user.User
+import it.mconst.cooler.models.user.Users
 import it.mconst.cooler.models.user.given
 import it.mconst.cooler.utils.given
 import it.mconst.cooler.utils.Result._

@@ -5,23 +5,26 @@ import munit.CatsEffectAssertions.MUnitCatsAssertionsForIOOps
 
 import cats.effect.IO
 import com.osinka.i18n.Lang
-import io.circe.{Encoder, Json}
-import io.circe.{Decoder, DecodingFailure, HCursor}
+import io.circe.Decoder
+import io.circe.DecodingFailure
+import io.circe.Encoder
+import io.circe.HCursor
+import io.circe.Json
 import io.circe.syntax.EncoderOps
-import it.mconst.cooler.models.user.{JWT, User}
+import it.mconst.cooler.models.Client
+import it.mconst.cooler.models.user.JWT
+import it.mconst.cooler.models.user.User
 import it.mconst.cooler.utils.Error
 import it.mconst.cooler.utils.Result._
-import org.http4s.{
-  AuthScheme,
-  Credentials,
-  EntityDecoder,
-  HttpApp,
-  Request,
-  Status
-}
+import org.http4s.AuthScheme
 import org.http4s.circe._
-import org.http4s.client.Client
+import org.http4s.client.{Client as HttpClient}
+import org.http4s.Credentials
+import org.http4s.EntityDecoder
 import org.http4s.headers.Authorization
+import org.http4s.HttpApp
+import org.http4s.Request
+import org.http4s.Status
 
 object TestUtils {
   extension [T](io: IO[T]) {
@@ -36,7 +39,7 @@ object TestUtils {
       result.map(_.fold(error => a.fail(error.message.toString), identity))
   }
 
-  extension (request: Request[IO])(using client: Client[IO]) {
+  extension (request: Request[IO])(using client: HttpClient[IO]) {
     def sign(authTokens: JWT.AuthTokens): Request[IO] = request.putHeaders(
       Authorization(
         Credentials.Token(AuthScheme.Bearer, authTokens.accessToken)
@@ -90,4 +93,52 @@ object TestUtils {
   }
 
   given EntityDecoder[IO, ErrorResponse] = jsonOf[IO, ErrorResponse]
+
+  def makeTestPrivateClient(
+      fiscalCode: String = "DOEJHN69A24E012X",
+      firstName: String = "John",
+      lastName: String = "Doe",
+      addressCountry: String = "US",
+      addressProvince: String = "EE",
+      addressZIP: String = "01234",
+      addressCity: String = "New York",
+      addressStreet: String = "Main Street",
+      addressStreetNumber: Option[String] = Some("42"),
+      addressEmail: String = "john.doe@example.com"
+  ) = Client.PrivateCreationData(
+    fiscalCode,
+    firstName,
+    lastName,
+    addressCountry,
+    addressProvince,
+    addressZIP,
+    addressCity,
+    addressStreet,
+    addressStreetNumber,
+    addressEmail
+  )
+
+  def makeTestBusinessClient(
+      countryCode: String = "US",
+      businessName: String = "ACNE Inc.",
+      vatNumber: String = "012345678901",
+      addressCountry: String = "US",
+      addressProvince: String = "EE",
+      addressZIP: String = "01234",
+      addressCity: String = "New York",
+      addressStreet: String = "Main Street",
+      addressStreetNumber: Option[String] = Some("42"),
+      addressEmail: String = "john.doe@example.com"
+  ) = Client.BusinessCreationData(
+    countryCode,
+    businessName,
+    vatNumber,
+    addressCountry,
+    addressProvince,
+    addressZIP,
+    addressCity,
+    addressStreet,
+    addressStreetNumber,
+    addressEmail
+  )
 }
