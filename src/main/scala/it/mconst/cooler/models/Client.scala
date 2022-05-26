@@ -654,6 +654,14 @@ object Clients {
         collection.update(client, Updates.combine(updates.asJava))
       }
     })
+
+  def delete(
+      _id: ObjectId
+  )(using customer: User)(using Lang): IO[Result[Client]] =
+    for
+      client <- findById(_id)
+      _ <- client.lift(collection.delete(_))
+    yield client
 }
 
 given Encoder[Client] = new Encoder[Client]() {

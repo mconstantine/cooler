@@ -195,4 +195,45 @@ class ClientsCollectionTest extends CatsEffectSuite {
         .assertEquals(Left(Error(NotFound, __.ErrorClientNotFound)))
     yield ()
   }
+
+  test("should delete a client") {
+    val data = makeTestBusinessClient(addressEmail = "delete-test@example.com")
+
+    for
+      client <- Clients.create(data).orFail
+      _ <- Clients.delete(client._id).orFail.assertEquals(client)
+      _ <- Clients
+        .findById(client._id)
+        .assertEquals(Left(Error(NotFound, __.ErrorClientNotFound)))
+    yield ()
+  }
+
+  test("should not delete a client of another user") {
+    val data = makeTestPrivateClient(addressEmail =
+      "delete-exclusivity-test@example.com"
+    )
+
+    for
+      user <- {
+        given Option[User] = Some(adminFixture())
+
+        Users
+          .register(
+            User.CreationData(
+              "Delete exclusivity test",
+              "delete-exclusivity-test@example.com",
+              "Abc123?!"
+            )
+          )
+          .orFail
+      }
+      client <- {
+        given User = user
+        Clients.create(data).orFail.map(_.asPrivate)
+      }
+      _ <- Clients
+        .delete(client._id)
+        .assertEquals(Left(Error(NotFound, __.ErrorClientNotFound)))
+    yield ()
+  }
 }
