@@ -3,11 +3,19 @@ package it.mconst.cooler.utils
 import cats.effect._
 import cats.effect.unsafe.implicits.global
 import com.mongodb.client.model.{Filters, Updates}
+import com.mongodb.client.model.Aggregates
+import com.mongodb.client.model.BsonField
+import com.mongodb.client.model.Facet
 import com.osinka.i18n.Lang
 import io.circe.{Encoder, Decoder, Json, HCursor}
 import io.circe.generic.auto._
+import it.mconst.cooler.models.Cursor
+import it.mconst.cooler.models.CursorQuery
+import it.mconst.cooler.models.CursorQueryAsc
+import it.mconst.cooler.models.CursorQueryDesc
 import it.mconst.cooler.utils.{Config, Error, Translations}
 import it.mconst.cooler.utils.Result._
+import mongo4cats.bson.Document as Doc
 import mongo4cats.bson.ObjectId
 import mongo4cats.circe._
 import mongo4cats.client._
@@ -17,9 +25,8 @@ import mongo4cats.collection.operations.{Filter, Update}
 import org.bson.BsonDateTime
 import org.bson.conversions.Bson
 import org.http4s.dsl.io._
+import scala.collection.JavaConverters._
 import scala.reflect.ClassTag
-import it.mconst.cooler.models.CursorQuery
-import it.mconst.cooler.models.Cursor
 
 abstract trait Document:
   val _id: ObjectId
@@ -58,6 +65,127 @@ case class Collection[Doc <: Document: ClassTag](name: String)(using
           .map(_.toRight(Error(NotFound, __.ErrorDocumentNotFoundAfterInsert)))
       yield doc
     }
+
+  def find[T <: Document](
+      searchKey: String,
+      initialFilters: Seq[Bson]
+  )(using
+      Lang,
+      Encoder[T],
+      Decoder[T]
+  ): CursorQuery => IO[Result[Cursor[T]]] = { query =>
+    val queryString = query match
+      case q: CursorQueryAsc  => q.query
+      case q: CursorQueryDesc => q.query
+
+    val findByQuery = queryString.fold(Seq.empty)(query =>
+      Seq(
+        Aggregates.`match`(Filters.regex(searchKey, query, "i"))
+      )
+    )
+
+    val sortingOrder: 1 | -1 = query match
+      case _: CursorQueryAsc  => 1
+      case _: CursorQueryDesc => -1
+
+    val skipCriteria = query match
+      case q: CursorQueryAsc => Filters.gt(searchKey, q.after.getOrElse(""))
+      case q: CursorQueryDesc =>
+        q.before.fold(Filters.empty)(Filters.lt(searchKey, _))
+
+    val limit = query match
+      case q: CursorQueryAsc  => q.first
+      case q: CursorQueryDesc => q.last
+
+    val minCriteria = query match
+      case _: CursorQueryAsc  => Doc("$min" -> s"$$$searchKey")
+      case _: CursorQueryDesc => Doc("$max" -> s"$$$searchKey")
+
+    val maxCriteria = query match
+      case _: CursorQueryAsc  => Doc("$max" -> s"$$$searchKey")
+      case _: CursorQueryDesc => Doc("$min" -> s"$$$searchKey")
+
+    val rest = Seq(
+      Aggregates.sort(Doc(s"$searchKey" -> sortingOrder)),
+      Aggregates.facet(
+        Facet(
+          "global",
+          List(
+            Aggregates.group(
+              null,
+              List(
+                BsonField("totalCount", Doc("$sum" -> 1)),
+                BsonField("min", minCriteria),
+                BsonField("max", maxCriteria)
+              ).asJava
+            )
+          ).asJava
+        ),
+        Facet(
+          "data",
+          List(
+            Aggregates.`match`(skipCriteria),
+            Aggregates.limit(limit.getOrElse(Config.defaultPageSize))
+          ).asJava
+        )
+      ),
+      Aggregates.project(
+        Doc(
+          "edges" -> Doc(
+            "$map" -> Doc(
+              "input" -> "$data",
+              "as" -> "item",
+              "in" -> Doc(
+                "node" -> "$$item",
+                "cursor" -> s"$$$$item.$searchKey"
+              )
+            )
+          ),
+          "global" -> Doc(
+            "$arrayElemAt" -> List("$global", 0)
+          ),
+          "order" -> Doc(
+            "$map" -> Doc(
+              "input" -> "$data",
+              "as" -> "item",
+              "in" -> s"$$$$item.$searchKey"
+            )
+          )
+        )
+      ),
+      Aggregates.project(
+        Doc(
+          "edges" -> "$edges",
+          "global" -> "$global",
+          "min" -> Doc(
+            "$arrayElemAt" -> List(Doc("$slice" -> List("$order", 1)), 0)
+          ),
+          "max" -> Doc(
+            "$arrayElemAt" -> List(Doc("$slice" -> List("$order", -1)), 0)
+          )
+        )
+      ),
+      Aggregates.project(
+        Doc(
+          "edges" -> "$edges",
+          "pageInfo" -> Doc(
+            "totalCount" -> "$global.totalCount",
+            "startCursor" -> "$min",
+            "endCursor" -> "$max",
+            "hasPreviousPage" -> Doc("$ne" -> List("$global.min", "$min")),
+            "hasNextPage" -> Doc("$ne" -> List("$global.max", "$max"))
+          )
+        )
+      )
+    )
+
+    val aggregation = initialFilters ++ findByQuery ++ rest
+
+    use(
+      _.aggregateWithCodec[Cursor[T]](aggregation).first
+        .map(_.toRight(Error(InternalServerError, __.ErrorUnknown)))
+    )
+  }
 
   def update(doc: Doc, update: Bson)(using Lang): IO[Result[Doc]] =
     use { collection =>

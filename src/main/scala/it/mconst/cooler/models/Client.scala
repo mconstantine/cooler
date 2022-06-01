@@ -3,8 +3,6 @@ package it.mconst.cooler.models
 import cats.effect.IO
 import cats.syntax.apply._
 import com.mongodb.client.model.Aggregates
-import com.mongodb.client.model.BsonField
-import com.mongodb.client.model.Facet
 import com.mongodb.client.model.Field
 import com.mongodb.client.model.Filters
 import com.mongodb.client.model.Updates
@@ -684,137 +682,28 @@ object Clients {
   def find(query: CursorQuery)(using
       customer: User
   )(using Lang): IO[Result[Cursor[Client]]] = {
-    val filterByCustomerAndAddName = Seq(
-      Aggregates.`match`(Filters.eq("user", customer._id)),
-      Aggregates.addFields(
-        Field(
-          "name",
-          Doc(
-            "$cond" -> Doc(
-              "if" -> Doc(
-                "$gt" -> List("$firstName", null)
-              ),
-              "then" -> Doc(
-                "$concat" -> List("$firstName", " ", "$lastName")
-              ),
-              "else" -> "$businessName"
-            )
-          )
-        )
-      )
-    )
-
-    val queryString = query match
-      case q: CursorQueryAsc  => q.query
-      case q: CursorQueryDesc => q.query
-
-    val findByQuery = queryString.fold(Seq.empty)(query =>
+    collection.find(
+      "name",
       Seq(
-        Aggregates.`match`(Filters.regex("name", query, "i"))
-      )
-    )
-
-    val sortingOrder: 1 | -1 = query match
-      case _: CursorQueryAsc  => 1
-      case _: CursorQueryDesc => -1
-
-    val skipCriteria = query match
-      case q: CursorQueryAsc => Filters.gt("name", q.after.getOrElse(""))
-      case q: CursorQueryDesc =>
-        q.before.fold(Filters.empty)(Filters.lt("name", _))
-
-    val limit = query match
-      case q: CursorQueryAsc  => q.first
-      case q: CursorQueryDesc => q.last
-
-    val minCriteria = query match
-      case _: CursorQueryAsc  => Doc("$min" -> "$name")
-      case _: CursorQueryDesc => Doc("$max" -> "$name")
-
-    val maxCriteria = query match
-      case _: CursorQueryAsc  => Doc("$max" -> "$name")
-      case _: CursorQueryDesc => Doc("$min" -> "$name")
-
-    val rest = Seq(
-      Aggregates.sort(Doc("name" -> sortingOrder)),
-      Aggregates.facet(
-        Facet(
-          "global",
-          List(
-            Aggregates.group(
-              null,
-              List(
-                BsonField("totalCount", Doc("$sum" -> 1)),
-                BsonField("min", minCriteria),
-                BsonField("max", maxCriteria)
-              ).asJava
-            )
-          ).asJava
-        ),
-        Facet(
-          "data",
-          List(
-            Aggregates.`match`(skipCriteria),
-            Aggregates.limit(limit.getOrElse(Config.defaultPageSize))
-          ).asJava
-        )
-      ),
-      Aggregates.project(
-        Doc(
-          "edges" -> Doc(
-            "$map" -> Doc(
-              "input" -> "$data",
-              "as" -> "item",
-              "in" -> Doc(
-                "node" -> "$$item",
-                "cursor" -> "$$item.name"
+        Aggregates.`match`(Filters.eq("user", customer._id)),
+        Aggregates.addFields(
+          Field(
+            "name",
+            Doc(
+              "$cond" -> Doc(
+                "if" -> Doc(
+                  "$gt" -> List("$firstName", null)
+                ),
+                "then" -> Doc(
+                  "$concat" -> List("$firstName", " ", "$lastName")
+                ),
+                "else" -> "$businessName"
               )
             )
-          ),
-          "global" -> Doc(
-            "$arrayElemAt" -> List("$global", 0)
-          ),
-          "order" -> Doc(
-            "$map" -> Doc(
-              "input" -> "$data",
-              "as" -> "item",
-              "in" -> "$$item.name"
-            )
-          )
-        )
-      ),
-      Aggregates.project(
-        Doc(
-          "edges" -> "$edges",
-          "global" -> "$global",
-          "min" -> Doc(
-            "$arrayElemAt" -> List(Doc("$slice" -> List("$order", 1)), 0)
-          ),
-          "max" -> Doc(
-            "$arrayElemAt" -> List(Doc("$slice" -> List("$order", -1)), 0)
-          )
-        )
-      ),
-      Aggregates.project(
-        Doc(
-          "edges" -> "$edges",
-          "pageInfo" -> Doc(
-            "totalCount" -> "$global.totalCount",
-            "startCursor" -> "$min",
-            "endCursor" -> "$max",
-            "hasPreviousPage" -> Doc("$ne" -> List("$global.min", "$min")),
-            "hasNextPage" -> Doc("$ne" -> List("$global.max", "$max"))
           )
         )
       )
-    )
-
-    val aggregation = filterByCustomerAndAddName ++ findByQuery ++ rest
-
-    collection.use(
-      _.aggregateWithCodec[Cursor[Client]](aggregation).first
-        .map(_.toRight(Error(InternalServerError, __.ErrorUnknown)))
-    )
+    )(query)
   }
 }
 

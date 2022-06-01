@@ -243,12 +243,14 @@ class ClientsCollectionTest extends CatsEffectSuite {
   def clientsList = Resource.make(
     {
       val clients: List[Client.CreationData] = List(
+        makeTestBusinessClient(businessName = "Alex"),
         makeTestBusinessClient(businessName = "Alice"),
+        makeTestBusinessClient(businessName = "Ally"),
         makeTestBusinessClient(businessName = "Bob"),
-        makeTestBusinessClient(businessName = "Charlie"),
+        makeTestPrivateClient(firstName = "Mark", lastName = "Alexson"),
         makeTestPrivateClient(firstName = "Mark", lastName = "Alison"),
-        makeTestPrivateClient(firstName = "Mark", lastName = "Bobson"),
-        makeTestPrivateClient(firstName = "Mark", lastName = "Charlieson")
+        makeTestPrivateClient(firstName = "Mark", lastName = "Allyson"),
+        makeTestPrivateClient(firstName = "Mark", lastName = "Bobson")
       )
 
       import cats.syntax.parallel._
@@ -264,109 +266,24 @@ class ClientsCollectionTest extends CatsEffectSuite {
   )(_ => Clients.collection.use(_.deleteMany(Filter.empty)).void)
 
   test("should find a client") {
-    clientsList.use { _ =>
-      Clients
-        .find(CursorQueryAsc(query = Some("ali")))
-        .orFail
-        .map(_.edges.map(_.node.name))
-        .assertEquals(List("Alice", "Mark Alison"))
-    }
-  }
-
-  test("should paginate clients (first page, asc)") {
-    clientsList.use { clients =>
-      for
-        result <- Clients.find(CursorQueryAsc(first = Some(2))).orFail
-        _ = assertEquals(
-          result.edges.map(_.node._id),
-          clients.slice(0, 2).map(_._id)
-        )
-        _ = assertEquals(result.pageInfo.totalCount, clients.length)
-        _ = assertEquals(result.pageInfo.hasPreviousPage, false)
-        _ = assertEquals(result.pageInfo.hasNextPage, true)
-      yield ()
-    }
-  }
-
-  test("should paginate clients (nth page, asc)") {
     clientsList.use { clients =>
       for
         result <- Clients
-          .find(CursorQueryAsc(first = Some(2), after = Some(clients(1).name)))
+          .find(
+            CursorQueryAsc(
+              query = Some("al"),
+              first = Some(2),
+              after = Some("Alice")
+            )
+          )
           .orFail
-        _ = assertEquals(
-          result.edges.map(_.node._id),
-          clients.slice(2, 4).map(_._id)
-        )
-        _ = assertEquals(result.pageInfo.totalCount, clients.length)
+        _ = assertEquals(result.pageInfo.totalCount, 6)
+        _ = assertEquals(result.pageInfo.startCursor, Some("Ally"))
+        _ = assertEquals(result.pageInfo.endCursor, Some("Mark Alexson"))
         _ = assertEquals(result.pageInfo.hasPreviousPage, true)
         _ = assertEquals(result.pageInfo.hasNextPage, true)
-      yield ()
-    }
-  }
-
-  test("should paginate clients (last page, asc)") {
-    clientsList.use { clients =>
-      for
-        result <- Clients
-          .find(CursorQueryAsc(first = Some(2), after = Some(clients(3).name)))
-          .orFail
-        _ = assertEquals(
-          result.edges.map(_.node._id),
-          clients.slice(4, 6).map(_._id)
-        )
-        _ = assertEquals(result.pageInfo.totalCount, clients.length)
-        _ = assertEquals(result.pageInfo.hasPreviousPage, true)
-        _ = assertEquals(result.pageInfo.hasNextPage, false)
-      yield ()
-    }
-  }
-
-  test("should paginate clients (first page, desc)") {
-    clientsList.use { clients =>
-      for
-        result <- Clients.find(CursorQueryDesc(last = Some(2))).orFail
-        _ = assertEquals(
-          result.edges.map(_.node._id),
-          clients.reverse.slice(0, 2).map(_._id)
-        )
-        _ = assertEquals(result.pageInfo.totalCount, clients.length)
-        _ = assertEquals(result.pageInfo.hasPreviousPage, false)
-        _ = assertEquals(result.pageInfo.hasNextPage, true)
-      yield ()
-    }
-  }
-
-  test("should paginate clients (nth page, desc)") {
-    clientsList.use { clients =>
-      for
-        result <- Clients
-          .find(CursorQueryDesc(last = Some(2), before = Some(clients(4).name)))
-          .orFail
-        _ = assertEquals(
-          result.edges.map(_.node._id),
-          clients.reverse.slice(2, 4).map(_._id)
-        )
-        _ = assertEquals(result.pageInfo.totalCount, clients.length)
-        _ = assertEquals(result.pageInfo.hasPreviousPage, true)
-        _ = assertEquals(result.pageInfo.hasNextPage, true)
-      yield ()
-    }
-  }
-
-  test("should paginate clients (last page, desc)") {
-    clientsList.use { clients =>
-      for
-        result <- Clients
-          .find(CursorQueryDesc(last = Some(2), before = Some(clients(2).name)))
-          .orFail
-        _ = assertEquals(
-          result.edges.map(_.node._id),
-          clients.reverse.slice(4, 6).map(_._id)
-        )
-        _ = assertEquals(result.pageInfo.totalCount, clients.length)
-        _ = assertEquals(result.pageInfo.hasPreviousPage, true)
-        _ = assertEquals(result.pageInfo.hasNextPage, false)
+        _ = assertEquals(result.edges.length, 2)
+        _ = assertEquals(result.edges.map(_.node), List(clients(2), clients(4)))
       yield ()
     }
   }
