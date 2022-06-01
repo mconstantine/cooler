@@ -4,3 +4,4 @@
 project/
 target/
 .scalafmt.conf
+node_modules/
