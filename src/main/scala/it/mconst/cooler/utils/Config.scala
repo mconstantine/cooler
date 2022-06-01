@@ -16,7 +16,11 @@ object Config extends App {
   case class ServerConfig(host: String, port: Int)
   case class DatabaseConfig(uri: String, name: String, encryptionKey: String)
 
-  private case class Config(server: ServerConfig, database: DatabaseConfig)
+  private case class Config(
+      server: ServerConfig,
+      database: DatabaseConfig,
+      defaultPageSize: Int
+  )
 
   private val configContent = open("src/main/resources/application.json").read()
 
@@ -36,4 +40,5 @@ object Config extends App {
 
   val server = config.server
   val database = config.database
+  val defaultPageSize = config.defaultPageSize
 }

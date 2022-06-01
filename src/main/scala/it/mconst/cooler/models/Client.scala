@@ -2,6 +2,11 @@ package it.mconst.cooler.models
 
 import cats.effect.IO
 import cats.syntax.apply._
+import com.mongodb.client.model.Aggregates
+import com.mongodb.client.model.BsonField
+import com.mongodb.client.model.Facet
+import com.mongodb.client.model.Field
+import com.mongodb.client.model.Filters
 import com.mongodb.client.model.Updates
 import com.osinka.i18n.Lang
 import io.circe.Decoder
@@ -15,13 +20,16 @@ import it.mconst.cooler.models.Client.PrivateUpdateData
 import it.mconst.cooler.models.user.User
 import it.mconst.cooler.utils.__
 import it.mconst.cooler.utils.Collection
+import it.mconst.cooler.utils.Config
 import it.mconst.cooler.utils.Document
 import it.mconst.cooler.utils.Error
 import it.mconst.cooler.utils.given
 import it.mconst.cooler.utils.Result._
 import it.mconst.cooler.utils.Timestamps
+import mongo4cats.bson.Document as Doc
 import mongo4cats.bson.ObjectId
 import mongo4cats.circe._
+import mongo4cats.codecs.MongoCodecProvider
 import mongo4cats.collection.operations.Filter
 import munit.Assertions
 import org.bson.BsonDateTime
@@ -44,7 +52,9 @@ abstract trait Client(
     createdAt: BsonDateTime,
     updatedAt: BsonDateTime
 ) extends Document
-    with Timestamps
+    with Timestamps {
+  def name: String
+}
 
 case class PrivateClient(
     _id: ObjectId,
@@ -73,7 +83,9 @@ case class PrivateClient(
       user,
       createdAt,
       updatedAt
-    )
+    ) {
+  override def name: String = s"$firstName $lastName"
+}
 
 case class BusinessClient(
     _id: ObjectId,
@@ -102,7 +114,9 @@ case class BusinessClient(
       user,
       createdAt,
       updatedAt
-    )
+    ) {
+  override def name: String = s"$businessName"
+}
 
 object Client {
   abstract trait CreationData(
@@ -113,7 +127,9 @@ object Client {
       addressStreet: String,
       addressStreetNumber: Option[String],
       addressEmail: String
-  )
+  ) {
+    def name: String
+  }
 
   case class PrivateCreationData(
       fiscalCode: String,
@@ -134,7 +150,9 @@ object Client {
         addressStreet,
         addressStreetNumber,
         addressEmail
-      )
+      ) {
+    override def name = s"${firstName} ${lastName}"
+  }
 
   case class BusinessCreationData(
       countryCode: String,
@@ -155,17 +173,17 @@ object Client {
         addressStreet,
         addressStreetNumber,
         addressEmail
-      )
+      ) {
+    override def name = businessName
+  }
 
-  given Encoder[CreationData] = new Encoder[CreationData]() {
+  given Encoder[CreationData] with Decoder[CreationData] with {
     override def apply(client: CreationData): Json = client match
       case privateCreationData: PrivateCreationData =>
         privateCreationData.asJson
       case businessCreationData: BusinessCreationData =>
         businessCreationData.asJson
-  }
 
-  given Decoder[CreationData] = new Decoder[CreationData]() {
     override def apply(c: HCursor): Decoder.Result[CreationData] =
       c.as[BusinessCreationData]
         .orElse[DecodingFailure, CreationData](c.as[PrivateCreationData])
@@ -173,10 +191,12 @@ object Client {
 
   given EntityEncoder[IO, PrivateCreationData] =
     jsonEncoderOf[IO, PrivateCreationData]
+
   given EntityDecoder[IO, PrivateCreationData] = jsonOf[IO, PrivateCreationData]
 
   given EntityEncoder[IO, BusinessCreationData] =
     jsonEncoderOf[IO, BusinessCreationData]
+
   given EntityDecoder[IO, BusinessCreationData] =
     jsonOf[IO, BusinessCreationData]
 
@@ -287,15 +307,13 @@ object Client {
         addressEmail
       )
 
-  given Encoder[UpdateData] = new Encoder[UpdateData]() {
+  given Encoder[UpdateData] with Decoder[UpdateData] with {
     override def apply(client: UpdateData): Json = client match
       case privateUpdateData: PrivateUpdateData =>
         privateUpdateData.asJson
       case businessUpdateData: BusinessUpdateData =>
         businessUpdateData.asJson
-  }
 
-  given Decoder[UpdateData] = new Decoder[UpdateData]() {
     override def apply(c: HCursor): Decoder.Result[UpdateData] =
       c.as[BusinessUpdateData]
         .orElse[DecodingFailure, UpdateData](c.as[PrivateUpdateData])
@@ -662,15 +680,149 @@ object Clients {
       client <- findById(_id)
       _ <- client.lift(collection.delete(_))
     yield client
+
+  def find(query: CursorQuery)(using
+      customer: User
+  )(using Lang): IO[Result[Cursor[Client]]] = {
+    val filterByCustomerAndAddName = Seq(
+      Aggregates.`match`(Filters.eq("user", customer._id)),
+      Aggregates.addFields(
+        Field(
+          "name",
+          Doc(
+            "$cond" -> Doc(
+              "if" -> Doc(
+                "$gt" -> List("$firstName", null)
+              ),
+              "then" -> Doc(
+                "$concat" -> List("$firstName", " ", "$lastName")
+              ),
+              "else" -> "$businessName"
+            )
+          )
+        )
+      )
+    )
+
+    val queryString = query match
+      case q: CursorQueryAsc  => q.query
+      case q: CursorQueryDesc => q.query
+
+    val findByQuery = queryString.fold(Seq.empty)(query =>
+      Seq(
+        Aggregates.`match`(Filters.regex("name", query, "i"))
+      )
+    )
+
+    val sortingOrder: 1 | -1 = query match
+      case _: CursorQueryAsc  => 1
+      case _: CursorQueryDesc => -1
+
+    val skipCriteria = query match
+      case q: CursorQueryAsc => Filters.gt("name", q.after.getOrElse(""))
+      case q: CursorQueryDesc =>
+        q.before.fold(Filters.empty)(Filters.lt("name", _))
+
+    val limit = query match
+      case q: CursorQueryAsc  => q.first
+      case q: CursorQueryDesc => q.last
+
+    val minCriteria = query match
+      case _: CursorQueryAsc  => Doc("$min" -> "$name")
+      case _: CursorQueryDesc => Doc("$max" -> "$name")
+
+    val maxCriteria = query match
+      case _: CursorQueryAsc  => Doc("$max" -> "$name")
+      case _: CursorQueryDesc => Doc("$min" -> "$name")
+
+    val rest = Seq(
+      Aggregates.sort(Doc("name" -> sortingOrder)),
+      Aggregates.facet(
+        Facet(
+          "global",
+          List(
+            Aggregates.group(
+              null,
+              List(
+                BsonField("totalCount", Doc("$sum" -> 1)),
+                BsonField("min", minCriteria),
+                BsonField("max", maxCriteria)
+              ).asJava
+            )
+          ).asJava
+        ),
+        Facet(
+          "data",
+          List(
+            Aggregates.`match`(skipCriteria),
+            Aggregates.limit(limit.getOrElse(Config.defaultPageSize))
+          ).asJava
+        )
+      ),
+      Aggregates.project(
+        Doc(
+          "edges" -> Doc(
+            "$map" -> Doc(
+              "input" -> "$data",
+              "as" -> "item",
+              "in" -> Doc(
+                "node" -> "$$item",
+                "cursor" -> "$$item.name"
+              )
+            )
+          ),
+          "global" -> Doc(
+            "$arrayElemAt" -> List("$global", 0)
+          ),
+          "order" -> Doc(
+            "$map" -> Doc(
+              "input" -> "$data",
+              "as" -> "item",
+              "in" -> "$$item.name"
+            )
+          )
+        )
+      ),
+      Aggregates.project(
+        Doc(
+          "edges" -> "$edges",
+          "global" -> "$global",
+          "min" -> Doc(
+            "$arrayElemAt" -> List(Doc("$slice" -> List("$order", 1)), 0)
+          ),
+          "max" -> Doc(
+            "$arrayElemAt" -> List(Doc("$slice" -> List("$order", -1)), 0)
+          )
+        )
+      ),
+      Aggregates.project(
+        Doc(
+          "edges" -> "$edges",
+          "pageInfo" -> Doc(
+            "totalCount" -> "$global.totalCount",
+            "startCursor" -> "$min",
+            "endCursor" -> "$max",
+            "hasPreviousPage" -> Doc("$ne" -> List("$global.min", "$min")),
+            "hasNextPage" -> Doc("$ne" -> List("$global.max", "$max"))
+          )
+        )
+      )
+    )
+
+    val aggregation = filterByCustomerAndAddName ++ findByQuery ++ rest
+
+    collection.use(
+      _.aggregateWithCodec[Cursor[Client]](aggregation).first
+        .map(_.toRight(Error(InternalServerError, __.ErrorUnknown)))
+    )
+  }
 }
 
-given Encoder[Client] = new Encoder[Client]() {
+given Encoder[Client] with Decoder[Client] with {
   override def apply(client: Client): Json = client match
     case privateClient: PrivateClient   => privateClient.asJson
     case businessClient: BusinessClient => businessClient.asJson
-}
 
-given Decoder[Client] = new Decoder[Client]() {
   override def apply(c: HCursor): Decoder.Result[Client] =
     c.as[BusinessClient].orElse[DecodingFailure, Client](c.as[PrivateClient])
 }

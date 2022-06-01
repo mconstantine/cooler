@@ -27,6 +27,7 @@ enum __(val key: String):
   case ErrorInvalidAccessToken extends __("error.auth.invalidAccessToken")
   case ErrorInvalidEmailOrPassword
       extends __("error.auth.invalidEmailOrPassword")
+  case ErrorUnknown extends __("error.unknown")
   case ErrorUserConflict extends __("error.user.conflict")
   case ErrorUserNotFound extends __("error.user.notFound")
   case ErrorUserRegisterForbidden extends __("error.user.register.forbidden")

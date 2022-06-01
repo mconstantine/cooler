@@ -7,5 +7,6 @@
     "uri": "mongodb://localhost:27017/cooler?maxPoolSize=20&w=majority&readPreference=primary&directConnection=true&ssl=false",
     "name": "cooler",
     "encryptionKey": "fb233db76df0f0c70226703d202a069554e899828bb63f0c"
-  }
+  },
+  "defaultPageSize": 20
 }

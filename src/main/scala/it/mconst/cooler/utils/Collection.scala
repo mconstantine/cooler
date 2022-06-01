@@ -18,6 +18,8 @@ import org.bson.BsonDateTime
 import org.bson.conversions.Bson
 import org.http4s.dsl.io._
 import scala.reflect.ClassTag
+import it.mconst.cooler.models.CursorQuery
+import it.mconst.cooler.models.Cursor
 
 abstract trait Document:
   val _id: ObjectId

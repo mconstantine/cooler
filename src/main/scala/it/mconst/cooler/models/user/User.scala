@@ -28,7 +28,6 @@ import it.mconst.cooler.utils.Result._
 import it.mconst.cooler.utils.Timestamps
 import mongo4cats.bson.ObjectId
 import mongo4cats.circe._
-import mongo4cats.codecs.MongoCodecProvider
 import mongo4cats.collection.operations.Filter
 import munit.Assertions
 import org.bson.BsonDateTime
@@ -46,7 +45,7 @@ object Password extends Validator[String, Password] {
   override def name = "Password"
 
   // FIXME: this could be called multiple times on a password that is already been encrypted.
-  // On a password that starts with "$2a$" this will save the clear password and mess everything
+  // On a password that starts with "$2a$" this will save the plain password and mess everything
   // up though. Is there another way to handle this?
   override def decode(s: String): Option[Password] =
     NonEmptyString

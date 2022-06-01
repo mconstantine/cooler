@@ -12,6 +12,9 @@ import it.mconst.cooler.utils.__
 import it.mconst.cooler.utils.Error
 import org.http4s.dsl.io._
 import cats.effect.IO
+import mongo4cats.collection.operations.Filter
+import it.mconst.cooler.models.Client.PrivateCreationData
+import it.mconst.cooler.models.Client.BusinessCreationData
 
 class ClientsCollectionTest extends CatsEffectSuite {
   val adminFixture = ResourceSuiteLocalFixture(
@@ -235,5 +238,171 @@ class ClientsCollectionTest extends CatsEffectSuite {
         .delete(client._id)
         .assertEquals(Left(Error(NotFound, __.ErrorClientNotFound)))
     yield ()
+  }
+
+  def clientsList = Resource.make(
+    {
+      val clients: List[Client.CreationData] = List(
+        makeTestBusinessClient(businessName = "Alice"),
+        makeTestBusinessClient(businessName = "Bob"),
+        makeTestBusinessClient(businessName = "Charlie"),
+        makeTestPrivateClient(firstName = "Mark", lastName = "Alison"),
+        makeTestPrivateClient(firstName = "Mark", lastName = "Bobson"),
+        makeTestPrivateClient(firstName = "Mark", lastName = "Charlieson")
+      )
+
+      import cats.syntax.parallel._
+
+      Clients.collection.use(_.deleteMany(Filter.empty)).flatMap { _ =>
+        clients
+          .map(Clients.create(_).orFail)
+          .parSequence
+          .map(_.sortWith(_.name < _.name))
+      }
+
+    }
+  )(_ => Clients.collection.use(_.deleteMany(Filter.empty)).void)
+
+  test("should find a client") {
+    clientsList.use { _ =>
+      Clients
+        .find(CursorQueryAsc(query = Some("ali")))
+        .orFail
+        .map(_.edges.map(_.node.name))
+        .assertEquals(List("Alice", "Mark Alison"))
+    }
+  }
+
+  test("should paginate clients (first page, asc)") {
+    clientsList.use { clients =>
+      for
+        result <- Clients.find(CursorQueryAsc(first = Some(2))).orFail
+        _ = assertEquals(
+          result.edges.map(_.node._id),
+          clients.slice(0, 2).map(_._id)
+        )
+        _ = assertEquals(result.pageInfo.totalCount, clients.length)
+        _ = assertEquals(result.pageInfo.hasPreviousPage, false)
+        _ = assertEquals(result.pageInfo.hasNextPage, true)
+      yield ()
+    }
+  }
+
+  test("should paginate clients (nth page, asc)") {
+    clientsList.use { clients =>
+      for
+        result <- Clients
+          .find(CursorQueryAsc(first = Some(2), after = Some(clients(1).name)))
+          .orFail
+        _ = assertEquals(
+          result.edges.map(_.node._id),
+          clients.slice(2, 4).map(_._id)
+        )
+        _ = assertEquals(result.pageInfo.totalCount, clients.length)
+        _ = assertEquals(result.pageInfo.hasPreviousPage, true)
+        _ = assertEquals(result.pageInfo.hasNextPage, true)
+      yield ()
+    }
+  }
+
+  test("should paginate clients (last page, asc)") {
+    clientsList.use { clients =>
+      for
+        result <- Clients
+          .find(CursorQueryAsc(first = Some(2), after = Some(clients(3).name)))
+          .orFail
+        _ = assertEquals(
+          result.edges.map(_.node._id),
+          clients.slice(4, 6).map(_._id)
+        )
+        _ = assertEquals(result.pageInfo.totalCount, clients.length)
+        _ = assertEquals(result.pageInfo.hasPreviousPage, true)
+        _ = assertEquals(result.pageInfo.hasNextPage, false)
+      yield ()
+    }
+  }
+
+  test("should paginate clients (first page, desc)") {
+    clientsList.use { clients =>
+      for
+        result <- Clients.find(CursorQueryDesc(last = Some(2))).orFail
+        _ = assertEquals(
+          result.edges.map(_.node._id),
+          clients.reverse.slice(0, 2).map(_._id)
+        )
+        _ = assertEquals(result.pageInfo.totalCount, clients.length)
+        _ = assertEquals(result.pageInfo.hasPreviousPage, false)
+        _ = assertEquals(result.pageInfo.hasNextPage, true)
+      yield ()
+    }
+  }
+
+  test("should paginate clients (nth page, desc)") {
+    clientsList.use { clients =>
+      for
+        result <- Clients
+          .find(CursorQueryDesc(last = Some(2), before = Some(clients(4).name)))
+          .orFail
+        _ = assertEquals(
+          result.edges.map(_.node._id),
+          clients.reverse.slice(2, 4).map(_._id)
+        )
+        _ = assertEquals(result.pageInfo.totalCount, clients.length)
+        _ = assertEquals(result.pageInfo.hasPreviousPage, true)
+        _ = assertEquals(result.pageInfo.hasNextPage, true)
+      yield ()
+    }
+  }
+
+  test("should paginate clients (last page, desc)") {
+    clientsList.use { clients =>
+      for
+        result <- Clients
+          .find(CursorQueryDesc(last = Some(2), before = Some(clients(2).name)))
+          .orFail
+        _ = assertEquals(
+          result.edges.map(_.node._id),
+          clients.reverse.slice(4, 6).map(_._id)
+        )
+        _ = assertEquals(result.pageInfo.totalCount, clients.length)
+        _ = assertEquals(result.pageInfo.hasPreviousPage, true)
+        _ = assertEquals(result.pageInfo.hasNextPage, false)
+      yield ()
+    }
+  }
+
+  test("should not include clients of other users when searching") {
+    clientsList.use { _ =>
+      for
+        user <- {
+          given Option[User] = Some(adminFixture())
+          Users
+            .register(
+              User.CreationData(
+                "Find exclusivity test",
+                "find-exclusivity-test@example.com",
+                "Abc123?!"
+              )
+            )
+            .orFail
+        }
+        client <- {
+          given User = user
+          Clients
+            .create(
+              makeTestBusinessClient(businessName = "Alice Alison Alinc")
+            )
+            .orFail
+        }
+        result <- {
+          given User = adminFixture()
+          Clients
+            .find(CursorQueryAsc(query = Some("ali")))
+            .orFail
+            .map(_.edges.map(_.node.name))
+        }
+        _ = assert(!result.contains("Alice Alison Alinc"))
+      yield ()
+    }
   }
 }

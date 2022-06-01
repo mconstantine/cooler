@@ -1,16 +1,25 @@
 package it.mconst.cooler.models
 
+import cats.data.NonEmptyList
+import cats.data.Validated
+import cats.effect.IO
 import com.osinka.i18n.Lang
 import io.circe.Decoder
 import io.circe.DecodingFailure
 import io.circe.Encoder
+import io.circe.generic.auto.deriveDecoder
+import io.circe.generic.auto.deriveEncoder
 import it.mconst.cooler.utils.__
+import it.mconst.cooler.utils.Document
 import it.mconst.cooler.utils.Error
 import it.mconst.cooler.utils.Result._
+import mongo4cats.bson.ObjectId
+import mongo4cats.circe._
+import mongo4cats.codecs.MongoCodecProvider
 import munit.Assertions
+import org.http4s.circe._
 import org.http4s.dsl.io._
-import cats.data.Validated
-import cats.data.NonEmptyList
+import org.http4s.EntityEncoder
 
 case class ValidationError(fieldName: String, message: __)(using Lang)
 type Validation[T] = Validated[NonEmptyList[ValidationError], T]
@@ -91,3 +100,34 @@ object Email extends Validator[String, Email] {
       ValidationError(fieldName, __.ErrorDecodeInvalidEmailFormat)
     )
 }
+
+case class PageInfo(
+    totalCount: Int,
+    startCursor: Option[String],
+    endCursor: Option[String],
+    hasPreviousPage: Boolean,
+    hasNextPage: Boolean
+)
+
+given EntityEncoder[IO, PageInfo] = jsonEncoderOf[IO, PageInfo]
+
+case class Edge[T <: Document](
+    node: T,
+    cursor: String
+)
+
+case class Cursor[T <: Document](pageInfo: PageInfo, edges: List[Edge[T]])
+
+trait CursorQuery(query: Option[String] = None)
+
+case class CursorQueryAsc(
+    query: Option[String] = None,
+    first: Option[Int] = None,
+    after: Option[String] = None
+) extends CursorQuery(query)
+
+case class CursorQueryDesc(
+    query: Option[String] = None,
+    last: Option[Int] = None,
+    before: Option[String] = None
+) extends CursorQuery(query)

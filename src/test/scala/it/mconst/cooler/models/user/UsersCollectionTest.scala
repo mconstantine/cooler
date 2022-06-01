@@ -319,7 +319,7 @@ class UsersCollectionTest extends CatsEffectSuite {
           .login(User.LoginData(user.email, userData.password))
           .orFail
         // expiration must be different in order for the tokens to be different
-        _ <- IO.delay(Thread.sleep(500))
+        _ <- IO.delay(Thread.sleep(1000))
         freshTokens <- Users
           .refreshToken(User.RefreshTokenData(authTokens.refreshToken))
           .orFail
@@ -348,7 +348,7 @@ class UsersCollectionTest extends CatsEffectSuite {
           .login(User.LoginData(user.email, userData.password))
           .orFail
         // expiration must be different in order for the tokens to be different
-        _ <- IO.delay(Thread.sleep(500))
+        _ <- IO.delay(Thread.sleep(1000))
         _ <- Users
           .refreshToken(User.RefreshTokenData(authTokens.accessToken))
           .assertEquals(
