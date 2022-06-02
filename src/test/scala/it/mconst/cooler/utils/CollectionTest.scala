@@ -26,7 +26,7 @@ class CollectionTest extends CatsEffectSuite {
   val dropFixture =
     ResourceSuiteLocalFixture("drop", Resource.make(IO.unit)(_ => people.drop))
 
-  val peopleList = Resource.make({
+  val peopleList = Resource.make {
     val peopleData: List[Person] = List(
       Person(ObjectId(), "Asd", ""),
       Person(ObjectId(), "Bsd", ""),
@@ -42,7 +42,7 @@ class CollectionTest extends CatsEffectSuite {
     people.use(_.deleteMany(Filter.empty)).flatMap { _ =>
       peopleData.map(people.create(_).orFail).parSequence
     }
-  })(_ => people.use(_.deleteMany(Filter.empty).void))
+  }(_ => people.use(_.deleteMany(Filter.empty).void))
 
   override val munitFixtures = List(dropFixture)
 

@@ -6,18 +6,27 @@ import it.mconst.cooler.utils.TestUtils._
 import cats.effect.IO
 import cats.effect.kernel.Resource
 import com.osinka.i18n.Lang
+import io.circe.generic.auto._
 import it.mconst.cooler.middlewares.UserMiddleware
 import it.mconst.cooler.models.asBusiness
 import it.mconst.cooler.models.asPrivate
 import it.mconst.cooler.models.Client
 import it.mconst.cooler.models.Clients
+import it.mconst.cooler.models.Cursor
+import it.mconst.cooler.models.Edge
 import it.mconst.cooler.models.given
+import it.mconst.cooler.models.PageInfo
 import it.mconst.cooler.models.user.User
 import it.mconst.cooler.models.user.Users
+import it.mconst.cooler.utils.__
+import it.mconst.cooler.utils.Error
+import mongo4cats.collection.operations.Filter
 import munit.Assertions
+import org.http4s.circe._
 import org.http4s.client.{Client as HttpClient}
 import org.http4s.client.dsl.io._
 import org.http4s.dsl.io._
+import org.http4s.EntityDecoder
 import org.http4s.implicits._
 import org.http4s.Uri
 
@@ -31,21 +40,19 @@ class ClientRoutesTest extends CatsEffectSuite {
 
   val adminFixture = ResourceSuiteLocalFixture(
     "admin",
-    Resource.make(
-      {
-        given Option[User] = None
+    Resource.make {
+      given Option[User] = None
 
-        Users
-          .register(
-            User.CreationData(
-              "Client routes test admin",
-              "client-routes-test-admin@example.com",
-              "S0m3P4ssw0rd!?"
-            )
+      Users
+        .register(
+          User.CreationData(
+            "Client routes test admin",
+            "client-routes-test-admin@example.com",
+            "S0m3P4ssw0rd!?"
           )
-          .orFail
-      }
-    )(_ =>
+        )
+        .orFail
+    }(_ =>
       Users.collection.use(_.drop).both(Clients.collection.use(_.drop)).void
     )
   )
@@ -64,6 +71,54 @@ class ClientRoutesTest extends CatsEffectSuite {
       )
   }
 
+  def clientsList = Resource.make {
+    val clients = List(
+      makeTestPrivateClient(firstName = "A", lastName = "A"),
+      makeTestPrivateClient(firstName = "B", lastName = "B"),
+      makeTestPrivateClient(firstName = "C", lastName = "D"),
+      makeTestBusinessClient(businessName = "D D"),
+      makeTestBusinessClient(businessName = "E E"),
+      makeTestBusinessClient(businessName = "F F")
+    )
+
+    import cats.syntax.parallel._
+    given User = adminFixture()
+
+    Clients.collection
+      .use(_.deleteMany(Filter.empty))
+      .flatMap(_ => clients.map(Clients.create(_).orFail).parSequence)
+  }(_ => Clients.collection.use(_.deleteMany(Filter.empty)).void)
+
+  test("should find clients (asc)") {
+    clientsList.use { clients =>
+      given EntityDecoder[IO, Cursor[Client]] = jsonOf[IO, Cursor[Client]]
+
+      GET(uri"/?query=d&first=1&after=C%20D")
+        .sign(adminFixture())
+        .shouldRespond(
+          Cursor[Client](
+            PageInfo(2, Some("D D"), Some("D D"), true, false),
+            List(Edge(clients(3), "D D"))
+          )
+        )
+    }
+  }
+
+  test("should find clients (desc)") {
+    clientsList.use { clients =>
+      given EntityDecoder[IO, Cursor[Client]] = jsonOf[IO, Cursor[Client]]
+
+      GET(uri"/?query=d&last=1&before=D%20D")
+        .sign(adminFixture())
+        .shouldRespond(
+          Cursor[Client](
+            PageInfo(2, Some("C D"), Some("C D"), true, false),
+            List(Edge(clients(2), "C D"))
+          )
+        )
+    }
+  }
+
   test("should find a client by id") {
     val admin = adminFixture()
     val data =
@@ -79,6 +134,55 @@ class ClientRoutesTest extends CatsEffectSuite {
           (c: Client) => c.asPrivate.addressEmail,
           data.addressEmail
         )
+    yield ()
+  }
+
+  test("should update a client") {
+    val admin = adminFixture()
+
+    val clientData =
+      makeTestPrivateClient(addressEmail = "update-route-test@example.com")
+
+    val updateData =
+      makeTestBusinessClient(addressEmail = "updated-through-route@example.com")
+
+    given User = admin
+
+    for
+      client <- Clients.create(clientData).orFail
+      _ <- PUT(
+        updateData,
+        Uri.fromString(s"/${client._id.toString}").getOrElse(fail(""))
+      )
+        .sign(admin)
+        .shouldRespondLike(
+          (c: Client) => c.asBusiness.addressEmail,
+          updateData.addressEmail
+        )
+    yield ()
+  }
+
+  test("should delete a client") {
+    val admin = adminFixture()
+
+    val clientData =
+      makeTestBusinessClient(addressEmail = "delete-route-test@example.com")
+
+    given User = admin
+
+    for
+      client <- Clients.create(clientData).orFail
+      _ <- DELETE(
+        Uri.fromString(s"/${client._id.toString}").getOrElse(fail(""))
+      )
+        .sign(admin)
+        .shouldRespondLike(
+          (c: Client) => c.asBusiness.addressEmail,
+          clientData.addressEmail
+        )
+      _ <- Clients
+        .findById(client.asBusiness._id)
+        .assertEquals(Left(Error(NotFound, __.ErrorClientNotFound)))
     yield ()
   }
 }

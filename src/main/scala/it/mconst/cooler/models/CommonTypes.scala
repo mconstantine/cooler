@@ -120,6 +120,25 @@ case class Cursor[T <: Document](pageInfo: PageInfo, edges: List[Edge[T]])
 
 trait CursorQuery(query: Option[String] = None)
 
+object CursorQuery {
+  def apply(
+      query: Option[String] = None,
+      first: Option[Int] = None,
+      after: Option[String] = None,
+      last: Option[Int] = None,
+      before: Option[String] = None
+  )(using Lang): Result[CursorQuery] = {
+    val firstOrAfter = first.isDefined || after.isDefined
+    val lastOrBefore = last.isDefined || before.isDefined
+
+    if firstOrAfter && lastOrBefore then
+      Left(Error(BadRequest, __.ErrorDecodeInvalidQuery))
+    else if lastOrBefore then Right(CursorQueryDesc(query, last, before))
+    else if firstOrAfter then Right(CursorQueryAsc(query, first, after))
+    else Right(CursorQueryAsc(query))
+  }
+}
+
 case class CursorQueryAsc(
     query: Option[String] = None,
     first: Option[Int] = None,

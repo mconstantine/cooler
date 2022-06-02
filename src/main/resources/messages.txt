@@ -8,6 +8,7 @@ error.decode.invalidEmailFormat=Invalid e-mail address format
 error.decode.invalidObjectId=Invalid Object ID
 error.decode.invalidPasswordFormat=Invalid password format
 error.decode.invalidProvinceCode=Invalid province code
+error.decode.invalidQuery=Invalid query. You can mix a query string with either first and after, OR last and before
 error.decode.validationErrors=Some data is not valid
 error.document.notFound.afterInsert=Inserted document wasn''t found
 error.document.notFound.afterUpdate=Updated document wasn''t found

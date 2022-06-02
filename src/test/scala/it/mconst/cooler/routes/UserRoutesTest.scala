@@ -28,7 +28,7 @@ class UserRoutesTest extends CatsEffectSuite {
 
   val adminFixture = ResourceSuiteLocalFixture(
     "admin",
-    Resource.make({
+    Resource.make {
       val adminData: User.CreationData = User.CreationData(
         "User routes test admin",
         "user-routes-test-admin@example.com",
@@ -37,7 +37,7 @@ class UserRoutesTest extends CatsEffectSuite {
 
       given Option[User] = None
       Users.register(adminData).orFail
-    })(_ => Users.collection.use(_.drop))
+    }(_ => Users.collection.use(_.drop))
   )
 
   override val munitFixtures = List(adminFixture)

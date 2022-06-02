@@ -19,7 +19,7 @@ import it.mconst.cooler.models.Client.BusinessCreationData
 class ClientsCollectionTest extends CatsEffectSuite {
   val adminFixture = ResourceSuiteLocalFixture(
     "admin",
-    Resource.make({
+    Resource.make {
       given Option[User] = None
 
       Users
@@ -31,7 +31,7 @@ class ClientsCollectionTest extends CatsEffectSuite {
           )
         )
         .orFail
-    })(_ =>
+    }(_ =>
       Users.collection
         .use(_.drop)
         .both(Clients.collection.use(_.drop))
@@ -240,30 +240,28 @@ class ClientsCollectionTest extends CatsEffectSuite {
     yield ()
   }
 
-  def clientsList = Resource.make(
-    {
-      val clients: List[Client.CreationData] = List(
-        makeTestBusinessClient(businessName = "Alex"),
-        makeTestBusinessClient(businessName = "Alice"),
-        makeTestBusinessClient(businessName = "Ally"),
-        makeTestBusinessClient(businessName = "Bob"),
-        makeTestPrivateClient(firstName = "Mark", lastName = "Alexson"),
-        makeTestPrivateClient(firstName = "Mark", lastName = "Alison"),
-        makeTestPrivateClient(firstName = "Mark", lastName = "Allyson"),
-        makeTestPrivateClient(firstName = "Mark", lastName = "Bobson")
-      )
+  def clientsList = Resource.make {
+    val clients: List[Client.CreationData] = List(
+      makeTestBusinessClient(businessName = "Alex"),
+      makeTestBusinessClient(businessName = "Alice"),
+      makeTestBusinessClient(businessName = "Ally"),
+      makeTestBusinessClient(businessName = "Bob"),
+      makeTestPrivateClient(firstName = "Mark", lastName = "Alexson"),
+      makeTestPrivateClient(firstName = "Mark", lastName = "Alison"),
+      makeTestPrivateClient(firstName = "Mark", lastName = "Allyson"),
+      makeTestPrivateClient(firstName = "Mark", lastName = "Bobson")
+    )
 
-      import cats.syntax.parallel._
+    import cats.syntax.parallel._
 
-      Clients.collection.use(_.deleteMany(Filter.empty)).flatMap { _ =>
-        clients
-          .map(Clients.create(_).orFail)
-          .parSequence
-          .map(_.sortWith(_.name < _.name))
-      }
-
+    Clients.collection.use(_.deleteMany(Filter.empty)).flatMap { _ =>
+      clients
+        .map(Clients.create(_).orFail)
+        .parSequence
+        .map(_.sortWith(_.name < _.name))
     }
-  )(_ => Clients.collection.use(_.deleteMany(Filter.empty)).void)
+
+  }(_ => Clients.collection.use(_.deleteMany(Filter.empty)).void)
 
   test("should find a client") {
     clientsList.use { clients =>
