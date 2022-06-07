@@ -37,7 +37,7 @@ import org.http4s.EntityDecoder
 import org.http4s.EntityEncoder
 import scala.collection.JavaConverters.*
 
-abstract trait Client(
+sealed abstract trait Client(
     _id: ObjectId,
     addressCountry: CountryCode,
     addressProvince: ProvinceCode,
@@ -54,7 +54,7 @@ abstract trait Client(
   def name: String
 }
 
-case class PrivateClient(
+final case class PrivateClient(
     _id: ObjectId,
     fiscalCode: NonEmptyString,
     firstName: NonEmptyString,
@@ -85,7 +85,7 @@ case class PrivateClient(
   override def name: String = s"$firstName $lastName"
 }
 
-case class BusinessClient(
+final case class BusinessClient(
     _id: ObjectId,
     countryCode: CountryCode,
     businessName: NonEmptyString,
@@ -117,7 +117,7 @@ case class BusinessClient(
 }
 
 object Client {
-  abstract trait CreationData(
+  sealed abstract trait CreationData(
       addressCountry: String,
       addressProvince: String,
       addressZIP: String,
@@ -129,7 +129,7 @@ object Client {
     def name: String
   }
 
-  case class PrivateCreationData(
+  final case class PrivateCreationData(
       fiscalCode: String,
       firstName: String,
       lastName: String,
@@ -152,7 +152,7 @@ object Client {
     override def name = s"${firstName} ${lastName}"
   }
 
-  case class BusinessCreationData(
+  final case class BusinessCreationData(
       countryCode: String,
       businessName: String,
       vatNumber: String,
@@ -201,7 +201,7 @@ object Client {
   given EntityEncoder[IO, CreationData] = jsonEncoderOf[IO, CreationData]
   given EntityDecoder[IO, CreationData] = jsonOf[IO, CreationData]
 
-  abstract trait ValidCreationData(
+  sealed abstract trait ValidCreationData(
       addressCountry: CountryCode,
       addressProvince: ProvinceCode,
       addressZIP: NonEmptyString,
@@ -211,7 +211,7 @@ object Client {
       addressEmail: Email
   )
 
-  case class ValidPrivateCreationData(
+  final case class ValidPrivateCreationData(
       fiscalCode: NonEmptyString,
       firstName: NonEmptyString,
       lastName: NonEmptyString,
@@ -232,7 +232,7 @@ object Client {
         addressEmail
       )
 
-  case class ValidBusinessCreationData(
+  final case class ValidBusinessCreationData(
       countryCode: CountryCode,
       businessName: NonEmptyString,
       vatNumber: NonEmptyString,
@@ -253,7 +253,7 @@ object Client {
         addressEmail
       )
 
-  abstract trait UpdateData(
+  sealed abstract trait UpdateData(
       addressCountry: Option[String],
       addressProvince: Option[String],
       addressZIP: Option[String],
@@ -263,7 +263,7 @@ object Client {
       addressEmail: Option[String]
   )
 
-  case class PrivateUpdateData(
+  final case class PrivateUpdateData(
       fiscalCode: Option[String] = None,
       firstName: Option[String] = None,
       lastName: Option[String] = None,
@@ -284,7 +284,7 @@ object Client {
         addressEmail
       )
 
-  case class BusinessUpdateData(
+  final case class BusinessUpdateData(
       countryCode: Option[String] = None,
       businessName: Option[String] = None,
       vatNumber: Option[String] = None,
@@ -320,7 +320,7 @@ object Client {
   given EntityEncoder[IO, UpdateData] = jsonEncoderOf[IO, UpdateData]
   given EntityDecoder[IO, UpdateData] = jsonOf[IO, UpdateData]
 
-  abstract trait ValidUpdateData(
+  sealed abstract trait ValidUpdateData(
       addressCountry: Option[CountryCode],
       addressProvince: Option[ProvinceCode],
       addressZIP: Option[NonEmptyString],
@@ -330,7 +330,7 @@ object Client {
       addressEmail: Option[Email]
   )
 
-  case class ValidPrivateUpdateData(
+  final case class ValidPrivateUpdateData(
       fiscalCode: Option[NonEmptyString],
       firstName: Option[NonEmptyString],
       lastName: Option[NonEmptyString],
@@ -351,7 +351,7 @@ object Client {
         addressEmail
       )
 
-  case class ValidBusinessUpdateData(
+  final case class ValidBusinessUpdateData(
       countryCode: Option[CountryCode],
       businessName: Option[NonEmptyString],
       vatNumber: Option[NonEmptyString],

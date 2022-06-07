@@ -32,8 +32,8 @@ object JWT {
   case object UserRefresh extends TokenType:
     val name = "user_refresh"
 
-  case class UnknownTokenType(name: String) extends TokenType
-  case class AuthTokens(val accessToken: String, val refreshToken: String)
+  final case class UnknownTokenType(name: String) extends TokenType
+  final case class AuthTokens(val accessToken: String, val refreshToken: String)
 
   given EntityEncoder[IO, AuthTokens] = jsonEncoderOf[IO, AuthTokens]
   given EntityDecoder[IO, AuthTokens] = jsonOf[IO, AuthTokens]

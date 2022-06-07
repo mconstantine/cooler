@@ -6,17 +6,21 @@ import io.circe.syntax.*
 import java.io.File
 import scala.io.Source
 
-object Config extends App {
+object Config {
   private def open(path: String) = new File(path)
 
   extension (file: File) {
     def read() = Source.fromFile(file).getLines().mkString
   }
 
-  case class ServerConfig(host: String, port: Int)
-  case class DatabaseConfig(uri: String, name: String, encryptionKey: String)
+  final case class ServerConfig(host: String, port: Int)
+  final case class DatabaseConfig(
+      uri: String,
+      name: String,
+      encryptionKey: String
+  )
 
-  private case class Config(
+  private final case class Config(
       server: ServerConfig,
       database: DatabaseConfig,
       defaultPageSize: Int

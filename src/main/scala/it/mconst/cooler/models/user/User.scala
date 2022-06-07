@@ -65,7 +65,7 @@ object Password extends Validator[String, Password] {
     )
 }
 
-case class User(
+final case class User(
     _id: ObjectId,
     name: NonEmptyString,
     email: Email,
@@ -79,7 +79,7 @@ given EntityEncoder[IO, User] = jsonEncoderOf[IO, User]
 given EntityDecoder[IO, User] = jsonOf[IO, User]
 
 object User {
-  case class CreationData(
+  final case class CreationData(
       name: String,
       email: String,
       password: String
@@ -87,13 +87,13 @@ object User {
   given EntityDecoder[IO, CreationData] = jsonOf[IO, CreationData]
   given EntityEncoder[IO, CreationData] = jsonEncoderOf[IO, CreationData]
 
-  case class ValidCreationData(
+  final case class ValidCreationData(
       name: NonEmptyString,
       email: Email,
       password: Password
   )
 
-  case class UpdateData(
+  final case class UpdateData(
       name: Option[String],
       email: Option[String],
       password: Option[String]
@@ -101,18 +101,20 @@ object User {
   given EntityDecoder[IO, UpdateData] = jsonOf[IO, UpdateData]
   given EntityEncoder[IO, UpdateData] = jsonEncoderOf[IO, UpdateData]
 
-  case class ValidUpdateData(
+  final case class ValidUpdateData(
       name: Option[NonEmptyString],
       email: Option[Email],
       password: Option[Password]
   )
 
-  case class RefreshTokenData(refreshToken: String)
+  final case class RefreshTokenData(refreshToken: String)
+
   given EntityDecoder[IO, RefreshTokenData] = jsonOf[IO, RefreshTokenData]
   given EntityEncoder[IO, RefreshTokenData] =
     jsonEncoderOf[IO, RefreshTokenData]
 
-  case class LoginData(email: Email, password: String)
+  final case class LoginData(email: Email, password: String)
+
   given EntityDecoder[IO, LoginData] = jsonOf[IO, LoginData]
   given EntityEncoder[IO, LoginData] = jsonEncoderOf[IO, LoginData]
 

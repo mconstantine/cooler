@@ -49,7 +49,7 @@ given Encoder[BsonDateTime] with Decoder[BsonDateTime] with {
     Decoder.decodeLong.map(BsonDateTime(_))(cursor)
 }
 
-case class Collection[Doc <: Document: ClassTag](name: String)(using
+final case class Collection[Doc <: Document: ClassTag](name: String)(using
     MongoCodecProvider[Doc]
 ) {
   def use[R](op: MongoCollection[IO, Doc] => IO[R]) =

@@ -21,7 +21,7 @@ import org.http4s.circe.*
 import org.http4s.dsl.io.*
 import org.http4s.EntityEncoder
 
-case class ValidationError(fieldName: String, message: __)(using Lang)
+final case class ValidationError(fieldName: String, message: __)(using Lang)
 type Validation[T] = Validated[NonEmptyList[ValidationError], T]
 
 extension [T](validation: Validation[T]) {
@@ -34,7 +34,7 @@ extension [T](validation: Validation[T]) {
   )
 }
 
-trait Validator[I, O](using encoder: Encoder[I], decoder: Decoder[I]) {
+abstract trait Validator[I, O](using encoder: Encoder[I], decoder: Decoder[I]) {
   def name: String
   def decode(input: I): Option[O]
 
@@ -101,7 +101,7 @@ object Email extends Validator[String, Email] {
     )
 }
 
-case class PageInfo(
+final case class PageInfo(
     totalCount: Int,
     startCursor: Option[String],
     endCursor: Option[String],
@@ -111,14 +111,14 @@ case class PageInfo(
 
 given EntityEncoder[IO, PageInfo] = jsonEncoderOf[IO, PageInfo]
 
-case class Edge[T <: Document](
+final case class Edge[T <: Document](
     node: T,
     cursor: String
 )
 
-case class Cursor[T <: Document](pageInfo: PageInfo, edges: List[Edge[T]])
+final case class Cursor[T <: Document](pageInfo: PageInfo, edges: List[Edge[T]])
 
-trait CursorQuery(query: Option[String] = None)
+sealed trait CursorQuery(query: Option[String] = None)
 
 object CursorQuery {
   def apply(
@@ -139,13 +139,13 @@ object CursorQuery {
   }
 }
 
-case class CursorQueryAsc(
+final case class CursorQueryAsc(
     query: Option[String] = None,
     first: Option[Int] = None,
     after: Option[String] = None
 ) extends CursorQuery(query)
 
-case class CursorQueryDesc(
+final case class CursorQueryDesc(
     query: Option[String] = None,
     last: Option[Int] = None,
     before: Option[String] = None

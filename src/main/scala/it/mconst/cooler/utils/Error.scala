@@ -9,7 +9,7 @@ import org.http4s.circe.*
 import org.http4s.EntityEncoder
 import org.http4s.Status
 
-case class Error(
+final case class Error(
     status: Status,
     messageKey: __,
     extras: Option[Map[String, String]] = None
