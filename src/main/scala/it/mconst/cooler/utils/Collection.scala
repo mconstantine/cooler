@@ -1,31 +1,38 @@
 package it.mconst.cooler.utils
 
-import cats.effect._
+import cats.effect.*
 import cats.effect.unsafe.implicits.global
-import com.mongodb.client.model.{Filters, Updates}
 import com.mongodb.client.model.Aggregates
 import com.mongodb.client.model.BsonField
 import com.mongodb.client.model.Facet
+import com.mongodb.client.model.Filters
+import com.mongodb.client.model.Updates
 import com.osinka.i18n.Lang
-import io.circe.{Encoder, Decoder, Json, HCursor}
-import io.circe.generic.auto._
+import io.circe.Decoder
+import io.circe.Encoder
+import io.circe.generic.auto.*
+import io.circe.HCursor
+import io.circe.Json
 import it.mconst.cooler.models.Cursor
 import it.mconst.cooler.models.CursorQuery
 import it.mconst.cooler.models.CursorQueryAsc
 import it.mconst.cooler.models.CursorQueryDesc
-import it.mconst.cooler.utils.{Config, Error, Translations}
-import it.mconst.cooler.utils.Result._
+import it.mconst.cooler.utils.Config
+import it.mconst.cooler.utils.Error
+import it.mconst.cooler.utils.Result.*
+import it.mconst.cooler.utils.Translations
 import mongo4cats.bson.Document as Doc
 import mongo4cats.bson.ObjectId
-import mongo4cats.circe._
-import mongo4cats.client._
+import mongo4cats.circe.*
+import mongo4cats.client.*
 import mongo4cats.codecs.MongoCodecProvider
 import mongo4cats.collection.MongoCollection
-import mongo4cats.collection.operations.{Filter, Update}
+import mongo4cats.collection.operations.Filter
+import mongo4cats.collection.operations.Update
 import org.bson.BsonDateTime
 import org.bson.conversions.Bson
-import org.http4s.dsl.io._
-import scala.collection.JavaConverters._
+import org.http4s.dsl.io.*
+import scala.collection.JavaConverters.*
 import scala.reflect.ClassTag
 
 abstract trait Document:

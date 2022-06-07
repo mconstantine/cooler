@@ -1,6 +1,7 @@
 package it.mconst.cooler.utils
 
-import com.osinka.i18n.{Messages, Lang}
+import com.osinka.i18n.Lang
+import com.osinka.i18n.Messages
 import org.http4s.headers.`Accept-Language`
 import org.http4s.LanguageTag
 

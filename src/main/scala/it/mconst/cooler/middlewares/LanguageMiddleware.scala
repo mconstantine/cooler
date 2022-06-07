@@ -1,21 +1,23 @@
 package it.mconst.cooler.middlewares
 
-import cats.{Applicative, Functor, Monad}
-import cats.data.{Kleisli, OptionT}
+import cats.Applicative
+import cats.data.Kleisli
+import cats.data.OptionT
 import cats.effect.IO
-import cats.syntax.all._
+import cats.Functor
+import cats.Monad
+import cats.syntax.all.*
 import com.osinka.i18n.Lang
 import it.mconst.cooler.utils.Translations
-import org.http4s.{
-  ContextRequest,
-  ContextRoutes,
-  LanguageTag,
-  Request,
-  Response,
-  Status
-}
-import org.http4s.headers.{`Accept-Language`, `Content-Language`}
+import org.http4s.ContextRequest
+import org.http4s.ContextRoutes
+import org.http4s.headers.`Accept-Language`
+import org.http4s.headers.`Content-Language`
+import org.http4s.LanguageTag
+import org.http4s.Request
+import org.http4s.Response
 import org.http4s.server.ContextMiddleware
+import org.http4s.Status
 
 type LanguageRequest[F[_]] = ContextRequest[F, Lang]
 

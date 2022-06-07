@@ -1,8 +1,13 @@
 package it.mconst.cooler
 
-import cats.effect.{ExitCode, IO, IOApp}
-import com.comcast.ip4s.{Host, Port}
-import it.mconst.cooler.routes.{PublicRoutes, UserRoutes}
+import cats.effect.ExitCode
+import cats.effect.IO
+import cats.effect.IOApp
+import com.comcast.ip4s.Host
+import com.comcast.ip4s.Port
+import it.mconst.cooler.routes.ClientRoutes
+import it.mconst.cooler.routes.PublicRoutes
+import it.mconst.cooler.routes.UserRoutes
 import it.mconst.cooler.utils.Config
 import org.http4s.ember.server.EmberServerBuilder
 import org.http4s.server.Router
@@ -10,7 +15,8 @@ import org.http4s.server.Router
 object Server extends IOApp {
   val services = Router(
     "/" -> PublicRoutes(),
-    "/users" -> UserRoutes()
+    "/users" -> UserRoutes(),
+    "/clients" -> ClientRoutes()
   )
 
   val app = Router("/api" -> services).orNotFound

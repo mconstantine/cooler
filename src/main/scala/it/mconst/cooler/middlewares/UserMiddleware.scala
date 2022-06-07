@@ -1,21 +1,24 @@
 package it.mconst.cooler.middlewares
 
-import cats._
-import cats.data._
-import cats.effect._
-import cats.implicits._
+import cats.*
+import cats.data.*
+import cats.effect.*
+import cats.implicits.*
 import com.osinka.i18n.Lang
-import it.mconst.cooler.models.user.{JWT, User}
-import it.mconst.cooler.utils.{__, Error, Translations}
-import it.mconst.cooler.utils.Result._
+import it.mconst.cooler.models.user.JWT
+import it.mconst.cooler.models.user.User
+import it.mconst.cooler.utils.__
+import it.mconst.cooler.utils.Error
 import it.mconst.cooler.utils.given
-import org.http4s._
-import org.http4s.dsl.io._
-import org.http4s.headers._
-import org.http4s.server._
+import it.mconst.cooler.utils.Result.*
+import it.mconst.cooler.utils.Translations
+import org.http4s.*
+import org.http4s.dsl.io.*
+import org.http4s.headers.*
+import org.http4s.server.*
 
 object UserMiddleware {
-  case class UserContext(user: User, lang: Lang)
+  final case class UserContext(user: User, lang: Lang)
 
   private val authUser: Kleisli[IO, Request[IO], Result[UserContext]] =
     Kleisli(request =>

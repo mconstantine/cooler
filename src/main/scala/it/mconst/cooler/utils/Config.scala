@@ -1,8 +1,8 @@
 package it.mconst.cooler.utils
 
-import io.circe.generic.auto._
-import io.circe.parser._
-import io.circe.syntax._
+import io.circe.generic.auto.*
+import io.circe.parser.*
+import io.circe.syntax.*
 import java.io.File
 import scala.io.Source
 

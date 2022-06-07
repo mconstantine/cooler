@@ -1,7 +1,7 @@
 package it.mconst.cooler.models
 
 import cats.effect.IO
-import cats.syntax.apply._
+import cats.syntax.apply.*
 import com.mongodb.client.model.Aggregates
 import com.mongodb.client.model.Field
 import com.mongodb.client.model.Filters
@@ -10,10 +10,10 @@ import com.osinka.i18n.Lang
 import io.circe.Decoder
 import io.circe.DecodingFailure
 import io.circe.Encoder
-import io.circe.generic.auto._
+import io.circe.generic.auto.*
 import io.circe.HCursor
 import io.circe.Json
-import io.circe.syntax._
+import io.circe.syntax.*
 import it.mconst.cooler.models.Client.PrivateUpdateData
 import it.mconst.cooler.models.user.User
 import it.mconst.cooler.utils.__
@@ -22,20 +22,20 @@ import it.mconst.cooler.utils.Config
 import it.mconst.cooler.utils.Document
 import it.mconst.cooler.utils.Error
 import it.mconst.cooler.utils.given
-import it.mconst.cooler.utils.Result._
+import it.mconst.cooler.utils.Result.*
 import it.mconst.cooler.utils.Timestamps
 import mongo4cats.bson.Document as Doc
 import mongo4cats.bson.ObjectId
-import mongo4cats.circe._
+import mongo4cats.circe.*
 import mongo4cats.codecs.MongoCodecProvider
 import mongo4cats.collection.operations.Filter
 import munit.Assertions
 import org.bson.BsonDateTime
-import org.http4s.circe._
-import org.http4s.dsl.io._
+import org.http4s.circe.*
+import org.http4s.dsl.io.*
 import org.http4s.EntityDecoder
 import org.http4s.EntityEncoder
-import scala.collection.JavaConverters._
+import scala.collection.JavaConverters.*
 
 abstract trait Client(
     _id: ObjectId,

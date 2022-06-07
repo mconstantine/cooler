@@ -2,8 +2,10 @@ package it.mconst.cooler.utils
 
 import cats.Applicative
 import cats.effect.IO
-import org.http4s.{EntityBody, EntityEncoder, Response}
-import org.http4s.dsl.io._
+import org.http4s.dsl.io.*
+import org.http4s.EntityBody
+import org.http4s.EntityEncoder
+import org.http4s.Response
 
 object Result {
   type Result[T] = Either[Error, T]

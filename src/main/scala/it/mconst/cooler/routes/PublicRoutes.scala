@@ -2,12 +2,14 @@ package it.mconst.cooler.routes
 
 import cats.effect.IO
 import com.osinka.i18n.Lang
-import it.mconst.cooler.middlewares.{LanguageMiddleware, LanguageRoutes}
-import it.mconst.cooler.models.user.{User, Users}
+import it.mconst.cooler.middlewares.LanguageMiddleware
+import it.mconst.cooler.middlewares.LanguageRoutes
 import it.mconst.cooler.models.user.given
+import it.mconst.cooler.models.user.User
+import it.mconst.cooler.models.user.Users
 import it.mconst.cooler.utils.given
-import it.mconst.cooler.utils.Result._
-import org.http4s.dsl.io._
+import it.mconst.cooler.utils.Result.*
+import org.http4s.dsl.io.*
 
 object PublicRoutes {
   val routes: LanguageRoutes[IO] = {

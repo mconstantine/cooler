@@ -2,10 +2,12 @@ package it.mconst.cooler.utils
 
 import cats.effect.IO
 import com.osinka.i18n.Lang
-import io.circe.{Encoder, Json}
+import io.circe.Encoder
+import io.circe.Json
 import it.mconst.cooler.utils.Translations
-import org.http4s.{EntityEncoder, Status}
-import org.http4s.circe._
+import org.http4s.circe.*
+import org.http4s.EntityEncoder
+import org.http4s.Status
 
 case class Error(
     status: Status,

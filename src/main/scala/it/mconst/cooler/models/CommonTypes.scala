@@ -12,13 +12,13 @@ import io.circe.generic.auto.deriveEncoder
 import it.mconst.cooler.utils.__
 import it.mconst.cooler.utils.Document
 import it.mconst.cooler.utils.Error
-import it.mconst.cooler.utils.Result._
+import it.mconst.cooler.utils.Result.*
 import mongo4cats.bson.ObjectId
-import mongo4cats.circe._
+import mongo4cats.circe.*
 import mongo4cats.codecs.MongoCodecProvider
 import munit.Assertions
-import org.http4s.circe._
-import org.http4s.dsl.io._
+import org.http4s.circe.*
+import org.http4s.dsl.io.*
 import org.http4s.EntityEncoder
 
 case class ValidationError(fieldName: String, message: __)(using Lang)

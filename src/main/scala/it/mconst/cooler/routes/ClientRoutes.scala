@@ -2,7 +2,7 @@ package it.mconst.cooler.routes
 
 import cats.effect.IO
 import com.osinka.i18n.Lang
-import io.circe.generic.auto._
+import io.circe.generic.auto.*
 import it.mconst.cooler.middlewares.UserMiddleware
 import it.mconst.cooler.middlewares.UserMiddleware.UserContext
 import it.mconst.cooler.models.Client
@@ -14,10 +14,10 @@ import it.mconst.cooler.models.user.User
 import it.mconst.cooler.utils.__
 import it.mconst.cooler.utils.Error
 import it.mconst.cooler.utils.given
-import it.mconst.cooler.utils.Result._
+import it.mconst.cooler.utils.Result.*
 import org.http4s.AuthedRoutes
-import org.http4s.circe._
-import org.http4s.dsl.io._
+import org.http4s.circe.*
+import org.http4s.dsl.io.*
 import org.http4s.EntityEncoder
 import org.http4s.QueryParamDecoder
 

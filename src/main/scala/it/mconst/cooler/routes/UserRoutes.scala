@@ -3,14 +3,14 @@ package it.mconst.cooler.routes
 import cats.effect.IO
 import com.osinka.i18n.Lang
 import it.mconst.cooler.middlewares.UserMiddleware
-import it.mconst.cooler.middlewares.UserMiddleware._
+import it.mconst.cooler.middlewares.UserMiddleware.*
+import it.mconst.cooler.models.user.given
 import it.mconst.cooler.models.user.User
 import it.mconst.cooler.models.user.Users
-import it.mconst.cooler.models.user.given
 import it.mconst.cooler.utils.given
-import it.mconst.cooler.utils.Result._
+import it.mconst.cooler.utils.Result.*
 import org.http4s.AuthedRoutes
-import org.http4s.dsl.io._
+import org.http4s.dsl.io.*
 
 object UserRoutes {
   val routes: AuthedRoutes[UserContext, IO] = AuthedRoutes.of {

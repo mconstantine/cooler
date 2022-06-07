@@ -2,18 +2,25 @@ package it.mconst.cooler.models.user
 
 import cats.effect.IO
 import com.osinka.i18n.Lang
-import io.circe.generic.auto.{deriveDecoder, deriveEncoder}
+import io.circe.generic.auto.deriveDecoder
+import io.circe.generic.auto.deriveEncoder
 import io.circe.parser.decode
 import io.circe.syntax.EncoderOps
-import it.mconst.cooler.utils.{__, Config, Error}
-import it.mconst.cooler.utils.Result._
+import it.mconst.cooler.utils.__
+import it.mconst.cooler.utils.Config
+import it.mconst.cooler.utils.Error
+import it.mconst.cooler.utils.Result.*
 import java.time.Instant
 import mongo4cats.bson.ObjectId
 import mongo4cats.collection.operations.Filter
-import org.http4s.circe._
-import org.http4s.dsl.io._
-import org.http4s.{EntityDecoder, EntityEncoder}
-import pdi.jwt.{JwtCirce, JwtAlgorithm, JwtClaim, JwtOptions}
+import org.http4s.circe.*
+import org.http4s.dsl.io.*
+import org.http4s.EntityDecoder
+import org.http4s.EntityEncoder
+import pdi.jwt.JwtAlgorithm
+import pdi.jwt.JwtCirce
+import pdi.jwt.JwtClaim
+import pdi.jwt.JwtOptions
 
 object JWT {
   sealed trait TokenType:
