@@ -1,7 +1,9 @@
 package it.mconst.cooler.utils
 
 import cats.Applicative
+import cats.data.EitherT
 import cats.effect.IO
+import cats.Functor
 import org.http4s.dsl.io.*
 import org.http4s.EntityBody
 import org.http4s.EntityEncoder
@@ -33,7 +35,7 @@ object Result {
         we: EntityEncoder[IO, Error],
         wr: EntityEncoder[IO, T]
     ): IO[Response[IO]] = result match
-      case Right(value) => Ok.apply(wr.toEntity(value).body)
+      case Right(value) => Ok(wr.toEntity(value).body)
       case Left(error) =>
         IO.pure(Response(status = error.status, body = we.toEntity(error).body))
   }

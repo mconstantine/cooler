@@ -1,7 +1,7 @@
 package it.mconst.cooler.models.user
 
-import cats.data.NonEmptyList
-import cats.data.Validated
+import cats.data.EitherT
+import cats.data.OptionT
 import cats.effect.IO
 import cats.syntax.apply.*
 import com.github.t3hnar.bcrypt.*
@@ -20,12 +20,10 @@ import it.mconst.cooler.models.Validation
 import it.mconst.cooler.models.ValidationError
 import it.mconst.cooler.models.Validator
 import it.mconst.cooler.utils.__
-import it.mconst.cooler.utils.Collection
-import it.mconst.cooler.utils.Document
+import it.mconst.cooler.utils._Collection
+import it.mconst.cooler.utils.DbDocument
 import it.mconst.cooler.utils.Error
 import it.mconst.cooler.utils.given
-import it.mconst.cooler.utils.Result.*
-import it.mconst.cooler.utils.Timestamps
 import mongo4cats.bson.ObjectId
 import mongo4cats.circe.*
 import mongo4cats.collection.operations.Filter
@@ -36,8 +34,6 @@ import org.http4s.dsl.io.*
 import org.http4s.EntityDecoder
 import org.http4s.EntityEncoder
 import scala.collection.JavaConverters.*
-import scala.util.Failure
-import scala.util.Success
 
 opaque type Password = String
 
@@ -72,8 +68,7 @@ final case class User(
     password: Password,
     createdAt: BsonDateTime,
     updatedAt: BsonDateTime
-) extends Document
-    with Timestamps
+) extends DbDocument
 
 given EntityEncoder[IO, User] = jsonEncoderOf[IO, User]
 given EntityDecoder[IO, User] = jsonOf[IO, User]
@@ -141,7 +136,7 @@ object User {
 
   def fromCreationData(
       data: CreationData
-  )(using Lang): Result[User] =
+  )(using Lang): Either[Error, User] =
     for
       validatedData <- validateCreationData(data).toResult
       user <- Right(
@@ -158,93 +153,103 @@ object User {
 }
 
 object Users {
-  val collection = Collection[User]("users")
+  val collection = _Collection[IO, User]("users")
 
   def register(
       user: User.CreationData
-  )(using customer: Option[User])(using Lang): IO[Result[User]] =
-    for
-      firstUserOrCustomerError <- customer.swapLift(
-        collection
-          .use(_.count)
-          .map(n =>
-            Option.when(n > 0)(Error(Forbidden, __.ErrorUserRegisterForbidden))
+  )(using customer: Option[User])(using Lang): EitherT[IO, Error, User] =
+    EitherT(
+      collection.use(c =>
+        OptionT
+          .fromOption(customer)
+          .flatTapNone(
+            c.raw(_.count)
+              .map(n =>
+                Option
+                  .when(n > 0)(Error(Forbidden, __.ErrorUserRegisterForbidden))
+              )
           )
+          .flatMap(_ => OptionT.none)
+          .orElse(
+            c.findOne(Filter.eq("email", user.email))
+              .toOption
+              .map(_ => Error(Conflict, __.ErrorUserConflict))
+          )
+          .toLeft[User](null)
+          .flatMap(_ =>
+            EitherT.fromEither(User.fromCreationData(user)).flatMap(c.create)
+          )
+          .value
       )
-      userExistsError <- firstUserOrCustomerError.liftNone(
-        collection
-          .use(_.find(Filter.eq("email", user.email)).first)
-          .map(_.map(user => Error(Conflict, __.ErrorUserConflict)))
-      )
-      user <- userExistsError.toLeftLift(
-        User.fromCreationData(user).lift(collection.create(_))
-      )
-    yield user
+    )
 
   def update(
       data: User.UpdateData
-  )(using customer: User)(using Lang): IO[Result[User]] = {
-    for
-      validatedData <- IO(User.validateUpdateData(data))
-      existingUserError <- validatedData.toResult
-        .liftValidate(data =>
-          data.email.lift(email =>
-            collection
-              .use(
-                _.find(
-                  Filter.eq("email", email).and(Filter.ne("_id", customer._id))
-                ).first
-              )
-              .map(_.map(_ => Error(Conflict, __.ErrorUserConflict)))
+  )(using customer: User)(using Lang): EitherT[IO, Error, User] =
+    EitherT(
+      collection.use(c =>
+        EitherT
+          .fromEither[IO](User.validateUpdateData(data).toResult)
+          .flatMap(data =>
+            data.email.fold(EitherT.rightT[IO, Error](data))(email =>
+              OptionT(
+                c.raw(
+                  _.find(
+                    Filter
+                      .eq("email", email)
+                      .and(Filter.ne("_id", customer._id))
+                  ).first
+                )
+              ).toLeft(data).leftMap(_ => Error(Conflict, __.ErrorUserConflict))
+            )
           )
-        )
-      result <- validatedData.toResult.lift(data =>
-        existingUserError.toLeftLift {
-          val updates = List(
-            data.name.map(Updates.set("name", _)).toList,
-            data.email.map(Updates.set("email", _)).toList,
-            data.password.map(Updates.set("password", _)).toList,
-            Some(
-              Updates.set(
-                "updatedAt",
-                BsonDateTime(System.currentTimeMillis).getValue
-              )
-            ).toList
-          ).flatten
+          .flatMap { (data: User.ValidUpdateData) =>
+            val updates = List(
+              data.name.map(Updates.set("name", _)).toList,
+              data.email.map(Updates.set("email", _)).toList,
+              data.password.map(Updates.set("password", _)).toList,
+              Some(
+                Updates.set(
+                  "updatedAt",
+                  BsonDateTime(System.currentTimeMillis).getValue
+                )
+              ).toList
+            ).flatten
 
-          collection.update(customer, Updates.combine(updates.asJava))
-        }
+            c.update(customer._id, Updates.combine(updates.asJava))
+          }
+          .value
       )
-    yield result
-  }
+    )
 
   def login(
       data: User.LoginData
-  )(using Lang): IO[Result[JWT.AuthTokens]] =
-    for
-      user <- collection
-        .use(_.find(Filter.eq("email", data.email)).first)
-        .map(_.toRight(Error(BadRequest, __.ErrorInvalidEmailOrPassword)))
-      userWithRightPassword = user.flatMap(user =>
-        Either.cond(
-          data.password
-            .isBcryptedSafeBounded(user.password.toString)
-            .getOrElse(false),
-          user,
-          Error(BadRequest, __.ErrorInvalidEmailOrPassword)
+  )(using Lang): EitherT[IO, Error, JWT.AuthTokens] =
+    EitherT(collection.use { c =>
+      val error = Error(BadRequest, __.ErrorInvalidEmailOrPassword)
+
+      c.findOne(Filter.eq("email", data.email))
+        .leftMap(_ => error)
+        .flatMap(user =>
+          EitherT.cond(
+            data.password
+              .isBcryptedSafeBounded(user.password.toString)
+              .getOrElse(false),
+            user,
+            error
+          )
         )
-      )
-      authTokens = userWithRightPassword.map(JWT.generateAuthTokens(_))
-    yield authTokens
+        .map(JWT.generateAuthTokens(_))
+        .value
+    })
 
   def refreshToken(
       data: User.RefreshTokenData
-  )(using Lang): IO[Result[JWT.AuthTokens]] =
-    for
-      userResult <- JWT.decodeToken(data.refreshToken, JWT.UserRefresh)
-      authTokens = userResult.map(JWT.generateAuthTokens(_))
-    yield authTokens
+  )(using Lang): EitherT[IO, Error, JWT.AuthTokens] =
+    JWT
+      .decodeToken(data.refreshToken, JWT.UserRefresh)
+      .map(JWT.generateAuthTokens(_))
 
-  def delete(using customer: User)(using Lang): IO[Result[User]] =
-    collection.delete(customer)
+  def delete(using customer: User)(using Lang): EitherT[IO, Error, User] =
+    EitherT(collection.use(_.delete(customer._id).value))
 }

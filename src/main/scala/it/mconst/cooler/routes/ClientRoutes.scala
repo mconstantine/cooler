@@ -1,5 +1,6 @@
 package it.mconst.cooler.routes
 
+import cats.data.EitherT
 import cats.effect.IO
 import com.osinka.i18n.Lang
 import io.circe.generic.auto.*
@@ -14,12 +15,10 @@ import it.mconst.cooler.models.user.User
 import it.mconst.cooler.utils.__
 import it.mconst.cooler.utils.Error
 import it.mconst.cooler.utils.given
-import it.mconst.cooler.utils.Result.*
 import org.http4s.AuthedRoutes
 import org.http4s.circe.*
 import org.http4s.dsl.io.*
 import org.http4s.EntityEncoder
-import org.http4s.QueryParamDecoder
 
 object ClientRoutes {
   val routes: AuthedRoutes[UserContext, IO] = AuthedRoutes.of {
@@ -29,7 +28,7 @@ object ClientRoutes {
 
       for
         data <- ctxReq.req.as[Client.CreationData]
-        response <- Clients.create(data).flatMap(_.toResponse)
+        response <- Clients.create(data).toResponse
       yield response
     }
 
@@ -45,16 +44,17 @@ object ClientRoutes {
       given EntityEncoder[IO, Cursor[Client]] =
         jsonEncoderOf[IO, Cursor[Client]]
 
-      CursorQuery(query, first, after, last, before)
-        .lift(Clients.find(_))
-        .flatMap(_.toResponse)
+      EitherT
+        .fromEither[IO](CursorQuery(query, first, after, last, before))
+        .flatMap(Clients.find(_))
+        .toResponse
     }
 
     case GET -> Root / ObjectIdParam(id) as context => {
       given Lang = context.lang
       given User = context.user
 
-      Clients.findById(id).flatMap(_.toResponse)
+      Clients.findById(id).toResponse
     }
 
     case ctxReq @ PUT -> Root / ObjectIdParam(id) as context => {
@@ -63,7 +63,7 @@ object ClientRoutes {
 
       for
         data <- ctxReq.req.as[Client.UpdateData]
-        response <- Clients.update(id, data).flatMap(_.toResponse)
+        response <- Clients.update(id, data).toResponse
       yield response
     }
 
@@ -71,7 +71,7 @@ object ClientRoutes {
       given Lang = context.lang
       given User = context.user
 
-      Clients.delete(id).flatMap(_.toResponse)
+      Clients.delete(id).toResponse
     }
   }
 

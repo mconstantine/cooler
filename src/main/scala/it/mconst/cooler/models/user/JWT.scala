@@ -1,5 +1,6 @@
 package it.mconst.cooler.models.user
 
+import cats.data.EitherT
 import cats.effect.IO
 import com.osinka.i18n.Lang
 import io.circe.generic.auto.deriveDecoder
@@ -9,7 +10,6 @@ import io.circe.syntax.EncoderOps
 import it.mconst.cooler.utils.__
 import it.mconst.cooler.utils.Config
 import it.mconst.cooler.utils.Error
-import it.mconst.cooler.utils.Result.*
 import java.time.Instant
 import mongo4cats.bson.ObjectId
 import mongo4cats.collection.operations.Filter
@@ -83,32 +83,36 @@ object JWT {
 
   def decodeToken(token: String, tokenType: TokenType)(using
       Lang
-  ): IO[Result[User]] = {
-    val userId: Result[ObjectId] =
-      for
-        claimResult <- JwtCirce
+  ): EitherT[IO, Error, User] = {
+    val error = Error(Forbidden, __.ErrorInvalidAccessToken)
+
+    EitherT
+      .fromEither[IO](
+        JwtCirce
           .decode(token, encryptionKey, Seq(algorithm))
           .toEither
           .left
           .map(_ => Error(Forbidden, __.ErrorInvalidAccessToken))
-        claimValidation <- Either.cond(
-          validateClaim(claimResult, tokenType),
-          claimResult,
-          Error(Forbidden, __.ErrorInvalidAccessToken)
-        )
-        content <- decode[TokenContent](claimValidation.content).left.map(_ =>
-          Error(Forbidden, __.ErrorInvalidAccessToken)
-        )
-        _id <- ObjectId
-          .from(content._id)
-          .left
-          .map(_ => Error(Forbidden, __.ErrorInvalidAccessToken))
-      yield _id
-
-    userId.lift(_id =>
-      Users.collection
-        .use(_.find(Filter.eq("_id", _id)).first)
-        .map(_.toRight(Error(Forbidden, __.ErrorInvalidAccessToken)))
-    )
+          .flatMap(claim =>
+            Either.cond(
+              validateClaim(claim, tokenType),
+              claim,
+              Error(Forbidden, __.ErrorInvalidAccessToken)
+            )
+          )
+          .flatMap(claim =>
+            decode[TokenContent](claim.content).left
+              .map(_ => Error(Forbidden, __.ErrorInvalidAccessToken))
+          )
+          .flatMap(content =>
+            ObjectId
+              .from(content._id)
+              .left
+              .map(_ => Error(Forbidden, __.ErrorInvalidAccessToken))
+          )
+      )
+      .flatMap(_id =>
+        EitherT(Users.collection.use(_.findOne(Filter.eq("_id", _id)).value))
+      )
   }
 }

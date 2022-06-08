@@ -10,12 +10,9 @@ import io.circe.Encoder
 import io.circe.generic.auto.deriveDecoder
 import io.circe.generic.auto.deriveEncoder
 import it.mconst.cooler.utils.__
-import it.mconst.cooler.utils.Document
 import it.mconst.cooler.utils.Error
 import it.mconst.cooler.utils.Result.*
-import mongo4cats.bson.ObjectId
 import mongo4cats.circe.*
-import mongo4cats.codecs.MongoCodecProvider
 import munit.Assertions
 import org.http4s.circe.*
 import org.http4s.dsl.io.*
@@ -25,13 +22,14 @@ final case class ValidationError(fieldName: String, message: __)(using Lang)
 type Validation[T] = Validated[NonEmptyList[ValidationError], T]
 
 extension [T](validation: Validation[T]) {
-  def toResult(using Lang): Result[T] = validation.toEither.left.map(error =>
-    Error(
-      BadRequest,
-      __.ErrorDecodeValidationErrors,
-      Some(error.groupMapReduce(_.fieldName)(_.message.toString))
+  def toResult(using Lang): Either[Error, T] =
+    validation.toEither.left.map(error =>
+      Error(
+        BadRequest,
+        __.ErrorDecodeValidationErrors,
+        Some(error.groupMapReduce(_.fieldName)(_.message.toString))
+      )
     )
-  )
 }
 
 abstract trait Validator[I, O](using encoder: Encoder[I], decoder: Decoder[I]) {
@@ -111,12 +109,12 @@ final case class PageInfo(
 
 given EntityEncoder[IO, PageInfo] = jsonEncoderOf[IO, PageInfo]
 
-final case class Edge[T <: Document](
+final case class Edge[T](
     node: T,
     cursor: String
 )
 
-final case class Cursor[T <: Document](pageInfo: PageInfo, edges: List[Edge[T]])
+final case class Cursor[T](pageInfo: PageInfo, edges: List[Edge[T]])
 
 sealed trait CursorQuery(query: Option[String] = None)
 
@@ -127,7 +125,7 @@ object CursorQuery {
       after: Option[String] = None,
       last: Option[Int] = None,
       before: Option[String] = None
-  )(using Lang): Result[CursorQuery] = {
+  )(using Lang): Either[Error, CursorQuery] = {
     val firstOrAfter = first.isDefined || after.isDefined
     val lastOrBefore = last.isDefined || before.isDefined
 

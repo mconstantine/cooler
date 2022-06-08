@@ -1,5 +1,6 @@
 package it.mconst.cooler.models
 
+import cats.data.EitherT
 import cats.effect.IO
 import cats.syntax.apply.*
 import com.mongodb.client.model.Aggregates
@@ -14,20 +15,16 @@ import io.circe.generic.auto.*
 import io.circe.HCursor
 import io.circe.Json
 import io.circe.syntax.*
-import it.mconst.cooler.models.Client.PrivateUpdateData
 import it.mconst.cooler.models.user.User
 import it.mconst.cooler.utils.__
-import it.mconst.cooler.utils.Collection
+import it.mconst.cooler.utils._Collection
 import it.mconst.cooler.utils.Config
-import it.mconst.cooler.utils.Document
+import it.mconst.cooler.utils.DbDocument
 import it.mconst.cooler.utils.Error
 import it.mconst.cooler.utils.given
-import it.mconst.cooler.utils.Result.*
-import it.mconst.cooler.utils.Timestamps
-import mongo4cats.bson.Document as Doc
+import mongo4cats.bson.Document
 import mongo4cats.bson.ObjectId
 import mongo4cats.circe.*
-import mongo4cats.codecs.MongoCodecProvider
 import mongo4cats.collection.operations.Filter
 import munit.Assertions
 import org.bson.BsonDateTime
@@ -49,8 +46,7 @@ sealed abstract trait Client(
     user: ObjectId,
     createdAt: BsonDateTime,
     updatedAt: BsonDateTime
-) extends Document
-    with Timestamps {
+) extends DbDocument {
   def name: String
 }
 
@@ -546,7 +542,7 @@ object Client {
 
   def fromCreationData(data: CreationData, customer: User)(using
       Lang
-  ): Result[Client] =
+  ): Either[Error, Client] =
     validateCreationData(data).toResult.map(_ match
       case d: ValidPrivateCreationData =>
         PrivateClient(
@@ -606,105 +602,120 @@ extension (client: Client) {
 }
 
 object Clients {
-  val collection = Collection[Client]("clients")
+  val collection = _Collection[IO, Client]("clients")
 
   def create(
       data: Client.CreationData
-  )(using customer: User)(using Lang): IO[Result[Client]] =
-    Client.fromCreationData(data, customer).lift(collection.create(_))
+  )(using customer: User)(using Lang): EitherT[IO, Error, Client] =
+    EitherT(
+      collection.use(c =>
+        EitherT
+          .fromEither[IO](Client.fromCreationData(data, customer))
+          .flatMap(c.create(_))
+          .value
+      )
+    )
 
   def findById(
       _id: ObjectId
-  )(using customer: User)(using Lang): IO[Result[Client]] =
-    collection
-      .use(
-        _.find(Filter.eq("_id", _id).and(Filter.eq("user", customer._id))).first
+  )(using customer: User)(using Lang): EitherT[IO, Error, Client] =
+    EitherT(
+      collection.use(c =>
+        c.findOne(Filter.eq("_id", _id).and(Filter.eq("user", customer._id)))
+          .leftMap(_ => Error(NotFound, __.ErrorClientNotFound))
+          .value
       )
-      .map(_.toRight(Error(NotFound, __.ErrorClientNotFound)))
+    )
 
   def update(_id: ObjectId, data: Client.UpdateData)(using customer: User)(using
       Lang
-  ): IO[Result[Client]] =
-    findById(_id).flatMap(_.lift { client =>
-      Client.validateUpdateData(data).toResult.lift { data =>
-        val updates = (data match
-          case d: Client.ValidPrivateUpdateData =>
-            List(
-              d.fiscalCode.map(Updates.set("fiscalCode", _)).toList,
-              d.firstName.map(Updates.set("firstName", _)).toList,
-              d.lastName.map(Updates.set("lastName", _)).toList,
-              d.addressCountry.map(Updates.set("addressCountry", _)).toList,
-              d.addressProvince.map(Updates.set("addressProvince", _)).toList,
-              d.addressZIP.map(Updates.set("addressZIP", _)).toList,
-              d.addressCity.map(Updates.set("addressCity", _)).toList,
-              d.addressStreet.map(Updates.set("addressStreet", _)).toList,
-              d.addressStreetNumber
-                .map(Updates.set("addressStreetNumber", _))
-                .toList,
-              d.addressEmail.map(Updates.set("addressEmail", _)).toList
-            )
-          case d: Client.ValidBusinessUpdateData =>
-            List(
-              d.countryCode.map(Updates.set("countryCode", _)).toList,
-              d.businessName.map(Updates.set("businessName", _)).toList,
-              d.vatNumber.map(Updates.set("vatNumber", _)).toList,
-              d.addressCountry.map(Updates.set("addressCountry", _)).toList,
-              d.addressProvince.map(Updates.set("addressProvince", _)).toList,
-              d.addressZIP.map(Updates.set("addressZIP", _)).toList,
-              d.addressCity.map(Updates.set("addressCity", _)).toList,
-              d.addressStreet.map(Updates.set("addressStreet", _)).toList,
-              d.addressStreetNumber
-                .map(Updates.set("addressStreetNumber", _))
-                .toList,
-              d.addressEmail.map(Updates.set("addressEmail", _)).toList
-            )
-        ).flatten ++ List(
-          Some(
-            Updates.set(
-              "updatedAt",
-              BsonDateTime(System.currentTimeMillis).getValue
-            )
-          ).toList
-        ).flatten
+  ): EitherT[IO, Error, Client] =
+    findById(_id).flatMap { client =>
+      EitherT.fromEither[IO](Client.validateUpdateData(data).toResult).flatMap {
+        (data: Client.ValidUpdateData) =>
+          val updates = (data match
+            case d: Client.ValidPrivateUpdateData =>
+              List(
+                d.fiscalCode.map(Updates.set("fiscalCode", _)).toList,
+                d.firstName.map(Updates.set("firstName", _)).toList,
+                d.lastName.map(Updates.set("lastName", _)).toList,
+                d.addressCountry.map(Updates.set("addressCountry", _)).toList,
+                d.addressProvince.map(Updates.set("addressProvince", _)).toList,
+                d.addressZIP.map(Updates.set("addressZIP", _)).toList,
+                d.addressCity.map(Updates.set("addressCity", _)).toList,
+                d.addressStreet.map(Updates.set("addressStreet", _)).toList,
+                d.addressStreetNumber
+                  .map(Updates.set("addressStreetNumber", _))
+                  .toList,
+                d.addressEmail.map(Updates.set("addressEmail", _)).toList
+              )
+            case d: Client.ValidBusinessUpdateData =>
+              List(
+                d.countryCode.map(Updates.set("countryCode", _)).toList,
+                d.businessName.map(Updates.set("businessName", _)).toList,
+                d.vatNumber.map(Updates.set("vatNumber", _)).toList,
+                d.addressCountry.map(Updates.set("addressCountry", _)).toList,
+                d.addressProvince.map(Updates.set("addressProvince", _)).toList,
+                d.addressZIP.map(Updates.set("addressZIP", _)).toList,
+                d.addressCity.map(Updates.set("addressCity", _)).toList,
+                d.addressStreet.map(Updates.set("addressStreet", _)).toList,
+                d.addressStreetNumber
+                  .map(Updates.set("addressStreetNumber", _))
+                  .toList,
+                d.addressEmail.map(Updates.set("addressEmail", _)).toList
+              )
+          ).flatten ++ List(
+            Some(
+              Updates.set(
+                "updatedAt",
+                BsonDateTime(System.currentTimeMillis).getValue
+              )
+            ).toList
+          ).flatten
 
-        collection.update(client, Updates.combine(updates.asJava))
+          EitherT(
+            collection
+              .use(_.update(client._id, Updates.combine(updates.asJava)).value)
+          )
       }
-    })
+    }
 
   def delete(
       _id: ObjectId
-  )(using customer: User)(using Lang): IO[Result[Client]] =
-    for
-      client <- findById(_id)
-      _ <- client.lift(collection.delete(_))
-    yield client
+  )(using customer: User)(using Lang): EitherT[IO, Error, Client] =
+    findById(_id).flatMap(client =>
+      EitherT(collection.use(_.delete(_id).map(_ => client).value))
+    )
 
   def find(query: CursorQuery)(using
       customer: User
-  )(using Lang): IO[Result[Cursor[Client]]] = {
-    collection.find(
-      "name",
-      Seq(
-        Aggregates.`match`(Filters.eq("user", customer._id)),
-        Aggregates.addFields(
-          Field(
-            "name",
-            Doc(
-              "$cond" -> Doc(
-                "if" -> Doc(
-                  "$gt" -> List("$firstName", null)
-                ),
-                "then" -> Doc(
-                  "$concat" -> List("$firstName", " ", "$lastName")
-                ),
-                "else" -> "$businessName"
+  )(using Lang): EitherT[IO, Error, Cursor[Client]] =
+    EitherT(
+      collection.use(
+        _.find(
+          "name",
+          Seq(
+            Aggregates.`match`(Filters.eq("user", customer._id)),
+            Aggregates.addFields(
+              Field(
+                "name",
+                Document(
+                  "$cond" -> Document(
+                    "if" -> Document(
+                      "$gt" -> List("$firstName", null)
+                    ),
+                    "then" -> Document(
+                      "$concat" -> List("$firstName", " ", "$lastName")
+                    ),
+                    "else" -> "$businessName"
+                  )
+                )
               )
             )
           )
-        )
+        )(query).value
       )
-    )(query)
-  }
+    )
 }
 
 given Encoder[Client] with Decoder[Client] with {

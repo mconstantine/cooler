@@ -8,8 +8,9 @@ import it.mconst.cooler.models.user.given
 import it.mconst.cooler.models.user.User
 import it.mconst.cooler.models.user.Users
 import it.mconst.cooler.utils.given
-import it.mconst.cooler.utils.Result.*
 import org.http4s.dsl.io.*
+
+import org.http4s.Response
 
 object PublicRoutes {
   val routes: LanguageRoutes[IO] = {
@@ -20,7 +21,7 @@ object PublicRoutes {
 
         for
           data <- ctxReq.req.as[User.CreationData]
-          response <- Users.register(data).flatMap(_.toResponse)
+          response <- Users.register(data).toResponse
         yield response
       }
       case ctxReq @ POST -> Root / "login" as lang => {
@@ -28,7 +29,7 @@ object PublicRoutes {
 
         for
           data <- ctxReq.req.as[User.LoginData]
-          response <- Users.login(data).flatMap(_.toResponse)
+          response <- Users.login(data).toResponse
         yield response
       }
       case ctxReq @ POST -> Root / "refresh-token" as lang => {
@@ -36,7 +37,7 @@ object PublicRoutes {
 
         for
           data <- ctxReq.req.as[User.RefreshTokenData]
-          response <- Users.refreshToken(data).flatMap(_.toResponse)
+          response <- Users.refreshToken(data).toResponse
         yield response
       }
     }
