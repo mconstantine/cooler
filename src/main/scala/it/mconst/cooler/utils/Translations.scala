@@ -26,6 +26,7 @@ enum __(val key: String):
       extends __("error.document.notFound.afterUpdate")
   case ErrorDocumentNotFoundBeforeDelete
       extends __("error.document.notFound.beforeDelete")
+  case ErrorDocumentNotFound extends __("error.document.notFound")
   case ErrorInvalidAccessToken extends __("error.auth.invalidAccessToken")
   case ErrorInvalidEmailOrPassword
       extends __("error.auth.invalidEmailOrPassword")

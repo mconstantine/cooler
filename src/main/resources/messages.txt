@@ -13,6 +13,7 @@ error.decode.validationErrors=Some data is not valid
 error.document.notFound.afterInsert=Inserted document wasn''t found
 error.document.notFound.afterUpdate=Updated document wasn''t found
 error.document.notFound.beforeDelete=Document to be deleted was''t found
+error.document.notFound=The document you are looking for wasn''t found
 error.unknown=An unexpected error occurred
 error.user.conflict=A user with this e-mail address already exists
 error.user.notFound=User not found
