@@ -17,7 +17,7 @@ import io.circe.Json
 import io.circe.syntax.*
 import it.mconst.cooler.models.user.User
 import it.mconst.cooler.utils.__
-import it.mconst.cooler.utils._Collection
+import it.mconst.cooler.utils.Collection
 import it.mconst.cooler.utils.Config
 import it.mconst.cooler.utils.DbDocument
 import it.mconst.cooler.utils.Error
@@ -602,7 +602,7 @@ extension (client: Client) {
 }
 
 object Clients {
-  val collection = _Collection[IO, Client]("clients")
+  val collection = Collection[IO, Client]("clients")
 
   def create(
       data: Client.CreationData
@@ -683,9 +683,9 @@ object Clients {
   def delete(
       _id: ObjectId
   )(using customer: User)(using Lang): EitherT[IO, Error, Client] =
-    findById(_id).flatMap(client =>
-      EitherT(collection.use(_.delete(_id).map(_ => client).value))
-    )
+    findById(_id).flatMap(client => {
+      EitherT(collection.use(_.delete(_id).value))
+    })
 
   def find(query: CursorQuery)(using
       customer: User

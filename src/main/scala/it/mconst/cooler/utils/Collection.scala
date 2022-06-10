@@ -35,6 +35,7 @@ import scala.collection.JavaConverters.*
 import scala.reflect.ClassTag
 
 // TODO: create and update could probably handle `createdAt` and `updatedAt` by themselves
+// TODO: `use` should be callable with `EitherT` and `OptionT`
 trait DbDocument {
   def _id: ObjectId
   def createdAt: BsonDateTime
@@ -48,7 +49,7 @@ given Encoder[BsonDateTime] with Decoder[BsonDateTime] with {
     Decoder.decodeLong.map(BsonDateTime(_))(cursor)
 }
 
-final case class _Collection[F[_]: Async, Doc: ClassTag](name: String)(using
+final case class Collection[F[_]: Async, Doc: ClassTag](name: String)(using
     F: Monad[F]
 )(using
     MongoCodecProvider[Doc]
@@ -100,8 +101,8 @@ final case class _Collection[F[_]: Async, Doc: ClassTag](name: String)(using
         original <- findOne(filter).leftMap(_ =>
           Error(NotFound, __.ErrorDocumentNotFoundBeforeDelete)
         )
-        _ = c.deleteOne(filter)
-      yield original
+        deleted <- EitherT.liftF(c.deleteOne(filter).map(_ => original))
+      yield deleted
     }
 
     def drop: F[Unit] = c.drop

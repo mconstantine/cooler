@@ -20,7 +20,7 @@ import it.mconst.cooler.models.Validation
 import it.mconst.cooler.models.ValidationError
 import it.mconst.cooler.models.Validator
 import it.mconst.cooler.utils.__
-import it.mconst.cooler.utils._Collection
+import it.mconst.cooler.utils.Collection
 import it.mconst.cooler.utils.DbDocument
 import it.mconst.cooler.utils.Error
 import it.mconst.cooler.utils.given
@@ -153,23 +153,25 @@ object User {
 }
 
 object Users {
-  val collection = _Collection[IO, User]("users")
+  val collection = Collection[IO, User]("users")
 
   def register(
       user: User.CreationData
   )(using customer: Option[User])(using Lang): EitherT[IO, Error, User] =
     EitherT(
       collection.use(c =>
-        OptionT
-          .fromOption(customer)
-          .flatTapNone(
-            c.raw(_.count)
-              .map(n =>
-                Option
-                  .when(n > 0)(Error(Forbidden, __.ErrorUserRegisterForbidden))
-              )
-          )
-          .flatMap(_ => OptionT.none)
+        OptionT(
+          OptionT
+            .fromOption[IO](customer)
+            .foldF(
+              c.raw(_.count)
+                .map(n =>
+                  Option.when(n > 0)(
+                    Error(Forbidden, __.ErrorUserRegisterForbidden)
+                  )
+                )
+            )(_ => OptionT.none[IO, Error].value)
+        )
           .orElse(
             c.findOne(Filter.eq("email", user.email))
               .toOption

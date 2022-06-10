@@ -113,6 +113,7 @@ object JWT {
       )
       .flatMap(_id =>
         EitherT(Users.collection.use(_.findOne(Filter.eq("_id", _id)).value))
+          .leftMap(_ => Error(Forbidden, __.ErrorInvalidAccessToken))
       )
   }
 }

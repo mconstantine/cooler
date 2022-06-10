@@ -1,20 +1,23 @@
 package it.mconst.cooler.routes
 
-import it.mconst.cooler.utils.TestUtils._
-import munit.{Assertions, CatsEffectSuite}
+import it.mconst.cooler.utils.TestUtils.*
+import munit.Assertions
+import munit.CatsEffectSuite
 
 import cats.effect.IO
 import cats.effect.kernel.Resource
-import com.github.t3hnar.bcrypt._
+import com.github.t3hnar.bcrypt.*
 import com.osinka.i18n.Lang
-import it.mconst.cooler.models.user.{User, Users}
 import it.mconst.cooler.models.user.given
-import it.mconst.cooler.utils.{__, Error}
+import it.mconst.cooler.models.user.User
+import it.mconst.cooler.models.user.Users
+import it.mconst.cooler.utils.__
+import it.mconst.cooler.utils.Error
 import it.mconst.cooler.utils.given
 import org.http4s.client.Client
-import org.http4s.client.dsl.io._
-import org.http4s.dsl.io._
-import org.http4s.implicits._
+import org.http4s.client.dsl.io.*
+import org.http4s.dsl.io.*
+import org.http4s.implicits.*
 import org.http4s.Request
 
 class UserRoutesTest extends CatsEffectSuite {

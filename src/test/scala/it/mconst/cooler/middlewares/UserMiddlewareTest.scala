@@ -1,25 +1,33 @@
 package it.mconst.cooler.middlewares
 
+import it.mconst.cooler.utils.TestUtils.*
+import munit.Assertions
 import munit.CatsEffectSuite
-import it.mconst.cooler.utils.TestUtils._
 
+import cats.data.EitherT
 import cats.effect.IO
 import cats.effect.kernel.Resource
 import cats.effect.unsafe.implicits.global
-import cats.syntax.all._
+import cats.syntax.all.*
 import com.osinka.i18n.Lang
-import it.mconst.cooler.middlewares.UserMiddleware._
-import it.mconst.cooler.models.user.{JWT, User, Users}
-import it.mconst.cooler.utils.{__, Translations}
+import it.mconst.cooler.middlewares.UserMiddleware.*
+import it.mconst.cooler.models.user.JWT
+import it.mconst.cooler.models.user.User
+import it.mconst.cooler.models.user.Users
+import it.mconst.cooler.utils.__
 import it.mconst.cooler.utils.given
-import org.http4s.{AuthedRoutes, HttpApp, HttpRoutes}
+import it.mconst.cooler.utils.Translations
+import org.http4s.AuthedRoutes
 import org.http4s.client.Client
-import org.http4s.client.dsl.io._
-import org.http4s.dsl.io._
-import org.http4s.implicits._
+import org.http4s.client.dsl.io.*
+import org.http4s.dsl.io.*
+import org.http4s.HttpApp
+import org.http4s.HttpRoutes
+import org.http4s.implicits.*
 
 class UserMiddlewareTest extends CatsEffectSuite {
   given Lang = Lang.Default
+  given Assertions = this
 
   val publicRoutes: HttpRoutes[IO] = HttpRoutes.of[IO] { case GET -> Root =>
     Ok("Public")
@@ -50,17 +58,13 @@ class UserMiddlewareTest extends CatsEffectSuite {
       for
         user <- {
           given Option[User] = None
-          Users.register(userData)
+          Users.register(userData).orFail
         }
-        login <- user match
-          case Left(error) => IO(Left(error))
-          case Right(user) =>
-            Users.login(User.LoginData(user.email, userData.password))
-        authTokens = login match
-          case Left(error)       => fail(error.toString)
-          case Right(authTokens) => authTokens
-      yield (authTokens)
-    )(_ => Users.collection.use(_.drop))
+        authTokens <- Users
+          .login(User.LoginData(user.email, userData.password))
+          .orFail
+      yield authTokens
+    )(_ => Users.collection.use(c => c.drop))
   )
 
   override val munitFixtures = List(authTokensFixture)

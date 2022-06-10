@@ -1,20 +1,20 @@
 package it.mconst.cooler.models
 
-import it.mconst.cooler.utils.TestUtils._
+import it.mconst.cooler.utils.TestUtils.*
 import munit.Assertions
 import munit.CatsEffectSuite
 
+import cats.effect.IO
 import cats.effect.kernel.Resource
 import com.osinka.i18n.Lang
+import it.mconst.cooler.models.Client.BusinessCreationData
+import it.mconst.cooler.models.Client.PrivateCreationData
 import it.mconst.cooler.models.user.User
 import it.mconst.cooler.models.user.Users
 import it.mconst.cooler.utils.__
 import it.mconst.cooler.utils.Error
-import org.http4s.dsl.io._
-import cats.effect.IO
 import mongo4cats.collection.operations.Filter
-import it.mconst.cooler.models.Client.PrivateCreationData
-import it.mconst.cooler.models.Client.BusinessCreationData
+import org.http4s.dsl.io.*
 
 class ClientsCollectionTest extends CatsEffectSuite {
   val adminFixture = ResourceSuiteLocalFixture(
@@ -63,7 +63,8 @@ class ClientsCollectionTest extends CatsEffectSuite {
       client <- Clients.create(data).orFail
       _ <- Clients
         .findById(client._id)
-        .map(_.map(_.asBusiness.addressEmail))
+        .map(_.asBusiness.addressEmail)
+        .value
         .assertEquals(Right(data.addressEmail))
     yield ()
   }
@@ -92,6 +93,7 @@ class ClientsCollectionTest extends CatsEffectSuite {
       }
       _ <- Clients
         .findById(client._id)
+        .value
         .assertEquals(Left(Error(NotFound, __.ErrorClientNotFound)))
     yield ()
   }
@@ -195,6 +197,7 @@ class ClientsCollectionTest extends CatsEffectSuite {
       }
       _ <- Clients
         .update(client._id, update)
+        .value
         .assertEquals(Left(Error(NotFound, __.ErrorClientNotFound)))
     yield ()
   }
@@ -207,6 +210,7 @@ class ClientsCollectionTest extends CatsEffectSuite {
       _ <- Clients.delete(client._id).orFail.assertEquals(client)
       _ <- Clients
         .findById(client._id)
+        .value
         .assertEquals(Left(Error(NotFound, __.ErrorClientNotFound)))
     yield ()
   }
@@ -236,6 +240,7 @@ class ClientsCollectionTest extends CatsEffectSuite {
       }
       _ <- Clients
         .delete(client._id)
+        .value
         .assertEquals(Left(Error(NotFound, __.ErrorClientNotFound)))
     yield ()
   }
@@ -252,16 +257,15 @@ class ClientsCollectionTest extends CatsEffectSuite {
       makeTestPrivateClient(firstName = "Mark", lastName = "Bobson")
     )
 
-    import cats.syntax.parallel._
+    import cats.syntax.parallel.*
 
-    Clients.collection.use(_.deleteMany(Filter.empty)).flatMap { _ =>
+    Clients.collection.use(_.raw(_.deleteMany(Filter.empty)).flatMap { _ =>
       clients
         .map(Clients.create(_).orFail)
         .parSequence
         .map(_.sortWith(_.name < _.name))
-    }
-
-  }(_ => Clients.collection.use(_.deleteMany(Filter.empty)).void)
+    })
+  }(_ => Clients.collection.use(_.raw(_.deleteMany(Filter.empty)).void))
 
   test("should find a client") {
     clientsList.use { clients =>

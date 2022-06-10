@@ -3,7 +3,9 @@ package it.mconst.cooler.utils
 import munit.Assertions
 import munit.CatsEffectAssertions.MUnitCatsAssertionsForIOOps
 
+import cats.data.EitherT
 import cats.effect.IO
+import cats.Functor
 import com.osinka.i18n.Lang
 import io.circe.Decoder
 import io.circe.DecodingFailure
@@ -15,10 +17,10 @@ import it.mconst.cooler.models.Client
 import it.mconst.cooler.models.user.JWT
 import it.mconst.cooler.models.user.User
 import it.mconst.cooler.utils.Error
-import it.mconst.cooler.utils.Result._
+import it.mconst.cooler.utils.Result.*
 import org.http4s.AuthScheme
-import org.http4s.circe._
-import org.http4s.client.{Client as HttpClient}
+import org.http4s.circe.*
+import org.http4s.client.Client as HttpClient
 import org.http4s.Credentials
 import org.http4s.EntityDecoder
 import org.http4s.headers.Authorization
@@ -34,9 +36,9 @@ object TestUtils {
     }
   }
 
-  extension [T](result: IO[Result[T]]) {
-    def orFail(using a: Assertions) =
-      result.map(_.fold(error => a.fail(error.message.toString), identity))
+  extension [F[_]: Functor, T](result: EitherT[F, Error, T]) {
+    def orFail(using a: Assertions): F[T] =
+      result.fold(error => a.fail(error.message.toString), identity)
   }
 
   extension (request: Request[IO])(using client: HttpClient[IO]) {

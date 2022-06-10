@@ -1,12 +1,12 @@
 package it.mconst.cooler.routes
 
+import it.mconst.cooler.utils.TestUtils.*
 import munit.CatsEffectSuite
-import it.mconst.cooler.utils.TestUtils._
 
 import cats.effect.IO
 import cats.effect.kernel.Resource
 import com.osinka.i18n.Lang
-import io.circe.generic.auto._
+import io.circe.generic.auto.*
 import it.mconst.cooler.middlewares.UserMiddleware
 import it.mconst.cooler.models.asBusiness
 import it.mconst.cooler.models.asPrivate
@@ -22,12 +22,12 @@ import it.mconst.cooler.utils.__
 import it.mconst.cooler.utils.Error
 import mongo4cats.collection.operations.Filter
 import munit.Assertions
-import org.http4s.circe._
+import org.http4s.circe.*
 import org.http4s.client.{Client as HttpClient}
-import org.http4s.client.dsl.io._
-import org.http4s.dsl.io._
+import org.http4s.client.dsl.io.*
+import org.http4s.dsl.io.*
 import org.http4s.EntityDecoder
-import org.http4s.implicits._
+import org.http4s.implicits.*
 import org.http4s.Uri
 
 class ClientRoutesTest extends CatsEffectSuite {
@@ -81,13 +81,13 @@ class ClientRoutesTest extends CatsEffectSuite {
       makeTestBusinessClient(businessName = "F F")
     )
 
-    import cats.syntax.parallel._
+    import cats.syntax.parallel.*
     given User = adminFixture()
 
     Clients.collection
-      .use(_.deleteMany(Filter.empty))
+      .use(_.raw(_.deleteMany(Filter.empty)))
       .flatMap(_ => clients.map(Clients.create(_).orFail).parSequence)
-  }(_ => Clients.collection.use(_.deleteMany(Filter.empty)).void)
+  }(_ => Clients.collection.use(_.raw(_.deleteMany(Filter.empty)).void))
 
   test("should find clients (asc)") {
     clientsList.use { clients =>
@@ -182,6 +182,7 @@ class ClientRoutesTest extends CatsEffectSuite {
         )
       _ <- Clients
         .findById(client.asBusiness._id)
+        .value
         .assertEquals(Left(Error(NotFound, __.ErrorClientNotFound)))
     yield ()
   }
