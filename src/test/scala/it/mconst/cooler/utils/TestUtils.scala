@@ -17,7 +17,6 @@ import it.mconst.cooler.models.Client
 import it.mconst.cooler.models.user.JWT
 import it.mconst.cooler.models.user.User
 import it.mconst.cooler.utils.Error
-import it.mconst.cooler.utils.Result.*
 import org.http4s.AuthScheme
 import org.http4s.circe.*
 import org.http4s.client.Client as HttpClient

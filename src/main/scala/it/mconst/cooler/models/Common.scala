@@ -11,7 +11,6 @@ import io.circe.generic.auto.deriveDecoder
 import io.circe.generic.auto.deriveEncoder
 import it.mconst.cooler.utils.__
 import it.mconst.cooler.utils.Error
-import it.mconst.cooler.utils.Result.*
 import mongo4cats.circe.*
 import munit.Assertions
 import org.http4s.circe.*
