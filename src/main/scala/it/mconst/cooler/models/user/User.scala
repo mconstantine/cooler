@@ -6,7 +6,6 @@ import cats.effect.IO
 import cats.syntax.apply.*
 import com.github.t3hnar.bcrypt.*
 import com.mongodb.client.model.Filters
-import com.mongodb.client.model.Updates
 import com.osinka.i18n.Lang
 import io.circe.Decoder
 import io.circe.DecodingFailure
@@ -33,7 +32,6 @@ import org.http4s.circe.*
 import org.http4s.dsl.io.*
 import org.http4s.EntityDecoder
 import org.http4s.EntityEncoder
-import scala.collection.JavaConverters.*
 
 opaque type Password = String
 
@@ -201,19 +199,14 @@ object Users {
           )
         )
         .flatMap { (data: User.ValidUpdateData) =>
-          val updates = List(
-            data.name.map(Updates.set("name", _)).toList,
-            data.email.map(Updates.set("email", _)).toList,
-            data.password.map(Updates.set("password", _)).toList,
-            Some(
-              Updates.set(
-                "updatedAt",
-                BsonDateTime(System.currentTimeMillis).getValue
-              )
-            ).toList
-          ).flatten
-
-          c.update(customer._id, Updates.combine(updates.asJava))
+          c.update(
+            customer._id,
+            Map(
+              "name" -> data.name,
+              "email" -> data.email,
+              "password" -> data.password
+            )
+          )
         }
     )
 

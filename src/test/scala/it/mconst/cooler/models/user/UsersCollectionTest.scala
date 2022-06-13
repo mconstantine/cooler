@@ -162,6 +162,7 @@ class UsersCollectionTest extends CatsEffectSuite {
           given Option[User] = none[User]
           Users.register(userData).orFail
         }
+        _ <- IO.delay(Thread.sleep(500))
         updated <- {
           given User = original
           Users.update(update).orFail

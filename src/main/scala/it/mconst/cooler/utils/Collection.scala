@@ -10,6 +10,7 @@ import com.mongodb.client.model.Aggregates
 import com.mongodb.client.model.BsonField
 import com.mongodb.client.model.Facet
 import com.mongodb.client.model.Filters
+import com.mongodb.client.model.Updates
 import com.osinka.i18n.Lang
 import io.circe.Decoder
 import io.circe.Encoder
@@ -28,15 +29,12 @@ import mongo4cats.client.MongoClient
 import mongo4cats.codecs.MongoCodecProvider
 import mongo4cats.collection.MongoCollection
 import mongo4cats.collection.operations.Filter
-import mongo4cats.collection.operations.Update
 import org.bson.BsonDateTime
 import org.bson.conversions.Bson
 import org.http4s.dsl.io.*
 import scala.collection.JavaConverters.*
 import scala.reflect.ClassTag
 
-// TODO: create and update could probably handle `createdAt` and `updatedAt` by themselves
-// TODO: `use` should be callable with `EitherT` and `OptionT`
 trait DbDocument {
   def _id: ObjectId
   def createdAt: BsonDateTime
@@ -50,12 +48,16 @@ given Encoder[BsonDateTime] with Decoder[BsonDateTime] with {
     Decoder.decodeLong.map(BsonDateTime(_))(cursor)
 }
 
-final case class Collection[F[_]: Async, Doc: ClassTag](name: String)(using
+final case class Collection[F[_]: Async, Doc <: DbDocument: ClassTag](
+    name: String
+)(using
     F: Monad[F]
 )(using
     MongoCodecProvider[Doc]
 ) {
-  protected final case class CollectionResource[F[_]: Async, Doc: ClassTag](
+  protected final case class CollectionResource[F[
+      _
+  ]: Async, Doc <: DbDocument: ClassTag](
       c: MongoCollection[F, Doc]
   )(using F: Monad[F])(using MongoCodecProvider[Doc]) {
     def findOne(filter: Filter)(using Lang): EitherT[F, Error, Doc] =
@@ -72,24 +74,31 @@ final case class Collection[F[_]: Async, Doc: ClassTag](name: String)(using
         )
       yield inserted
 
-    def update(_id: ObjectId, update: Bson)(using
-        Lang
-    ): EitherT[F, Error, Doc] =
-      for
-        result <- EitherT.liftF(c.updateOne(Filters.eq("_id", _id), update))
-        updated <- findOne(Filter.eq("_id", _id)).leftMap(_ =>
-          Error(NotFound, __.ErrorDocumentNotFoundAfterUpdate)
-        )
-      yield updated
-
-    def update(_id: ObjectId, update: Update)(using
+    def update(_id: ObjectId, updates: Map[String, Option[Any]])(using
         Lang
     ): EitherT[F, Error, Doc] = {
-      val filter = Filter.eq("_id", _id)
+      val providedUpdates = updates.toList
+        .map(entry => entry._2.map(Updates.set(entry._1, _)))
+        .map(_.toList)
+        .flatten
+
+      val updatedAtUpdate = List(
+        Updates.set(
+          "updatedAt",
+          BsonDateTime(System.currentTimeMillis).getValue
+        )
+      )
+
+      val allUpdates = providedUpdates ++ updatedAtUpdate
 
       for
-        result <- EitherT.liftF(c.updateOne(filter, update))
-        updated <- findOne(filter).leftMap(_ =>
+        result <- EitherT.liftF(
+          c.updateOne(
+            Filters.eq("_id", _id),
+            Updates.combine(allUpdates.asJava)
+          )
+        )
+        updated <- findOne(Filter.eq("_id", _id)).leftMap(_ =>
           Error(NotFound, __.ErrorDocumentNotFoundAfterUpdate)
         )
       yield updated

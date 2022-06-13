@@ -4,6 +4,7 @@ import it.mconst.cooler.utils.TestUtils.*
 import munit.Assertions
 import munit.CatsEffectSuite
 
+import cats.data.EitherT
 import cats.effect.IO
 import cats.effect.Resource
 import cats.effect.unsafe.implicits.global
@@ -15,10 +16,8 @@ import mongo4cats.bson.ObjectId
 import mongo4cats.circe.*
 import mongo4cats.codecs.MongoCodecProvider
 import mongo4cats.collection.operations.Filter
-import mongo4cats.collection.operations.Update
-import cats.data.EitherT
-import org.http4s.Status
 import org.bson.BsonDateTime
+import org.http4s.Status
 
 class CollectionTest extends CatsEffectSuite {
   given Lang = Lang.Default
@@ -69,15 +68,35 @@ class CollectionTest extends CatsEffectSuite {
 
   test("should update a document") {
     val person = Person(new ObjectId(), "John", "Doe")
-    val update = Update.set("firstName", "Mario").set("lastName", "Martino")
+
+    val updates = Map(
+      "firstName" -> Some("Mario"),
+      "lastName" -> Some("Martino")
+    )
 
     for
       update <- people
         .use(_.create(person))
         .orFail
-        .flatMap(person => people.use(_.update(person._id, update)).orFail)
+        .flatMap(person => people.use(_.update(person._id, updates)).orFail)
       _ = assertEquals(update.firstName, "Mario")
       _ = assertEquals(update.lastName, "Martino")
+    yield ()
+  }
+
+  test("should register the time of the update") {
+    val person = Person(new ObjectId(), "John", "Doe")
+
+    val updates = Map(
+      "firstName" -> Some("Mario"),
+      "lastName" -> Some("Martino")
+    )
+
+    for
+      person <- people.use(_.create(person)).orFail
+      _ <- IO.delay(500)
+      updated <- people.use(_.update(person._id, updates)).orFail
+      _ = assert(updated.updatedAt.getValue > person.updatedAt.getValue)
     yield ()
   }
 

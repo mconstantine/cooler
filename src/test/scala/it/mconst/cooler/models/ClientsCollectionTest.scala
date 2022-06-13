@@ -120,7 +120,6 @@ class ClientsCollectionTest extends CatsEffectSuite {
         data.addressStreetNumber
       )
       _ = assertEquals(updated.addressEmail.toString, data.addressEmail)
-      _ = assertNotEquals(updated.updatedAt.getValue, client.updatedAt.getValue)
     yield ()
   }
 
@@ -164,7 +163,6 @@ class ClientsCollectionTest extends CatsEffectSuite {
         update.addressStreetNumber
       )
       _ = assertEquals(updated.addressEmail.toString, update.addressEmail.get)
-      _ = assertNotEquals(updated.updatedAt.getValue, client.updatedAt.getValue)
     yield ()
   }
 

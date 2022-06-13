@@ -7,7 +7,6 @@ import cats.syntax.apply.*
 import com.mongodb.client.model.Aggregates
 import com.mongodb.client.model.Field
 import com.mongodb.client.model.Filters
-import com.mongodb.client.model.Updates
 import com.osinka.i18n.Lang
 import io.circe.Decoder
 import io.circe.DecodingFailure
@@ -33,7 +32,6 @@ import org.http4s.circe.*
 import org.http4s.dsl.io.*
 import org.http4s.EntityDecoder
 import org.http4s.EntityEncoder
-import scala.collection.JavaConverters.*
 
 sealed abstract trait Client(
     _id: ObjectId,
@@ -628,47 +626,38 @@ object Clients {
     findById(_id).flatMap { client =>
       EitherT.fromEither[IO](Client.validateUpdateData(data).toResult).flatMap {
         (data: Client.ValidUpdateData) =>
-          val updates = (data match
-            case d: Client.ValidPrivateUpdateData =>
-              List(
-                d.fiscalCode.map(Updates.set("fiscalCode", _)).toList,
-                d.firstName.map(Updates.set("firstName", _)).toList,
-                d.lastName.map(Updates.set("lastName", _)).toList,
-                d.addressCountry.map(Updates.set("addressCountry", _)).toList,
-                d.addressProvince.map(Updates.set("addressProvince", _)).toList,
-                d.addressZIP.map(Updates.set("addressZIP", _)).toList,
-                d.addressCity.map(Updates.set("addressCity", _)).toList,
-                d.addressStreet.map(Updates.set("addressStreet", _)).toList,
-                d.addressStreetNumber
-                  .map(Updates.set("addressStreetNumber", _))
-                  .toList,
-                d.addressEmail.map(Updates.set("addressEmail", _)).toList
-              )
-            case d: Client.ValidBusinessUpdateData =>
-              List(
-                d.countryCode.map(Updates.set("countryCode", _)).toList,
-                d.businessName.map(Updates.set("businessName", _)).toList,
-                d.vatNumber.map(Updates.set("vatNumber", _)).toList,
-                d.addressCountry.map(Updates.set("addressCountry", _)).toList,
-                d.addressProvince.map(Updates.set("addressProvince", _)).toList,
-                d.addressZIP.map(Updates.set("addressZIP", _)).toList,
-                d.addressCity.map(Updates.set("addressCity", _)).toList,
-                d.addressStreet.map(Updates.set("addressStreet", _)).toList,
-                d.addressStreetNumber
-                  .map(Updates.set("addressStreetNumber", _))
-                  .toList,
-                d.addressEmail.map(Updates.set("addressEmail", _)).toList
-              )
-          ).flatten ++ List(
-            Some(
-              Updates.set(
-                "updatedAt",
-                BsonDateTime(System.currentTimeMillis).getValue
-              )
-            ).toList
-          ).flatten
-
-          collection.use(_.update(client._id, Updates.combine(updates.asJava)))
+          collection.use(
+            _.update(
+              client._id,
+              data match
+                case d: Client.ValidPrivateUpdateData =>
+                  Map(
+                    "fiscalCode" -> d.fiscalCode,
+                    "firstName" -> d.firstName,
+                    "lastName" -> d.lastName,
+                    "addressCountry" -> d.addressCountry,
+                    "addressProvince" -> d.addressProvince,
+                    "addressZIP" -> d.addressZIP,
+                    "addressCity" -> d.addressCity,
+                    "addressStreet" -> d.addressStreet,
+                    "addressStreetNumber" -> d.addressStreetNumber,
+                    "addressEmail" -> d.addressEmail
+                  )
+                case d: Client.ValidBusinessUpdateData =>
+                  Map(
+                    "countryCode" -> d.countryCode,
+                    "businessName" -> d.businessName,
+                    "vatNumber" -> d.vatNumber,
+                    "addressCountry" -> d.addressCountry,
+                    "addressProvince" -> d.addressProvince,
+                    "addressZIP" -> d.addressZIP,
+                    "addressCity" -> d.addressCity,
+                    "addressStreet" -> d.addressStreet,
+                    "addressStreetNumber" -> d.addressStreetNumber,
+                    "addressEmail" -> d.addressEmail
+                  )
+            )
+          )
       }
     }
 
