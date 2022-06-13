@@ -1,6 +1,6 @@
 package it.mconst.cooler.models
 
-import cats.data.NonEmptyList
+import cats.data.NonEmptyChain
 import cats.data.Validated
 import cats.effect.IO
 import cats.syntax.all.none
@@ -19,7 +19,7 @@ import org.http4s.dsl.io.*
 import org.http4s.EntityEncoder
 
 final case class ValidationError(fieldName: String, message: __)(using Lang)
-type Validation[T] = Validated[NonEmptyList[ValidationError], T]
+type Validation[T] = Validated[NonEmptyChain[ValidationError], T]
 
 extension [T](validation: Validation[T]) {
   def toResult(using Lang): Either[Error, T] =
@@ -27,7 +27,11 @@ extension [T](validation: Validation[T]) {
       Error(
         BadRequest,
         __.ErrorDecodeValidationErrors,
-        Some(error.groupMapReduce(_.fieldName)(_.message.toString))
+        Some(
+          error
+            .groupMapReduce(_.fieldName)(_.message.toString)
+            .asInstanceOf[Map[String, String]]
+        )
       )
     )
 }
@@ -42,7 +46,7 @@ abstract trait Validator[I, O](using encoder: Encoder[I], decoder: Decoder[I]) {
   protected def validate(input: I, error: ValidationError)(using
       Lang
   ): Validation[O] =
-    Validated.fromEither(decode(input).toRight(NonEmptyList(error, List.empty)))
+    Validated.fromEither(decode(input).toRight(NonEmptyChain.one(error)))
 
   def validate(fieldName: String, input: I)(using Lang): Validation[O]
 
