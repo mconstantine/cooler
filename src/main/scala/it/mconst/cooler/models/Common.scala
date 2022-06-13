@@ -3,6 +3,7 @@ package it.mconst.cooler.models
 import cats.data.NonEmptyList
 import cats.data.Validated
 import cats.effect.IO
+import cats.syntax.all.none
 import com.osinka.i18n.Lang
 import io.circe.Decoder
 import io.circe.DecodingFailure
@@ -48,7 +49,8 @@ abstract trait Validator[I, O](using encoder: Encoder[I], decoder: Decoder[I]) {
   def validateOptional(fieldName: String, o: Option[I])(using
       Lang
   ): Validation[Option[O]] =
-    o.map(validate(fieldName, _).map(Some(_))).getOrElse(Validated.valid(None))
+    o.map(validate(fieldName, _).map(Some(_)))
+      .getOrElse(Validated.valid(none[O]))
 
   given Encoder[O] = encoder.asInstanceOf[Encoder[O]]
 
@@ -115,15 +117,15 @@ final case class Edge[T](
 
 final case class Cursor[T](pageInfo: PageInfo, edges: List[Edge[T]])
 
-sealed trait CursorQuery(query: Option[String] = None)
+sealed trait CursorQuery(query: Option[String] = none[String])
 
 object CursorQuery {
   def apply(
-      query: Option[String] = None,
-      first: Option[Int] = None,
-      after: Option[String] = None,
-      last: Option[Int] = None,
-      before: Option[String] = None
+      query: Option[String] = none[String],
+      first: Option[Int] = none[Int],
+      after: Option[String] = none[String],
+      last: Option[Int] = none[Int],
+      before: Option[String] = none[String]
   )(using Lang): Either[Error, CursorQuery] = {
     val firstOrAfter = first.isDefined || after.isDefined
     val lastOrBefore = last.isDefined || before.isDefined
@@ -137,13 +139,13 @@ object CursorQuery {
 }
 
 final case class CursorQueryAsc(
-    query: Option[String] = None,
-    first: Option[Int] = None,
-    after: Option[String] = None
+    query: Option[String] = none[String],
+    first: Option[Int] = none[Int],
+    after: Option[String] = none[String]
 ) extends CursorQuery(query)
 
 final case class CursorQueryDesc(
-    query: Option[String] = None,
-    last: Option[Int] = None,
-    before: Option[String] = None
+    query: Option[String] = none[String],
+    last: Option[Int] = none[Int],
+    before: Option[String] = none[String]
 ) extends CursorQuery(query)

@@ -6,6 +6,7 @@ import munit.CatsEffectSuite
 
 import cats.effect.IO
 import cats.effect.kernel.Resource
+import cats.syntax.all.none
 import com.osinka.i18n.Lang
 import it.mconst.cooler.models.Client.BusinessCreationData
 import it.mconst.cooler.models.Client.PrivateCreationData
@@ -20,7 +21,7 @@ class ClientsCollectionTest extends CatsEffectSuite {
   val adminFixture = ResourceSuiteLocalFixture(
     "admin",
     Resource.make {
-      given Option[User] = None
+      given Option[User] = none[User]
 
       Users
         .register(

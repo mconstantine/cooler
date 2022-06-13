@@ -1,6 +1,7 @@
 package it.mconst.cooler.utils
 
 import cats.effect.IO
+import cats.syntax.all.none
 import com.osinka.i18n.Lang
 import io.circe.Encoder
 import io.circe.Json
@@ -12,7 +13,7 @@ import org.http4s.Status
 final case class Error(
     status: Status,
     messageKey: __,
-    extras: Option[Map[String, String]] = None
+    extras: Option[Map[String, String]] = none[Map[String, String]]
 )(using Lang) {
   def message = Translations.t(messageKey)
 }

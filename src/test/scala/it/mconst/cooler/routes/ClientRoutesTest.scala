@@ -5,6 +5,7 @@ import munit.CatsEffectSuite
 
 import cats.effect.IO
 import cats.effect.kernel.Resource
+import cats.syntax.all.none
 import com.osinka.i18n.Lang
 import io.circe.generic.auto.*
 import it.mconst.cooler.middlewares.UserMiddleware
@@ -41,7 +42,7 @@ class ClientRoutesTest extends CatsEffectSuite {
   val adminFixture = ResourceSuiteLocalFixture(
     "admin",
     Resource.make {
-      given Option[User] = None
+      given Option[User] = none[User]
 
       Users
         .register(

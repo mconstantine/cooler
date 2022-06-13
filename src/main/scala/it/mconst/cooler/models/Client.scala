@@ -2,6 +2,7 @@ package it.mconst.cooler.models
 
 import cats.data.EitherT
 import cats.effect.IO
+import cats.syntax.all.none
 import cats.syntax.apply.*
 import com.mongodb.client.model.Aggregates
 import com.mongodb.client.model.Field
@@ -260,16 +261,16 @@ object Client {
   )
 
   final case class PrivateUpdateData(
-      fiscalCode: Option[String] = None,
-      firstName: Option[String] = None,
-      lastName: Option[String] = None,
-      addressCountry: Option[String] = None,
-      addressProvince: Option[String] = None,
-      addressZIP: Option[String] = None,
-      addressCity: Option[String] = None,
-      addressStreet: Option[String] = None,
-      addressStreetNumber: Option[String] = None,
-      addressEmail: Option[String] = None
+      fiscalCode: Option[String] = none[String],
+      firstName: Option[String] = none[String],
+      lastName: Option[String] = none[String],
+      addressCountry: Option[String] = none[String],
+      addressProvince: Option[String] = none[String],
+      addressZIP: Option[String] = none[String],
+      addressCity: Option[String] = none[String],
+      addressStreet: Option[String] = none[String],
+      addressStreetNumber: Option[String] = none[String],
+      addressEmail: Option[String] = none[String]
   ) extends UpdateData(
         addressCountry,
         addressProvince,
@@ -281,16 +282,16 @@ object Client {
       )
 
   final case class BusinessUpdateData(
-      countryCode: Option[String] = None,
-      businessName: Option[String] = None,
-      vatNumber: Option[String] = None,
-      addressCountry: Option[String] = None,
-      addressProvince: Option[String] = None,
-      addressZIP: Option[String] = None,
-      addressCity: Option[String] = None,
-      addressStreet: Option[String] = None,
-      addressStreetNumber: Option[String] = None,
-      addressEmail: Option[String] = None
+      countryCode: Option[String] = none[String],
+      businessName: Option[String] = none[String],
+      vatNumber: Option[String] = none[String],
+      addressCountry: Option[String] = none[String],
+      addressProvince: Option[String] = none[String],
+      addressZIP: Option[String] = none[String],
+      addressCity: Option[String] = none[String],
+      addressStreet: Option[String] = none[String],
+      addressStreetNumber: Option[String] = none[String],
+      addressEmail: Option[String] = none[String]
   ) extends UpdateData(
         addressCountry,
         addressProvince,

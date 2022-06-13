@@ -8,6 +8,7 @@ import cats.effect.IO
 import cats.effect.kernel.Resource
 import cats.effect.unsafe.implicits.global
 import cats.syntax.*
+import cats.syntax.all.none
 import com.github.t3hnar.bcrypt.*
 import com.osinka.i18n.Lang
 import it.mconst.cooler.models.Email
@@ -35,7 +36,7 @@ class UsersCollectionTest extends CatsEffectSuite {
         "Abc123!?"
       )
 
-      given Option[User] = None
+      given Option[User] = none[User]
 
       for
         user <- Users.register(userData).orFail
@@ -66,7 +67,7 @@ class UsersCollectionTest extends CatsEffectSuite {
         "Abc123!?"
       )
 
-      given Option[User] = None
+      given Option[User] = none[User]
 
       for
         _ <- Users.register(firstUser).value
@@ -95,7 +96,7 @@ class UsersCollectionTest extends CatsEffectSuite {
 
       for
         firstUser <- {
-          given Option[User] = None
+          given Option[User] = none[User]
           Users.register(firstUserData).orFail
         }
         secondUser <- {
@@ -129,7 +130,7 @@ class UsersCollectionTest extends CatsEffectSuite {
 
       for
         firstUser <- {
-          given Option[User] = None
+          given Option[User] = none[User]
           Users.register(firstUserData).orFail
         }
         _ <- {
@@ -152,13 +153,13 @@ class UsersCollectionTest extends CatsEffectSuite {
 
       val update = User.UpdateData(
         Some("Updated name"),
-        None,
+        none[String],
         Some("Upd4t3dP4ssw0rd!")
       )
 
       for
         original <- {
-          given Option[User] = None
+          given Option[User] = none[User]
           Users.register(userData).orFail
         }
         updated <- {
@@ -193,7 +194,7 @@ class UsersCollectionTest extends CatsEffectSuite {
 
       for
         firstUser <- {
-          given Option[User] = None
+          given Option[User] = none[User]
           Users.register(firstUserData).orFail
         }
         secondUser <- {
@@ -203,7 +204,13 @@ class UsersCollectionTest extends CatsEffectSuite {
         _ <- {
           given User = secondUser
           Users
-            .update(User.UpdateData(None, Some(firstUserData.email), None))
+            .update(
+              User.UpdateData(
+                none[String],
+                Some(firstUserData.email),
+                none[String]
+              )
+            )
             .assertEquals(Left(Error(Status.Conflict, __.ErrorUserConflict)))
         }
       yield ()
@@ -220,7 +227,7 @@ class UsersCollectionTest extends CatsEffectSuite {
 
       for
         user <- {
-          given Option[User] = None
+          given Option[User] = none[User]
           Users.register(userData).orFail
         }
         authTokens <- Users
@@ -265,7 +272,7 @@ class UsersCollectionTest extends CatsEffectSuite {
 
       for
         user <- {
-          given Option[User] = None
+          given Option[User] = none[User]
           Users.register(userData).orFail
         }
         _ <- Users
@@ -292,7 +299,7 @@ class UsersCollectionTest extends CatsEffectSuite {
 
       for
         user <- {
-          given Option[User] = None
+          given Option[User] = none[User]
           Users.register(userData).orFail
         }
         _ <- Users
@@ -314,7 +321,7 @@ class UsersCollectionTest extends CatsEffectSuite {
 
       for
         user <- {
-          given Option[User] = None
+          given Option[User] = none[User]
           Users.register(userData).orFail
         }
         authTokens <- Users
@@ -343,7 +350,7 @@ class UsersCollectionTest extends CatsEffectSuite {
 
       for
         user <- {
-          given Option[User] = None
+          given Option[User] = none[User]
           Users.register(userData).orFail
         }
         authTokens <- Users
@@ -370,7 +377,7 @@ class UsersCollectionTest extends CatsEffectSuite {
 
       for
         user <- {
-          given Option[User] = None
+          given Option[User] = none[User]
           Users.register(userData).orFail
         }
         _ <- {

@@ -6,6 +6,7 @@ import munit.CatsEffectSuite
 
 import cats.effect.IO
 import cats.effect.kernel.Resource
+import cats.syntax.all.none
 import com.github.t3hnar.bcrypt.*
 import com.osinka.i18n.Lang
 import it.mconst.cooler.models.user.given
@@ -38,7 +39,7 @@ class UserRoutesTest extends CatsEffectSuite {
         "S0m3P4ssw0rd?!"
       )
 
-      given Option[User] = None
+      given Option[User] = none[User]
       Users.register(adminData).orFail
     }(_ => Users.collection.use(_.drop))
   )
@@ -87,7 +88,8 @@ class UserRoutesTest extends CatsEffectSuite {
       "S0m3Passw0rd?!"
     )
 
-    val updateData = User.UpdateData(Some("Updated name"), None, None)
+    val updateData =
+      User.UpdateData(Some("Updated name"), none[String], none[String])
 
     for
       user <- client.expect[User](POST(userData, uri"/").sign(admin))
@@ -114,14 +116,14 @@ class UserRoutesTest extends CatsEffectSuite {
   test("should update a user") {
     testUserUpdate(
       "Authed user update test",
-      User.UpdateData(Some("Updated name"), None, None)
+      User.UpdateData(Some("Updated name"), none[String], none[String])
     )
   }
 
   test("should handle empty user updates") {
     testUserUpdate(
       "Empty user update test",
-      User.UpdateData(None, None, None)
+      User.UpdateData(none[String], none[String], none[String])
     )
   }
 

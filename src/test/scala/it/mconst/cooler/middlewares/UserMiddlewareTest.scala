@@ -57,7 +57,7 @@ class UserMiddlewareTest extends CatsEffectSuite {
     Resource.make(
       for
         user <- {
-          given Option[User] = None
+          given Option[User] = none[User]
           Users.register(userData).orFail
         }
         authTokens <- Users

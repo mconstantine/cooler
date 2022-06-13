@@ -2,6 +2,7 @@ package it.mconst.cooler.models.user
 
 import cats.data.EitherT
 import cats.effect.IO
+import cats.syntax.all.none
 import com.osinka.i18n.Lang
 import io.circe.generic.auto.deriveDecoder
 import io.circe.generic.auto.deriveEncoder
@@ -50,17 +51,17 @@ object JWT {
         content = TokenContent(user._id.toString).asJson.noSpaces,
         issuer = Some(issuer),
         subject = Some(tokenType.name),
-        audience = None,
+        audience = none[Set[String]],
         expiration = tokenType match
           case UserAccess =>
             Some(Instant.now.plusSeconds(1209600).getEpochSecond)
-          case UserRefresh => None
+          case UserRefresh => none[Long]
           // Unknown tokens expire instantly LOL
           case UnknownTokenType(_) => Some(Instant.now.getEpochSecond)
         ,
-        notBefore = None,
+        notBefore = none[Long],
         issuedAt = Some(Instant.now.getEpochSecond),
-        jwtId = None
+        jwtId = none[String]
       ),
       encryptionKey,
       algorithm

@@ -1,6 +1,7 @@
 package it.mconst.cooler.routes
 
 import cats.effect.IO
+import cats.syntax.all.none
 import com.osinka.i18n.Lang
 import it.mconst.cooler.middlewares.LanguageMiddleware
 import it.mconst.cooler.middlewares.LanguageRoutes
@@ -17,7 +18,7 @@ object PublicRoutes {
     LanguageRoutes.of {
       case ctxReq @ POST -> Root / "register" as lang => {
         given Lang = lang
-        given Option[User] = None
+        given Option[User] = none[User]
 
         for
           data <- ctxReq.req.as[User.CreationData]
