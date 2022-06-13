@@ -64,7 +64,7 @@ class CollectionTest extends CatsEffectSuite {
 
   test("should create a document") {
     val person = Person(new ObjectId(), "John", "Doe")
-    people.use(_.create(person).value).assertEquals(Right(person))
+    people.use(_.create(person)).assertEquals(Right(person))
   }
 
   test("should update a document") {
@@ -72,13 +72,10 @@ class CollectionTest extends CatsEffectSuite {
     val update = Update.set("firstName", "Mario").set("lastName", "Martino")
 
     for
-      update <- EitherT(
-        people
-          .use(_.create(person).value)
-      ).orFail
-        .flatMap(person =>
-          EitherT(people.use(_.update(person._id, update).value)).orFail
-        )
+      update <- people
+        .use(_.create(person))
+        .orFail
+        .flatMap(person => people.use(_.update(person._id, update)).orFail)
       _ = assertEquals(update.firstName, "Mario")
       _ = assertEquals(update.lastName, "Martino")
     yield ()
@@ -88,13 +85,12 @@ class CollectionTest extends CatsEffectSuite {
     val person = Person(new ObjectId(), "John", "Doe")
 
     for
-      _ <- EitherT(people.use(_.create(person).value)).value
-      result <- EitherT(people.use(_.delete(person._id).value)).value
+      _ <- people.use(_.create(person)).value
+      _ <- people
+        .use(_.delete(person._id))
         .assertEquals(Right(person))
-      _ <- EitherT(
-        people
-          .use(_.findOne(Filter.eq("_id", person._id)).value)
-      ).value
+      _ <- people
+        .use(_.findOne(Filter.eq("_id", person._id)))
         .assertEquals(Left(Error(Status.NotFound, __.ErrorDocumentNotFound)))
     yield ()
   }
@@ -102,14 +98,11 @@ class CollectionTest extends CatsEffectSuite {
   test("should find a document") {
     peopleList.use { peopleData =>
       for
-        result <- EitherT(
-          people
-            .use(
-              _.find("firstName", Seq.empty)(
-                CursorQueryAsc(query = Some("a"))
-              ).value
-            )
-        ).orFail
+        result <- people
+          .use(
+            _.find("firstName", Seq.empty)(CursorQueryAsc(query = Some("a")))
+          )
+          .orFail
         _ = assertEquals(result.pageInfo.totalCount, 1)
         _ = assertEquals(result.pageInfo.startCursor, Some("Asd"))
         _ = assertEquals(result.pageInfo.endCursor, Some("Asd"))
@@ -123,14 +116,13 @@ class CollectionTest extends CatsEffectSuite {
   test("should paginate a document (first page, asc)") {
     peopleList.use { peopleData =>
       for
-        result <- EitherT(
-          people
-            .use(
-              _.find("firstName", Seq.empty)(
-                CursorQueryAsc(query = Some("sd"), first = Some(2))
-              ).value
+        result <- people
+          .use(
+            _.find("firstName", Seq.empty)(
+              CursorQueryAsc(query = Some("sd"), first = Some(2))
             )
-        ).orFail
+          )
+          .orFail
         _ = assertEquals(result.pageInfo.totalCount, 6)
         _ = assertEquals(result.pageInfo.startCursor, Some("Asd"))
         _ = assertEquals(result.pageInfo.endCursor, Some("Bsd"))
@@ -144,18 +136,17 @@ class CollectionTest extends CatsEffectSuite {
   test("should paginate a document (nth page, asc)") {
     peopleList.use { peopleData =>
       for
-        result <- EitherT(
-          people
-            .use(
-              _.find("firstName", Seq.empty)(
-                CursorQueryAsc(
-                  query = Some("sd"),
-                  first = Some(2),
-                  after = Some("Bsd")
-                )
-              ).value
+        result <- people
+          .use(
+            _.find("firstName", Seq.empty)(
+              CursorQueryAsc(
+                query = Some("sd"),
+                first = Some(2),
+                after = Some("Bsd")
+              )
             )
-        ).orFail
+          )
+          .orFail
         _ = assertEquals(result.pageInfo.totalCount, 6)
         _ = assertEquals(result.pageInfo.startCursor, Some("Csd"))
         _ = assertEquals(result.pageInfo.endCursor, Some("Dsd"))
@@ -169,18 +160,17 @@ class CollectionTest extends CatsEffectSuite {
   test("should paginate a document (last page, asc)") {
     peopleList.use { peopleData =>
       for
-        result <- EitherT(
-          people
-            .use(
-              _.find("firstName", Seq.empty)(
-                CursorQueryAsc(
-                  query = Some("sd"),
-                  first = Some(2),
-                  after = Some("Dsd")
-                )
-              ).value
+        result <- people
+          .use(
+            _.find("firstName", Seq.empty)(
+              CursorQueryAsc(
+                query = Some("sd"),
+                first = Some(2),
+                after = Some("Dsd")
+              )
             )
-        ).orFail
+          )
+          .orFail
         _ = assertEquals(result.pageInfo.totalCount, 6)
         _ = assertEquals(result.pageInfo.startCursor, Some("Esd"))
         _ = assertEquals(result.pageInfo.endCursor, Some("Fsd"))
@@ -194,14 +184,13 @@ class CollectionTest extends CatsEffectSuite {
   test("should paginate a document (first page, desc)") {
     peopleList.use { peopleData =>
       for
-        result <- EitherT(
-          people
-            .use(
-              _.find("firstName", Seq.empty)(
-                CursorQueryDesc(query = Some("sd"), last = Some(2))
-              ).value
+        result <- people
+          .use(
+            _.find("firstName", Seq.empty)(
+              CursorQueryDesc(query = Some("sd"), last = Some(2))
             )
-        ).orFail
+          )
+          .orFail
         _ = assertEquals(result.pageInfo.totalCount, 6)
         _ = assertEquals(result.pageInfo.startCursor, Some("Fsd"))
         _ = assertEquals(result.pageInfo.endCursor, Some("Esd"))
@@ -218,18 +207,17 @@ class CollectionTest extends CatsEffectSuite {
   test("should paginate a document (nth page, desc)") {
     peopleList.use { peopleData =>
       for
-        result <- EitherT(
-          people
-            .use(
-              _.find("firstName", Seq.empty)(
-                CursorQueryDesc(
-                  query = Some("sd"),
-                  last = Some(2),
-                  before = Some("Esd")
-                )
-              ).value
+        result <- people
+          .use(
+            _.find("firstName", Seq.empty)(
+              CursorQueryDesc(
+                query = Some("sd"),
+                last = Some(2),
+                before = Some("Esd")
+              )
             )
-        ).orFail
+          )
+          .orFail
         _ = assertEquals(result.pageInfo.totalCount, 6)
         _ = assertEquals(result.pageInfo.startCursor, Some("Dsd"))
         _ = assertEquals(result.pageInfo.endCursor, Some("Csd"))
@@ -246,18 +234,17 @@ class CollectionTest extends CatsEffectSuite {
   test("should paginate a document (last page, desc)") {
     peopleList.use { peopleData =>
       for
-        result <- EitherT(
-          people
-            .use(
-              _.find("firstName", Seq.empty)(
-                CursorQueryDesc(
-                  query = Some("sd"),
-                  last = Some(2),
-                  before = Some("Csd")
-                )
-              ).value
+        result <- people
+          .use(
+            _.find("firstName", Seq.empty)(
+              CursorQueryDesc(
+                query = Some("sd"),
+                last = Some(2),
+                before = Some("Csd")
+              )
             )
-        ).orFail
+          )
+          .orFail
         _ = assertEquals(result.pageInfo.totalCount, 6)
         _ = assertEquals(result.pageInfo.startCursor, Some("Bsd"))
         _ = assertEquals(result.pageInfo.endCursor, Some("Asd"))

@@ -70,9 +70,8 @@ class UsersCollectionTest extends CatsEffectSuite {
 
       for
         _ <- Users.register(firstUser).value
-        result <- Users
+        _ <- Users
           .register(secondUser)
-          .value
           .assertEquals(
             Left(Error(Status.Forbidden, __.ErrorUserRegisterForbidden))
           )
@@ -133,11 +132,10 @@ class UsersCollectionTest extends CatsEffectSuite {
           given Option[User] = None
           Users.register(firstUserData).orFail
         }
-        secondUser <- {
+        _ <- {
           given Option[User] = Some(firstUser)
           Users
             .register(secondUserData)
-            .value
             .assertEquals(Left(Error(Status.Conflict, __.ErrorUserConflict)))
         }
       yield ()
@@ -202,11 +200,10 @@ class UsersCollectionTest extends CatsEffectSuite {
           given Option[User] = Some(firstUser)
           Users.register(secondUserData).orFail
         }
-        update <- {
+        _ <- {
           given User = secondUser
           Users
             .update(User.UpdateData(None, Some(firstUserData.email), None))
-            .value
             .assertEquals(Left(Error(Status.Conflict, __.ErrorUserConflict)))
         }
       yield ()
@@ -252,7 +249,6 @@ class UsersCollectionTest extends CatsEffectSuite {
 
       Users
         .login(User.LoginData(fakeUser.email, fakeUser.password.toString))
-        .value
         .assertEquals(
           Left(Error(Status.BadRequest, __.ErrorInvalidEmailOrPassword))
         )
@@ -279,7 +275,6 @@ class UsersCollectionTest extends CatsEffectSuite {
               userData.password
             )
           )
-          .value
           .assertEquals(
             Left(Error(Status.BadRequest, __.ErrorInvalidEmailOrPassword))
           )
@@ -302,7 +297,6 @@ class UsersCollectionTest extends CatsEffectSuite {
         }
         _ <- Users
           .login(User.LoginData(user.email, "someOtherPassword"))
-          .value
           .assertEquals(
             Left(Error(Status.BadRequest, __.ErrorInvalidEmailOrPassword))
           )
@@ -359,7 +353,6 @@ class UsersCollectionTest extends CatsEffectSuite {
         _ <- IO.delay(Thread.sleep(1000))
         _ <- Users
           .refreshToken(User.RefreshTokenData(authTokens.accessToken))
-          .value
           .assertEquals(
             Left(Error(Status.Forbidden, __.ErrorInvalidAccessToken))
           )
@@ -387,7 +380,7 @@ class UsersCollectionTest extends CatsEffectSuite {
         _ <- {
           given User = user
           Users.collection
-            .use(_.findOne(Filter.eq("_id", user._id)).value)
+            .use(_.findOne(Filter.eq("_id", user._id)))
             .assertEquals(
               Left(Error(Status.NotFound, __.ErrorDocumentNotFound))
             )

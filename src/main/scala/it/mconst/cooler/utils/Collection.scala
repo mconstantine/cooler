@@ -1,6 +1,7 @@
 package it.mconst.cooler.utils
 
 import cats.data.EitherT
+import cats.data.OptionT
 import cats.effect.kernel.Async
 import cats.effect.kernel.Resource
 import cats.implicits.*
@@ -251,4 +252,12 @@ final case class Collection[F[_]: Async, Doc: ClassTag](name: String)(using
 
   def use[R](op: CollectionResource[F, Doc] => F[R]): F[R] =
     resource.use(c => op(CollectionResource(c)))
+
+  def use[R](op: CollectionResource[F, Doc] => OptionT[F, R]): OptionT[F, R] =
+    OptionT(resource.use(c => op(CollectionResource(c)).value))
+
+  def use[E, R](
+      op: CollectionResource[F, Doc] => EitherT[F, E, R]
+  ): EitherT[F, E, R] =
+    EitherT(resource.use(c => op(CollectionResource(c)).value))
 }

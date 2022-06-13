@@ -41,6 +41,10 @@ object TestUtils {
       result.fold(error => a.fail(error.message.toString), identity)
   }
 
+  extension [E, R](result: EitherT[IO, E, R]) {
+    def assertEquals[B](expected: B) = result.value.assertEquals(expected)
+  }
+
   extension (request: Request[IO])(using client: HttpClient[IO]) {
     def sign(authTokens: JWT.AuthTokens): Request[IO] = request.putHeaders(
       Authorization(

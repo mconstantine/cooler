@@ -57,7 +57,6 @@ class PublicRoutesTest extends CatsEffectSuite {
         )
         _ <- JWT
           .decodeToken(authTokens.accessToken, JWT.UserAccess)
-          .value
           .assertEquals(Right(user))
       yield ()
     }

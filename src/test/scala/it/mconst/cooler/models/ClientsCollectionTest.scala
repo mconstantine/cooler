@@ -64,7 +64,6 @@ class ClientsCollectionTest extends CatsEffectSuite {
       _ <- Clients
         .findById(client._id)
         .map(_.asBusiness.addressEmail)
-        .value
         .assertEquals(Right(data.addressEmail))
     yield ()
   }
@@ -93,7 +92,6 @@ class ClientsCollectionTest extends CatsEffectSuite {
       }
       _ <- Clients
         .findById(client._id)
-        .value
         .assertEquals(Left(Error(NotFound, __.ErrorClientNotFound)))
     yield ()
   }
@@ -197,7 +195,6 @@ class ClientsCollectionTest extends CatsEffectSuite {
       }
       _ <- Clients
         .update(client._id, update)
-        .value
         .assertEquals(Left(Error(NotFound, __.ErrorClientNotFound)))
     yield ()
   }
@@ -210,7 +207,6 @@ class ClientsCollectionTest extends CatsEffectSuite {
       _ <- Clients.delete(client._id).orFail.assertEquals(client)
       _ <- Clients
         .findById(client._id)
-        .value
         .assertEquals(Left(Error(NotFound, __.ErrorClientNotFound)))
     yield ()
   }
@@ -240,7 +236,6 @@ class ClientsCollectionTest extends CatsEffectSuite {
       }
       _ <- Clients
         .delete(client._id)
-        .value
         .assertEquals(Left(Error(NotFound, __.ErrorClientNotFound)))
     yield ()
   }

@@ -158,76 +158,69 @@ object Users {
   def register(
       user: User.CreationData
   )(using customer: Option[User])(using Lang): EitherT[IO, Error, User] =
-    EitherT(
-      collection.use(c =>
-        OptionT(
-          OptionT
-            .fromOption[IO](customer)
-            .foldF(
-              c.raw(_.count)
-                .map(n =>
-                  Option.when(n > 0)(
-                    Error(Forbidden, __.ErrorUserRegisterForbidden)
-                  )
+    collection.use(c =>
+      customer
+        .fold(
+          OptionT(
+            c.raw(_.count)
+              .map(n =>
+                Option.when(n > 0)(
+                  Error(Forbidden, __.ErrorUserRegisterForbidden)
                 )
-            )(_ => OptionT.none[IO, Error].value)
+              )
+          )
+        )(_ => OptionT.none[IO, Error])
+        .orElse(
+          c.findOne(Filter.eq("email", user.email))
+            .toOption
+            .map(_ => Error(Conflict, __.ErrorUserConflict))
         )
-          .orElse(
-            c.findOne(Filter.eq("email", user.email))
-              .toOption
-              .map(_ => Error(Conflict, __.ErrorUserConflict))
-          )
-          .toLeft[User](null)
-          .flatMap(_ =>
-            EitherT.fromEither(User.fromCreationData(user)).flatMap(c.create)
-          )
-          .value
-      )
+        .toLeft[User](null)
+        .flatMap(_ =>
+          EitherT.fromEither(User.fromCreationData(user)).flatMap(c.create)
+        )
     )
 
   def update(
       data: User.UpdateData
   )(using customer: User)(using Lang): EitherT[IO, Error, User] =
-    EitherT(
-      collection.use(c =>
-        EitherT
-          .fromEither[IO](User.validateUpdateData(data).toResult)
-          .flatMap(data =>
-            data.email.fold(EitherT.rightT[IO, Error](data))(email =>
-              OptionT(
-                c.raw(
-                  _.find(
-                    Filter
-                      .eq("email", email)
-                      .and(Filter.ne("_id", customer._id))
-                  ).first
-                )
-              ).toLeft(data).leftMap(_ => Error(Conflict, __.ErrorUserConflict))
-            )
+    collection.use(c =>
+      EitherT
+        .fromEither[IO](User.validateUpdateData(data).toResult)
+        .flatMap(data =>
+          data.email.fold(EitherT.rightT[IO, Error](data))(email =>
+            OptionT(
+              c.raw(
+                _.find(
+                  Filter
+                    .eq("email", email)
+                    .and(Filter.ne("_id", customer._id))
+                ).first
+              )
+            ).toLeft(data).leftMap(_ => Error(Conflict, __.ErrorUserConflict))
           )
-          .flatMap { (data: User.ValidUpdateData) =>
-            val updates = List(
-              data.name.map(Updates.set("name", _)).toList,
-              data.email.map(Updates.set("email", _)).toList,
-              data.password.map(Updates.set("password", _)).toList,
-              Some(
-                Updates.set(
-                  "updatedAt",
-                  BsonDateTime(System.currentTimeMillis).getValue
-                )
-              ).toList
-            ).flatten
+        )
+        .flatMap { (data: User.ValidUpdateData) =>
+          val updates = List(
+            data.name.map(Updates.set("name", _)).toList,
+            data.email.map(Updates.set("email", _)).toList,
+            data.password.map(Updates.set("password", _)).toList,
+            Some(
+              Updates.set(
+                "updatedAt",
+                BsonDateTime(System.currentTimeMillis).getValue
+              )
+            ).toList
+          ).flatten
 
-            c.update(customer._id, Updates.combine(updates.asJava))
-          }
-          .value
-      )
+          c.update(customer._id, Updates.combine(updates.asJava))
+        }
     )
 
   def login(
       data: User.LoginData
   )(using Lang): EitherT[IO, Error, JWT.AuthTokens] =
-    EitherT(collection.use { c =>
+    collection.use { c =>
       val error = Error(BadRequest, __.ErrorInvalidEmailOrPassword)
 
       c.findOne(Filter.eq("email", data.email))
@@ -242,8 +235,7 @@ object Users {
           )
         )
         .map(JWT.generateAuthTokens(_))
-        .value
-    })
+    }
 
   def refreshToken(
       data: User.RefreshTokenData
@@ -253,5 +245,5 @@ object Users {
       .map(JWT.generateAuthTokens(_))
 
   def delete(using customer: User)(using Lang): EitherT[IO, Error, User] =
-    EitherT(collection.use(_.delete(customer._id).value))
+    collection.use(_.delete(customer._id))
 }

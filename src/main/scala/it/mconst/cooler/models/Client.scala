@@ -607,24 +607,18 @@ object Clients {
   def create(
       data: Client.CreationData
   )(using customer: User)(using Lang): EitherT[IO, Error, Client] =
-    EitherT(
-      collection.use(c =>
-        EitherT
-          .fromEither[IO](Client.fromCreationData(data, customer))
-          .flatMap(c.create(_))
-          .value
-      )
+    collection.use(c =>
+      EitherT
+        .fromEither[IO](Client.fromCreationData(data, customer))
+        .flatMap(c.create(_))
     )
 
   def findById(
       _id: ObjectId
   )(using customer: User)(using Lang): EitherT[IO, Error, Client] =
-    EitherT(
-      collection.use(c =>
-        c.findOne(Filter.eq("_id", _id).and(Filter.eq("user", customer._id)))
-          .leftMap(_ => Error(NotFound, __.ErrorClientNotFound))
-          .value
-      )
+    collection.use(c =>
+      c.findOne(Filter.eq("_id", _id).and(Filter.eq("user", customer._id)))
+        .leftMap(_ => Error(NotFound, __.ErrorClientNotFound))
     )
 
   def update(_id: ObjectId, data: Client.UpdateData)(using customer: User)(using
@@ -673,48 +667,41 @@ object Clients {
             ).toList
           ).flatten
 
-          EitherT(
-            collection
-              .use(_.update(client._id, Updates.combine(updates.asJava)).value)
-          )
+          collection.use(_.update(client._id, Updates.combine(updates.asJava)))
       }
     }
 
   def delete(
       _id: ObjectId
   )(using customer: User)(using Lang): EitherT[IO, Error, Client] =
-    findById(_id).flatMap(client => {
-      EitherT(collection.use(_.delete(_id).value))
-    })
+    findById(_id).flatMap(client => collection.use(_.delete(_id)))
 
   def find(query: CursorQuery)(using
       customer: User
   )(using Lang): EitherT[IO, Error, Cursor[Client]] =
-    EitherT(
-      collection.use(
-        _.find(
-          "name",
-          Seq(
-            Aggregates.`match`(Filters.eq("user", customer._id)),
-            Aggregates.addFields(
-              Field(
-                "name",
-                Document(
-                  "$cond" -> Document(
-                    "if" -> Document(
-                      "$gt" -> List("$firstName", null)
-                    ),
-                    "then" -> Document(
-                      "$concat" -> List("$firstName", " ", "$lastName")
-                    ),
-                    "else" -> "$businessName"
-                  )
+    collection.use(
+      _.find(
+        "name",
+        Seq(
+          Aggregates.`match`(Filters.eq("user", customer._id)),
+          Aggregates.addFields(
+            Field(
+              "name",
+              Document(
+                "$cond" -> Document(
+                  "if" -> Document(
+                    "$gt" -> List("$firstName", null)
+                  ),
+                  "then" -> Document(
+                    "$concat" -> List("$firstName", " ", "$lastName")
+                  ),
+                  "else" -> "$businessName"
                 )
               )
             )
           )
-        )(query).value
-      )
+        )
+      )(query)
     )
 }
 

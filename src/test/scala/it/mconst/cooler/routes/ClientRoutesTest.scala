@@ -182,7 +182,6 @@ class ClientRoutesTest extends CatsEffectSuite {
         )
       _ <- Clients
         .findById(client.asBusiness._id)
-        .value
         .assertEquals(Left(Error(NotFound, __.ErrorClientNotFound)))
     yield ()
   }
