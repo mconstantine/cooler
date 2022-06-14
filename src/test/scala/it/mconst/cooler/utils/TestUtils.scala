@@ -6,6 +6,7 @@ import munit.CatsEffectAssertions.MUnitCatsAssertionsForIOOps
 import cats.data.EitherT
 import cats.effect.IO
 import cats.Functor
+import cats.syntax.all.none
 import com.osinka.i18n.Lang
 import io.circe.Decoder
 import io.circe.DecodingFailure
@@ -13,10 +14,17 @@ import io.circe.Encoder
 import io.circe.HCursor
 import io.circe.Json
 import io.circe.syntax.EncoderOps
+import it.mconst.cooler.models.BusinessClient
 import it.mconst.cooler.models.Client
+import it.mconst.cooler.models.DbProject
+import it.mconst.cooler.models.PrivateClient
+import it.mconst.cooler.models.Project
+import it.mconst.cooler.models.ProjectCashData
+import it.mconst.cooler.models.ProjectWithClient
 import it.mconst.cooler.models.user.JWT
 import it.mconst.cooler.models.user.User
 import it.mconst.cooler.utils.Error
+import mongo4cats.bson.ObjectId
 import org.http4s.AuthScheme
 import org.http4s.circe.*
 import org.http4s.client.Client as HttpClient
@@ -146,4 +154,36 @@ object TestUtils {
     addressStreetNumber,
     addressEmail
   )
+
+  extension (client: Client) {
+    def asPrivate(using a: Assertions): PrivateClient = client match
+      case c: PrivateClient => c
+      case _: BusinessClient =>
+        a.fail("Trying to cast business client to private client")
+
+    def asBusiness(using a: Assertions): BusinessClient = client match
+      case c: BusinessClient => c
+      case _: PrivateClient =>
+        a.fail("Trying to cast private client to business client")
+  }
+
+  def makeTestProject(
+      client: ObjectId,
+      name: String = "Test project",
+      description: Option[String] = none[String],
+      cashData: Option[ProjectCashData] = none[ProjectCashData]
+  ) = Project.CreationData(client.toHexString, name, description, cashData)
+
+  extension (project: Project) {
+    def asDbProject(using a: Assertions): DbProject = project match
+      case p: DbProject => p
+      case _: ProjectWithClient =>
+        a.fail("Trying to cast project with client to DB project")
+
+    def asProjectWithClient(using a: Assertions): ProjectWithClient =
+      project match
+        case p: ProjectWithClient => p
+        case _: DbProject =>
+          a.fail("Trying to cast DB project to project with client")
+  }
 }

@@ -12,6 +12,7 @@ import io.circe.generic.auto.deriveDecoder
 import io.circe.generic.auto.deriveEncoder
 import it.mconst.cooler.utils.__
 import it.mconst.cooler.utils.Error
+import mongo4cats.bson.ObjectId
 import mongo4cats.circe.*
 import munit.Assertions
 import org.http4s.circe.*
@@ -153,3 +154,25 @@ final case class CursorQueryDesc(
     last: Option[Int] = none[Int],
     before: Option[String] = none[String]
 ) extends CursorQuery(query)
+
+extension (s: String) {
+  def toObjectId(fieldName: String)(using Lang): Validation[ObjectId] =
+    Validated.fromEither(
+      ObjectId
+        .from(s)
+        .left
+        .map(_ =>
+          NonEmptyChain.one(
+            ValidationError(fieldName, __.ErrorDecodeInvalidObjectId)
+          )
+        )
+    )
+}
+
+extension (os: Option[String]) {
+  def toOptionalObjectId(fieldName: String)(using
+      Lang
+  ): Validation[Option[ObjectId]] =
+    os.map(_.toObjectId(fieldName).map(Some(_)))
+      .getOrElse(Validated.valid(none[ObjectId]))
+}

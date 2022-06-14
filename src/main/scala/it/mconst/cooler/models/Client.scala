@@ -26,7 +26,6 @@ import mongo4cats.bson.Document
 import mongo4cats.bson.ObjectId
 import mongo4cats.circe.*
 import mongo4cats.collection.operations.Filter
-import munit.Assertions
 import org.bson.BsonDateTime
 import org.http4s.circe.*
 import org.http4s.dsl.io.*
@@ -42,7 +41,7 @@ sealed abstract trait Client(
     addressStreet: NonEmptyString,
     addressStreetNumber: Option[NonEmptyString],
     addressEmail: Email,
-    user: ObjectId,
+    val user: ObjectId,
     createdAt: BsonDateTime,
     updatedAt: BsonDateTime
 ) extends DbDocument {
@@ -61,7 +60,7 @@ final case class PrivateClient(
     addressStreet: NonEmptyString,
     addressStreetNumber: Option[NonEmptyString],
     addressEmail: Email,
-    user: ObjectId,
+    override val user: ObjectId,
     createdAt: BsonDateTime,
     updatedAt: BsonDateTime
 ) extends Client(
@@ -92,7 +91,7 @@ final case class BusinessClient(
     addressStreet: NonEmptyString,
     addressStreetNumber: Option[NonEmptyString],
     addressEmail: Email,
-    user: ObjectId,
+    override val user: ObjectId,
     createdAt: BsonDateTime,
     updatedAt: BsonDateTime
 ) extends Client(
@@ -588,20 +587,11 @@ extension (client: Client) {
     client match
       case c: PrivateClient  => whenPrivate(c)
       case c: BusinessClient => whenBusiness(c)
-
-  def asPrivate(using a: Assertions): PrivateClient = client match
-    case c: PrivateClient => c
-    case _: BusinessClient =>
-      a.fail("Trying to cast business client to private client")
-
-  def asBusiness(using a: Assertions): BusinessClient = client match
-    case c: BusinessClient => c
-    case _: PrivateClient =>
-      a.fail("Trying to cast private client to business client")
 }
 
 object Clients {
-  val collection = Collection[IO, Client]("clients")
+  val collectionName = "clients"
+  val collection = Collection[IO, Client](collectionName)
 
   def create(
       data: Client.CreationData

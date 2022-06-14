@@ -9,8 +9,6 @@ import cats.syntax.all.none
 import com.osinka.i18n.Lang
 import io.circe.generic.auto.*
 import it.mconst.cooler.middlewares.UserMiddleware
-import it.mconst.cooler.models.asBusiness
-import it.mconst.cooler.models.asPrivate
 import it.mconst.cooler.models.Client
 import it.mconst.cooler.models.Clients
 import it.mconst.cooler.models.Cursor
