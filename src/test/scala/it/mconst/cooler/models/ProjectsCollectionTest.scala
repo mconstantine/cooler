@@ -128,4 +128,75 @@ class ProjectsCollectionTest extends CatsEffectSuite {
       yield ()
     }
   }
+
+  def projectsList = Resource.make {
+    val client = testDataFixture().client
+
+    val projects: List[Project.CreationData] = List(
+      makeTestProject(client._id, name = "Alice"),
+      makeTestProject(client._id, name = "Bob"),
+      makeTestProject(client._id, name = "Charlie"),
+      makeTestProject(client._id, name = "Daniel"),
+      makeTestProject(client._id, name = "Eleanor"),
+      makeTestProject(client._id, name = "Frederick")
+    )
+
+    import cats.syntax.parallel.*
+
+    Projects.collection.use(_.raw(_.deleteMany(Filter.empty)).flatMap { _ =>
+      projects
+        .map(Projects.create(_).orFail)
+        .parSequence
+        .map(
+          _.sortWith(_.asDbProject.name.toString < _.asDbProject.name.toString)
+        )
+    })
+  }(_ => Projects.collection.use(_.raw(_.deleteMany(Filter.empty)).void))
+
+  test("should find a project") {
+    projectsList.use { projects =>
+      for
+        result <- Projects
+          .find(
+            CursorQueryAsc(
+              query = Some("a"),
+              first = Some(2),
+              after = Some("Alice")
+            )
+          )
+          .orFail
+        _ = assertEquals(result.pageInfo.totalCount, 4)
+        _ = assertEquals(result.pageInfo.startCursor, Some("Charlie"))
+        _ = assertEquals(result.pageInfo.endCursor, Some("Daniel"))
+        _ = assertEquals(result.pageInfo.hasPreviousPage, true)
+        _ = assertEquals(result.pageInfo.hasNextPage, true)
+        _ = assertEquals(result.edges.length, 2)
+        _ = assertEquals(
+          result.edges.map(_.node),
+          List(projects(2), projects(3))
+        )
+      yield ()
+    }
+  }
+
+  test("should not include projects of clients of other users when searching") {
+    projectsList.use { _ =>
+      otherUser.use { user =>
+        given User = user
+
+        for
+          client <- Clients.create(makeTestBusinessClient()).orFail
+          project <- Projects
+            .create(makeTestProject(client._id, name = "Adam"))
+            .orFail
+          result <- Projects
+            .find(CursorQueryAsc(query = Some("a")))
+            .orFail
+            .map(_.edges.map(_.node.asDbProject.name.toString))
+          _ = assertEquals(result, List("Adam"))
+        yield ()
+      }
+    }
+  }
+
 }

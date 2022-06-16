@@ -613,10 +613,10 @@ object Clients {
   def update(_id: ObjectId, data: Client.UpdateData)(using customer: User)(using
       Lang
   ): EitherT[IO, Error, Client] =
-    findById(_id).flatMap { client =>
-      EitherT.fromEither[IO](Client.validateUpdateData(data).toResult).flatMap {
-        (data: Client.ValidUpdateData) =>
-          collection.use(
+    for
+      client <- findById(_id)
+      data <- EitherT.fromEither[IO](Client.validateUpdateData(data).toResult)
+      result <- collection.use(
             _.update(
               client._id,
               data match
@@ -647,9 +647,7 @@ object Clients {
                     "addressEmail" -> d.addressEmail
                   )
             )
-          )
-      }
-    }
+    yield result
 
   def delete(
       _id: ObjectId

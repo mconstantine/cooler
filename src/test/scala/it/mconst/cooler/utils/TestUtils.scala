@@ -45,7 +45,16 @@ object TestUtils {
 
   extension [F[_]: Functor, T](result: EitherT[F, Error, T]) {
     def orFail(using a: Assertions): F[T] =
-      result.fold(error => a.fail(error.message.toString), identity)
+      result.fold(
+        error =>
+          a.fail(
+            List(
+              List(error.message.toString),
+              error.extras.map(_.mkString("; ")).toList
+            ).flatten.mkString(" - ")
+          ),
+        identity
+      )
   }
 
   extension [E, R](result: EitherT[IO, E, R]) {

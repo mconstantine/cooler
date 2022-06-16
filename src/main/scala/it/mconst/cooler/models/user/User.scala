@@ -151,8 +151,7 @@ object User {
 }
 
 object Users {
-  val collectionName = "users"
-  val collection = Collection[IO, User](collectionName)
+  val collection = Collection[IO, User]("users")
 
   def register(
       user: User.CreationData

@@ -4,6 +4,7 @@ import cats.data.EitherT
 import cats.data.NonEmptyChain
 import cats.data.OptionT
 import cats.effect.IO
+import cats.syntax.all.none
 import com.mongodb.client.model.Aggregates
 import com.mongodb.client.model.Filters
 import com.osinka.i18n.Lang
@@ -21,10 +22,14 @@ import it.mconst.cooler.utils.Collection
 import it.mconst.cooler.utils.DbDocument
 import it.mconst.cooler.utils.Error
 import it.mconst.cooler.utils.given
+import mongo4cats.bson.Document
 import mongo4cats.bson.ObjectId
 import mongo4cats.circe.*
 import org.bson.BsonDateTime
 import org.http4s.Status
+import org.http4s.EntityDecoder
+import org.http4s.EntityEncoder
+import org.http4s.circe.*
 
 final case class ProjectCashData(at: BsonDateTime, amount: BigDecimal)
 
@@ -79,6 +84,9 @@ object Project {
       cashData: Option[ProjectCashData]
   )
 
+  given EntityDecoder[IO, CreationData] = jsonOf[IO, CreationData]
+  given EntityEncoder[IO, CreationData] = jsonEncoderOf[IO, CreationData]
+
   final case class ValidCreationData(
       client: ObjectId,
       name: NonEmptyString,
@@ -87,11 +95,14 @@ object Project {
   )
 
   final case class UpdateData(
-      client: Option[String],
-      name: Option[String],
-      description: Option[String],
-      cashData: Option[ProjectCashData]
+      client: Option[String] = none[String],
+      name: Option[String] = none[String],
+      description: Option[String] = none[String],
+      cashData: Option[ProjectCashData] = none[ProjectCashData]
   )
+
+  given EntityDecoder[IO, UpdateData] = jsonOf[IO, UpdateData]
+  given EntityEncoder[IO, UpdateData] = jsonEncoderOf[IO, UpdateData]
 
   final case class ValidUpdateData(
       client: Option[ObjectId],
@@ -138,8 +149,7 @@ object Project {
 }
 
 object Projects {
-  val collectionName = "projects"
-  val collection = Collection[IO, Project](collectionName)
+  val collection = Collection[IO, Project]("projects")
 
   def create(
       data: Project.CreationData
@@ -163,7 +173,7 @@ object Projects {
               Seq(
                 Aggregates.`match`(Filters.eq("_id", _id)),
                 Aggregates
-                  .lookup(Clients.collectionName, "client", "_id", "client"),
+                  .lookup(Clients.collection.name, "client", "_id", "client"),
                 Aggregates.unwind("$client"),
                 Aggregates.`match`(Filters.eq("client.user", customer._id))
               )
@@ -172,6 +182,23 @@ object Projects {
         ),
       Error(Status.NotFound, __.ErrorProjectNotFound)
     )
+
+  def find(query: CursorQuery)(using customer: User)(using
+      Lang
+  ): EitherT[IO, Error, Cursor[Project]] =
+    collection.use(
+      _.find(
+        "name",
+        Seq(
+          Aggregates
+            .lookup(Clients.collection.name, "client", "_id", "tmpClient"),
+          Aggregates.unwind("$tmpClient"),
+          Aggregates.`match`(Filters.eq("tmpClient.user", customer._id)),
+          Aggregates.project(Document("tmpClient" -> false))
+        )
+      )(query)
+    )
+
 }
 
 given Encoder[Project] with Decoder[Project] with {
