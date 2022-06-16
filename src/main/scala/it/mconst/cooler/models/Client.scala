@@ -590,8 +590,7 @@ extension (client: Client) {
 }
 
 object Clients {
-  val collectionName = "clients"
-  val collection = Collection[IO, Client](collectionName)
+  val collection = Collection[IO, Client]("clients")
 
   def create(
       data: Client.CreationData
@@ -617,36 +616,37 @@ object Clients {
       client <- findById(_id)
       data <- EitherT.fromEither[IO](Client.validateUpdateData(data).toResult)
       result <- collection.use(
-            _.update(
-              client._id,
-              data match
-                case d: Client.ValidPrivateUpdateData =>
-                  Map(
-                    "fiscalCode" -> d.fiscalCode,
-                    "firstName" -> d.firstName,
-                    "lastName" -> d.lastName,
-                    "addressCountry" -> d.addressCountry,
-                    "addressProvince" -> d.addressProvince,
-                    "addressZIP" -> d.addressZIP,
-                    "addressCity" -> d.addressCity,
-                    "addressStreet" -> d.addressStreet,
-                    "addressStreetNumber" -> d.addressStreetNumber,
-                    "addressEmail" -> d.addressEmail
-                  )
-                case d: Client.ValidBusinessUpdateData =>
-                  Map(
-                    "countryCode" -> d.countryCode,
-                    "businessName" -> d.businessName,
-                    "vatNumber" -> d.vatNumber,
-                    "addressCountry" -> d.addressCountry,
-                    "addressProvince" -> d.addressProvince,
-                    "addressZIP" -> d.addressZIP,
-                    "addressCity" -> d.addressCity,
-                    "addressStreet" -> d.addressStreet,
-                    "addressStreetNumber" -> d.addressStreetNumber,
-                    "addressEmail" -> d.addressEmail
-                  )
-            )
+        _.update(
+          client._id,
+          data match
+            case d: Client.ValidPrivateUpdateData =>
+              Map(
+                "fiscalCode" -> d.fiscalCode,
+                "firstName" -> d.firstName,
+                "lastName" -> d.lastName,
+                "addressCountry" -> d.addressCountry,
+                "addressProvince" -> d.addressProvince,
+                "addressZIP" -> d.addressZIP,
+                "addressCity" -> d.addressCity,
+                "addressStreet" -> d.addressStreet,
+                "addressStreetNumber" -> d.addressStreetNumber,
+                "addressEmail" -> d.addressEmail
+              )
+            case d: Client.ValidBusinessUpdateData =>
+              Map(
+                "countryCode" -> d.countryCode,
+                "businessName" -> d.businessName,
+                "vatNumber" -> d.vatNumber,
+                "addressCountry" -> d.addressCountry,
+                "addressProvince" -> d.addressProvince,
+                "addressZIP" -> d.addressZIP,
+                "addressCity" -> d.addressCity,
+                "addressStreet" -> d.addressStreet,
+                "addressStreetNumber" -> d.addressStreetNumber,
+                "addressEmail" -> d.addressEmail
+              )
+        )
+      )
     yield result
 
   def delete(
