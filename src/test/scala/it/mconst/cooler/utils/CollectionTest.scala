@@ -69,10 +69,10 @@ class CollectionTest extends CatsEffectSuite {
   test("should update a document") {
     val person = Person(new ObjectId(), "John", "Doe")
 
-    val updates = Map(
-      "firstName" -> Some("Mario"),
-      "lastName" -> Some("Martino")
-    )
+    val updates = people
+      .Update("firstName", Some("Mario"))
+      .`with`("lastName", Some("Martino"))
+      .build
 
     for
       update <- people
@@ -87,10 +87,10 @@ class CollectionTest extends CatsEffectSuite {
   test("should register the time of the update") {
     val person = Person(new ObjectId(), "John", "Doe")
 
-    val updates = Map(
-      "firstName" -> Some("Mario"),
-      "lastName" -> Some("Martino")
-    )
+    val updates = people
+      .Update("firstName", Some("Mario"))
+      .`with`("lastName", Some("Martino"))
+      .build
 
     for
       person <- people.use(_.create(person)).orFail

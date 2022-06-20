@@ -620,31 +620,31 @@ object Clients {
           client._id,
           data match
             case d: Client.ValidPrivateUpdateData =>
-              Map(
-                "fiscalCode" -> d.fiscalCode,
-                "firstName" -> d.firstName,
-                "lastName" -> d.lastName,
-                "addressCountry" -> d.addressCountry,
-                "addressProvince" -> d.addressProvince,
-                "addressZIP" -> d.addressZIP,
-                "addressCity" -> d.addressCity,
-                "addressStreet" -> d.addressStreet,
-                "addressStreetNumber" -> d.addressStreetNumber,
-                "addressEmail" -> d.addressEmail
-              )
+              collection
+                .Update("fiscalCode", d.fiscalCode)
+                .`with`("firstName", d.firstName)
+                .`with`("lastName", d.lastName)
+                .`with`("addressCountry", d.addressCountry)
+                .`with`("addressProvince", d.addressProvince)
+                .`with`("addressZIP", d.addressZIP)
+                .`with`("addressCity", d.addressCity)
+                .`with`("addressStreet", d.addressStreet)
+                .`with`("addressStreetNumber", d.addressStreetNumber)
+                .`with`("addressEmail", d.addressEmail)
+                .build
             case d: Client.ValidBusinessUpdateData =>
-              Map(
-                "countryCode" -> d.countryCode,
-                "businessName" -> d.businessName,
-                "vatNumber" -> d.vatNumber,
-                "addressCountry" -> d.addressCountry,
-                "addressProvince" -> d.addressProvince,
-                "addressZIP" -> d.addressZIP,
-                "addressCity" -> d.addressCity,
-                "addressStreet" -> d.addressStreet,
-                "addressStreetNumber" -> d.addressStreetNumber,
-                "addressEmail" -> d.addressEmail
-              )
+              collection
+                .Update("countryCode", d.countryCode)
+                .`with`("businessName", d.businessName)
+                .`with`("vatNumber", d.vatNumber)
+                .`with`("addressCountry", d.addressCountry)
+                .`with`("addressProvince", d.addressProvince)
+                .`with`("addressZIP", d.addressZIP)
+                .`with`("addressCity", d.addressCity)
+                .`with`("addressStreet", d.addressStreet)
+                .`with`("addressStreetNumber", d.addressStreetNumber)
+                .`with`("addressEmail", d.addressEmail)
+                .build
         )
       )
     yield result
@@ -652,7 +652,7 @@ object Clients {
   def delete(
       _id: ObjectId
   )(using customer: User)(using Lang): EitherT[IO, Error, Client] =
-    findById(_id).flatMap(client => collection.use(_.delete(_id)))
+    findById(_id).flatMap(client => collection.use(_.delete(client._id)))
 
   def find(query: CursorQuery)(using
       customer: User

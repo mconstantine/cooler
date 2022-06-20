@@ -4,6 +4,7 @@ import it.mconst.cooler.utils.TestUtils.*
 import munit.Assertions
 import munit.CatsEffectSuite
 
+import cats.effect.IO
 import cats.effect.kernel.Resource
 import cats.syntax.all.none
 import com.osinka.i18n.Lang
@@ -11,6 +12,8 @@ import it.mconst.cooler.models.user.User
 import it.mconst.cooler.models.user.Users
 import it.mconst.cooler.utils.__
 import it.mconst.cooler.utils.Error
+import mongo4cats.collection.operations.Filter
+import org.bson.BsonDateTime
 import org.http4s.Status
 
 class ProjectsCollectionTest extends CatsEffectSuite {
@@ -43,6 +46,7 @@ class ProjectsCollectionTest extends CatsEffectSuite {
       Users.collection
         .use(_.drop)
         .both(Clients.collection.use(_.drop))
+        .both(Projects.collection.use(_.drop))
         .void
     )
   )
@@ -57,7 +61,9 @@ class ProjectsCollectionTest extends CatsEffectSuite {
     val data =
       makeTestProject(
         testDataFixture().client._id,
-        name = "Project creation test"
+        name = "Project creation test",
+        cashData =
+          Some(ProjectCashData(BsonDateTime(System.currentTimeMillis), 1000.0))
       )
 
     Projects.create(data).orFail.map(_.asDbProject.name).assertEquals(data.name)
@@ -96,7 +102,9 @@ class ProjectsCollectionTest extends CatsEffectSuite {
     val data =
       makeTestProject(
         testDataFixture().client._id,
-        name = "Project find by id test"
+        name = "Project find by id test",
+        cashData =
+          Some(ProjectCashData(BsonDateTime(System.currentTimeMillis), 1000.0))
       )
 
     for
@@ -199,4 +207,126 @@ class ProjectsCollectionTest extends CatsEffectSuite {
     }
   }
 
+  test("should update a project (empty update)") {
+    val client = testDataFixture().client
+    val data = makeTestProject(client._id, name = "Update empty test")
+
+    val update = Project.UpdateData()
+
+    for
+      project <- Projects.create(data).orFail.map(_.asDbProject)
+      _ <- IO.delay(Thread.sleep(500))
+      updated <- Projects.update(project._id, update).orFail.map(_.asDbProject)
+      _ = assertEquals(updated.client.toHexString, data.client)
+      _ = assertEquals(updated.name.toString, data.name)
+      _ = assertEquals(updated.description.map(_.toString), data.description)
+      _ = assertEquals(updated.cashData, data.cashData)
+    yield ()
+  }
+
+  test("should update a project (full update)") {
+    val client = testDataFixture().client
+    val data = makeTestProject(client._id, name = "Update full test")
+
+    val newClientData =
+      makeTestBusinessClient(addressEmail = "new-project-client@example.com")
+
+    for
+      client <- Clients.create(newClientData).orFail.map(_.asBusiness)
+      project <- Projects.create(data).orFail
+      update = Project.UpdateData(
+        Some(client._id.toString),
+        Some("Updated name"),
+        Some("Updated description"),
+        Some(ProjectCashData(BsonDateTime(System.currentTimeMillis), 42.0))
+      )
+      _ <- IO.delay(Thread.sleep(500))
+      updated <- Projects.update(project._id, update).orFail.map(_.asDbProject)
+      _ = assertEquals(updated.client.toString, update.client.get)
+      _ = assertEquals(updated.name.toString, update.name.get)
+      _ = assertEquals(updated.description.map(_.toString), update.description)
+      _ = assertEquals(updated.cashData, update.cashData)
+    yield ()
+  }
+
+  test("should update a project of another user") {
+    otherUser.use { otherUser =>
+      val data = makeTestProject(
+        testDataFixture().client._id,
+        name = "Update exclusivity test"
+      )
+
+      for
+        project <- Projects.create(data).orFail
+        _ <- {
+          given User = otherUser
+
+          Projects
+            .update(project._id, Project.UpdateData())
+            .assertEquals(Left(Error(Status.NotFound, __.ErrorProjectNotFound)))
+        }
+      yield ()
+    }
+  }
+
+  test("should not accept an updated client if it is of another user") {
+    otherUser.use { otherUser =>
+      val testData = testDataFixture()
+      val originalUser = testData.user
+      val originalClient = testData.client
+      val updatedClientData = makeTestPrivateClient()
+
+      val projectData = makeTestProject(
+        originalClient._id,
+        name = "Update client exclusivity test"
+      )
+
+      for
+        project <- Projects.create(projectData).orFail
+        updatedClient <- {
+          given User = otherUser
+          Clients.create(updatedClientData).orFail
+        }
+        projectUpdateData = Project.UpdateData(client =
+          Some(updatedClient._id.toHexString)
+        )
+        _ <- Projects
+          .update(project._id, projectUpdateData)
+          .assertEquals(Left(Error(Status.NotFound, __.ErrorClientNotFound)))
+      yield ()
+    }
+  }
+
+  test("should delete a client") {
+    val data =
+      makeTestProject(testDataFixture().client._id, name = "Delete test")
+
+    for
+      project <- Projects.create(data).orFail
+      _ <- Projects.delete(project._id).orFail.assertEquals(project)
+      _ <- Projects
+        .findById(project._id)
+        .assertEquals(Left(Error(Status.NotFound, __.ErrorProjectNotFound)))
+    yield ()
+  }
+
+  test("should not delete a project of another user") {
+    otherUser.use { otherUser =>
+      val data = makeTestProject(
+        testDataFixture().client._id,
+        name = "Delete exclusivity test"
+      )
+
+      for
+        project <- Projects.create(data).orFail
+        _ <- {
+          given User = otherUser
+
+          Projects
+            .delete(project._id)
+            .assertEquals(Left(Error(Status.NotFound, __.ErrorProjectNotFound)))
+        }
+      yield ()
+    }
+  }
 }

@@ -199,6 +199,33 @@ object Projects {
       )(query)
     )
 
+  def update(_id: ObjectId, data: Project.UpdateData)(using customer: User)(
+      using Lang
+  ): EitherT[IO, Error, Project] =
+    for
+      project <- findById(_id)
+      data <- EitherT.fromEither[IO](Project.validateUpdateData(data).toResult)
+      client <- data.client.fold(EitherT.rightT[IO, Error](none[Client]))(
+        Clients.findById(_).map(Some(_))
+      )
+      result <- collection
+        .useWithCodec[ProjectCashData, Error, Project](
+          _.update(
+            project._id,
+            collection
+              .Update("client", client.map(_._id))
+              .`with`("name", data.name)
+              .`with`("description", data.description)
+              .`with`("cashData", data.cashData)
+              .build
+          )
+        )
+    yield result
+
+  def delete(_id: ObjectId)(using customer: User)(using
+      Lang
+  ): EitherT[IO, Error, Project] =
+    findById(_id).flatMap(project => collection.use(_.delete(project._id)))
 }
 
 given Encoder[Project] with Decoder[Project] with {
@@ -209,3 +236,6 @@ given Encoder[Project] with Decoder[Project] with {
   override def apply(c: HCursor): Result[Project] =
     c.as[DbProject].orElse[DecodingFailure, Project](c.as[ProjectWithClient])
 }
+
+given EntityEncoder[IO, Project] = jsonEncoderOf[IO, Project]
+given EntityDecoder[IO, Project] = jsonOf[IO, Project]

@@ -55,6 +55,33 @@ final case class Collection[F[_]: Async, Doc <: DbDocument: ClassTag](
 )(using
     MongoCodecProvider[Doc]
 ) {
+  protected final case class EmptyUpdate() {
+    def `with`[T](key: String, value: Option[T])(using
+        MongoCodecProvider[T]
+    ): Update = Update(
+      Map(key -> value)
+    )
+  }
+
+  protected final case class Update(val values: Map[String, Option[Any]]) {
+    def `with`[T](key: String, value: Option[T])(using
+        MongoCodecProvider[T]
+    ): Update = Update(
+      values ++ Map(key -> value)
+    )
+
+    def build: BuiltUpdate = BuiltUpdate(values)
+  }
+
+  protected final case class BuiltUpdate(val values: Map[String, Option[Any]])
+
+  object Update {
+    def apply[T](key: String, value: Option[T])(using
+        MongoCodecProvider[T]
+    ): Update =
+      EmptyUpdate().`with`[T](key, value)
+  }
+
   protected final case class CollectionResource[F[
       _
   ]: Async, Doc <: DbDocument: ClassTag](
@@ -74,10 +101,10 @@ final case class Collection[F[_]: Async, Doc <: DbDocument: ClassTag](
         )
       yield inserted
 
-    def update(_id: ObjectId, updates: Map[String, Option[Any]])(using
+    def update(_id: ObjectId, update: BuiltUpdate)(using
         Lang
     ): EitherT[F, Error, Doc] = {
-      val providedUpdates = updates.toList
+      val providedUpdates = update.values.toList
         .map(entry => entry._2.map(Updates.set(entry._1, _)))
         .map(_.toList)
         .flatten
@@ -269,4 +296,27 @@ final case class Collection[F[_]: Async, Doc <: DbDocument: ClassTag](
       op: CollectionResource[F, Doc] => EitherT[F, E, R]
   ): EitherT[F, E, R] =
     EitherT(resource.use(c => op(CollectionResource(c)).value))
+
+  def useWithCodec[C, R](
+      op: CollectionResource[F, Doc] => F[R]
+  )(using ClassTag[C], MongoCodecProvider[C]): F[R] =
+    resource.map(_.withAddedCodec[C]).use(c => op(CollectionResource(c)))
+
+  def useWithCodec[C, R](
+      op: CollectionResource[F, Doc] => OptionT[F, R]
+  )(using ClassTag[C], MongoCodecProvider[C]): OptionT[F, R] =
+    OptionT(
+      resource
+        .map(_.withAddedCodec[C])
+        .use(c => op(CollectionResource(c)).value)
+    )
+
+  def useWithCodec[C, E, R](
+      op: CollectionResource[F, Doc] => EitherT[F, E, R]
+  )(using ClassTag[C], MongoCodecProvider[C]): EitherT[F, E, R] =
+    EitherT(
+      resource
+        .map(_.withAddedCodec[C])
+        .use(c => op(CollectionResource(c)).value)
+    )
 }
