@@ -28,8 +28,8 @@ class ProjectsCollectionTest extends CatsEffectSuite {
         admin <- Users
           .register(
             User.CreationData(
-              "Client collection test admin",
-              "client-test-admin@example.com",
+              "Project collection test admin",
+              "project-test-admin@example.com",
               "S0m3P4ssw0rd!?"
             )
           )

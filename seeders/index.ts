@@ -3,6 +3,7 @@ import { MongoClient } from "mongodb";
 import { seedClients } from "./Client";
 import { seedUsers } from "./User";
 import { seedProjects } from "./Project";
+import { seedTasks } from "./Task";
 
 const dbUri = config.database.uri;
 const dbName = config.database.name;
@@ -14,6 +15,7 @@ const dbName = config.database.name;
   await seedUsers(db);
   await seedClients(db);
   await seedProjects(db);
+  await seedTasks(db);
 })().then(
   () => {
     console.log("Done.");

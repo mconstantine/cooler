@@ -17,14 +17,20 @@ import io.circe.syntax.EncoderOps
 import it.mconst.cooler.models.BusinessClient
 import it.mconst.cooler.models.Client
 import it.mconst.cooler.models.DbProject
+import it.mconst.cooler.models.DbTask
 import it.mconst.cooler.models.PrivateClient
 import it.mconst.cooler.models.Project
 import it.mconst.cooler.models.ProjectCashData
 import it.mconst.cooler.models.ProjectWithClient
+import it.mconst.cooler.models.Task
+import it.mconst.cooler.models.TaskWithProject
 import it.mconst.cooler.models.user.JWT
 import it.mconst.cooler.models.user.User
 import it.mconst.cooler.utils.Error
+import java.time.format.DateTimeFormatter
+import java.time.LocalDateTime
 import mongo4cats.bson.ObjectId
+import org.bson.BsonDateTime
 import org.http4s.AuthScheme
 import org.http4s.circe.*
 import org.http4s.client.Client as HttpClient
@@ -194,5 +200,35 @@ object TestUtils {
         case p: ProjectWithClient => p
         case _: DbProject =>
           a.fail("Trying to cast DB project to project with client")
+  }
+
+  def makeTestTask(
+      project: ObjectId,
+      name: String = "Test task",
+      description: Option[String] = none[String],
+      startTime: String =
+        LocalDateTime.now.format(DateTimeFormatter.ISO_DATE_TIME),
+      expectedWorkingHours: Float = 1f,
+      hourlyCost: Float = 1f
+  ) = Task.InputData(
+    project.toHexString,
+    name,
+    description,
+    startTime,
+    expectedWorkingHours,
+    hourlyCost
+  )
+
+  extension (task: Task) {
+    def asDbTask(using a: Assertions): DbTask = task match
+      case t: DbTask => t
+      case _: TaskWithProject =>
+        a.fail("Trying to cast task with project to DB task")
+
+    def asTaskWithProject(using a: Assertions): TaskWithProject =
+      task match
+        case t: TaskWithProject => t
+        case _: DbTask =>
+          a.fail("Trying to cast DB task to task with project")
   }
 }

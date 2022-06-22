@@ -12,12 +12,17 @@ import io.circe.generic.auto.deriveDecoder
 import io.circe.generic.auto.deriveEncoder
 import it.mconst.cooler.utils.__
 import it.mconst.cooler.utils.Error
+import java.time.format.DateTimeFormatter
+import java.time.LocalDateTime
+import java.time.ZoneOffset
 import mongo4cats.bson.ObjectId
 import mongo4cats.circe.*
 import munit.Assertions
+import org.bson.BsonDateTime
 import org.http4s.circe.*
 import org.http4s.dsl.io.*
 import org.http4s.EntityEncoder
+import scala.util.Try
 
 final case class ValidationError(fieldName: String, message: __)(using Lang)
 type Validation[T] = Validated[NonEmptyChain[ValidationError], T]
@@ -165,6 +170,19 @@ extension (s: String) {
           NonEmptyChain.one(
             ValidationError(fieldName, __.ErrorDecodeInvalidObjectId)
           )
+        )
+    )
+
+  def toBsonDateTime(fieldName: String)(using Lang): Validation[BsonDateTime] =
+    Validated.fromEither(
+      Try(LocalDateTime.parse(s, DateTimeFormatter.ISO_DATE_TIME)).toEither.left
+        .map(_ =>
+          NonEmptyChain.one(
+            ValidationError(fieldName, __.ErrorDecodeInvalidDateTime)
+          )
+        )
+        .map(dateTime =>
+          BsonDateTime(dateTime.toEpochSecond(ZoneOffset.UTC) * 1000)
         )
     )
 }

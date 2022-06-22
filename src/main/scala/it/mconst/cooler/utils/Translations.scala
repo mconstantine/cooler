@@ -11,10 +11,13 @@ enum __(val key: String):
   case ErrorDecodeEmptyString extends __("error.decode.emptyString")
   case ErrorDecodeInvalidCountryCode
       extends __("error.decode.invalidCountryCode")
+  case ErrorDecodeInvalidDateTime extends __("error.decode.invalidDateTime")
   case ErrorDecodeInvalidEmailFormat
       extends __("error.decode.invalidEmailFormat")
   case ErrorDecodeInvalidObjectId extends __("error.decode.invalidObjectId")
   case ErrorDecodeInvalidPasswordFormat
+      extends __("error.decode.invalidPasswordFormat")
+  case ErrorDecodeInvalidPositiveFloat
       extends __("error.decode.invalidPasswordFormat")
   case ErrorDecodeInvalidProvinceCode
       extends __("error.decode.invalidProvinceCode")
@@ -31,6 +34,7 @@ enum __(val key: String):
   case ErrorInvalidEmailOrPassword
       extends __("error.auth.invalidEmailOrPassword")
   case ErrorProjectNotFound extends __("error.project.notFound")
+  case ErrorTaskNotFound extends __("error.task.notFound")
   case ErrorUnknown extends __("error.unknown")
   case ErrorUserConflict extends __("error.user.conflict")
   case ErrorUserNotFound extends __("error.user.notFound")
