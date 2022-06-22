@@ -182,17 +182,15 @@ object Projects {
         .useWithCodec[ProjectCashData, Error, Project](
           _.update(
             project._id,
-            collection
-              .Update("client", client._id)
-              .`with`("name", data.name)
+            collection.Update
+              .`with`("client" -> client._id)
+              .`with`("name" -> data.name)
               .`with`(
-                "description",
-                data.description,
+                "description" -> data.description,
                 collection.UpdateStrategy.UnsetIfEmpty
               )
               .`with`(
-                "cashData",
-                data.cashData,
+                "cashData" -> data.cashData,
                 collection.UpdateStrategy.UnsetIfEmpty
               )
               .build

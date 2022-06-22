@@ -201,20 +201,17 @@ object Users {
         .flatMap { (data: User.ValidUpdateData) =>
           c.update(
             customer._id,
-            collection
-              .Update(
-                "name",
-                data.name,
+            collection.Update
+              .`with`(
+                "name" -> data.name,
                 collection.UpdateStrategy.IgnoreIfEmpty
               )
               .`with`(
-                "email",
-                data.email,
+                "email" -> data.email,
                 collection.UpdateStrategy.IgnoreIfEmpty
               )
               .`with`(
-                "password",
-                data.password,
+                "password" -> data.password,
                 collection.UpdateStrategy.IgnoreIfEmpty
               )
               .build

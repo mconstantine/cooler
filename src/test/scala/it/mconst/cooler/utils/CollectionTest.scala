@@ -71,34 +71,9 @@ class CollectionTest extends CatsEffectSuite {
   test("should update a document") {
     val person = Person(new ObjectId(), "John", "Doe")
 
-    val updates = people
-      .Update("firstName", "Mario")
-      .`with`("lastName", "Martino")
-      .build
-
-    for
-      update <- people
-        .use(_.create(person))
-        .orFail
-        .flatMap(person => people.use(_.update(person._id, updates)).orFail)
-      _ = assertEquals(update.firstName, "Mario")
-      _ = assertEquals(update.lastName, "Martino")
-    yield ()
-  }
-
-  // FIXME: this is temporary
-  test("temporary") {
-    val person = Person(new ObjectId(), "John", "Doe")
-
-    val updates = people
-      // TODO: this should NOT compile
-      .Update("firstName", Some("Mario"))
-      // TODO: this should NOT compile
-      // .`with`("firstName", "Martino", people.UpdateStrategy.IgnoreIfEmpty)
-      .`with`("lastName", "Martino")
-      .`with`("lastName", Some("Martino"), people.UpdateStrategy.IgnoreIfEmpty)
-      // TODO: this should NOT compile
-      .`with`("lastName", Some("Martino"))
+    val updates = people.Update
+      .`with`("firstName" -> "Mario")
+      .`with`("lastName" -> "Martino")
       .build
 
     for
@@ -114,9 +89,9 @@ class CollectionTest extends CatsEffectSuite {
   test("should register the time of the update") {
     val person = Person(new ObjectId(), "John", "Doe")
 
-    val updates = people
-      .Update("firstName", "Mario")
-      .`with`("lastName", "Martino")
+    val updates = people.Update
+      .`with`("firstName" -> "Mario")
+      .`with`("lastName" -> "Martino")
       .build
 
     for

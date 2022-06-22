@@ -415,38 +415,36 @@ object Clients {
           client._id,
           data match
             case d: Client.ValidPrivateInputData =>
-              collection
-                .Update("fiscalCode", d.fiscalCode)
-                .`with`("firstName", d.firstName)
-                .`with`("lastName", d.lastName)
-                .`with`("addressCountry", d.addressCountry)
-                .`with`("addressProvince", d.addressProvince)
-                .`with`("addressZIP", d.addressZIP)
-                .`with`("addressCity", d.addressCity)
-                .`with`("addressStreet", d.addressStreet)
+              collection.Update
+                .`with`("fiscalCode" -> d.fiscalCode)
+                .`with`("firstName" -> d.firstName)
+                .`with`("lastName" -> d.lastName)
+                .`with`("addressCountry" -> d.addressCountry)
+                .`with`("addressProvince" -> d.addressProvince)
+                .`with`("addressZIP" -> d.addressZIP)
+                .`with`("addressCity" -> d.addressCity)
+                .`with`("addressStreet" -> d.addressStreet)
                 .`with`(
-                  "addressStreetNumber",
-                  d.addressStreetNumber,
+                  "addressStreetNumber" -> d.addressStreetNumber,
                   collection.UpdateStrategy.UnsetIfEmpty
                 )
-                .`with`("addressEmail", d.addressEmail)
+                .`with`("addressEmail" -> d.addressEmail)
                 .build
             case d: Client.ValidBusinessInputData =>
-              collection
-                .Update("countryCode", d.countryCode)
-                .`with`("businessName", d.businessName)
-                .`with`("vatNumber", d.vatNumber)
-                .`with`("addressCountry", d.addressCountry)
-                .`with`("addressProvince", d.addressProvince)
-                .`with`("addressZIP", d.addressZIP)
-                .`with`("addressCity", d.addressCity)
-                .`with`("addressStreet", d.addressStreet)
+              collection.Update
+                .`with`("countryCode" -> d.countryCode)
+                .`with`("businessName" -> d.businessName)
+                .`with`("vatNumber" -> d.vatNumber)
+                .`with`("addressCountry" -> d.addressCountry)
+                .`with`("addressProvince" -> d.addressProvince)
+                .`with`("addressZIP" -> d.addressZIP)
+                .`with`("addressCity" -> d.addressCity)
+                .`with`("addressStreet" -> d.addressStreet)
                 .`with`(
-                  "addressStreetNumber",
-                  d.addressStreetNumber,
+                  "addressStreetNumber" -> d.addressStreetNumber,
                   collection.UpdateStrategy.UnsetIfEmpty
                 )
-                .`with`("addressEmail", d.addressEmail)
+                .`with`("addressEmail" -> d.addressEmail)
                 .build
         )
       )

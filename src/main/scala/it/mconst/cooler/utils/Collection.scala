@@ -70,30 +70,35 @@ final case class Collection[F[
   ) extends UpdateItem(key, value)
 
   protected final case class EmptyUpdate() {
-    def `with`[T](key: String, value: T)(using
+    def `with`[T](value: (String, T))(using
         MongoCodecProvider[T]
-    ): Update = Update(List(ValueUpdateItem(key, value)))
+    ): Update = Update(List(ValueUpdateItem(value._1, value._2)))
 
     def `with`[T](
-        key: String,
-        value: Option[T],
+        value: (String, Option[T]),
         updateStrategy: UpdateStrategy
     )(using
         MongoCodecProvider[T]
-    ): Update = Update(List(OptionUpdateItem(key, value, updateStrategy)))
+    ): Update = Update(
+      List(OptionUpdateItem(value._1, value._2, updateStrategy))
+    )
   }
 
   protected final case class Update(val values: List[UpdateItem[_]]) {
-    def `with`[T](key: String, value: T)(using
+    def `with`[T](value: (String, T))(using
         MongoCodecProvider[T]
-    ): Update = Update(ValueUpdateItem(key, value) :: values)
+    ): Update = Update(ValueUpdateItem(value._1, value._2) :: values)
+
+    def `with`(value: (String, Option[_])): Nothing =
+      throw new IllegalArgumentException(
+        "You mst provide an UpdateStrategy when updating an optional field"
+      )
 
     def `with`[T](
-        key: String,
-        value: Option[T],
+        value: (String, Option[T]),
         updateStrategy: UpdateStrategy
     )(using MongoCodecProvider[T]): Update =
-      Update(OptionUpdateItem(key, value, updateStrategy) :: values)
+      Update(OptionUpdateItem(value._1, value._2, updateStrategy) :: values)
 
     def build: BuiltUpdate = BuiltUpdate(values)
   }
@@ -101,13 +106,21 @@ final case class Collection[F[
   protected final case class BuiltUpdate(val values: List[UpdateItem[_]])
 
   object Update {
-    def apply[T](key: String, value: T)(using
+    def `with`[T](value: (String, T))(using
         MongoCodecProvider[T]
-    ): Update = EmptyUpdate().`with`[T](key, value)
+    ): Update = EmptyUpdate().`with`(value)
 
-    def apply[T](key: String, value: Option[T], updateStrategy: UpdateStrategy)(
-        using MongoCodecProvider[T]
-    ): Update = EmptyUpdate().`with`[T](key, value, updateStrategy)
+    def `with`(value: (String, Option[_])): Nothing =
+      throw new IllegalArgumentException(
+        "You mst provide an UpdateStrategy when updating an optional field"
+      )
+
+    def `with`[T](
+        value: (String, Option[T]),
+        updateStrategy: UpdateStrategy
+    )(using
+        MongoCodecProvider[T]
+    ): Update = EmptyUpdate().`with`[T](value, updateStrategy)
   }
 
   protected final case class CollectionResource[F[
