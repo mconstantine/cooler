@@ -127,7 +127,7 @@ object TestUtils {
       addressStreet: String = "Main Street",
       addressStreetNumber: Option[String] = Some("42"),
       addressEmail: String = "john.doe@example.com"
-  ) = Client.PrivateCreationData(
+  ) = Client.PrivateInputData(
     fiscalCode,
     firstName,
     lastName,
@@ -151,7 +151,7 @@ object TestUtils {
       addressStreet: String = "Main Street",
       addressStreetNumber: Option[String] = Some("42"),
       addressEmail: String = "john.doe@example.com"
-  ) = Client.BusinessCreationData(
+  ) = Client.BusinessInputData(
     countryCode,
     businessName,
     vatNumber,
@@ -181,7 +181,7 @@ object TestUtils {
       name: String = "Test project",
       description: Option[String] = none[String],
       cashData: Option[ProjectCashData] = none[ProjectCashData]
-  ) = Project.CreationData(client.toHexString, name, description, cashData)
+  ) = Project.InputData(client.toHexString, name, description, cashData)
 
   extension (project: Project) {
     def asDbProject(using a: Assertions): DbProject = project match

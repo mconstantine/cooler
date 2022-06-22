@@ -111,7 +111,7 @@ final case class BusinessClient(
 }
 
 object Client {
-  sealed abstract trait CreationData(
+  sealed abstract trait InputData(
       addressCountry: String,
       addressProvince: String,
       addressZIP: String,
@@ -123,7 +123,7 @@ object Client {
     def name: String
   }
 
-  final case class PrivateCreationData(
+  final case class PrivateInputData(
       fiscalCode: String,
       firstName: String,
       lastName: String,
@@ -134,7 +134,7 @@ object Client {
       addressStreet: String,
       addressStreetNumber: Option[String],
       addressEmail: String
-  ) extends CreationData(
+  ) extends InputData(
         addressCountry,
         addressProvince,
         addressZIP,
@@ -146,7 +146,7 @@ object Client {
     override def name = s"${firstName} ${lastName}"
   }
 
-  final case class BusinessCreationData(
+  final case class BusinessInputData(
       countryCode: String,
       businessName: String,
       vatNumber: String,
@@ -157,7 +157,7 @@ object Client {
       addressStreet: String,
       addressStreetNumber: Option[String],
       addressEmail: String
-  ) extends CreationData(
+  ) extends InputData(
         addressCountry,
         addressProvince,
         addressZIP,
@@ -169,33 +169,33 @@ object Client {
     override def name = businessName
   }
 
-  given Encoder[CreationData] with Decoder[CreationData] with {
-    override def apply(client: CreationData): Json = client match
-      case privateCreationData: PrivateCreationData =>
+  given Encoder[InputData] with Decoder[InputData] with {
+    override def apply(client: InputData): Json = client match
+      case privateCreationData: PrivateInputData =>
         privateCreationData.asJson
-      case businessCreationData: BusinessCreationData =>
+      case businessCreationData: BusinessInputData =>
         businessCreationData.asJson
 
-    override def apply(c: HCursor): Decoder.Result[CreationData] =
-      c.as[BusinessCreationData]
-        .orElse[DecodingFailure, CreationData](c.as[PrivateCreationData])
+    override def apply(c: HCursor): Decoder.Result[InputData] =
+      c.as[BusinessInputData]
+        .orElse[DecodingFailure, InputData](c.as[PrivateInputData])
   }
 
-  given EntityEncoder[IO, PrivateCreationData] =
-    jsonEncoderOf[IO, PrivateCreationData]
+  given EntityEncoder[IO, PrivateInputData] =
+    jsonEncoderOf[IO, PrivateInputData]
 
-  given EntityDecoder[IO, PrivateCreationData] = jsonOf[IO, PrivateCreationData]
+  given EntityDecoder[IO, PrivateInputData] = jsonOf[IO, PrivateInputData]
 
-  given EntityEncoder[IO, BusinessCreationData] =
-    jsonEncoderOf[IO, BusinessCreationData]
+  given EntityEncoder[IO, BusinessInputData] =
+    jsonEncoderOf[IO, BusinessInputData]
 
-  given EntityDecoder[IO, BusinessCreationData] =
-    jsonOf[IO, BusinessCreationData]
+  given EntityDecoder[IO, BusinessInputData] =
+    jsonOf[IO, BusinessInputData]
 
-  given EntityEncoder[IO, CreationData] = jsonEncoderOf[IO, CreationData]
-  given EntityDecoder[IO, CreationData] = jsonOf[IO, CreationData]
+  given EntityEncoder[IO, InputData] = jsonEncoderOf[IO, InputData]
+  given EntityDecoder[IO, InputData] = jsonOf[IO, InputData]
 
-  sealed abstract trait ValidCreationData(
+  sealed abstract trait ValidInputData(
       addressCountry: CountryCode,
       addressProvince: ProvinceCode,
       addressZIP: NonEmptyString,
@@ -205,7 +205,7 @@ object Client {
       addressEmail: Email
   )
 
-  final case class ValidPrivateCreationData(
+  final case class ValidPrivateInputData(
       fiscalCode: NonEmptyString,
       firstName: NonEmptyString,
       lastName: NonEmptyString,
@@ -216,7 +216,7 @@ object Client {
       addressStreet: NonEmptyString,
       addressStreetNumber: Option[NonEmptyString],
       addressEmail: Email
-  ) extends ValidCreationData(
+  ) extends ValidInputData(
         addressCountry,
         addressProvince,
         addressZIP,
@@ -226,7 +226,7 @@ object Client {
         addressEmail
       )
 
-  final case class ValidBusinessCreationData(
+  final case class ValidBusinessInputData(
       countryCode: CountryCode,
       businessName: NonEmptyString,
       vatNumber: NonEmptyString,
@@ -237,7 +237,7 @@ object Client {
       addressStreet: NonEmptyString,
       addressStreetNumber: Option[NonEmptyString],
       addressEmail: Email
-  ) extends ValidCreationData(
+  ) extends ValidInputData(
         addressCountry,
         addressProvince,
         addressZIP,
@@ -247,129 +247,10 @@ object Client {
         addressEmail
       )
 
-  sealed abstract trait UpdateData(
-      addressCountry: Option[String],
-      addressProvince: Option[String],
-      addressZIP: Option[String],
-      addressCity: Option[String],
-      addressStreet: Option[String],
-      addressStreetNumber: Option[String],
-      addressEmail: Option[String]
-  )
-
-  final case class PrivateUpdateData(
-      fiscalCode: Option[String] = none[String],
-      firstName: Option[String] = none[String],
-      lastName: Option[String] = none[String],
-      addressCountry: Option[String] = none[String],
-      addressProvince: Option[String] = none[String],
-      addressZIP: Option[String] = none[String],
-      addressCity: Option[String] = none[String],
-      addressStreet: Option[String] = none[String],
-      addressStreetNumber: Option[String] = none[String],
-      addressEmail: Option[String] = none[String]
-  ) extends UpdateData(
-        addressCountry,
-        addressProvince,
-        addressZIP,
-        addressCity,
-        addressStreet,
-        addressStreetNumber,
-        addressEmail
-      )
-
-  final case class BusinessUpdateData(
-      countryCode: Option[String] = none[String],
-      businessName: Option[String] = none[String],
-      vatNumber: Option[String] = none[String],
-      addressCountry: Option[String] = none[String],
-      addressProvince: Option[String] = none[String],
-      addressZIP: Option[String] = none[String],
-      addressCity: Option[String] = none[String],
-      addressStreet: Option[String] = none[String],
-      addressStreetNumber: Option[String] = none[String],
-      addressEmail: Option[String] = none[String]
-  ) extends UpdateData(
-        addressCountry,
-        addressProvince,
-        addressZIP,
-        addressCity,
-        addressStreet,
-        addressStreetNumber,
-        addressEmail
-      )
-
-  given Encoder[UpdateData] with Decoder[UpdateData] with {
-    override def apply(client: UpdateData): Json = client match
-      case privateUpdateData: PrivateUpdateData =>
-        privateUpdateData.asJson
-      case businessUpdateData: BusinessUpdateData =>
-        businessUpdateData.asJson
-
-    override def apply(c: HCursor): Decoder.Result[UpdateData] =
-      c.as[BusinessUpdateData]
-        .orElse[DecodingFailure, UpdateData](c.as[PrivateUpdateData])
-  }
-
-  given EntityEncoder[IO, UpdateData] = jsonEncoderOf[IO, UpdateData]
-  given EntityDecoder[IO, UpdateData] = jsonOf[IO, UpdateData]
-
-  sealed abstract trait ValidUpdateData(
-      addressCountry: Option[CountryCode],
-      addressProvince: Option[ProvinceCode],
-      addressZIP: Option[NonEmptyString],
-      addressCity: Option[NonEmptyString],
-      addressStreet: Option[NonEmptyString],
-      addressStreetNumber: Option[NonEmptyString],
-      addressEmail: Option[Email]
-  )
-
-  final case class ValidPrivateUpdateData(
-      fiscalCode: Option[NonEmptyString],
-      firstName: Option[NonEmptyString],
-      lastName: Option[NonEmptyString],
-      addressCountry: Option[CountryCode],
-      addressProvince: Option[ProvinceCode],
-      addressZIP: Option[NonEmptyString],
-      addressCity: Option[NonEmptyString],
-      addressStreet: Option[NonEmptyString],
-      addressStreetNumber: Option[NonEmptyString],
-      addressEmail: Option[Email]
-  ) extends ValidUpdateData(
-        addressCountry,
-        addressProvince,
-        addressZIP,
-        addressCity,
-        addressStreet,
-        addressStreetNumber,
-        addressEmail
-      )
-
-  final case class ValidBusinessUpdateData(
-      countryCode: Option[CountryCode],
-      businessName: Option[NonEmptyString],
-      vatNumber: Option[NonEmptyString],
-      addressCountry: Option[CountryCode],
-      addressProvince: Option[ProvinceCode],
-      addressZIP: Option[NonEmptyString],
-      addressCity: Option[NonEmptyString],
-      addressStreet: Option[NonEmptyString],
-      addressStreetNumber: Option[NonEmptyString],
-      addressEmail: Option[Email]
-  ) extends ValidUpdateData(
-        addressCountry,
-        addressProvince,
-        addressZIP,
-        addressCity,
-        addressStreet,
-        addressStreetNumber,
-        addressEmail
-      )
-
-  def validateCreationData(data: CreationData)(using
+  def validateInputData(data: InputData)(using
       Lang
-  ): Validation[ValidCreationData] = data match
-    case d: PrivateCreationData =>
+  ): Validation[ValidInputData] = data match
+    case d: PrivateInputData =>
       (
         NonEmptyString.validate("fiscalCode", d.fiscalCode),
         NonEmptyString.validate("firstName", d.firstName),
@@ -397,7 +278,7 @@ object Client {
             addressStreetNumber,
             addressEmail
         ) =>
-          ValidPrivateCreationData(
+          ValidPrivateInputData(
             fiscalCode,
             firstName,
             lastName,
@@ -410,7 +291,7 @@ object Client {
             addressEmail
           )
       )
-    case d: BusinessCreationData =>
+    case d: BusinessInputData =>
       (
         CountryCode.validate("countryCode", d.countryCode),
         NonEmptyString.validate("businessName", d.businessName),
@@ -438,7 +319,7 @@ object Client {
             addressStreetNumber,
             addressEmail
         ) =>
-          ValidBusinessCreationData(
+          ValidBusinessInputData(
             countryCode,
             businessName,
             vatNumber,
@@ -452,97 +333,11 @@ object Client {
           )
       )
 
-  def validateUpdateData(data: UpdateData)(using
-      Lang
-  ): Validation[ValidUpdateData] = data match
-    case d: PrivateUpdateData =>
-      (
-        NonEmptyString.validateOptional("fiscalCode", d.fiscalCode),
-        NonEmptyString.validateOptional("firstName", d.firstName),
-        NonEmptyString.validateOptional("lastName", d.lastName),
-        CountryCode.validateOptional("addressCountry", d.addressCountry),
-        ProvinceCode.validateOptional("addressProvince", d.addressProvince),
-        NonEmptyString.validateOptional("addressZIP", d.addressZIP),
-        NonEmptyString.validateOptional("addressCity", d.addressCity),
-        NonEmptyString.validateOptional("addressStreet", d.addressStreet),
-        NonEmptyString.validateOptional(
-          "addressStreetNumber",
-          d.addressStreetNumber
-        ),
-        Email.validateOptional("addressEmail", d.addressEmail)
-      ).mapN(
-        (
-            fiscalCode,
-            firstName,
-            lastName,
-            addressCountry,
-            addressProvince,
-            addressZIP,
-            addressCity,
-            addressStreet,
-            addressStreetNumber,
-            addressEmail
-        ) =>
-          ValidPrivateUpdateData(
-            fiscalCode,
-            firstName,
-            lastName,
-            addressCountry,
-            addressProvince,
-            addressZIP,
-            addressCity,
-            addressStreet,
-            addressStreetNumber,
-            addressEmail
-          )
-      )
-    case d: BusinessUpdateData =>
-      (
-        CountryCode.validateOptional("countryCode", d.countryCode),
-        NonEmptyString.validateOptional("businessName", d.businessName),
-        NonEmptyString.validateOptional("vatNumber", d.vatNumber),
-        CountryCode.validateOptional("addressCountry", d.addressCountry),
-        ProvinceCode.validateOptional("addressProvince", d.addressProvince),
-        NonEmptyString.validateOptional("addressZIP", d.addressZIP),
-        NonEmptyString.validateOptional("addressCity", d.addressCity),
-        NonEmptyString.validateOptional("addressStreet", d.addressStreet),
-        NonEmptyString.validateOptional(
-          "addressStreetNumber",
-          d.addressStreetNumber
-        ),
-        Email.validateOptional("addressEmail", d.addressEmail)
-      ).mapN(
-        (
-            countryCode,
-            businessName,
-            vatNumber,
-            addressCountry,
-            addressProvince,
-            addressZIP,
-            addressCity,
-            addressStreet,
-            addressStreetNumber,
-            addressEmail
-        ) =>
-          ValidBusinessUpdateData(
-            countryCode,
-            businessName,
-            vatNumber,
-            addressCountry,
-            addressProvince,
-            addressZIP,
-            addressCity,
-            addressStreet,
-            addressStreetNumber,
-            addressEmail
-          )
-      )
-
-  def fromCreationData(data: CreationData, customer: User)(using
+  def fromInputData(data: InputData, customer: User)(using
       Lang
   ): Either[Error, Client] =
-    validateCreationData(data).toResult.map(_ match
-      case d: ValidPrivateCreationData =>
+    validateInputData(data).toResult.map(_ match
+      case d: ValidPrivateInputData =>
         PrivateClient(
           ObjectId(),
           d.fiscalCode,
@@ -559,7 +354,7 @@ object Client {
           BsonDateTime(System.currentTimeMillis),
           BsonDateTime(System.currentTimeMillis)
         )
-      case d: ValidBusinessCreationData =>
+      case d: ValidBusinessInputData =>
         BusinessClient(
           ObjectId(),
           d.countryCode,
@@ -590,14 +385,14 @@ extension (client: Client) {
 }
 
 object Clients {
-  val collection = Collection[IO, Client]("clients")
+  val collection = Collection[IO, Client.InputData, Client]("clients")
 
   def create(
-      data: Client.CreationData
+      data: Client.InputData
   )(using customer: User)(using Lang): EitherT[IO, Error, Client] =
     collection.use(c =>
       EitherT
-        .fromEither[IO](Client.fromCreationData(data, customer))
+        .fromEither[IO](Client.fromInputData(data, customer))
         .flatMap(c.create(_))
     )
 
@@ -609,17 +404,17 @@ object Clients {
         .leftMap(_ => Error(NotFound, __.ErrorClientNotFound))
     )
 
-  def update(_id: ObjectId, data: Client.UpdateData)(using customer: User)(using
+  def update(_id: ObjectId, data: Client.InputData)(using customer: User)(using
       Lang
   ): EitherT[IO, Error, Client] =
     for
       client <- findById(_id)
-      data <- EitherT.fromEither[IO](Client.validateUpdateData(data).toResult)
+      data <- EitherT.fromEither[IO](Client.validateInputData(data).toResult)
       result <- collection.use(
         _.update(
           client._id,
           data match
-            case d: Client.ValidPrivateUpdateData =>
+            case d: Client.ValidPrivateInputData =>
               collection
                 .Update("fiscalCode", d.fiscalCode)
                 .`with`("firstName", d.firstName)
@@ -629,10 +424,14 @@ object Clients {
                 .`with`("addressZIP", d.addressZIP)
                 .`with`("addressCity", d.addressCity)
                 .`with`("addressStreet", d.addressStreet)
-                .`with`("addressStreetNumber", d.addressStreetNumber)
+                .`with`(
+                  "addressStreetNumber",
+                  d.addressStreetNumber,
+                  collection.UpdateStrategy.UnsetIfEmpty
+                )
                 .`with`("addressEmail", d.addressEmail)
                 .build
-            case d: Client.ValidBusinessUpdateData =>
+            case d: Client.ValidBusinessInputData =>
               collection
                 .Update("countryCode", d.countryCode)
                 .`with`("businessName", d.businessName)
@@ -642,7 +441,11 @@ object Clients {
                 .`with`("addressZIP", d.addressZIP)
                 .`with`("addressCity", d.addressCity)
                 .`with`("addressStreet", d.addressStreet)
-                .`with`("addressStreetNumber", d.addressStreetNumber)
+                .`with`(
+                  "addressStreetNumber",
+                  d.addressStreetNumber,
+                  collection.UpdateStrategy.UnsetIfEmpty
+                )
                 .`with`("addressEmail", d.addressEmail)
                 .build
         )

@@ -179,6 +179,36 @@ class UsersCollectionTest extends CatsEffectSuite {
     }
   }
 
+  test("should ignore empty updated fields") {
+    cleanUsersCollection.use { _ =>
+      val userData = User.CreationData(
+        "Update test ignore if empty",
+        "update-test-ignore-if-empty@example.com",
+        "Abc123!?"
+      )
+
+      val update = User.UpdateData(
+        none[String],
+        none[String],
+        none[String]
+      )
+
+      for
+        original <- {
+          given Option[User] = none[User]
+          Users.register(userData).orFail
+        }
+        updated <- {
+          given User = original
+          Users.update(update).orFail
+        }
+        _ = assertEquals(updated.name.toString, userData.name)
+        _ = assertEquals(updated.email.toString, userData.email)
+        _ = assertEquals(updated.password, original.password)
+      yield ()
+    }
+  }
+
   test("should reject the update if another user has the new email address") {
     cleanUsersCollection.use { _ =>
       val firstUserData = User.CreationData(

@@ -140,7 +140,7 @@ class ProjectsCollectionTest extends CatsEffectSuite {
   def projectsList = Resource.make {
     val client = testDataFixture().client
 
-    val projects: List[Project.CreationData] = List(
+    val projects: List[Project.InputData] = List(
       makeTestProject(client._id, name = "Alice"),
       makeTestProject(client._id, name = "Bob"),
       makeTestProject(client._id, name = "Charlie"),
@@ -207,24 +207,7 @@ class ProjectsCollectionTest extends CatsEffectSuite {
     }
   }
 
-  test("should update a project (empty update)") {
-    val client = testDataFixture().client
-    val data = makeTestProject(client._id, name = "Update empty test")
-
-    val update = Project.UpdateData()
-
-    for
-      project <- Projects.create(data).orFail.map(_.asDbProject)
-      _ <- IO.delay(Thread.sleep(500))
-      updated <- Projects.update(project._id, update).orFail.map(_.asDbProject)
-      _ = assertEquals(updated.client.toHexString, data.client)
-      _ = assertEquals(updated.name.toString, data.name)
-      _ = assertEquals(updated.description.map(_.toString), data.description)
-      _ = assertEquals(updated.cashData, data.cashData)
-    yield ()
-  }
-
-  test("should update a project (full update)") {
+  test("should update a project") {
     val client = testDataFixture().client
     val data = makeTestProject(client._id, name = "Update full test")
 
@@ -234,22 +217,40 @@ class ProjectsCollectionTest extends CatsEffectSuite {
     for
       client <- Clients.create(newClientData).orFail.map(_.asBusiness)
       project <- Projects.create(data).orFail
-      update = Project.UpdateData(
-        Some(client._id.toString),
-        Some("Updated name"),
+      update = Project.InputData(
+        client._id.toString,
+        "Updated name",
         Some("Updated description"),
         Some(ProjectCashData(BsonDateTime(System.currentTimeMillis), 42.0))
       )
       _ <- IO.delay(Thread.sleep(500))
       updated <- Projects.update(project._id, update).orFail.map(_.asDbProject)
-      _ = assertEquals(updated.client.toString, update.client.get)
-      _ = assertEquals(updated.name.toString, update.name.get)
+      _ = assertEquals(updated.client.toString, update.client)
+      _ = assertEquals(updated.name.toString, update.name)
       _ = assertEquals(updated.description.map(_.toString), update.description)
       _ = assertEquals(updated.cashData, update.cashData)
     yield ()
   }
 
-  test("should update a project of another user") {
+  test("should unset empty optional fields") {
+    val client = testDataFixture().client
+    val data = makeTestProject(client._id, name = "Update unset if empty test")
+
+    for
+      project <- Projects.create(data).orFail
+      update = Project.InputData(
+        client._id.toHexString,
+        "Updated name",
+        none[String],
+        none[ProjectCashData]
+      )
+      updated <- Projects.update(project._id, update).orFail.map(_.asDbProject)
+      _ = assertEquals(updated.description.map(_.toString), none[String])
+      _ = assertEquals(updated.cashData, none[ProjectCashData])
+    yield ()
+  }
+
+  test("should not update a project of another user") {
     otherUser.use { otherUser =>
       val data = makeTestProject(
         testDataFixture().client._id,
@@ -262,7 +263,7 @@ class ProjectsCollectionTest extends CatsEffectSuite {
           given User = otherUser
 
           Projects
-            .update(project._id, Project.UpdateData())
+            .update(project._id, makeTestProject(testDataFixture().client._id))
             .assertEquals(Left(Error(Status.NotFound, __.ErrorProjectNotFound)))
         }
       yield ()
@@ -287,9 +288,7 @@ class ProjectsCollectionTest extends CatsEffectSuite {
           given User = otherUser
           Clients.create(updatedClientData).orFail
         }
-        projectUpdateData = Project.UpdateData(client =
-          Some(updatedClient._id.toHexString)
-        )
+        projectUpdateData = makeTestProject(updatedClient._id)
         _ <- Projects
           .update(project._id, projectUpdateData)
           .assertEquals(Left(Error(Status.NotFound, __.ErrorClientNotFound)))
@@ -297,7 +296,7 @@ class ProjectsCollectionTest extends CatsEffectSuite {
     }
   }
 
-  test("should delete a client") {
+  test("should delete a project") {
     val data =
       makeTestProject(testDataFixture().client._id, name = "Delete test")
 

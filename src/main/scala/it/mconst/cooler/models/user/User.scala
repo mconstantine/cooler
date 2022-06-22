@@ -151,7 +151,7 @@ object User {
 }
 
 object Users {
-  val collection = Collection[IO, User]("users")
+  val collection = Collection[IO, User.CreationData, User]("users")
 
   def register(
       user: User.CreationData
@@ -202,9 +202,21 @@ object Users {
           c.update(
             customer._id,
             collection
-              .Update("name", data.name)
-              .`with`("email", data.email)
-              .`with`("password", data.password)
+              .Update(
+                "name",
+                data.name,
+                collection.UpdateStrategy.IgnoreIfEmpty
+              )
+              .`with`(
+                "email",
+                data.email,
+                collection.UpdateStrategy.IgnoreIfEmpty
+              )
+              .`with`(
+                "password",
+                data.password,
+                collection.UpdateStrategy.IgnoreIfEmpty
+              )
               .build
           )
         }

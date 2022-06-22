@@ -25,7 +25,7 @@ object ProjectRoutes {
       given User = context.user
 
       for
-        data <- ctxReq.req.as[Project.CreationData]
+        data <- ctxReq.req.as[Project.InputData]
         response <- Projects.create(data).toResponse
       yield response
     }
@@ -55,6 +55,22 @@ object ProjectRoutes {
       Projects.findById(id).toResponse
     }
 
+    case ctxReq @ PUT -> Root / ObjectIdParam(id) as context => {
+      given Lang = context.lang
+      given User = context.user
+
+      for
+        data <- ctxReq.req.as[Project.InputData]
+        response <- Projects.update(id, data).toResponse
+      yield response
+    }
+
+    case DELETE -> Root / ObjectIdParam(id) as context => {
+      given Lang = context.lang
+      given User = context.user
+
+      Projects.delete(id).toResponse
+    }
   }
 
   def apply() = UserMiddleware(routes)

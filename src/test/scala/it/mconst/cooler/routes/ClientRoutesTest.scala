@@ -58,9 +58,9 @@ class ClientRoutesTest extends CatsEffectSuite {
 
   override val munitFixtures = List(adminFixture)
 
-  test("should register a client") {
+  test("should create a client") {
     val data =
-      makeTestBusinessClient(addressEmail = "register-test@example.com")
+      makeTestBusinessClient(addressEmail = "create-test@example.com")
 
     POST(data, uri"/")
       .sign(adminFixture())

@@ -34,6 +34,7 @@ import org.bson.conversions.Bson
 import org.http4s.dsl.io.*
 import scala.collection.JavaConverters.*
 import scala.reflect.ClassTag
+import mongo4cats.database.MongoDatabase
 
 trait DbDocument {
   def _id: ObjectId
@@ -48,54 +49,90 @@ given Encoder[BsonDateTime] with Decoder[BsonDateTime] with {
     Decoder.decodeLong.map(BsonDateTime(_))(cursor)
 }
 
-final case class Collection[F[_]: Async, Doc <: DbDocument: ClassTag](
-    name: String
-)(using
+final case class Collection[F[
+    _
+]: Async, Input: ClassTag, Doc <: DbDocument: ClassTag](name: String)(using
     F: Monad[F]
-)(using
-    MongoCodecProvider[Doc]
-) {
+)(using MongoCodecProvider[Input], MongoCodecProvider[Doc]) {
+  enum UpdateStrategy:
+    case UnsetIfEmpty extends UpdateStrategy
+    case IgnoreIfEmpty extends UpdateStrategy
+
+  protected sealed abstract trait UpdateItem[T](key: String, value: T)
+
+  protected final case class ValueUpdateItem[T](key: String, value: T)
+      extends UpdateItem(key, value)
+
+  protected final case class OptionUpdateItem[T](
+      key: String,
+      value: Option[T],
+      updateStrategy: UpdateStrategy
+  ) extends UpdateItem(key, value)
+
   protected final case class EmptyUpdate() {
-    def `with`[T](key: String, value: Option[T])(using
+    def `with`[T](key: String, value: T)(using
         MongoCodecProvider[T]
-    ): Update = Update(
-      Map(key -> value)
-    )
+    ): Update = Update(List(ValueUpdateItem(key, value)))
+
+    def `with`[T](
+        key: String,
+        value: Option[T],
+        updateStrategy: UpdateStrategy
+    )(using
+        MongoCodecProvider[T]
+    ): Update = Update(List(OptionUpdateItem(key, value, updateStrategy)))
   }
 
-  protected final case class Update(val values: Map[String, Option[Any]]) {
-    def `with`[T](key: String, value: Option[T])(using
+  protected final case class Update(val values: List[UpdateItem[_]]) {
+    def `with`[T](key: String, value: T)(using
         MongoCodecProvider[T]
-    ): Update = Update(
-      values ++ Map(key -> value)
-    )
+    ): Update = Update(ValueUpdateItem(key, value) :: values)
+
+    def `with`[T](
+        key: String,
+        value: Option[T],
+        updateStrategy: UpdateStrategy
+    )(using MongoCodecProvider[T]): Update =
+      Update(OptionUpdateItem(key, value, updateStrategy) :: values)
 
     def build: BuiltUpdate = BuiltUpdate(values)
   }
 
-  protected final case class BuiltUpdate(val values: Map[String, Option[Any]])
+  protected final case class BuiltUpdate(val values: List[UpdateItem[_]])
 
   object Update {
-    def apply[T](key: String, value: Option[T])(using
+    def apply[T](key: String, value: T)(using
         MongoCodecProvider[T]
-    ): Update =
-      EmptyUpdate().`with`[T](key, value)
+    ): Update = EmptyUpdate().`with`[T](key, value)
+
+    def apply[T](key: String, value: Option[T], updateStrategy: UpdateStrategy)(
+        using MongoCodecProvider[T]
+    ): Update = EmptyUpdate().`with`[T](key, value, updateStrategy)
   }
 
   protected final case class CollectionResource[F[
       _
-  ]: Async, Doc <: DbDocument: ClassTag](
-      c: MongoCollection[F, Doc]
-  )(using F: Monad[F])(using MongoCodecProvider[Doc]) {
+  ]: Async, Input: ClassTag, Doc <: DbDocument: ClassTag](
+      db: MongoDatabase[F],
+      collectionCodecDecorator: MongoCollection[F, Document] => MongoCollection[
+        F,
+        Document
+      ] = identity[MongoCollection[F, Document]]
+  )(using
+      MongoCodecProvider[Input],
+      MongoCodecProvider[Doc]
+  ) {
     def findOne(filter: Filter)(using Lang): EitherT[F, Error, Doc] =
       EitherT.fromOptionF(
-        c.find(filter).first,
+        db.getCollectionWithCodec[Doc](name).flatMap(_.find(filter).first),
         Error(NotFound, __.ErrorDocumentNotFound)
       )
 
     def create(doc: Doc)(using Lang): EitherT[F, Error, Doc] =
       for
-        result <- EitherT.liftF(c.insertOne(doc))
+        result <- EitherT.liftF(
+          db.getCollectionWithCodec[Doc](name).flatMap(_.insertOne(doc))
+        )
         inserted <- findOne(Filter.eq("_id", result.getInsertedId)).leftMap(_ =>
           Error(NotFound, __.ErrorDocumentNotFoundAfterInsert)
         )
@@ -104,8 +141,20 @@ final case class Collection[F[_]: Async, Doc <: DbDocument: ClassTag](
     def update(_id: ObjectId, update: BuiltUpdate)(using
         Lang
     ): EitherT[F, Error, Doc] = {
-      val providedUpdates = update.values.toList
-        .map(entry => entry._2.map(Updates.set(entry._1, _)))
+      val providedUpdates = update.values
+        .map(
+          _ match
+            case update: ValueUpdateItem[_] =>
+              Some(Updates.set(update.key, update.value))
+            case update: OptionUpdateItem[_] =>
+              update.value match
+                case Some(value) => Some(Updates.set(update.key, value))
+                case None =>
+                  update.updateStrategy match
+                    case UpdateStrategy.IgnoreIfEmpty => none[Bson]
+                    case UpdateStrategy.UnsetIfEmpty =>
+                      Some(Updates.unset(update.key))
+        )
         .map(_.toList)
         .flatten
 
@@ -120,10 +169,14 @@ final case class Collection[F[_]: Async, Doc <: DbDocument: ClassTag](
 
       for
         result <- EitherT.liftF(
-          c.updateOne(
-            Filters.eq("_id", _id),
-            Updates.combine(allUpdates.asJava)
-          )
+          db.getCollection(name)
+            .map(collectionCodecDecorator)
+            .flatMap(
+              _.updateOne(
+                Filters.eq("_id", _id),
+                Updates.combine(allUpdates.asJava)
+              )
+            )
         )
         updated <- findOne(Filter.eq("_id", _id)).leftMap(_ =>
           Error(NotFound, __.ErrorDocumentNotFoundAfterUpdate)
@@ -138,13 +191,16 @@ final case class Collection[F[_]: Async, Doc <: DbDocument: ClassTag](
         original <- findOne(filter).leftMap(_ =>
           Error(NotFound, __.ErrorDocumentNotFoundBeforeDelete)
         )
-        deleted <- EitherT.liftF(c.deleteOne(filter).map(_ => original))
+        deleted <- EitherT.liftF(
+          db.getCollection(name).flatMap(_.deleteOne(filter).map(_ => original))
+        )
       yield deleted
     }
 
-    def drop: F[Unit] = c.drop
+    def drop: F[Unit] = db.getCollection(name).flatMap(_.drop)
 
-    def raw[R](op: MongoCollection[F, Doc] => F[R]): F[R] = op(c)
+    def raw[R](op: MongoCollection[F, Doc] => F[R]): F[R] =
+      db.getCollectionWithCodec[Doc](name).flatMap(op)
 
     def find(
         searchKey: String,
@@ -267,56 +323,49 @@ final case class Collection[F[_]: Async, Doc <: DbDocument: ClassTag](
       val aggregation = initialFilters ++ findByQuery ++ rest
 
       EitherT.fromOptionF(
-        c.aggregateWithCodec[Cursor[Doc]](aggregation).first,
+        db.getCollection(name)
+          .flatMap(_.aggregateWithCodec[Cursor[Doc]](aggregation).first),
         Error(InternalServerError, __.ErrorUnknown)
       )
     }
   }
 
-  private def resource: Resource[F, MongoCollection[F, Doc]] =
+  private def resource: Resource[F, MongoDatabase[F]] =
     MongoClient
       .fromConnectionString[F](Config.database.uri)
       .flatMap(client =>
-        Resource.make(
-          client
-            .getDatabase(Config.database.name)
-            .flatMap(
-              _.getCollectionWithCodec[Doc](name)
-            )
-        )(_ => F.unit)
+        Resource.make(client.getDatabase(Config.database.name))(_ => F.unit)
       )
 
-  def use[R](op: CollectionResource[F, Doc] => F[R]): F[R] =
-    resource.use(c => op(CollectionResource(c)))
+  def use[R](op: CollectionResource[F, Input, Doc] => F[R]): F[R] =
+    resource.use(db => op(CollectionResource(db)))
 
-  def use[R](op: CollectionResource[F, Doc] => OptionT[F, R]): OptionT[F, R] =
-    OptionT(resource.use(c => op(CollectionResource(c)).value))
+  def use[R](
+      op: CollectionResource[F, Input, Doc] => OptionT[F, R]
+  ): OptionT[F, R] =
+    OptionT(resource.use(db => op(CollectionResource(db)).value))
 
   def use[E, R](
-      op: CollectionResource[F, Doc] => EitherT[F, E, R]
+      op: CollectionResource[F, Input, Doc] => EitherT[F, E, R]
   ): EitherT[F, E, R] =
-    EitherT(resource.use(c => op(CollectionResource(c)).value))
+    EitherT(resource.use(db => op(CollectionResource(db)).value))
 
   def useWithCodec[C, R](
-      op: CollectionResource[F, Doc] => F[R]
+      op: CollectionResource[F, Input, Doc] => F[R]
   )(using ClassTag[C], MongoCodecProvider[C]): F[R] =
-    resource.map(_.withAddedCodec[C]).use(c => op(CollectionResource(c)))
+    resource.use(db => op(CollectionResource(db, _.withAddedCodec[C])))
 
   def useWithCodec[C, R](
-      op: CollectionResource[F, Doc] => OptionT[F, R]
+      op: CollectionResource[F, Input, Doc] => OptionT[F, R]
   )(using ClassTag[C], MongoCodecProvider[C]): OptionT[F, R] =
     OptionT(
-      resource
-        .map(_.withAddedCodec[C])
-        .use(c => op(CollectionResource(c)).value)
+      resource.use(db => op(CollectionResource(db, _.withAddedCodec[C])).value)
     )
 
   def useWithCodec[C, E, R](
-      op: CollectionResource[F, Doc] => EitherT[F, E, R]
+      op: CollectionResource[F, Input, Doc] => EitherT[F, E, R]
   )(using ClassTag[C], MongoCodecProvider[C]): EitherT[F, E, R] =
     EitherT(
-      resource
-        .map(_.withAddedCodec[C])
-        .use(c => op(CollectionResource(c)).value)
+      resource.use(db => op(CollectionResource(db, _.withAddedCodec[C])).value)
     )
 }

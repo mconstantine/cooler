@@ -23,7 +23,7 @@ class CollectionTest extends CatsEffectSuite {
   given Lang = Lang.Default
   given Assertions = this
 
-  case class Person(
+  final case class Person(
       _id: ObjectId,
       firstName: String,
       lastName: String,
@@ -31,7 +31,9 @@ class CollectionTest extends CatsEffectSuite {
       updatedAt: BsonDateTime = BsonDateTime(System.currentTimeMillis)
   ) extends DbDocument
 
-  val people = Collection[IO, Person]("people")
+  final case class PersonInputData(firstName: String, lastName: String)
+
+  val people = Collection[IO, PersonInputData, Person]("people")
 
   val dropFixture =
     ResourceSuiteLocalFixture(
@@ -70,7 +72,32 @@ class CollectionTest extends CatsEffectSuite {
     val person = Person(new ObjectId(), "John", "Doe")
 
     val updates = people
+      .Update("firstName", "Mario")
+      .`with`("lastName", "Martino")
+      .build
+
+    for
+      update <- people
+        .use(_.create(person))
+        .orFail
+        .flatMap(person => people.use(_.update(person._id, updates)).orFail)
+      _ = assertEquals(update.firstName, "Mario")
+      _ = assertEquals(update.lastName, "Martino")
+    yield ()
+  }
+
+  // FIXME: this is temporary
+  test("temporary") {
+    val person = Person(new ObjectId(), "John", "Doe")
+
+    val updates = people
+      // TODO: this should NOT compile
       .Update("firstName", Some("Mario"))
+      // TODO: this should NOT compile
+      // .`with`("firstName", "Martino", people.UpdateStrategy.IgnoreIfEmpty)
+      .`with`("lastName", "Martino")
+      .`with`("lastName", Some("Martino"), people.UpdateStrategy.IgnoreIfEmpty)
+      // TODO: this should NOT compile
       .`with`("lastName", Some("Martino"))
       .build
 
@@ -88,8 +115,8 @@ class CollectionTest extends CatsEffectSuite {
     val person = Person(new ObjectId(), "John", "Doe")
 
     val updates = people
-      .Update("firstName", Some("Mario"))
-      .`with`("lastName", Some("Martino"))
+      .Update("firstName", "Mario")
+      .`with`("lastName", "Martino")
       .build
 
     for

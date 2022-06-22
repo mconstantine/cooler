@@ -27,7 +27,7 @@ object ClientRoutes {
       given User = context.user
 
       for
-        data <- ctxReq.req.as[Client.CreationData]
+        data <- ctxReq.req.as[Client.InputData]
         response <- Clients.create(data).toResponse
       yield response
     }
@@ -62,7 +62,7 @@ object ClientRoutes {
       given User = context.user
 
       for
-        data <- ctxReq.req.as[Client.UpdateData]
+        data <- ctxReq.req.as[Client.InputData]
         response <- Clients.update(id, data).toResponse
       yield response
     }
