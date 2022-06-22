@@ -19,6 +19,8 @@ import it.mconst.cooler.models.ProjectCashData
 import it.mconst.cooler.models.Projects
 import it.mconst.cooler.models.user.User
 import it.mconst.cooler.models.user.Users
+import it.mconst.cooler.utils.__
+import it.mconst.cooler.utils.Error
 import mongo4cats.collection.operations.Filter
 import munit.Assertions
 import org.bson.BsonDateTime
@@ -28,6 +30,7 @@ import org.http4s.client.dsl.io.*
 import org.http4s.dsl.io.*
 import org.http4s.EntityDecoder
 import org.http4s.implicits.*
+import org.http4s.Status
 import org.http4s.Uri
 
 class ProjectRoutesTest extends CatsEffectSuite {
@@ -192,6 +195,28 @@ class ProjectRoutesTest extends CatsEffectSuite {
         )
         .map(_.asDbProject)
       _ = assertEquals(result.name.toString, updateData.name)
+    yield ()
+  }
+
+  test("should delete a project") {
+    val projectData =
+      makeTestProject(testDataFixture().client._id, name = "Delete route test")
+
+    given User = testDataFixture().user
+
+    for
+      project <- Projects.create(projectData).orFail
+      _ <- DELETE(
+        Uri.fromString(s"/${project._id.toString}").getOrElse(fail(""))
+      )
+        .sign(testDataFixture().user)
+        .shouldRespondLike(
+          (p: Project) => p.asDbProject.name,
+          projectData.name
+        )
+      _ <- Projects
+        .findById(project.asDbProject._id)
+        .assertEquals(Left(Error(Status.NotFound, __.ErrorProjectNotFound)))
     yield ()
   }
 }
