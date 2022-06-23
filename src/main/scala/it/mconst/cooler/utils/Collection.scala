@@ -21,6 +21,8 @@ import it.mconst.cooler.models.Cursor
 import it.mconst.cooler.models.CursorQuery
 import it.mconst.cooler.models.CursorQueryAsc
 import it.mconst.cooler.models.CursorQueryDesc
+import it.mconst.cooler.models.toBsonDateTime
+import it.mconst.cooler.models.toISOString
 import it.mconst.cooler.utils.Error
 import mongo4cats.bson.Document
 import mongo4cats.bson.ObjectId
@@ -29,12 +31,14 @@ import mongo4cats.client.MongoClient
 import mongo4cats.codecs.MongoCodecProvider
 import mongo4cats.collection.MongoCollection
 import mongo4cats.collection.operations.Filter
+import mongo4cats.database.MongoDatabase
 import org.bson.BsonDateTime
 import org.bson.conversions.Bson
 import org.http4s.dsl.io.*
 import scala.collection.JavaConverters.*
 import scala.reflect.ClassTag
-import mongo4cats.database.MongoDatabase
+import io.circe.DecodingFailure
+import io.circe.Decoder.Result
 
 trait DbDocument {
   def _id: ObjectId
@@ -44,9 +48,15 @@ trait DbDocument {
 
 given Encoder[BsonDateTime] with Decoder[BsonDateTime] with {
   override def apply(datetime: BsonDateTime): Json =
-    Encoder.encodeLong(datetime.getValue)
+    Encoder.encodeString(datetime.toISOString)
   override def apply(cursor: HCursor): Decoder.Result[BsonDateTime] =
-    Decoder.decodeLong.map(BsonDateTime(_))(cursor)
+    Decoder
+      .decodeString(cursor)
+      .flatMap(
+        _.toBsonDateTime.left.map(_ =>
+          DecodingFailure("ISOString", cursor.history)
+        )
+      )
 }
 
 final case class Collection[F[
@@ -162,7 +172,7 @@ final case class Collection[F[
                 Updates.set(
                   update.key,
                   update.value match
-                    case value: BsonDateTime => value.getValue
+                    case value: BsonDateTime => value.toISOString
                     case _                   => update.value
                 )
               )
@@ -173,7 +183,7 @@ final case class Collection[F[
                     Updates.set(
                       update.key,
                       value match
-                        case value: BsonDateTime => value.getValue
+                        case value: BsonDateTime => value.toISOString
                         case _                   => value
                     )
                   )
@@ -189,7 +199,7 @@ final case class Collection[F[
       val updatedAtUpdate = List(
         Updates.set(
           "updatedAt",
-          BsonDateTime(System.currentTimeMillis).getValue
+          BsonDateTime(System.currentTimeMillis).toISOString
         )
       )
 

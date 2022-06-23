@@ -98,7 +98,7 @@ object Project {
   def validateInputData(data: InputData)(using
       Lang
   ): Validation[ValidInputData] = (
-    data.client.toObjectId("client"),
+    data.client.validateObjectId("client"),
     NonEmptyString.validate("name", data.name),
     NonEmptyString.validateOptional("description", data.description)
   ).mapN((client, name, description) =>

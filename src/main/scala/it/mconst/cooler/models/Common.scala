@@ -23,6 +23,8 @@ import org.http4s.circe.*
 import org.http4s.dsl.io.*
 import org.http4s.EntityEncoder
 import scala.util.Try
+import java.time.ZoneId
+import java.nio.charset.MalformedInputException
 
 final case class ValidationError(fieldName: String, message: __)(using Lang)
 type Validation[T] = Validated[NonEmptyChain[ValidationError], T]
@@ -161,11 +163,11 @@ final case class CursorQueryDesc(
 ) extends CursorQuery(query)
 
 extension (s: String) {
-  def toObjectId(fieldName: String)(using Lang): Validation[ObjectId] =
+  def toObjectId: Either[String, ObjectId] = ObjectId.from(s)
+
+  def validateObjectId(fieldName: String)(using Lang): Validation[ObjectId] =
     Validated.fromEither(
-      ObjectId
-        .from(s)
-        .left
+      s.toObjectId.left
         .map(_ =>
           NonEmptyChain.one(
             ValidationError(fieldName, __.ErrorDecodeInvalidObjectId)
@@ -173,24 +175,65 @@ extension (s: String) {
         )
     )
 
-  def toBsonDateTime(fieldName: String)(using Lang): Validation[BsonDateTime] =
+  def toBsonDateTime: Either[Throwable, BsonDateTime] = {
+    val regex =
+      "^(\\d{4})-(\\d{2})-(\\d{2})T(\\d{2}):(\\d{2}):(\\d{2}).(\\d{3})((?:Z|[+-]\\d{2}:\\d{2}))$".r
+
+    val matcher = regex.pattern.matcher(s)
+
+    if matcher.matches then
+      Try {
+        BsonDateTime(
+          LocalDateTime
+            .of(
+              matcher.group(1).toInt,
+              matcher.group(2).toInt,
+              matcher.group(3).toInt,
+              matcher.group(4).toInt,
+              matcher.group(5).toInt,
+              matcher.group(6).toInt
+            )
+            .atZone(ZoneId.of(matcher.group(8)))
+            .toEpochSecond * 1000L + matcher.group(7).toLong
+        )
+      }.toEither
+    else Left(new IllegalArgumentException("Invalid ISO 8601 date"))
+  }
+
+  def validateBsonDateTime(
+      fieldName: String
+  )(using Lang): Validation[BsonDateTime] = {
     Validated.fromEither(
-      Try(LocalDateTime.parse(s, DateTimeFormatter.ISO_DATE_TIME)).toEither.left
+      s.toBsonDateTime.left
         .map(_ =>
           NonEmptyChain.one(
             ValidationError(fieldName, __.ErrorDecodeInvalidDateTime)
           )
         )
-        .map(dateTime =>
-          BsonDateTime(dateTime.toEpochSecond(ZoneOffset.UTC) * 1000)
-        )
     )
+  }
+}
+
+extension (bdt: BsonDateTime) {
+  def toISOString: String = {
+    val timestamp = bdt.getValue
+    val millis = (timestamp % 1000).toInt
+
+    val millisString =
+      if millis < 10 then s"00$millis"
+      else if millis < 100 then s"0$millis"
+      else millis.toString
+
+    LocalDateTime
+      .ofEpochSecond(timestamp / 1000, 0, ZoneOffset.UTC)
+      .format(DateTimeFormatter.ISO_DATE_TIME) + s".${millisString}Z"
+  }
 }
 
 extension (os: Option[String]) {
   def toOptionalObjectId(fieldName: String)(using
       Lang
   ): Validation[Option[ObjectId]] =
-    os.map(_.toObjectId(fieldName).map(Some(_)))
+    os.map(_.validateObjectId(fieldName).map(Some(_)))
       .getOrElse(Validated.valid(none[ObjectId]))
 }

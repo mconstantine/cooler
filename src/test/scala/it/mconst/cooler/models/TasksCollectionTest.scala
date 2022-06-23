@@ -15,6 +15,7 @@ import it.mconst.cooler.utils.Error
 import java.time.format.DateTimeFormatter
 import java.time.LocalDateTime
 import mongo4cats.collection.operations.Filter
+import org.bson.BsonDateTime
 import org.http4s.Status
 
 class TasksCollectionTest extends CatsEffectSuite {
@@ -229,7 +230,7 @@ class TasksCollectionTest extends CatsEffectSuite {
         newProject._id.toString,
         "Updated name",
         none[String],
-        LocalDateTime.now.format(DateTimeFormatter.ISO_DATE_TIME),
+        BsonDateTime(System.currentTimeMillis).toISOString,
         task.asDbTask.expectedWorkingHours.toFloat + 10f,
         task.asDbTask.hourlyCost.toFloat + 10f
       )

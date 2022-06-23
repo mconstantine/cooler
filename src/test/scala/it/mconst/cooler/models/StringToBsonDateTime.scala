@@ -8,27 +8,25 @@ import it.mconst.cooler.utils.__
 import munit.CatsEffectSuite
 import org.bson.BsonDateTime
 
-class StringToBsonDateTime extends CatsEffectSuite {
+class Conversions extends CatsEffectSuite {
   given Lang = Lang.Default
 
-  test("should work") {
-    val validISOString = "1990-09-20T15:30:42.000Z"
-    val dateTime = validISOString.toBsonDateTime("test")
+  test("should convert an ISO string to BsonDateTime and back") {
+    val validISOString = "1990-09-20T15:30:42.666+02:00"
+    val dateTime = validISOString.toBsonDateTime
 
-    assertEquals(dateTime.map(_.getValue), Valid(653844642000L))
+    assertEquals(dateTime, Right(BsonDateTime(653837442666L)))
+
+    val parsedISOString =
+      dateTime.getOrElse(BsonDateTime(System.currentTimeMillis)).toISOString
+
+    assertEquals(parsedISOString, "1990-09-20T13:30:42.666Z")
   }
 
   test("should handle errors") {
-    val validISOString = "Last time I showered"
-    val result = validISOString.toBsonDateTime("test")
+    val invalidISOString = "Last time I showered"
+    val result = invalidISOString.toBsonDateTime
 
-    assertEquals(
-      result,
-      Invalid(
-        NonEmptyChain.one(
-          ValidationError("test", __.ErrorDecodeInvalidDateTime)
-        )
-      )
-    )
+    assertEquals(result.left.map(_.getMessage), Left("Invalid ISO 8601 date"))
   }
 }

@@ -19,6 +19,7 @@ import it.mconst.cooler.models.Project
 import it.mconst.cooler.models.Projects
 import it.mconst.cooler.models.Task
 import it.mconst.cooler.models.Tasks
+import it.mconst.cooler.models.toISOString
 import it.mconst.cooler.models.user.User
 import it.mconst.cooler.models.user.Users
 import it.mconst.cooler.utils.__
@@ -26,6 +27,7 @@ import it.mconst.cooler.utils.Error
 import java.time.format.DateTimeFormatter
 import java.time.LocalDateTime
 import mongo4cats.collection.operations.Filter
+import org.bson.BsonDateTime
 import org.http4s.circe.*
 import org.http4s.client.{Client as HttpClient}
 import org.http4s.client.dsl.io.*
@@ -97,7 +99,7 @@ class TaskRoutesTest extends CatsEffectSuite {
       testDataFixture().project._id,
       name = "Create test",
       description = Some("Some description"),
-      startTime = LocalDateTime.now.format(DateTimeFormatter.ISO_DATE_TIME),
+      startTime = BsonDateTime(System.currentTimeMillis).toISOString,
       expectedWorkingHours = 10f,
       hourlyCost = 25f
     )

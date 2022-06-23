@@ -128,10 +128,10 @@ object Task {
   def validateInputData(
       data: InputData
   )(using Lang): Validation[ValidInputData] = (
-    data.project.toObjectId("project"),
+    data.project.validateObjectId("project"),
     NonEmptyString.validate("name", data.name),
     NonEmptyString.validateOptional("description", data.description),
-    data.startTime.toBsonDateTime("startTime"),
+    data.startTime.validateBsonDateTime("startTime"),
     PositiveFloat.validate("expectedWorkingHours", data.expectedWorkingHours),
     PositiveFloat.validate("hourlyCost", data.hourlyCost)
   ).mapN(

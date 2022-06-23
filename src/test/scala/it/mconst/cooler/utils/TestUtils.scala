@@ -24,6 +24,7 @@ import it.mconst.cooler.models.ProjectCashData
 import it.mconst.cooler.models.ProjectWithClient
 import it.mconst.cooler.models.Task
 import it.mconst.cooler.models.TaskWithProject
+import it.mconst.cooler.models.toISOString
 import it.mconst.cooler.models.user.JWT
 import it.mconst.cooler.models.user.User
 import it.mconst.cooler.utils.Error
@@ -206,8 +207,7 @@ object TestUtils {
       project: ObjectId,
       name: String = "Test task",
       description: Option[String] = none[String],
-      startTime: String =
-        LocalDateTime.now.format(DateTimeFormatter.ISO_DATE_TIME),
+      startTime: String = BsonDateTime(System.currentTimeMillis).toISOString,
       expectedWorkingHours: Float = 1f,
       hourlyCost: Float = 1f
   ) = Task.InputData(

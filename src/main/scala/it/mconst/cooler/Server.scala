@@ -6,7 +6,9 @@ import cats.effect.IOApp
 import com.comcast.ip4s.Host
 import com.comcast.ip4s.Port
 import it.mconst.cooler.routes.ClientRoutes
+import it.mconst.cooler.routes.ProjectRoutes
 import it.mconst.cooler.routes.PublicRoutes
+import it.mconst.cooler.routes.TaskRoutes
 import it.mconst.cooler.routes.UserRoutes
 import it.mconst.cooler.utils.Config
 import org.http4s.ember.server.EmberServerBuilder
@@ -16,7 +18,9 @@ object Server extends IOApp {
   val services = Router(
     "/" -> PublicRoutes(),
     "/users" -> UserRoutes(),
-    "/clients" -> ClientRoutes()
+    "/clients" -> ClientRoutes(),
+    "/projects" -> ProjectRoutes(),
+    "/tasks" -> TaskRoutes()
   )
 
   val app = Router("/api" -> services).orNotFound

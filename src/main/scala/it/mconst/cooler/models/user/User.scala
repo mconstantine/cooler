@@ -143,8 +143,8 @@ object User {
           name = validatedData.name,
           email = validatedData.email,
           password = validatedData.password,
-          createdAt = BsonDateTime(System.currentTimeMillis()),
-          updatedAt = BsonDateTime(System.currentTimeMillis())
+          createdAt = BsonDateTime(System.currentTimeMillis),
+          updatedAt = BsonDateTime(System.currentTimeMillis)
         )
       )
     yield user
