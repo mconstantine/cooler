@@ -4,15 +4,18 @@ import it.mconst.cooler.utils.TestUtils.*
 import munit.Assertions
 import munit.CatsEffectSuite
 
-import it.mconst.cooler.models.user.User
+import cats.effect.IO
 import cats.effect.kernel.Resource
 import cats.syntax.all.none
-import it.mconst.cooler.models.user.Users
 import com.osinka.i18n.Lang
-import org.http4s.Status
+import it.mconst.cooler.models.user.User
+import it.mconst.cooler.models.user.Users
 import it.mconst.cooler.utils.__
 import it.mconst.cooler.utils.Error
+import java.time.format.DateTimeFormatter
+import java.time.LocalDateTime
 import mongo4cats.collection.operations.Filter
+import org.http4s.Status
 
 class TasksCollectionTest extends CatsEffectSuite {
   final case class TestData(user: User, client: Client, project: Project)
@@ -203,6 +206,124 @@ class TasksCollectionTest extends CatsEffectSuite {
           _ = assertEquals(result, List("Adam"))
         yield ()
       }
+    }
+  }
+
+  test("should update a task") {
+    val client = testDataFixture().client
+    val originalProject = testDataFixture().project
+
+    val data = makeTestTask(
+      originalProject._id,
+      name = "Update full test",
+      description = Some("Description")
+    )
+
+    val newProjectData =
+      makeTestProject(client._id, name = "New task project")
+
+    for
+      newProject <- Projects.create(newProjectData).orFail.map(_.asDbProject)
+      task <- Tasks.create(data).orFail
+      update = Task.InputData(
+        newProject._id.toString,
+        "Updated name",
+        none[String],
+        LocalDateTime.now.format(DateTimeFormatter.ISO_DATE_TIME),
+        task.asDbTask.expectedWorkingHours.toFloat + 10f,
+        task.asDbTask.hourlyCost.toFloat + 10f
+      )
+      _ <- IO.delay(Thread.sleep(500))
+      updated <- Tasks.update(task._id, update).orFail.map(_.asDbTask)
+      _ = assertEquals(updated.project.toString, update.project)
+      _ = assertEquals(updated.name.toString, update.name)
+      _ = assertEquals(updated.description.map(_.toString), none[String])
+      _ = assertEquals(
+        updated.expectedWorkingHours.toFloat,
+        update.expectedWorkingHours
+      )
+      _ = assertEquals(updated.hourlyCost.toFloat, update.hourlyCost)
+    yield ()
+  }
+
+  test("should not update a task of another user") {
+    otherUser.use { otherUser =>
+      val data = makeTestTask(
+        testDataFixture().project._id,
+        name = "Update exclusivity test"
+      )
+
+      for
+        task <- Tasks.create(data).orFail
+        _ <- {
+          given User = otherUser
+
+          Tasks
+            .update(task._id, makeTestTask(testDataFixture().project._id))
+            .assertEquals(Left(Error(Status.NotFound, __.ErrorTaskNotFound)))
+        }
+      yield ()
+    }
+  }
+
+  test("should not accept an updated project if it is of another user") {
+    otherUser.use { otherUser =>
+      val testData = testDataFixture()
+      val user = testData.user
+      val project = testData.project
+
+      val taskData = makeTestTask(
+        project._id,
+        name = "Update exclusivity test"
+      )
+
+      for
+        task <- Tasks.create(taskData).orFail
+        otherUserClient <- {
+          given User = otherUser
+          Clients.create(makeTestPrivateClient()).orFail
+        }
+        otherUserProject <- {
+          given User = otherUser
+          Projects.create(makeTestProject(otherUserClient._id)).orFail
+        }
+        taskUpdateData = makeTestTask(otherUserProject._id)
+        _ <- Tasks
+          .update(task._id, taskUpdateData)
+          .assertEquals(Left(Error(Status.NotFound, __.ErrorProjectNotFound)))
+      yield ()
+    }
+  }
+
+  test("should delete a task") {
+    val data = makeTestTask(testDataFixture().project._id, name = "Delete test")
+
+    for
+      task <- Tasks.create(data).orFail
+      _ <- Tasks.delete(task._id).orFail.assertEquals(task)
+      _ <- Tasks
+        .findById(task._id)
+        .assertEquals(Left(Error(Status.NotFound, __.ErrorTaskNotFound)))
+    yield ()
+  }
+
+  test("should not delete a task of another user") {
+    otherUser.use { otherUser =>
+      val data = makeTestTask(
+        testDataFixture().project._id,
+        name = "Delete exclusivity test"
+      )
+
+      for
+        task <- Tasks.create(data).orFail
+        _ <- {
+          given User = otherUser
+
+          Tasks
+            .delete(task._id)
+            .assertEquals(Left(Error(Status.NotFound, __.ErrorTaskNotFound)))
+        }
+      yield ()
     }
   }
 }

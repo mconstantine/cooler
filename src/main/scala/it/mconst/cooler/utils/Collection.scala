@@ -158,10 +158,25 @@ final case class Collection[F[
         .map(
           _ match
             case update: ValueUpdateItem[_] =>
-              Some(Updates.set(update.key, update.value))
+              Some(
+                Updates.set(
+                  update.key,
+                  update.value match
+                    case value: BsonDateTime => value.getValue
+                    case _                   => update.value
+                )
+              )
             case update: OptionUpdateItem[_] =>
               update.value match
-                case Some(value) => Some(Updates.set(update.key, value))
+                case Some(value) =>
+                  Some(
+                    Updates.set(
+                      update.key,
+                      value match
+                        case value: BsonDateTime => value.getValue
+                        case _                   => value
+                    )
+                  )
                 case None =>
                   update.updateStrategy match
                     case UpdateStrategy.IgnoreIfEmpty => none[Bson]

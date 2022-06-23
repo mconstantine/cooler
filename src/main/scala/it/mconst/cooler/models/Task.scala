@@ -3,6 +3,9 @@ package it.mconst.cooler.models
 import cats.data.EitherT
 import cats.effect.IO
 import cats.syntax.apply.*
+import com.mongodb.client.model.Aggregates
+import com.mongodb.client.model.Field
+import com.mongodb.client.model.Filters
 import com.osinka.i18n.Lang
 import io.circe.Decoder
 import io.circe.Decoder.Result
@@ -18,6 +21,7 @@ import it.mconst.cooler.utils.Collection
 import it.mconst.cooler.utils.DbDocument
 import it.mconst.cooler.utils.Error
 import it.mconst.cooler.utils.given
+import mongo4cats.bson.Document
 import mongo4cats.bson.ObjectId
 import mongo4cats.circe.*
 import org.bson.BsonDateTime
@@ -25,10 +29,6 @@ import org.http4s.circe.*
 import org.http4s.EntityDecoder
 import org.http4s.EntityEncoder
 import org.http4s.Status
-import com.mongodb.client.model.Aggregates
-import com.mongodb.client.model.Filters
-import mongo4cats.bson.Document
-import com.mongodb.client.model.Field
 
 opaque type PositiveFloat = Float
 
@@ -44,6 +44,10 @@ object PositiveFloat extends Validator[Float, PositiveFloat] {
       value,
       ValidationError(fieldName, __.ErrorDecodeInvalidPositiveFloat)
     )
+}
+
+extension (pf: PositiveFloat) {
+  def toFloat: Float = pf
 }
 
 sealed abstract trait Task(
@@ -275,37 +279,45 @@ object Tasks {
       )(query)
     )
 
-  // def update(_id: ObjectId, data: Project.InputData)(using customer: User)(using
-  //     Lang
-  // ): EitherT[IO, Error, Project] =
-  //   for
-  //     project <- findById(_id)
-  //     data <- EitherT.fromEither[IO](Project.validateInputData(data).toResult)
-  //     client <- Clients.findById(data.client)
-  //     result <- collection
-  //       .useWithCodec[ProjectCashData, Error, Project](
-  //         _.update(
-  //           project._id,
-  //           collection.Update
-  //             .`with`("client" -> client._id)
-  //             .`with`("name" -> data.name)
-  //             .`with`(
-  //               "description" -> data.description,
-  //               collection.UpdateStrategy.UnsetIfEmpty
-  //             )
-  //             .`with`(
-  //               "cashData" -> data.cashData,
-  //               collection.UpdateStrategy.UnsetIfEmpty
-  //             )
-  //             .build
-  //         )
-  //       )
-  //   yield result
+  def update(_id: ObjectId, data: Task.InputData)(using customer: User)(using
+      Lang
+  ): EitherT[IO, Error, Task] =
+    for
+      task <- findById(_id)
+      data <- EitherT.fromEither[IO](Task.validateInputData(data).toResult)
+      projectId <- Projects
+        .findById(data.project)
+        .flatMap(_ match
+          case _: DbProject =>
+            EitherT.leftT[IO, ObjectId](
+              Error(Status.InternalServerError, __.ErrorUnknown)
+            )
+          case project: ProjectWithClient =>
+            EitherT.rightT[IO, Error](project._id)
+        )
+      result <- collection
+        .use(
+          _.update(
+            task._id,
+            collection.Update
+              .`with`("project" -> projectId)
+              .`with`("name" -> data.name)
+              .`with`(
+                "description" -> data.description,
+                collection.UpdateStrategy.UnsetIfEmpty
+              )
+              .`with`("startTime" -> data.startTime)
+              .`with`("expectedWorkingHours" -> data.expectedWorkingHours)
+              .`with`("hourlyCost" -> data.hourlyCost)
+              .build
+          )
+        )
+    yield result
 
-  // def delete(_id: ObjectId)(using customer: User)(using
-  //     Lang
-  // ): EitherT[IO, Error, Project] =
-  //   findById(_id).flatMap(project => collection.use(_.delete(project._id)))
+  def delete(_id: ObjectId)(using customer: User)(using
+      Lang
+  ): EitherT[IO, Error, Task] =
+    findById(_id).flatMap(task => collection.use(_.delete(task._id)))
 }
 
 given Encoder[Task] with Decoder[Task] with {
