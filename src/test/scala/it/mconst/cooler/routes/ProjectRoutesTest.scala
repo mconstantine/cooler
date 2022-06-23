@@ -1,6 +1,7 @@
 package it.mconst.cooler.routes
 
 import it.mconst.cooler.utils.TestUtils.*
+import munit.Assertions
 import munit.CatsEffectSuite
 
 import cats.effect.IO
@@ -22,7 +23,6 @@ import it.mconst.cooler.models.user.Users
 import it.mconst.cooler.utils.__
 import it.mconst.cooler.utils.Error
 import mongo4cats.collection.operations.Filter
-import munit.Assertions
 import org.bson.BsonDateTime
 import org.http4s.circe.*
 import org.http4s.client.{Client as HttpClient}
@@ -195,6 +195,7 @@ class ProjectRoutesTest extends CatsEffectSuite {
         )
         .map(_.asDbProject)
       _ = assertEquals(result.name.toString, updateData.name)
+      _ = assertEquals(result.description.map(_.toString), none[String])
     yield ()
   }
 
@@ -215,7 +216,7 @@ class ProjectRoutesTest extends CatsEffectSuite {
           projectData.name
         )
       _ <- Projects
-        .findById(project.asDbProject._id)
+        .findById(project._id)
         .assertEquals(Left(Error(Status.NotFound, __.ErrorProjectNotFound)))
     yield ()
   }
