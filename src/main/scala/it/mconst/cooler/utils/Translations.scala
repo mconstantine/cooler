@@ -34,6 +34,7 @@ enum __(val key: String):
   case ErrorInvalidEmailOrPassword
       extends __("error.auth.invalidEmailOrPassword")
   case ErrorProjectNotFound extends __("error.project.notFound")
+  case ErrorSessionNotFound extends __("error.session.notFound")
   case ErrorTaskNotFound extends __("error.task.notFound")
   case ErrorUnknown extends __("error.unknown")
   case ErrorUserConflict extends __("error.user.conflict")

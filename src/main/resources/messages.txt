@@ -17,6 +17,7 @@ error.document.notFound.afterUpdate=Updated document wasn''t found
 error.document.notFound.beforeDelete=Document to be deleted was''t found
 error.document.notFound=The document you are looking for wasn''t found
 error.project.notFound=Project not found
+error.session.notFound=Session not found
 error.task.notFound=Task not found
 error.unknown=An unexpected error occurred
 error.user.conflict=A user with this e-mail address already exists

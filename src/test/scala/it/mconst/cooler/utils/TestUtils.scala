@@ -22,6 +22,7 @@ import it.mconst.cooler.models.PrivateClient
 import it.mconst.cooler.models.Project
 import it.mconst.cooler.models.ProjectCashData
 import it.mconst.cooler.models.ProjectWithClient
+import it.mconst.cooler.models.Session
 import it.mconst.cooler.models.Task
 import it.mconst.cooler.models.TaskWithProject
 import it.mconst.cooler.models.toISOString
@@ -231,4 +232,12 @@ object TestUtils {
         case _: DbTask =>
           a.fail("Trying to cast DB task to task with project")
   }
+
+  def makeTestSession(
+      task: ObjectId,
+      startTime: Option[String] = Some(
+        BsonDateTime(System.currentTimeMillis).toISOString
+      ),
+      endTime: Option[String] = none[String]
+  ) = Session.InputData(task.toHexString, startTime, endTime)
 }
