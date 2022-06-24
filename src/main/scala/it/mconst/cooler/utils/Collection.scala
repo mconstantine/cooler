@@ -265,7 +265,8 @@ final case class Collection[F[
         case _: CursorQueryDesc => -1
 
       val skipCriteria = query match
-        case q: CursorQueryAsc => Filters.gt(searchKey, q.after.getOrElse(""))
+        case q: CursorQueryAsc =>
+          q.after.fold(Filters.empty)(Filters.gt(searchKey, _))
         case q: CursorQueryDesc =>
           q.before.fold(Filters.empty)(Filters.lt(searchKey, _))
 
@@ -352,7 +353,9 @@ final case class Collection[F[
           Document(
             "edges" -> "$edges",
             "pageInfo" -> Document(
-              "totalCount" -> "$global.totalCount",
+              "totalCount" -> Document(
+                "$ifNull" -> List("$global.totalCount", 0)
+              ),
               "startCursor" -> "$min",
               "endCursor" -> "$max",
               "hasPreviousPage" -> Document(

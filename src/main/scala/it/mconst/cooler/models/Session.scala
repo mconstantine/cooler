@@ -195,6 +195,7 @@ object Sessions {
     _.find(
       "startTime",
       Seq(
+        Aggregates.`match`(Filters.eq("task", task)),
         Document(
           "$lookup" -> Document(
             "from" -> "tasks",
@@ -236,7 +237,7 @@ object Sessions {
       query match
         case q: CursorQueryAsc => CursorQueryAsc(none[String], q.first, q.after)
         case q: CursorQueryDesc =>
-          CursorQueryAsc(none[String], q.last, q.before)
+          CursorQueryDesc(none[String], q.last, q.before)
     )
   )
 
@@ -277,5 +278,6 @@ object Sessions {
 
   def delete(_id: ObjectId)(using customer: User)(using
       Lang
-  ): EitherT[IO, Error, Session] = ???
+  ): EitherT[IO, Error, Session] =
+    findById(_id).flatMap(session => collection.use(_.delete(session._id)))
 }
