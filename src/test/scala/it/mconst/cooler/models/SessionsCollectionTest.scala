@@ -14,6 +14,7 @@ import org.bson.BsonDateTime
 import it.mconst.cooler.utils.Error
 import org.http4s.Status
 import it.mconst.cooler.utils.__
+import mongo4cats.collection.operations.Filter
 
 class SessionsCollectionTest extends CatsEffectSuite {
   final case class TestData(
@@ -140,7 +141,74 @@ class SessionsCollectionTest extends CatsEffectSuite {
     )
   }
 
-  test("should get the sessions of a task") {}
+  def sessionsList = Resource.make {
+    val now = System.currentTimeMillis
+
+    val sessions = List(
+      makeTestSession(
+        testDataFixture().task._id,
+        startTime = Some(BsonDateTime(now + 0).toISOString)
+      ),
+      makeTestSession(
+        testDataFixture().task._id,
+        startTime = Some(BsonDateTime(now + 100).toISOString)
+      ),
+      makeTestSession(
+        testDataFixture().task._id,
+        startTime = Some(BsonDateTime(now + 200).toISOString)
+      ),
+      makeTestSession(
+        testDataFixture().task._id,
+        startTime = Some(BsonDateTime(now + 300).toISOString)
+      ),
+      makeTestSession(
+        testDataFixture().task._id,
+        startTime = Some(BsonDateTime(now + 400).toISOString)
+      )
+    )
+
+    import cats.syntax.parallel.*
+
+    Sessions.collection
+      .use(_.raw(_.deleteMany(Filter.empty)))
+      .flatMap(_ =>
+        sessions
+          .map(Sessions.start(_).orFail)
+          .parSequence
+          .map(_.sortWith(_.startTime.getValue < _.startTime.getValue))
+      )
+  }(_ => Sessions.collection.use(_.raw(_.deleteMany(Filter.empty))).void)
+
+  test("should get the sessions of a task (asc)") {
+    sessionsList.use(sessions =>
+      Sessions
+        .getSessions(
+          testDataFixture().task._id,
+          CursorQueryAsc(
+            none[String],
+            Some(PositiveInteger.unsafe(2)),
+            Some(sessions.head.startTime.toISOString)
+          )
+        )
+        .orFail
+        .assertEquals(
+          Cursor(
+            PageInfo(
+              5,
+              Some(sessions(1).startTime.toISOString),
+              Some(sessions(2).startTime.toISOString),
+              true,
+              true
+            ),
+            sessions
+              .slice(1, 3)
+              .map(session => Edge(session, session.startTime.toISOString))
+          )
+        )
+    )
+  }
+
+  test("should get the sessions of a task (desc)") {}
   test("should not get the sessions of a task of another user") {}
   test("should update a session") {}
   test("should not update a session of a task of another user") {}

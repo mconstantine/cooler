@@ -25,8 +25,12 @@ import org.http4s.EntityEncoder
 import scala.util.Try
 import java.time.ZoneId
 import java.nio.charset.MalformedInputException
+import org.http4s.Status
 
-final case class ValidationError(fieldName: String, message: __)(using Lang)
+final case class ValidationError(fieldName: String, message: __)(using Lang) {
+  def toError: Error = Error(Status.BadRequest, this.message)
+}
+
 type Validation[T] = Validated[NonEmptyChain[ValidationError], T]
 
 extension [T](validation: Validation[T]) {
@@ -63,6 +67,8 @@ abstract trait Validator[I, O](using encoder: Encoder[I], decoder: Decoder[I]) {
   ): Validation[Option[O]] =
     o.map(validate(fieldName, _).map(Some(_)))
       .getOrElse(Validated.valid(none[O]))
+
+  def unsafe(i: I): O = decode(i).get
 
   given Encoder[O] = encoder.asInstanceOf[Encoder[O]]
 
@@ -112,6 +118,23 @@ object Email extends Validator[String, Email] {
     )
 }
 
+opaque type PositiveInteger = Int
+
+object PositiveInteger extends Validator[Int, PositiveInteger] {
+  override def name = "PositiveInteger"
+
+  override def decode(n: Int): Option[PositiveInteger] = Option.when(n > 0)(n)
+
+  override def validate(fieldName: String, value: Int)(using
+      Lang
+  ): Validation[PositiveInteger] =
+    validate(value, ValidationError(fieldName, __.ErrorDecodePositiveInteger))
+}
+
+extension (pi: PositiveInteger) {
+  def toInt: Int = pi
+}
+
 final case class PageInfo(
     totalCount: Int,
     startCursor: Option[String],
@@ -139,26 +162,48 @@ object CursorQuery {
       last: Option[Int] = none[Int],
       before: Option[String] = none[String]
   )(using Lang): Either[Error, CursorQuery] = {
-    val firstOrAfter = first.isDefined || after.isDefined
-    val lastOrBefore = last.isDefined || before.isDefined
+    val validatedFirst =
+      first.map(PositiveInteger.validate("first", _).leftMap(_.head))
+
+    val validatedLast =
+      first.map(PositiveInteger.validate("last", _).leftMap(_.head))
+
+    val firstOrAfter = validatedFirst.isDefined || after.isDefined
+    val lastOrBefore = validatedLast.isDefined || before.isDefined
 
     if firstOrAfter && lastOrBefore then
       Left(Error(BadRequest, __.ErrorDecodeInvalidQuery))
-    else if lastOrBefore then Right(CursorQueryDesc(query, last, before))
-    else if firstOrAfter then Right(CursorQueryAsc(query, first, after))
+    else if lastOrBefore then
+      validatedLast
+        .map(
+          _.toEither
+            .map(last => CursorQueryDesc(query, Some(last), before))
+            .left
+            .map(_.toError)
+        )
+        .getOrElse(Right(CursorQueryDesc(query, none[PositiveInteger], before)))
+    else if firstOrAfter then
+      validatedFirst
+        .map(
+          _.toEither
+            .map(first => CursorQueryAsc(query, Some(first), after))
+            .left
+            .map(_.toError)
+        )
+        .getOrElse(Right(CursorQueryAsc(query, none[PositiveInteger], after)))
     else Right(CursorQueryAsc(query))
   }
 }
 
 final case class CursorQueryAsc(
     query: Option[String] = none[String],
-    first: Option[Int] = none[Int],
+    first: Option[PositiveInteger] = none[PositiveInteger],
     after: Option[String] = none[String]
 ) extends CursorQuery(query)
 
 final case class CursorQueryDesc(
     query: Option[String] = none[String],
-    last: Option[Int] = none[Int],
+    last: Option[PositiveInteger] = none[PositiveInteger],
     before: Option[String] = none[String]
 ) extends CursorQuery(query)
 

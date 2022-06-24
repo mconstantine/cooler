@@ -240,7 +240,7 @@ class ClientsCollectionTest extends CatsEffectSuite {
           .find(
             CursorQueryAsc(
               query = Some("al"),
-              first = Some(2),
+              first = Some(PositiveInteger.unsafe(2)),
               after = Some("Alice")
             )
           )

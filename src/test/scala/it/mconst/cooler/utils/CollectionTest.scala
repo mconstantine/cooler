@@ -12,6 +12,7 @@ import com.osinka.i18n.Lang
 import io.circe.generic.auto.*
 import it.mconst.cooler.models.CursorQueryAsc
 import it.mconst.cooler.models.CursorQueryDesc
+import it.mconst.cooler.models.PositiveInteger
 import mongo4cats.bson.ObjectId
 import mongo4cats.circe.*
 import mongo4cats.codecs.MongoCodecProvider
@@ -140,7 +141,10 @@ class CollectionTest extends CatsEffectSuite {
         result <- people
           .use(
             _.find("firstName", Seq.empty)(
-              CursorQueryAsc(query = Some("sd"), first = Some(2))
+              CursorQueryAsc(
+                query = Some("sd"),
+                first = Some(PositiveInteger.unsafe(2))
+              )
             )
           )
           .orFail
@@ -162,7 +166,7 @@ class CollectionTest extends CatsEffectSuite {
             _.find("firstName", Seq.empty)(
               CursorQueryAsc(
                 query = Some("sd"),
-                first = Some(2),
+                first = Some(PositiveInteger.unsafe(2)),
                 after = Some("Bsd")
               )
             )
@@ -186,7 +190,7 @@ class CollectionTest extends CatsEffectSuite {
             _.find("firstName", Seq.empty)(
               CursorQueryAsc(
                 query = Some("sd"),
-                first = Some(2),
+                first = Some(PositiveInteger.unsafe(2)),
                 after = Some("Dsd")
               )
             )
@@ -208,7 +212,10 @@ class CollectionTest extends CatsEffectSuite {
         result <- people
           .use(
             _.find("firstName", Seq.empty)(
-              CursorQueryDesc(query = Some("sd"), last = Some(2))
+              CursorQueryDesc(
+                query = Some("sd"),
+                last = Some(PositiveInteger.unsafe(2))
+              )
             )
           )
           .orFail
@@ -233,7 +240,7 @@ class CollectionTest extends CatsEffectSuite {
             _.find("firstName", Seq.empty)(
               CursorQueryDesc(
                 query = Some("sd"),
-                last = Some(2),
+                last = Some(PositiveInteger.unsafe(2)),
                 before = Some("Esd")
               )
             )
@@ -260,7 +267,7 @@ class CollectionTest extends CatsEffectSuite {
             _.find("firstName", Seq.empty)(
               CursorQueryDesc(
                 query = Some("sd"),
-                last = Some(2),
+                last = Some(PositiveInteger.unsafe(2)),
                 before = Some("Csd")
               )
             )

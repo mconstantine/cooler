@@ -19,6 +19,8 @@ enum __(val key: String):
       extends __("error.decode.invalidPasswordFormat")
   case ErrorDecodeInvalidPositiveFloat
       extends __("error.decode.invalidPasswordFormat")
+  case ErrorDecodePositiveInteger
+      extends __("error.decode.invalidPositiveInteger")
   case ErrorDecodeInvalidProvinceCode
       extends __("error.decode.invalidProvinceCode")
   case ErrorDecodeInvalidQuery extends __("error.decode.invalidQuery")

@@ -191,7 +191,54 @@ object Sessions {
 
   def getSessions(task: ObjectId, query: CursorQuery)(using customer: User)(
       using Lang
-  ): EitherT[IO, Error, Cursor[Session]] = ???
+  ): EitherT[IO, Error, Cursor[Session]] = collection.use(
+    _.find(
+      "startTime",
+      Seq(
+        Document(
+          "$lookup" -> Document(
+            "from" -> "tasks",
+            "localField" -> "task",
+            "foreignField" -> "_id",
+            "as" -> "task",
+            "pipeline" -> Seq(
+              Document(
+                "$lookup" -> Document(
+                  "from" -> "projects",
+                  "localField" -> "project",
+                  "foreignField" -> "_id",
+                  "as" -> "project",
+                  "pipeline" -> Seq(
+                    Aggregates.lookup(
+                      "clients",
+                      "client",
+                      "_id",
+                      "client"
+                    ),
+                    Aggregates.`match`(
+                      Filters.eq("client.user", customer._id)
+                    )
+                  )
+                )
+              )
+            )
+          )
+        ),
+        Document(
+          "$match" -> Document(
+            "task.project" -> Document("$not" -> Document("$size", 0))
+          )
+        ),
+        Aggregates.addFields(Field("task", "$task._id")),
+        Aggregates.unwind("$task")
+      )
+    )(
+      query match
+        case q: CursorQueryAsc => CursorQueryAsc(none[String], q.first, q.after)
+        case q: CursorQueryDesc =>
+          CursorQueryAsc(none[String], q.last, q.before)
+    )
+  )
 
   def update(_id: ObjectId, data: Session.InputData)(using customer: User)(using
       Lang

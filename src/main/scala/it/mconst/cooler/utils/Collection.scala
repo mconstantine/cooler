@@ -13,6 +13,8 @@ import com.mongodb.client.model.Filters
 import com.mongodb.client.model.Updates
 import com.osinka.i18n.Lang
 import io.circe.Decoder
+import io.circe.Decoder.Result
+import io.circe.DecodingFailure
 import io.circe.Encoder
 import io.circe.generic.auto.*
 import io.circe.HCursor
@@ -21,7 +23,9 @@ import it.mconst.cooler.models.Cursor
 import it.mconst.cooler.models.CursorQuery
 import it.mconst.cooler.models.CursorQueryAsc
 import it.mconst.cooler.models.CursorQueryDesc
+import it.mconst.cooler.models.PositiveInteger
 import it.mconst.cooler.models.toBsonDateTime
+import it.mconst.cooler.models.toInt
 import it.mconst.cooler.models.toISOString
 import it.mconst.cooler.utils.Error
 import mongo4cats.bson.Document
@@ -37,8 +41,6 @@ import org.bson.conversions.Bson
 import org.http4s.dsl.io.*
 import scala.collection.JavaConverters.*
 import scala.reflect.ClassTag
-import io.circe.DecodingFailure
-import io.circe.Decoder.Result
 
 trait DbDocument {
   def _id: ObjectId
@@ -299,7 +301,11 @@ final case class Collection[F[
             "data",
             List(
               Aggregates.`match`(skipCriteria),
-              Aggregates.limit(limit.getOrElse(Config.defaultPageSize))
+              Aggregates.limit(
+                limit
+                  .getOrElse(PositiveInteger.unsafe(Config.defaultPageSize))
+                  .toInt
+              )
             ).asJava
           )
         ),
