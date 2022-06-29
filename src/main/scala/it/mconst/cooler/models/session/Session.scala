@@ -1,12 +1,22 @@
-package it.mconst.cooler.models
+package it.mconst.cooler.models.session
 
 import cats.data.EitherT
+import cats.data.Validated.Valid
 import cats.effect.IO
 import cats.syntax.all.none
+import cats.syntax.apply.*
 import com.mongodb.client.model.Aggregates
+import com.mongodb.client.model.Field
 import com.mongodb.client.model.Filters
 import com.osinka.i18n.Lang
 import io.circe.generic.auto.*
+import it.mconst.cooler.models.*
+import it.mconst.cooler.models.client.Client
+import it.mconst.cooler.models.client.given
+import it.mconst.cooler.models.task.DbTask
+import it.mconst.cooler.models.task.Tasks
+import it.mconst.cooler.models.task.Tasks
+import it.mconst.cooler.models.task.TaskWithProject
 import it.mconst.cooler.models.user.User
 import it.mconst.cooler.utils.__
 import it.mconst.cooler.utils.Collection
@@ -21,13 +31,10 @@ import org.http4s.circe.*
 import org.http4s.EntityDecoder
 import org.http4s.EntityEncoder
 import org.http4s.Status
-import cats.syntax.apply.*
-import cats.data.Validated.Valid
-import com.mongodb.client.model.Field
 
 final case class Session(
     _id: ObjectId,
-    task: ObjectId,
+    val task: ObjectId,
     startTime: BsonDateTime,
     endTime: Option[BsonDateTime],
     createdAt: BsonDateTime,
@@ -281,3 +288,8 @@ object Sessions {
   ): EitherT[IO, Error, Session] =
     findById(_id).flatMap(session => collection.use(_.delete(session._id)))
 }
+
+given EntityEncoder[IO, Session] = jsonEncoderOf[IO, Session]
+given EntityDecoder[IO, Session] = jsonOf[IO, Session]
+
+given EntityEncoder[IO, Cursor[Session]] = jsonEncoderOf[IO, Cursor[Session]]

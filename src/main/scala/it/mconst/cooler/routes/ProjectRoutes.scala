@@ -6,11 +6,10 @@ import com.osinka.i18n.Lang
 import io.circe.generic.auto.*
 import it.mconst.cooler.middlewares.UserMiddleware
 import it.mconst.cooler.middlewares.UserMiddleware.UserContext
-import it.mconst.cooler.models.Cursor
-import it.mconst.cooler.models.CursorQuery
-import it.mconst.cooler.models.given
-import it.mconst.cooler.models.Project
-import it.mconst.cooler.models.Projects
+import it.mconst.cooler.models.*
+import it.mconst.cooler.models.project.given
+import it.mconst.cooler.models.project.Project
+import it.mconst.cooler.models.project.Projects
 import it.mconst.cooler.models.user.User
 import it.mconst.cooler.utils.given
 import org.http4s.AuthedRoutes
@@ -38,9 +37,6 @@ object ProjectRoutes {
         BeforeMatcher(before) as context => {
       given Lang = context.lang
       given User = context.user
-
-      given EntityEncoder[IO, Cursor[Project]] =
-        jsonEncoderOf[IO, Cursor[Project]]
 
       EitherT
         .fromEither[IO](CursorQuery(query, first, after, last, before))

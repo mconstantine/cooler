@@ -9,12 +9,10 @@ import cats.syntax.all.none
 import com.osinka.i18n.Lang
 import io.circe.generic.auto.*
 import it.mconst.cooler.middlewares.UserMiddleware
-import it.mconst.cooler.models.Client
-import it.mconst.cooler.models.Clients
-import it.mconst.cooler.models.Cursor
-import it.mconst.cooler.models.Edge
-import it.mconst.cooler.models.given
-import it.mconst.cooler.models.PageInfo
+import it.mconst.cooler.models.*
+import it.mconst.cooler.models.client.Client
+import it.mconst.cooler.models.client.Clients
+import it.mconst.cooler.models.client.given
 import it.mconst.cooler.models.user.User
 import it.mconst.cooler.models.user.Users
 import it.mconst.cooler.utils.__

@@ -1,4 +1,4 @@
-package it.mconst.cooler.models
+package it.mconst.cooler.models.client
 
 import cats.data.EitherT
 import cats.effect.IO
@@ -15,6 +15,7 @@ import io.circe.generic.auto.*
 import io.circe.HCursor
 import io.circe.Json
 import io.circe.syntax.*
+import it.mconst.cooler.models.*
 import it.mconst.cooler.models.user.User
 import it.mconst.cooler.utils.__
 import it.mconst.cooler.utils.Collection
@@ -495,6 +496,8 @@ given Encoder[Client] with Decoder[Client] with {
 
 given EntityEncoder[IO, Client] = jsonEncoderOf[IO, Client]
 given EntityDecoder[IO, Client] = jsonOf[IO, Client]
+
+given EntityEncoder[IO, Cursor[Client]] = jsonEncoderOf[IO, Cursor[Client]]
 
 opaque type CountryCode = String
 opaque type ProvinceCode = String

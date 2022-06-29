@@ -1,4 +1,4 @@
-package it.mconst.cooler.models
+package it.mconst.cooler.models.project
 
 import cats.data.EitherT
 import cats.data.NonEmptyChain
@@ -17,6 +17,10 @@ import io.circe.generic.auto.*
 import io.circe.HCursor
 import io.circe.Json
 import io.circe.syntax.*
+import it.mconst.cooler.models.*
+import it.mconst.cooler.models.client.Client
+import it.mconst.cooler.models.client.Clients
+import it.mconst.cooler.models.client.given
 import it.mconst.cooler.models.user.User
 import it.mconst.cooler.utils.__
 import it.mconst.cooler.utils.Collection
@@ -138,20 +142,23 @@ object Projects {
       _id: ObjectId
   )(using customer: User)(using Lang): EitherT[IO, Error, Project] =
     EitherT.fromOptionF(
-      collection
-        .use(
-          _.raw(
-            _.aggregateWithCodec[ProjectWithClient](
-              Seq(
-                Aggregates.`match`(Filters.eq("_id", _id)),
-                Aggregates
-                  .lookup(Clients.collection.name, "client", "_id", "client"),
-                Aggregates.unwind("$client"),
-                Aggregates.`match`(Filters.eq("client.user", customer._id))
-              )
-            ).first
-          )
-        ),
+      collection.use(
+        _.raw(
+          _.aggregateWithCodec[ProjectWithClient](
+            Seq(
+              Aggregates.`match`(Filters.eq("_id", _id)),
+              Aggregates.lookup(
+                Clients.collection.name,
+                "client",
+                "_id",
+                "client"
+              ),
+              Aggregates.unwind("$client"),
+              Aggregates.`match`(Filters.eq("client.user", customer._id))
+            )
+          ).first
+        )
+      ),
       Error(Status.NotFound, __.ErrorProjectNotFound)
     )
 
@@ -215,3 +222,5 @@ given Encoder[Project] with Decoder[Project] with {
 
 given EntityEncoder[IO, Project] = jsonEncoderOf[IO, Project]
 given EntityDecoder[IO, Project] = jsonOf[IO, Project]
+
+given EntityEncoder[IO, Cursor[Project]] = jsonEncoderOf[IO, Cursor[Project]]

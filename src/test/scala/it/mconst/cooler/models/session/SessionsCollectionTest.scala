@@ -1,4 +1,4 @@
-package it.mconst.cooler.models
+package it.mconst.cooler.models.session
 
 import it.mconst.cooler.utils.TestUtils.*
 import munit.Assertions
@@ -8,13 +8,20 @@ import cats.effect.IO
 import cats.effect.kernel.Resource
 import cats.syntax.all.none
 import com.osinka.i18n.Lang
+import it.mconst.cooler.models.*
+import it.mconst.cooler.models.client.Client
+import it.mconst.cooler.models.client.Clients
+import it.mconst.cooler.models.project.Project
+import it.mconst.cooler.models.project.Projects
+import it.mconst.cooler.models.task.Task
+import it.mconst.cooler.models.task.Tasks
 import it.mconst.cooler.models.user.User
 import it.mconst.cooler.models.user.Users
-import org.bson.BsonDateTime
-import it.mconst.cooler.utils.Error
-import org.http4s.Status
 import it.mconst.cooler.utils.__
+import it.mconst.cooler.utils.Error
 import mongo4cats.collection.operations.Filter
+import org.bson.BsonDateTime
+import org.http4s.Status
 
 class SessionsCollectionTest extends CatsEffectSuite {
   final case class TestData(

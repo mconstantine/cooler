@@ -12,8 +12,10 @@ import io.circe.generic.auto.deriveDecoder
 import io.circe.generic.auto.deriveEncoder
 import it.mconst.cooler.utils.__
 import it.mconst.cooler.utils.Error
+import java.nio.charset.MalformedInputException
 import java.time.format.DateTimeFormatter
 import java.time.LocalDateTime
+import java.time.ZoneId
 import java.time.ZoneOffset
 import mongo4cats.bson.ObjectId
 import mongo4cats.circe.*
@@ -22,10 +24,8 @@ import org.bson.BsonDateTime
 import org.http4s.circe.*
 import org.http4s.dsl.io.*
 import org.http4s.EntityEncoder
-import scala.util.Try
-import java.time.ZoneId
-import java.nio.charset.MalformedInputException
 import org.http4s.Status
+import scala.util.Try
 
 final case class ValidationError(fieldName: String, message: __)(using Lang) {
   def toError: Error = Error(Status.BadRequest, this.message)
@@ -166,7 +166,7 @@ object CursorQuery {
       first.map(PositiveInteger.validate("first", _).leftMap(_.head))
 
     val validatedLast =
-      first.map(PositiveInteger.validate("last", _).leftMap(_.head))
+      last.map(PositiveInteger.validate("last", _).leftMap(_.head))
 
     val firstOrAfter = validatedFirst.isDefined || after.isDefined
     val lastOrBefore = validatedLast.isDefined || before.isDefined

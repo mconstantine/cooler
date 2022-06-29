@@ -1,4 +1,4 @@
-package it.mconst.cooler.models
+package it.mconst.cooler.models.task
 
 import it.mconst.cooler.utils.TestUtils.*
 import munit.Assertions
@@ -8,6 +8,12 @@ import cats.effect.IO
 import cats.effect.kernel.Resource
 import cats.syntax.all.none
 import com.osinka.i18n.Lang
+import it.mconst.cooler.models.*
+import it.mconst.cooler.models.client.Client
+import it.mconst.cooler.models.client.Clients
+import it.mconst.cooler.models.client.given
+import it.mconst.cooler.models.project.Project
+import it.mconst.cooler.models.project.Projects
 import it.mconst.cooler.models.user.User
 import it.mconst.cooler.models.user.Users
 import it.mconst.cooler.utils.__

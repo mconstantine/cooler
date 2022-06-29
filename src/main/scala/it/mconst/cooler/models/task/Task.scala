@@ -1,4 +1,4 @@
-package it.mconst.cooler.models
+package it.mconst.cooler.models.task
 
 import cats.data.EitherT
 import cats.effect.IO
@@ -15,6 +15,12 @@ import io.circe.generic.auto.*
 import io.circe.HCursor
 import io.circe.Json
 import io.circe.syntax.*
+import it.mconst.cooler.models.*
+import it.mconst.cooler.models.client.Client
+import it.mconst.cooler.models.client.given
+import it.mconst.cooler.models.project.DbProject
+import it.mconst.cooler.models.project.Projects
+import it.mconst.cooler.models.project.ProjectWithClient
 import it.mconst.cooler.models.user.User
 import it.mconst.cooler.utils.__
 import it.mconst.cooler.utils.Collection
@@ -331,3 +337,5 @@ given Encoder[Task] with Decoder[Task] with {
 
 given EntityEncoder[IO, Task] = jsonEncoderOf[IO, Task]
 given EntityDecoder[IO, Task] = jsonOf[IO, Task]
+
+given EntityEncoder[IO, Cursor[Task]] = jsonEncoderOf[IO, Cursor[Task]]

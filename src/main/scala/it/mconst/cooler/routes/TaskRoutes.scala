@@ -6,11 +6,10 @@ import com.osinka.i18n.Lang
 import io.circe.generic.auto.*
 import it.mconst.cooler.middlewares.UserMiddleware
 import it.mconst.cooler.middlewares.UserMiddleware.UserContext
-import it.mconst.cooler.models.Cursor
-import it.mconst.cooler.models.CursorQuery
-import it.mconst.cooler.models.given
-import it.mconst.cooler.models.Task
-import it.mconst.cooler.models.Tasks
+import it.mconst.cooler.models.*
+import it.mconst.cooler.models.task.given
+import it.mconst.cooler.models.task.Task
+import it.mconst.cooler.models.task.Tasks
 import it.mconst.cooler.models.user.User
 import it.mconst.cooler.utils.given
 import org.http4s.AuthedRoutes
@@ -38,9 +37,6 @@ object TaskRoutes {
         BeforeMatcher(before) as context => {
       given Lang = context.lang
       given User = context.user
-
-      given EntityEncoder[IO, Cursor[Task]] =
-        jsonEncoderOf[IO, Cursor[Task]]
 
       EitherT
         .fromEither[IO](CursorQuery(query, first, after, last, before))
