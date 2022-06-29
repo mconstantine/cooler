@@ -68,9 +68,6 @@ final case class User(
     updatedAt: BsonDateTime
 ) extends DbDocument
 
-given EntityEncoder[IO, User] = jsonEncoderOf[IO, User]
-given EntityDecoder[IO, User] = jsonOf[IO, User]
-
 object User {
   final case class CreationData(
       name: String,
@@ -249,3 +246,6 @@ object Users {
   def delete(using customer: User)(using Lang): EitherT[IO, Error, User] =
     collection.use(_.delete(customer._id))
 }
+
+given EntityEncoder[IO, User] = jsonEncoderOf[IO, User]
+given EntityDecoder[IO, User] = jsonOf[IO, User]

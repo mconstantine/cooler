@@ -178,7 +178,7 @@ class TaskRoutesTest extends CatsEffectSuite {
     yield ()
   }
 
-  test("should update a project") {
+  test("should update a task") {
     val user = testDataFixture().user
 
     val taskData =
@@ -190,7 +190,7 @@ class TaskRoutesTest extends CatsEffectSuite {
 
     val updateData = makeTestTask(
       testDataFixture().project._id,
-      name = "Updated project name"
+      name = "Updated task name"
     )
 
     given User = user
