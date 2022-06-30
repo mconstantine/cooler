@@ -323,7 +323,10 @@ object Tasks {
   def delete(_id: ObjectId)(using customer: User)(using
       Lang
   ): EitherT[IO, Error, Task] =
-    findById(_id).flatMap(task => collection.use(_.delete(task._id)))
+    for
+      task <- findById(_id)
+      result <- collection.use(_.delete(task._id))
+    yield result
 }
 
 given Encoder[Task] with Decoder[Task] with {

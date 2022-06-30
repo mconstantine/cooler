@@ -11,13 +11,7 @@ import io.circe.Decoder
 import io.circe.DecodingFailure
 import io.circe.Encoder
 import io.circe.generic.auto.*
-import it.mconst.cooler.models.Email
-import it.mconst.cooler.models.NonEmptyString
-import it.mconst.cooler.models.toResult
-import it.mconst.cooler.models.user.JWT
-import it.mconst.cooler.models.Validation
-import it.mconst.cooler.models.ValidationError
-import it.mconst.cooler.models.Validator
+import it.mconst.cooler.models.*
 import it.mconst.cooler.utils.__
 import it.mconst.cooler.utils.Collection
 import it.mconst.cooler.utils.DbDocument
@@ -26,12 +20,11 @@ import it.mconst.cooler.utils.given
 import mongo4cats.bson.ObjectId
 import mongo4cats.circe.*
 import mongo4cats.collection.operations.Filter
-import munit.Assertions
 import org.bson.BsonDateTime
 import org.http4s.circe.*
-import org.http4s.dsl.io.*
 import org.http4s.EntityDecoder
 import org.http4s.EntityEncoder
+import org.http4s.Status
 
 opaque type Password = String
 
@@ -160,7 +153,7 @@ object Users {
             c.raw(_.count)
               .map(n =>
                 Option.when(n > 0)(
-                  Error(Forbidden, __.ErrorUserRegisterForbidden)
+                  Error(Status.Forbidden, __.ErrorUserRegisterForbidden)
                 )
               )
           )
@@ -168,7 +161,7 @@ object Users {
         .orElse(
           c.findOne(Filter.eq("email", user.email))
             .toOption
-            .map(_ => Error(Conflict, __.ErrorUserConflict))
+            .map(_ => Error(Status.Conflict, __.ErrorUserConflict))
         )
         .toLeft[User](null)
         .flatMap(_ =>
@@ -180,47 +173,48 @@ object Users {
       data: User.UpdateData
   )(using customer: User)(using Lang): EitherT[IO, Error, User] =
     collection.use(c =>
-      EitherT
-        .fromEither[IO](User.validateUpdateData(data).toResult)
-        .flatMap(data =>
-          data.email.fold(EitherT.rightT[IO, Error](data))(email =>
-            OptionT(
-              c.raw(
-                _.find(
-                  Filter
-                    .eq("email", email)
-                    .and(Filter.ne("_id", customer._id))
-                ).first
-              )
-            ).toLeft(data).leftMap(_ => Error(Conflict, __.ErrorUserConflict))
+      for
+        data <- EitherT
+          .fromEither[IO](User.validateUpdateData(data).toResult)
+          .flatMap(data =>
+            data.email.fold(EitherT.rightT[IO, Error](data))(email =>
+              OptionT(
+                c.raw(
+                  _.find(
+                    Filter
+                      .eq("email", email)
+                      .and(Filter.ne("_id", customer._id))
+                  ).first
+                )
+              ).toLeft(data)
+                .leftMap(_ => Error(Status.Conflict, __.ErrorUserConflict))
+            )
           )
+        result <- c.update(
+          customer._id,
+          collection.Update
+            .`with`(
+              "name" -> data.name,
+              collection.UpdateStrategy.IgnoreIfEmpty
+            )
+            .`with`(
+              "email" -> data.email,
+              collection.UpdateStrategy.IgnoreIfEmpty
+            )
+            .`with`(
+              "password" -> data.password,
+              collection.UpdateStrategy.IgnoreIfEmpty
+            )
+            .build
         )
-        .flatMap { (data: User.ValidUpdateData) =>
-          c.update(
-            customer._id,
-            collection.Update
-              .`with`(
-                "name" -> data.name,
-                collection.UpdateStrategy.IgnoreIfEmpty
-              )
-              .`with`(
-                "email" -> data.email,
-                collection.UpdateStrategy.IgnoreIfEmpty
-              )
-              .`with`(
-                "password" -> data.password,
-                collection.UpdateStrategy.IgnoreIfEmpty
-              )
-              .build
-          )
-        }
+      yield result
     )
 
   def login(
       data: User.LoginData
   )(using Lang): EitherT[IO, Error, JWT.AuthTokens] =
     collection.use { c =>
-      val error = Error(BadRequest, __.ErrorInvalidEmailOrPassword)
+      val error = Error(Status.BadRequest, __.ErrorInvalidEmailOrPassword)
 
       c.findOne(Filter.eq("email", data.email))
         .leftMap(_ => error)

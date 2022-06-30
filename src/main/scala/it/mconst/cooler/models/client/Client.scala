@@ -29,9 +29,9 @@ import mongo4cats.circe.*
 import mongo4cats.collection.operations.Filter
 import org.bson.BsonDateTime
 import org.http4s.circe.*
-import org.http4s.dsl.io.*
 import org.http4s.EntityDecoder
 import org.http4s.EntityEncoder
+import org.http4s.Status
 
 sealed abstract trait Client(
     _id: ObjectId,
@@ -392,9 +392,10 @@ object Clients {
       data: Client.InputData
   )(using customer: User)(using Lang): EitherT[IO, Error, Client] =
     collection.use(c =>
-      EitherT
-        .fromEither[IO](Client.fromInputData(data, customer))
-        .flatMap(c.create(_))
+      for
+        data <- EitherT.fromEither[IO](Client.fromInputData(data, customer))
+        client <- c.create(data)
+      yield client
     )
 
   def findById(
@@ -402,7 +403,7 @@ object Clients {
   )(using customer: User)(using Lang): EitherT[IO, Error, Client] =
     collection.use(c =>
       c.findOne(Filter.eq("_id", _id).and(Filter.eq("user", customer._id)))
-        .leftMap(_ => Error(NotFound, __.ErrorClientNotFound))
+        .leftMap(_ => Error(Status.NotFound, __.ErrorClientNotFound))
     )
 
   def update(_id: ObjectId, data: Client.InputData)(using customer: User)(using

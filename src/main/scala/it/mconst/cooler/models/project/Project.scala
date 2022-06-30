@@ -208,7 +208,10 @@ object Projects {
   def delete(_id: ObjectId)(using customer: User)(using
       Lang
   ): EitherT[IO, Error, Project] =
-    findById(_id).flatMap(project => collection.use(_.delete(project._id)))
+    for
+      project <- findById(_id)
+      result <- collection.use(_.delete(project._id))
+    yield result
 }
 
 given Encoder[Project] with Decoder[Project] with {

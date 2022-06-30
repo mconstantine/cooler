@@ -14,7 +14,7 @@ import it.mconst.cooler.models.user.Users
 import it.mconst.cooler.utils.__
 import it.mconst.cooler.utils.Error
 import mongo4cats.collection.operations.Filter
-import org.http4s.dsl.io.*
+import org.http4s.Status
 
 class ClientsCollectionTest extends CatsEffectSuite {
   val adminFixture = ResourceSuiteLocalFixture(
@@ -92,7 +92,7 @@ class ClientsCollectionTest extends CatsEffectSuite {
       }
       _ <- Clients
         .findById(client._id)
-        .assertEquals(Left(Error(NotFound, __.ErrorClientNotFound)))
+        .assertEquals(Left(Error(Status.NotFound, __.ErrorClientNotFound)))
     yield ()
   }
 
@@ -166,7 +166,7 @@ class ClientsCollectionTest extends CatsEffectSuite {
       }
       _ <- Clients
         .update(client._id, update)
-        .assertEquals(Left(Error(NotFound, __.ErrorClientNotFound)))
+        .assertEquals(Left(Error(Status.NotFound, __.ErrorClientNotFound)))
     yield ()
   }
 
@@ -178,7 +178,7 @@ class ClientsCollectionTest extends CatsEffectSuite {
       _ <- Clients.delete(client._id).orFail.assertEquals(client)
       _ <- Clients
         .findById(client._id)
-        .assertEquals(Left(Error(NotFound, __.ErrorClientNotFound)))
+        .assertEquals(Left(Error(Status.NotFound, __.ErrorClientNotFound)))
     yield ()
   }
 
@@ -207,7 +207,7 @@ class ClientsCollectionTest extends CatsEffectSuite {
       }
       _ <- Clients
         .delete(client._id)
-        .assertEquals(Left(Error(NotFound, __.ErrorClientNotFound)))
+        .assertEquals(Left(Error(Status.NotFound, __.ErrorClientNotFound)))
     yield ()
   }
 
