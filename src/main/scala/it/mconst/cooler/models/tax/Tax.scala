@@ -113,7 +113,7 @@ object Taxes {
         .leftMap(_ => Error(Status.NotFound, __.ErrorTaxNotFound))
     )
 
-  def getTaxes(query: CursorQuery)(using customer: User)(using
+  def find(query: CursorQuery)(using customer: User)(using
       Lang
   ): EitherT[IO, Error, Cursor[Tax]] = collection.use(
     _.find("label", Seq(Aggregates.`match`(Filters.eq("user", customer._id))))(
@@ -146,3 +146,8 @@ object Taxes {
       result <- collection.use(_.delete(tax._id))
     yield result
 }
+
+given EntityEncoder[IO, Tax] = jsonEncoderOf[IO, Tax]
+given EntityDecoder[IO, Tax] = jsonOf[IO, Tax]
+
+given EntityEncoder[IO, Cursor[Tax]] = jsonEncoderOf[IO, Cursor[Tax]]

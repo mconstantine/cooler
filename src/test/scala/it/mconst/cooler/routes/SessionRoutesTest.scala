@@ -152,7 +152,7 @@ class SessionRoutesTest extends CatsEffectSuite {
       .flatMap(_ => sessions.map(Sessions.start(_).orFail).parSequence)
   }(_ => Sessions.collection.use(_.raw(_.deleteMany(Filter.empty)).void))
 
-  test("should find tasks (asc)") {
+  test("should find sessions (asc)") {
     sessionsList.use { sessions =>
       val taskId = testDataFixture().task._id.toHexString
       val after = sessions(1).startTime.toISOString

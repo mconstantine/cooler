@@ -80,7 +80,7 @@ class TaxesCollectionTest extends CatsEffectSuite {
   test("should find taxes (asc)") {
     taxesList.use(taxes =>
       Taxes
-        .getTaxes(
+        .find(
           CursorQueryAsc(
             Some("tax"),
             Some(PositiveInteger.unsafe(2)),
@@ -100,7 +100,7 @@ class TaxesCollectionTest extends CatsEffectSuite {
   test("should find taxes (desc)") {
     taxesList.use(taxes =>
       Taxes
-        .getTaxes(
+        .find(
           CursorQueryDesc(
             Some("tax"),
             Some(PositiveInteger.unsafe(2)),
@@ -138,7 +138,7 @@ class TaxesCollectionTest extends CatsEffectSuite {
         given User = otherUser
 
         Taxes
-          .getTaxes(
+          .find(
             CursorQueryAsc(none[String], none[PositiveInteger], none[String])
           )
           .orFail
@@ -187,7 +187,7 @@ class TaxesCollectionTest extends CatsEffectSuite {
       tax <- Taxes.create(data).orFail
       _ <- Taxes.delete(tax._id).orFail.assertEquals(tax)
       _ <- Taxes
-        .getTaxes(
+        .find(
           CursorQueryAsc(
             none[String],
             Some(PositiveInteger.unsafe(1000000)),
