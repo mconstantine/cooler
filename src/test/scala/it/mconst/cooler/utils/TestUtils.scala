@@ -26,6 +26,7 @@ import it.mconst.cooler.models.session.Session
 import it.mconst.cooler.models.task.DbTask
 import it.mconst.cooler.models.task.Task
 import it.mconst.cooler.models.task.TaskWithProject
+import it.mconst.cooler.models.tax.Tax
 import it.mconst.cooler.models.user.JWT
 import it.mconst.cooler.models.user.User
 import it.mconst.cooler.utils.Error
@@ -240,4 +241,9 @@ object TestUtils {
       ),
       endTime: Option[String] = none[String]
   ) = Session.InputData(task.toHexString, startTime, endTime)
+
+  def makeTestTax(
+      label: String = "Tax label",
+      value: BigDecimal = 0.42
+  ) = Tax.InputData(label, value)
 }

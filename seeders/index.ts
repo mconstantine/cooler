@@ -5,6 +5,7 @@ import { seedUsers } from "./User";
 import { seedProjects } from "./Project";
 import { seedTasks } from "./Task";
 import { seedSessions } from "./Session";
+import { seedTaxes } from "./Tax";
 
 const dbUri = config.database.uri;
 const dbName = config.database.name;
@@ -18,6 +19,7 @@ const dbName = config.database.name;
   await seedProjects(db);
   await seedTasks(db);
   await seedSessions(db);
+  await seedTaxes(db);
 })().then(
   () => {
     console.log("Done.");

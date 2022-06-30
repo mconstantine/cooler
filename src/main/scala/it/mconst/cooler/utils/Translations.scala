@@ -17,6 +17,7 @@ enum __(val key: String):
   case ErrorDecodeInvalidObjectId extends __("error.decode.invalidObjectId")
   case ErrorDecodeInvalidPasswordFormat
       extends __("error.decode.invalidPasswordFormat")
+  case ErrorDecodeInvalidPercentage extends __("error.decode.invalidPercentage")
   case ErrorDecodeInvalidPositiveFloat
       extends __("error.decode.invalidPasswordFormat")
   case ErrorDecodePositiveInteger
@@ -38,6 +39,7 @@ enum __(val key: String):
   case ErrorProjectNotFound extends __("error.project.notFound")
   case ErrorSessionNotFound extends __("error.session.notFound")
   case ErrorTaskNotFound extends __("error.task.notFound")
+  case ErrorTaxNotFound extends __("error.tax.notFound")
   case ErrorUnknown extends __("error.unknown")
   case ErrorUserConflict extends __("error.user.conflict")
   case ErrorUserNotFound extends __("error.user.notFound")

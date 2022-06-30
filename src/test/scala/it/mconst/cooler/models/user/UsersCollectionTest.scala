@@ -6,7 +6,6 @@ import munit.CatsEffectSuite
 
 import cats.effect.IO
 import cats.effect.kernel.Resource
-import cats.effect.unsafe.implicits.global
 import cats.syntax.*
 import cats.syntax.all.none
 import com.github.t3hnar.bcrypt.*
