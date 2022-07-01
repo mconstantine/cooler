@@ -308,7 +308,7 @@ class UsersCollectionTest extends CatsEffectSuite {
         _ <- Users
           .login(
             User.LoginData(
-              Email.unsafeDecode("some-other-email@example.com"),
+              Email.decode("some-other-email@example.com").getOrElse(fail("")),
               userData.password
             )
           )

@@ -21,7 +21,7 @@ libraryDependencies ++= Seq(
   "org.http4s" %% "http4s-dsl" % http4sVersion,
   "org.http4s" %% "http4s-ember-client" % http4sVersion,
   "org.http4s" %% "http4s-ember-server" % http4sVersion,
-  "org.typelevel" %% "munit-cats-effect-3" % "1.0.7"
+  "org.typelevel" %% "munit-cats-effect-3" % "1.0.7" % "test"
 )
 
 testFrameworks += new TestFramework("munit.Framework")

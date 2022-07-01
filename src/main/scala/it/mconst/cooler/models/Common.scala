@@ -19,7 +19,6 @@ import java.time.ZoneId
 import java.time.ZoneOffset
 import mongo4cats.bson.ObjectId
 import mongo4cats.circe.*
-import munit.Assertions
 import org.bson.BsonDateTime
 import org.http4s.circe.*
 import org.http4s.dsl.io.*
@@ -51,9 +50,6 @@ extension [T](validation: Validation[T]) {
 abstract trait Validator[I, O](using encoder: Encoder[I], decoder: Decoder[I]) {
   def name: String
   def decode(input: I): Option[O]
-
-  def unsafeDecode(input: I)(using a: Assertions): O =
-    decode(input).getOrElse(a.fail(s"Invalid $name: '$input'"))
 
   protected def validate(input: I, error: ValidationError)(using
       Lang
