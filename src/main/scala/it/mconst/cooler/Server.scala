@@ -14,9 +14,10 @@ import it.mconst.cooler.utils.Config
 import org.http4s.ember.server.EmberServerBuilder
 import org.http4s.server.Router
 import it.mconst.cooler.routes.TaxRoutes
+import org.http4s.server.middleware.CORS
 
 object Server extends IOApp {
-  val services = Router(
+  val router = Router(
     "/" -> PublicRoutes(),
     "/users" -> UserRoutes(),
     "/clients" -> ClientRoutes(),
@@ -25,7 +26,15 @@ object Server extends IOApp {
     "/taxes" -> TaxRoutes()
   )
 
-  val app = Router("/api" -> services).orNotFound
+  val service = Router("/api" -> router).orNotFound
+
+  val app = Config.environment match
+    case "development" => CORS(service)
+    case "production"  => service
+    case _ =>
+      throw new IllegalArgumentException(
+        "environment in configuration file must be either \"development\" or \"production\""
+      )
 
   override def run(args: List[String]) = {
     EmberServerBuilder

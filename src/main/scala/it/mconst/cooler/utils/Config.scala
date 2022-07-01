@@ -21,6 +21,7 @@ object Config {
   )
 
   private final case class Config(
+      environment: String,
       server: ServerConfig,
       database: DatabaseConfig,
       defaultPageSize: Int
@@ -42,6 +43,7 @@ object Config {
     )
   )
 
+  val environment = config.environment
   val server = config.server
   val database = config.database
   val defaultPageSize = config.defaultPageSize
