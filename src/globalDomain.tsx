@@ -3,9 +3,20 @@ import { flow, identity, pipe } from 'fp-ts/function'
 import { Option } from 'fp-ts/Option'
 import * as t from 'io-ts'
 import { IntFromString, NonEmptyString, NumberFromString } from 'io-ts-types'
-import { validate as isEmail } from 'isemail'
 import { option as tOption } from 'io-ts-types/option'
 import { unsafeLocalizedString } from './a18n'
+
+const emailInputForValidation = document.createElement('input')
+emailInputForValidation.type = 'email'
+
+function isEmail(s: string): boolean {
+  if (!s) {
+    return false
+  }
+
+  emailInputForValidation.value = s
+  return emailInputForValidation.checkValidity()
+}
 
 export type LocalizedStringBrand = string & {
   readonly LocalizedString: unique symbol

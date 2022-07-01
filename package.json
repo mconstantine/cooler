@@ -11,7 +11,6 @@
     "io-ts": "^2.2.13",
     "io-ts-types": "^0.5.12",
     "ionicons": "^6.0.2",
-    "isemail": "^3.2.0",
     "monocle-ts": "^2.3.13",
     "newtype-ts": "^0.3.4",
     "node-sass": "7.0.1",
