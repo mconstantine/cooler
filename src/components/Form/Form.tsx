@@ -3,7 +3,13 @@ import { constNull, pipe } from 'fp-ts/function'
 import { Option } from 'fp-ts/Option'
 import { TaskEither } from 'fp-ts/TaskEither'
 import { alert, send } from 'ionicons/icons'
-import { ComponentProps, FC, FormEvent, useEffect, useState } from 'react'
+import {
+  ComponentProps,
+  FormEvent,
+  PropsWithChildren,
+  useEffect,
+  useState
+} from 'react'
 import { a18n } from '../../a18n'
 import { LocalizedString } from '../../globalDomain'
 import { Button } from '../Button/Button/Button'
@@ -17,7 +23,7 @@ import { Panel } from '../Panel/Panel'
 import './Form.scss'
 import { HeadingAction } from '../Heading/Heading'
 
-interface Props {
+interface Props extends PropsWithChildren {
   title: LocalizedString
   headingAction: Option<HeadingAction>
   submit: TaskEither<LocalizedString, unknown>
@@ -27,12 +33,11 @@ interface Props {
   additionalButtons?: Array<ComponentProps<typeof Button>>
 }
 
-export const Form: FC<Props> = ({
-  submitLabel = a18n`Submit`,
-  submitIcon = send,
-  additionalButtons = [],
-  ...props
-}) => {
+export function Form(props: Props) {
+  const submitLabel = props.submitLabel || a18n`Submit`
+  const submitIcon = props.submitIcon || send
+  const additionalButtons = props.additionalButtons || []
+
   const [loadingState, setLoadingState] = useState<LoadingState>('default')
   const [submitError, setSubmitError] = useState<Option<LocalizedString>>(
     option.none

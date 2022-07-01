@@ -3,6 +3,7 @@ import { constVoid, flow, pipe } from 'fp-ts/function'
 import {
   createContext,
   PropsWithChildren,
+  ReactNode,
   useContext,
   useEffect,
   useReducer
@@ -74,7 +75,7 @@ export function useAccount() {
   return useContext(AccountContext)
 }
 
-export function AccountProvider(props: PropsWithChildren<{}>) {
+export function AccountProvider(props: PropsWithChildren) {
   const [state, dispatch] = useReducer(reducer, { type: 'ANONYMOUS' })
   const { readStorage, writeStorage, clearStorage } = useStorage()
 
@@ -166,7 +167,7 @@ export function AccountProvider(props: PropsWithChildren<{}>) {
     <AccountContext.Provider value={{ withLogin, logout }}>
       {pipe(
         state,
-        foldAccountState({
+        foldAccountState<ReactNode>({
           ANONYMOUS: () => (
             <Content>
               <LoginForm onSubmit={login} />

@@ -1,4 +1,4 @@
-import { createContext, FC, useContext } from 'react'
+import { createContext, PropsWithChildren, useContext } from 'react'
 import { PositiveInteger, unsafePositiveInteger } from '../globalDomain'
 
 interface Config {
@@ -13,11 +13,13 @@ const initialConfig: Config = {
 
 const ConfigContext = createContext<Config>(initialConfig)
 
-export const ConfigProvider: FC = props => (
-  <ConfigContext.Provider value={initialConfig}>
-    {props.children}
-  </ConfigContext.Provider>
-)
+export function ConfigProvider(props: PropsWithChildren) {
+  return (
+    <ConfigContext.Provider value={initialConfig}>
+      {props.children}
+    </ConfigContext.Provider>
+  )
+}
 
 export function useConfig() {
   return useContext(ConfigContext)
