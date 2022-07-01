@@ -13,6 +13,7 @@ import it.mconst.cooler.routes.UserRoutes
 import it.mconst.cooler.utils.Config
 import org.http4s.ember.server.EmberServerBuilder
 import org.http4s.server.Router
+import it.mconst.cooler.routes.TaxRoutes
 
 object Server extends IOApp {
   val services = Router(
@@ -20,7 +21,8 @@ object Server extends IOApp {
     "/users" -> UserRoutes(),
     "/clients" -> ClientRoutes(),
     "/projects" -> ProjectRoutes(),
-    "/tasks" -> TaskRoutes()
+    "/tasks" -> TaskRoutes(),
+    "/taxes" -> TaxRoutes()
   )
 
   val app = Router("/api" -> services).orNotFound
