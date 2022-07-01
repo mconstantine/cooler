@@ -81,41 +81,16 @@ export function makeDeleteRequest<I, II, O, OO>(
   return { ...request, method: 'DELETE' }
 }
 
-export const KnownErrorCode = t.keyof({
-  400: true,
-  401: true,
-  403: true,
-  404: true,
-  409: true,
-  500: true
+const ServerError = t.type({
+  status: t.number,
+  message: LocalizedString
 })
-export type KnownErrorCode = t.TypeOf<typeof KnownErrorCode>
-
-const CoolerErrorType = t.keyof({
-  COOLER_400: true,
-  COOLER_401: true,
-  COOLER_403: true,
-  COOLER_404: true,
-  COOLER_409: true,
-  COOLER_500: true
-})
-type CoolerErrorType = t.TypeOf<typeof CoolerErrorType>
-
-export const CoolerError = t.type(
-  {
-    code: CoolerErrorType,
-    message: LocalizedString,
-    extras: t.record(t.string, t.unknown)
-  },
-  'CoolerError'
-)
-export type CoolerError = t.TypeOf<typeof CoolerError>
 
 export function makeRequest<I, II, O, OO>(
   request: Request<I, II, O, OO>,
   token: Option<LoginOutput>,
   input?: I
-): TaskEither<CoolerError, O> {
+): TaskEither<LocalizedString, O> {
   const createQuery: IO<string> = () => {
     if (input === undefined) {
       return ''
@@ -183,44 +158,27 @@ export function makeRequest<I, II, O, OO>(
             })
           )
         }),
-      (error): CoolerError => {
+      error => {
         console.log(error)
-
-        return {
-          code: 'COOLER_500',
-          message: a18n`Unable to fetch data from the server`,
-          extras: {}
-        }
+        return a18n`Unable to fetch data from the server`
       }
     ),
     taskEither.chain(response =>
       pipe(
         taskEither.tryCatch(
           () => response.json(),
-          (error): CoolerError => {
+          error => {
             console.log(error)
-
-            return {
-              code: 'COOLER_500',
-              message: a18n`Unable to parse server response`,
-              extras: {}
-            }
+            return a18n`Unable to parse server response`
           }
         ),
         taskEither.chain(data => {
-          if (
-            Object.keys(KnownErrorCode.keys).includes(
-              response.status.toString()
-            )
-          ) {
+          if (response.status > 299) {
             return pipe(
-              CoolerError.decode(data),
-              either.mapLeft(
-                (errors): CoolerError => ({
-                  code: 'COOLER_500',
-                  message: a18n`Unable to decode error response`,
-                  extras: { errors }
-                })
+              ServerError.decode(data),
+              either.bimap(
+                () => a18n`Unable to decode error response`,
+                error => error.message
               ),
               taskEither.fromEither,
               taskEither.chain(taskEither.left)
@@ -236,20 +194,14 @@ export function makeRequest<I, II, O, OO>(
         request.outputCodec.decode,
         reportErrors,
         taskEither.fromEither,
-        taskEither.mapLeft(
-          (): CoolerError => ({
-            code: 'COOLER_500',
-            message: a18n`Decoding error from server response`,
-            extras: {}
-          })
-        )
+        taskEither.mapLeft(() => a18n`Decoding error from server response`)
       )
     )
   )
 }
 
 export type QueryHookOutput<T> = [
-  query: Query<CoolerError, T>,
+  query: Query<LocalizedString, T>,
   reload: IO<void>
 ]
 
@@ -258,7 +210,7 @@ function useQuery<I, II, O, OO>(
   input?: I
 ): QueryHookOutput<O> {
   const { withLogin } = useAccount()
-  const [queryState, setQueryState] = useState<Query<CoolerError, O>>(
+  const [queryState, setQueryState] = useState<Query<LocalizedString, O>>(
     query.loading()
   )
 
@@ -288,7 +240,7 @@ function useQuery<I, II, O, OO>(
 
 function useCommand<I, II, O, OO>(
   request: Request<I, II, O, OO>
-): ReaderTaskEither<I, CoolerError, O> {
+): ReaderTaskEither<I, LocalizedString, O> {
   const { withLogin } = useAccount()
   return input => withLogin(request, input)
 }
@@ -307,11 +259,11 @@ export function useLazyGet<I, II, O, OO>(request: GetRequest<I, II, O, OO>) {
 export function useReactiveCommand<I, II, O, OO>(
   request: Request<I, II, O, OO>
 ): [
-  query: Query<CoolerError, O>,
+  query: Query<LocalizedString, O>,
   setter: Reader<O, void>,
   command: ReaderTaskEither<I, void, void>
 ] {
-  const [state, setState] = useState<Query<CoolerError, O>>(query.loading())
+  const [state, setState] = useState<Query<LocalizedString, O>>(query.loading())
   const command = useCommand(request)
   const setter: Reader<O, void> = flow(query.right, setState)
 

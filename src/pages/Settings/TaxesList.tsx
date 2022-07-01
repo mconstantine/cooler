@@ -29,7 +29,7 @@ export function TaxesList() {
     taxes,
     query.fold(
       () => <LoadingBlock />,
-      error => <ErrorPanel error={error.message} />,
+      error => <ErrorPanel error={error} />,
       taxes => (
         <Panel title={a18n`Taxes`} action={option.none} framed>
           {taxes.map(tax => (

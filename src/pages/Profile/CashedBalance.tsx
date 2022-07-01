@@ -42,7 +42,7 @@ export function CashedBalance() {
     sequenceS(query.Apply),
     query.fold(
       () => <LoadingBlock />,
-      error => <ErrorPanel error={error.message} />,
+      error => <ErrorPanel error={error} />,
       ({ balance, taxes }) => (
         <Panel title={a18n`Cashed balance`} framed action={option.none}>
           <DateTimePicker

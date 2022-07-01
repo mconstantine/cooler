@@ -30,7 +30,7 @@ export function TasksDueToday() {
     tasksDueToday,
     query.fold(
       () => <LoadingBlock />,
-      error => <ErrorPanel error={error.message} />,
+      error => <ErrorPanel error={error} />,
       tasks => (
         <Panel title={a18n`Tasks due today`} action={option.none} framed>
           {pipe(

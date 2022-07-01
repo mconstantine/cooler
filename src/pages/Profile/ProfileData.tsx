@@ -35,14 +35,11 @@ export function ProfileData() {
   const deleteProfileCommand = useDelete(deleteProfileRequest)
 
   const onUpdate: ReaderTaskEither<ProfileUpdateInput, LocalizedString, void> =
-    pipe(
-      updateProfileCommand,
-      readerTaskEither.bimap(error => error.message, setProfile)
-    )
+    pipe(updateProfileCommand, readerTaskEither.map(setProfile))
 
   const onDelete: ReaderTaskEither<void, LocalizedString, void> = pipe(
     deleteProfileCommand,
-    readerTaskEither.bimap(error => error.message, logout)
+    readerTaskEither.map(logout)
   )
 
   const [isEditing, setIsEditing] = useState(false)
@@ -78,7 +75,7 @@ export function ProfileData() {
     profile,
     query.fold(
       () => <LoadingBlock />,
-      error => <ErrorPanel error={error.message} />,
+      error => <ErrorPanel error={error} />,
       profile =>
         pipe(
           isEditing,

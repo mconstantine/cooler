@@ -32,7 +32,7 @@ export function LatestProjects() {
     latestProjects,
     query.fold(
       () => <LoadingBlock />,
-      error => <ErrorPanel error={error.message} />,
+      error => <ErrorPanel error={error} />,
       projects => (
         <Panel title={a18n`Latest projects`} framed action={option.none}>
           <List

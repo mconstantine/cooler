@@ -38,7 +38,7 @@ export default function Project(props: Props) {
     project,
     query.fold(
       () => <LoadingBlock />,
-      error => <ErrorPanel error={error.message} />,
+      error => <ErrorPanel error={error} />,
       project => (
         <TaxesProvider>
           <ProjectData

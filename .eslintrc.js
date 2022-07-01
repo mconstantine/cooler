@@ -7,6 +7,7 @@ module.exports = {
   },
   rules: {
     'no-fallthrough': 'off',
+    'array-callback-return': 'off',
     '@typescript-eslint/no-redeclare': 'off',
     'fp-ts/no-module-imports': [
       'error',

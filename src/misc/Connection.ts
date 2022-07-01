@@ -1,4 +1,3 @@
-import { Reader } from 'fp-ts/Reader'
 import { Option } from 'fp-ts/Option'
 import * as t from 'io-ts'
 import { NonEmptyString, optionFromNullable } from 'io-ts-types'
@@ -7,7 +6,6 @@ import {
   PositiveInteger,
   unsafeNonNegativeInteger
 } from '../globalDomain'
-import { IO } from 'fp-ts/IO'
 import { pipe } from 'fp-ts/function'
 import { boolean } from 'fp-ts'
 
@@ -126,23 +124,4 @@ export function deleteFromConnection<T extends { id: PositiveInteger }>(
     totalCount: unsafeNonNegativeInteger(connection.totalCount - 1),
     edges: connection.edges.filter(({ node }) => node.id !== deletedNode.id)
   }
-}
-
-const CoolerErrorCode = t.keyof(
-  {
-    COOLER_400: true,
-    COOLER_401: true,
-    COOLER_403: true,
-    COOLER_404: true,
-    COOLER_409: true,
-    COOLER_500: true
-  },
-  'CoolerErrorCode'
-)
-type CoolerErrorCode = t.TypeOf<typeof CoolerErrorCode>
-
-export function foldCoolerErrorType<T>(matches: {
-  [k in CoolerErrorCode]: IO<T>
-}): Reader<CoolerErrorCode, T> {
-  return code => matches[code]()
 }

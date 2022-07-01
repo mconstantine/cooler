@@ -14,7 +14,6 @@ import { IO } from 'fp-ts/IO'
 import { useCallback } from '@storybook/client-api'
 import { Query } from '../effects/api/Query'
 import { query } from '../effects/api/api'
-import { CoolerError } from '../effects/api/useApi'
 
 interface Args {
   shouldFail: boolean
@@ -103,38 +102,34 @@ const fakeEntities: FakeEntity[] = [
 
 const ConnectionListTemplate: Story<Args> = props => {
   const [request, setRequest] = useState<
-    Query<CoolerError, Connection<FakeEntity>>
+    Query<LocalizedString, Connection<FakeEntity>>
   >(query.loading())
 
   const { filter, loadMore } = useCreateConnection([...fakeEntities])
 
-  const onQuerySearchChange = useCallback((queryString: string): void => {
-    setRequest(query.loading())
+  const onQuerySearchChange = useCallback(
+    (queryString: string): void => {
+      setRequest(query.loading())
 
-    pipe(
-      props.shouldFail,
-      boolean.fold(
-        () => {
-          pipe(
-            task.fromIO(() => filter(queryString)),
-            task.delay(500),
-            task => taskEither.fromTask(task),
-            taskEither.chain(connection =>
-              taskEither.fromIO(() => setRequest(query.right(connection)))
-            )
-          )()
-        },
-        () =>
-          setRequest(
-            query.left({
-              code: 'COOLER_500',
-              message: unsafeLocalizedString("I'm an error!"),
-              extras: {}
-            })
-          )
+      pipe(
+        props.shouldFail,
+        boolean.fold(
+          () => {
+            pipe(
+              task.fromIO(() => filter(queryString)),
+              task.delay(500),
+              task => taskEither.fromTask(task),
+              taskEither.chain(connection =>
+                taskEither.fromIO(() => setRequest(query.right(connection)))
+              )
+            )()
+          },
+          () => setRequest(query.left(unsafeLocalizedString("I'm an error!")))
+        )
       )
-    )
-  }, [])
+    },
+    [filter, props.shouldFail]
+  )
 
   const onLoadMore: IO<void> = () => {
     setRequest(query.loading())

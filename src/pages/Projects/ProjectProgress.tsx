@@ -27,7 +27,7 @@ export function ProjectProgress(props: Props) {
     taxes,
     query.fold(
       () => <LoadingBlock />,
-      error => <ErrorPanel error={error.message} />,
+      error => <ErrorPanel error={error} />,
       taxes => (
         <Panel title={a18n`Progress`} framed action={option.none}>
           <List

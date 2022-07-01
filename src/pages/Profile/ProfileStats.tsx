@@ -35,7 +35,7 @@ export function ProfileStats() {
     taxes,
     query.fold(
       () => <LoadingBlock />,
-      error => <ErrorPanel error={error.message} />,
+      error => <ErrorPanel error={error} />,
       taxes => (
         <Panel title={a18n`Current situation`} framed action={option.none}>
           <Body>
@@ -55,7 +55,7 @@ export function ProfileStats() {
             profileStats,
             query.fold(
               () => <LoadingBlock />,
-              error => <ErrorPanel error={error.message} />,
+              error => <ErrorPanel error={error} />,
               stats => {
                 const progress = computePercentage(
                   stats.expectedWorkingHours,

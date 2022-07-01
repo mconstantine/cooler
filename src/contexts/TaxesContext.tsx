@@ -6,7 +6,6 @@ import { createContext, PropsWithChildren, useContext, useEffect } from 'react'
 import { query } from '../effects/api/api'
 import { Query } from '../effects/api/Query'
 import {
-  CoolerError,
   makeDeleteRequest,
   makeGetRequest,
   makePostRequest,
@@ -32,7 +31,7 @@ import { Reader } from 'fp-ts/Reader'
 import { useAccount } from './AccountContext'
 
 interface TaxesContext {
-  taxes: Query<CoolerError, Tax[]>
+  taxes: Query<LocalizedString, Tax[]>
   createTax: ReaderTaskEither<TaxCreationInput, LocalizedString, void>
   updateTax: Reader<
     PositiveInteger,
@@ -101,8 +100,7 @@ export function TaxesProvider(props: PropsWithChildren<{}>) {
             )
           )
         })
-      ),
-      readerTaskEither.mapLeft(error => error.message)
+      )
     )
 
   const updateTax: Reader<
@@ -128,8 +126,7 @@ export function TaxesProvider(props: PropsWithChildren<{}>) {
               )
             )
           })
-        ),
-        taskEither.mapLeft(error => error.message)
+        )
       )
   }
 
@@ -156,8 +153,7 @@ export function TaxesProvider(props: PropsWithChildren<{}>) {
             )
           )
         })
-      ),
-      taskEither.mapLeft(error => error.message)
+      )
     )
   }
 

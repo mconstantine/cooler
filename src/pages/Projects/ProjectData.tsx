@@ -63,7 +63,7 @@ export function ProjectData(props: Props) {
         taskEither.rightIO(() => setError(option.none)),
         taskEither.chain(deleteProjectCommand),
         taskEither.bimap(
-          error => pipe(error.message, option.some, setError),
+          error => pipe(error, option.some, setError),
           props.onDelete
         )
       ),
@@ -85,8 +85,7 @@ export function ProjectData(props: Props) {
         first: unsafePositiveInteger(10),
         after: option.none
       }),
-      taskEither.bimap(
-        error => error.message,
+      taskEither.map(
         flow(
           getConnectionNodes,
           array.reduce({}, (res, client) => ({
@@ -105,13 +104,10 @@ export function ProjectData(props: Props) {
     void
   > = flow(
     updateProjectCommand,
-    taskEither.bimap(
-      error => error.message,
-      project => {
-        setIsEditing(false)
-        props.onUpdate(project)
-      }
-    )
+    taskEither.map(project => {
+      setIsEditing(false)
+      props.onUpdate(project)
+    })
   )
 
   return pipe(
@@ -162,7 +158,7 @@ export function ProjectData(props: Props) {
                   taxes,
                   query.fold(
                     () => <LoadingBlock />,
-                    error => <ErrorPanel error={error.message} />,
+                    error => <ErrorPanel error={error} />,
                     taxes => (
                       <List
                         heading={option.some(a18n`Cashed`)}

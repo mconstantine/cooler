@@ -1,5 +1,5 @@
 import * as t from 'io-ts'
-import { constVoid, flow, pipe } from 'fp-ts/function'
+import { constVoid, pipe } from 'fp-ts/function'
 import {
   createContext,
   PropsWithChildren,
@@ -18,13 +18,10 @@ import {
 import { boolean, option, readerTaskEither, taskEither } from 'fp-ts'
 import { DateFromISOString, NonEmptyString } from 'io-ts-types'
 import { EmailString, LocalizedString } from '../globalDomain'
-import { CoolerError, makeRequest, Request } from '../effects/api/useApi'
+import { makeRequest, Request } from '../effects/api/useApi'
 import { useStorage } from '../effects/useStorage'
 import { IO } from 'fp-ts/IO'
 import { FormData, LoginForm } from '../components/Form/Forms/LoginForm'
-import { foldCoolerErrorType } from '../misc/Connection'
-import { a18n } from '../a18n'
-import { commonErrors } from '../misc/commonErrors'
 import { ReaderTaskEither } from 'fp-ts/ReaderTaskEither'
 import { Content } from '../components/Content/Content'
 import { TaskEither } from 'fp-ts/TaskEither'
@@ -59,13 +56,13 @@ interface AccountContext {
   withLogin: <I, II, O, OO>(
     request: Request<I, II, O, OO>,
     input: I
-  ) => TaskEither<CoolerError, O>
+  ) => TaskEither<LocalizedString, O>
   logout: IO<void>
 }
 
 const AccountContext = createContext<AccountContext>({
   withLogin: readerTaskEither.fromIO(constVoid) as () => TaskEither<
-    CoolerError,
+    LocalizedString,
     never
   >,
   logout: constVoid
@@ -88,7 +85,7 @@ export function AccountProvider(props: PropsWithChildren) {
     makeRequest(
       {
         method: 'POST',
-        url: '/profile/login',
+        url: '/login',
         inputCodec: LoginInput,
         outputCodec: LoginOutput
       },
@@ -100,7 +97,7 @@ export function AccountProvider(props: PropsWithChildren) {
     makeRequest(
       {
         method: 'POST',
-        url: '/profile/refreshToken',
+        url: '/refresh-token',
         inputCodec: RefreshTokenInput,
         outputCodec: LoginOutput
       },
@@ -110,23 +107,10 @@ export function AccountProvider(props: PropsWithChildren) {
 
   const login: ReaderTaskEither<FormData, LocalizedString, void> = pipe(
     loginCommand,
-    readerTaskEither.bimap(
-      flow(
-        error => error.code,
-        foldCoolerErrorType({
-          COOLER_404: () => a18n`No accounts found with this email address.`,
-          COOLER_400: () => a18n`The password is incorrect.`,
-          COOLER_401: () => commonErrors.unexpected,
-          COOLER_403: () => commonErrors.unexpected,
-          COOLER_500: () => commonErrors.unexpected,
-          COOLER_409: () => commonErrors.unexpected
-        })
-      ),
-      response => {
-        writeStorage('account', response)
-        dispatch(setLoginAction(response))
-      }
-    )
+    readerTaskEither.map(response => {
+      writeStorage('account', response)
+      dispatch(setLoginAction(response))
+    })
   )
 
   const withLogin = <I, II, O, OO>(request: Request<I, II, O, OO>, input: I) =>
