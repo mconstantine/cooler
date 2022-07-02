@@ -40,10 +40,10 @@ export interface Edge<T> {
 export const Connection = <T extends t.Mixed>(T: T) =>
   t.type(
     {
-      totalCount: NonNegativeInteger,
       edges: t.array(Edge(T)),
       pageInfo: t.type(
         {
+          totalCount: NonNegativeInteger,
           startCursor: optionFromNullable(Cursor),
           endCursor: optionFromNullable(Cursor),
           hasNextPage: t.boolean,
@@ -55,9 +55,9 @@ export const Connection = <T extends t.Mixed>(T: T) =>
     `Connection<${T.name}>`
   )
 export interface Connection<T> {
-  totalCount: NonNegativeInteger
   edges: Edge<T>[]
   pageInfo: {
+    totalCount: NonNegativeInteger
     startCursor: Option<Cursor>
     endCursor: Option<Cursor>
     hasNextPage: boolean
@@ -85,7 +85,10 @@ export function addToConnection<T extends { id: PositiveInteger }>(
 ): Connection<T> {
   return {
     ...connection,
-    totalCount: unsafeNonNegativeInteger(connection.totalCount + 1),
+    pageInfo: {
+      ...connection.pageInfo,
+      totalCount: unsafeNonNegativeInteger(connection.pageInfo.totalCount + 1)
+    },
     edges: [
       {
         cursor: unsafeCursor(newNode.id.toString()),
@@ -121,7 +124,10 @@ export function deleteFromConnection<T extends { id: PositiveInteger }>(
 ): Connection<T> {
   return {
     ...connection,
-    totalCount: unsafeNonNegativeInteger(connection.totalCount - 1),
+    pageInfo: {
+      ...connection.pageInfo,
+      totalCount: unsafeNonNegativeInteger(connection.pageInfo.totalCount - 1)
+    },
     edges: connection.edges.filter(({ node }) => node.id !== deletedNode.id)
   }
 }

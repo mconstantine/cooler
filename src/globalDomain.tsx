@@ -80,6 +80,37 @@ export function unsafeNonEmptyString(s: string): NonEmptyString {
   )
 }
 
+const objectIdStringPattern = /^[a-f0-9]{24}$/
+
+interface ObjectIdStringBrand {
+  readonly ObjectIdString: unique symbol
+}
+
+const ObjectIdString = t.brand(
+  t.string,
+  (s): s is t.Branded<string, ObjectIdStringBrand> =>
+    objectIdStringPattern.test(s),
+  'ObjectIdString'
+)
+type ObjectIdString = t.TypeOf<typeof ObjectIdString>
+
+const ObjectIdFromServer = t.type({
+  $oid: ObjectIdString
+})
+type ObjectIdStringFromServer = t.TypeOf<typeof ObjectIdFromServer>
+
+export const ObjectId = new t.Type<ObjectIdString, ObjectIdStringFromServer>(
+  'ObjectId',
+  ObjectIdString.is,
+  (u, c) =>
+    pipe(
+      ObjectIdFromServer.validate(u, c),
+      either.map(objectIdFromServer => objectIdFromServer.$oid)
+    ),
+  objectIdString => ({ $oid: objectIdString })
+)
+export type ObjectId = t.TypeOf<typeof ObjectId>
+
 interface PositiveIntegerBrand {
   readonly PositiveInteger: unique symbol
 }

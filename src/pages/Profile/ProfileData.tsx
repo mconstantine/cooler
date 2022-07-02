@@ -95,12 +95,12 @@ export function ProfileData() {
                 <ReadOnlyInput
                   name="created_at"
                   label={a18n`Created at`}
-                  value={formatDateTime(profile.created_at)}
+                  value={formatDateTime(profile.createdAt)}
                 />
                 <ReadOnlyInput
                   name="updated_at"
                   label={a18n`Last updated at`}
-                  value={formatDateTime(profile.updated_at)}
+                  value={formatDateTime(profile.updatedAt)}
                 />
                 {pipe(
                   error,

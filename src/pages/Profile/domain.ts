@@ -13,7 +13,7 @@ import {
   EmailString,
   LocalizedString,
   NonNegativeNumber,
-  PositiveInteger
+  ObjectId
 } from '../../globalDomain'
 import { Task } from '../../entities/Task'
 import { Connection, ConnectionQueryInput } from '../../misc/Connection'
@@ -21,11 +21,11 @@ import { Project } from '../../entities/Project'
 
 const Profile = t.type(
   {
-    id: PositiveInteger,
+    _id: ObjectId,
     name: LocalizedString,
     email: EmailString,
-    created_at: DateFromISOString,
-    updated_at: DateFromISOString
+    createdAt: DateFromISOString,
+    updatedAt: DateFromISOString
   },
   'Profile'
 )
@@ -50,7 +50,7 @@ const ProfileStats = t.type(
 )
 
 export const getProfileRequest = makeGetRequest({
-  url: '/profile',
+  url: '/users/me',
   inputCodec: t.void,
   outputCodec: Profile
 })

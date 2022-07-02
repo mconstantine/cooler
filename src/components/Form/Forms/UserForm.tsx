@@ -28,8 +28,8 @@ export function UserForm(props: Props) {
         email: props.user.email as string,
         password: '',
         passwordConfirmation: '',
-        created_at: props.user.created_at,
-        updated_at: props.user.updated_at
+        createdAt: props.user.createdAt,
+        updatedAt: props.user.updatedAt
       },
       validators: () => ({
         name: validators.fromCodec(NonEmptyString, commonErrors.nonBlank),

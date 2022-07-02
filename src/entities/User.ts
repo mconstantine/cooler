@@ -6,8 +6,8 @@ export const User = t.type(
   {
     name: LocalizedString,
     email: EmailString,
-    created_at: DateFromISOString,
-    updated_at: DateFromISOString
+    createdAt: DateFromISOString,
+    updatedAt: DateFromISOString
   },
   'User'
 )

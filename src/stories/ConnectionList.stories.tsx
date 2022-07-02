@@ -203,8 +203,8 @@ function createConnection(
   hasNextPage: boolean
 ): Connection<FakeEntity> {
   return {
-    totalCount: unsafeNonNegativeInteger(fakeEntities.length),
     pageInfo: {
+      totalCount: unsafeNonNegativeInteger(fakeEntities.length),
       startCursor: pipe(
         entities,
         nonEmptyArray.fromArray,
