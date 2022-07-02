@@ -81,16 +81,20 @@ export function makeDeleteRequest<I, II, O, OO>(
   return { ...request, method: 'DELETE' }
 }
 
-const ServerError = t.type({
-  status: t.number,
-  message: LocalizedString
-})
+const ServerError = t.type(
+  {
+    status: t.number,
+    message: LocalizedString
+  },
+  'ServerError'
+)
+type ServerError = t.TypeOf<typeof ServerError>
 
 export function makeRequest<I, II, O, OO>(
   request: Request<I, II, O, OO>,
   token: Option<LoginOutput>,
   input?: I
-): TaskEither<LocalizedString, O> {
+): TaskEither<ServerError, O> {
   const createQuery: IO<string> = () => {
     if (input === undefined) {
       return ''
@@ -160,7 +164,11 @@ export function makeRequest<I, II, O, OO>(
         }),
       error => {
         console.log(error)
-        return a18n`Unable to fetch data from the server`
+
+        return {
+          status: 500,
+          message: a18n`Unable to fetch data from the server`
+        }
       }
     ),
     taskEither.chain(response =>
@@ -169,17 +177,21 @@ export function makeRequest<I, II, O, OO>(
           () => response.json(),
           error => {
             console.log(error)
-            return a18n`Unable to parse server response`
+
+            return {
+              status: 500,
+              message: a18n`Unable to parse server response`
+            }
           }
         ),
         taskEither.chain(data => {
           if (response.status > 299) {
             return pipe(
               ServerError.decode(data),
-              either.bimap(
-                () => a18n`Unable to decode error response`,
-                error => error.message
-              ),
+              either.mapLeft(() => ({
+                status: 500,
+                message: a18n`Unable to decode error response`
+              })),
               taskEither.fromEither,
               taskEither.chain(taskEither.left)
             )
@@ -194,7 +206,10 @@ export function makeRequest<I, II, O, OO>(
         request.outputCodec.decode,
         reportErrors,
         taskEither.fromEither,
-        taskEither.mapLeft(() => a18n`Decoding error from server response`)
+        taskEither.mapLeft(() => ({
+          status: 500,
+          message: a18n`Decoding error from server response`
+        }))
       )
     )
   )

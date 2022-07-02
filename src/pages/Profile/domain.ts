@@ -56,7 +56,7 @@ export const getProfileRequest = makeGetRequest({
 })
 
 export const getProfileStatsRequest = makeGetRequest({
-  url: '/profile/stats',
+  url: '/users/stats',
   inputCodec: ProfileStatsQueryInput,
   outputCodec: ProfileStats
 })

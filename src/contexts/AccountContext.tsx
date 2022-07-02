@@ -153,7 +153,8 @@ export function AccountProvider(props: PropsWithChildren) {
         writeStorage('account', response)
         dispatch(setLoginAction(response))
       })
-    )
+    ),
+    readerTaskEither.mapLeft(error => error.message)
   )
 
   const login: ReaderTaskEither<LoginFormData, LocalizedString, void> = pipe(
@@ -163,7 +164,8 @@ export function AccountProvider(props: PropsWithChildren) {
         writeStorage('account', response)
         dispatch(setLoginAction(response))
       })
-    )
+    ),
+    readerTaskEither.mapLeft(error => error.message)
   )
 
   const withLogin = <I, II, O, OO>(request: Request<I, II, O, OO>, input: I) =>
@@ -177,7 +179,17 @@ export function AccountProvider(props: PropsWithChildren) {
           pipe(
             state.token.expiration.getTime() < Date.now(),
             boolean.fold(
-              () => makeRequest(request, option.some(state.token), input),
+              () =>
+                pipe(
+                  makeRequest(request, option.some(state.token), input),
+                  taskEither.orElse(error => {
+                    if (error.status === 401 || error.status === 403) {
+                      dispatch(logoutAction())
+                    }
+
+                    return taskEither.left(error.message)
+                  })
+                ),
               () =>
                 pipe(
                   refreshTokenCommand(state.token.refreshToken),
@@ -186,7 +198,8 @@ export function AccountProvider(props: PropsWithChildren) {
                     dispatch(refreshTokenAction(response))
 
                     return makeRequest(request, option.some(response), input)
-                  })
+                  }),
+                  taskEither.mapLeft(error => error.message)
                 )
             )
           )
