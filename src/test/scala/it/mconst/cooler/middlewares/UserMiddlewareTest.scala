@@ -17,6 +17,7 @@ import it.mconst.cooler.models.user.Users
 import it.mconst.cooler.utils.__
 import it.mconst.cooler.utils.given
 import it.mconst.cooler.utils.Translations
+import org.bson.BsonDateTime
 import org.http4s.AuthedRoutes
 import org.http4s.client.Client
 import org.http4s.client.dsl.io.*
@@ -86,7 +87,9 @@ class UserMiddlewareTest extends CatsEffectSuite {
 
   test("should return 403 if the token is invalid") {
     val request =
-      GET(uri"/me").sign(JWT.AuthTokens("invalid-token", "invalid-token"))
+      GET(uri"/me").sign(
+        JWT.AuthTokens("invalid-token", "invalid-token", BsonDateTime(0L))
+      )
 
     app.assertError(request, Forbidden, __.ErrorInvalidAccessToken)
   }

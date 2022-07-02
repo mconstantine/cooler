@@ -11,9 +11,11 @@ import io.circe.syntax.EncoderOps
 import it.mconst.cooler.utils.__
 import it.mconst.cooler.utils.Config
 import it.mconst.cooler.utils.Error
+import it.mconst.cooler.utils.given
 import java.time.Instant
 import mongo4cats.bson.ObjectId
 import mongo4cats.collection.operations.Filter
+import org.bson.BsonDateTime
 import org.http4s.circe.*
 import org.http4s.dsl.io.*
 import org.http4s.EntityDecoder
@@ -26,15 +28,30 @@ import pdi.jwt.JwtOptions
 object JWT {
   sealed trait TokenType:
     def name: String
-
   case object UserAccess extends TokenType:
     val name = "user_access"
-
   case object UserRefresh extends TokenType:
     val name = "user_refresh"
 
+  sealed trait AuthToken {
+    def tokenType: TokenType
+    def token: String
+  }
+  final case class AccessToken(token: String, expiration: BsonDateTime)
+      extends AuthToken {
+    override def tokenType: TokenType = UserAccess
+  }
+  final case class RefreshToken(token: String) extends AuthToken {
+    override def tokenType: TokenType = UserRefresh
+  }
+
   final case class UnknownTokenType(name: String) extends TokenType
-  final case class AuthTokens(val accessToken: String, val refreshToken: String)
+
+  final case class AuthTokens(
+      val accessToken: String,
+      val refreshToken: String,
+      expiration: BsonDateTime
+  )
 
   given EntityEncoder[IO, AuthTokens] = jsonEncoderOf[IO, AuthTokens]
   given EntityDecoder[IO, AuthTokens] = jsonOf[IO, AuthTokens]
@@ -45,20 +62,18 @@ object JWT {
 
   private case class TokenContent(_id: String)
 
-  private def generateUserToken(tokenType: TokenType, user: User): String =
+  private def generateUserToken(
+      tokenType: TokenType,
+      user: User,
+      expiration: Option[Long]
+  ): String =
     JwtCirce.encode(
       new JwtClaim(
         content = TokenContent(user._id.toString).asJson.noSpaces,
         issuer = Some(issuer),
         subject = Some(tokenType.name),
         audience = none[Set[String]],
-        expiration = tokenType match
-          case UserAccess =>
-            Some(Instant.now.plusSeconds(1209600).getEpochSecond)
-          case UserRefresh => none[Long]
-          // Unknown tokens expire instantly LOL
-          case UnknownTokenType(_) => Some(Instant.now.getEpochSecond)
-        ,
+        expiration = expiration,
         notBefore = none[Long],
         issuedAt = Some(Instant.now.getEpochSecond),
         jwtId = none[String]
@@ -67,10 +82,23 @@ object JWT {
       algorithm
     )
 
-  def generateAuthTokens(user: User) = AuthTokens(
-    generateUserToken(UserAccess, user),
-    generateUserToken(UserRefresh, user)
+  private def generateUserAccessToken(user: User): AccessToken = {
+    val expirationSeconds = Instant.now.plusSeconds(1209600).getEpochSecond
+    val token = generateUserToken(UserAccess, user, Some(expirationSeconds))
+
+    AccessToken(token, BsonDateTime(expirationSeconds * 1000L))
+  }
+
+  private def generateUserRefreshToken(user: User): RefreshToken = RefreshToken(
+    generateUserToken(UserRefresh, user, none[Long])
   )
+
+  def generateAuthTokens(user: User) = {
+    val accessToken = generateUserAccessToken(user)
+    val refreshToken = generateUserRefreshToken(user)
+
+    AuthTokens(accessToken.token, refreshToken.token, accessToken.expiration)
+  }
 
   private def validateClaim(claim: JwtClaim, tokenType: TokenType): Boolean =
     claim.issuer.map(_.equals(issuer)).getOrElse(false) &&
