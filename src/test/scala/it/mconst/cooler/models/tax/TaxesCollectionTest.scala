@@ -29,7 +29,7 @@ class TaxesCollectionTest extends CatsEffectSuite {
         given Option[User] = none[User]
 
         Users
-          .register(
+          .create(
             User.CreationData(
               "Taxes collection test admin",
               "taxes-collection-test-admin@example.com",
@@ -120,7 +120,7 @@ class TaxesCollectionTest extends CatsEffectSuite {
   def otherUser = Resource.make {
     given Option[User] = Some(adminFixture())
     Users
-      .register(
+      .create(
         User.CreationData(
           "Other user",
           "other-user@example.com",

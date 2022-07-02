@@ -10,6 +10,7 @@ import cats.syntax.all.none
 import com.github.t3hnar.bcrypt.*
 import com.osinka.i18n.Lang
 import it.mconst.cooler.models.user.given
+import it.mconst.cooler.models.user.JWT
 import it.mconst.cooler.models.user.User
 import it.mconst.cooler.models.user.Users
 import it.mconst.cooler.utils.__
@@ -40,7 +41,7 @@ class UserRoutesTest extends CatsEffectSuite {
       )
 
       given Option[User] = none[User]
-      Users.register(adminData).orFail
+      Users.create(adminData).orFail
     }(_ => Users.collection.use(_.drop))
   )
 
@@ -60,9 +61,16 @@ class UserRoutesTest extends CatsEffectSuite {
       "S0m3Passw0rd?!"
     )
 
-    POST(userData, uri"/")
-      .sign(admin)
-      .shouldRespondLike((user: User) => user.email, userData.email)
+    val request = POST(userData, uri"/").sign(admin)
+
+    for
+      tokens <- client.expect[JWT.AuthTokens](request)
+      _ <- JWT
+        .decodeToken(tokens.accessToken, JWT.UserAccess)
+        .orFail
+        .map(_.email)
+        .assertEquals(userData.email)
+    yield ()
   }
 
   test("should reject an unsigned registration") {
@@ -92,7 +100,10 @@ class UserRoutesTest extends CatsEffectSuite {
       User.UpdateData(Some("Updated name"), none[String], none[String])
 
     for
-      user <- client.expect[User](POST(userData, uri"/").sign(admin))
+      tokens <- client.expect[JWT.AuthTokens](
+        POST(userData, uri"/").sign(admin)
+      )
+      user <- JWT.decodeToken(tokens.accessToken, JWT.UserAccess).orFail
       _ <- IO.delay(Thread.sleep(100))
       update <- client.expect[User](PUT(updateData, uri"/me").sign(user))
       _ = assertEquals(
@@ -148,7 +159,10 @@ class UserRoutesTest extends CatsEffectSuite {
     )
 
     for
-      user <- client.expect[User](POST(userData, uri"/").sign(admin))
+      tokens <- client.expect[JWT.AuthTokens](
+        POST(userData, uri"/").sign(admin)
+      )
+      user <- JWT.decodeToken(tokens.accessToken, JWT.UserAccess).orFail
       result <- client.expect[User](DELETE(uri"/me").sign(user))
       _ = assertEquals(user._id, result._id)
       _ <- app.assertError(

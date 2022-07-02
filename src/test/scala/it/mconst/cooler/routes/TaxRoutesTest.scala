@@ -42,7 +42,7 @@ class TaxRoutesTest extends CatsEffectSuite {
       given Option[User] = none[User]
 
       Users
-        .register(
+        .create(
           User.CreationData(
             "Tax routes test admin",
             "tax-routes-test-admin@example.com",

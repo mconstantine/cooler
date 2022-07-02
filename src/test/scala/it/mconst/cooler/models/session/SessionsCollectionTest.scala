@@ -38,7 +38,7 @@ class SessionsCollectionTest extends CatsEffectSuite {
         user <- {
           given Option[User] = none[User]
           Users
-            .register(
+            .create(
               User.CreationData(
                 "Sessions collection test admin",
                 "sessions-collection-test-admin@example.com",
@@ -109,7 +109,7 @@ class SessionsCollectionTest extends CatsEffectSuite {
   def otherUser = Resource.make {
     given Option[User] = Some(testDataFixture().user)
     Users
-      .register(
+      .create(
         User.CreationData("Other user", "other-user@example.com", "Wh4t3v3r!")
       )
       .orFail

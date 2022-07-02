@@ -56,7 +56,7 @@ class SessionRoutesTest extends CatsEffectSuite {
         user <- {
           given Option[User] = none[User]
           Users
-            .register(
+            .create(
               User.CreationData(
                 "Session routes test admin",
                 "session-routes-test-admin@example.com",

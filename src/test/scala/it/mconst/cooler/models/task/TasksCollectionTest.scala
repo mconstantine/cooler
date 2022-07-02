@@ -34,7 +34,7 @@ class TasksCollectionTest extends CatsEffectSuite {
 
       for
         admin <- Users
-          .register(
+          .create(
             User.CreationData(
               "Task collection test admin",
               "task-test-admin@example.com",
@@ -86,7 +86,7 @@ class TasksCollectionTest extends CatsEffectSuite {
   def otherUser = Resource.make {
     given Option[User] = Some(testDataFixture().user)
     Users
-      .register(
+      .create(
         User.CreationData("Other user", "other-user@example.com", "Wh4t3v3r!")
       )
       .orFail

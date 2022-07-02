@@ -1,13 +1,19 @@
 package it.mconst.cooler.routes
 
 import it.mconst.cooler.utils.TestUtils.*
+import munit.Assertions
 import munit.CatsEffectSuite
 
 import cats.effect.IO
 import cats.effect.kernel.Resource
+import cats.syntax.all.none
 import com.osinka.i18n.Lang
-import it.mconst.cooler.models.user.{JWT, User, Users}
+import io.circe.generic.auto.*
 import it.mconst.cooler.models.user.given
+import it.mconst.cooler.models.user.JWT
+import it.mconst.cooler.models.user.User
+import it.mconst.cooler.models.user.Users
+import it.mconst.cooler.utils.Error
 import mongo4cats.collection.operations.Filter
 import org.http4s.client.Client
 import org.http4s.client.dsl.io.*
@@ -21,6 +27,7 @@ class PublicRoutesTest extends CatsEffectSuite {
   val client: Client[IO] = Client.fromHttpApp(app)
 
   given Lang = Lang.Default
+  given Assertions = this
   given Client[IO] = client
 
   val cleanUsersCollection =
@@ -36,8 +43,16 @@ class PublicRoutesTest extends CatsEffectSuite {
         "S0m3P4ssw0rd?!"
       )
 
-      POST(data, uri"/register")
-        .shouldRespondLike((user: User) => user.email, data.email)
+      val request = POST(data, uri"/register")
+
+      for
+        tokens <- client.expect[JWT.AuthTokens](request)
+        _ <- JWT
+          .decodeToken(tokens.accessToken, JWT.UserAccess)
+          .orFail
+          .map(_.name)
+          .assertEquals(data.name)
+      yield ()
     }
   }
 
@@ -50,7 +65,8 @@ class PublicRoutesTest extends CatsEffectSuite {
 
     cleanUsersCollection.use { _ =>
       for
-        user <- client.expect[User](POST(data, uri"/register"))
+        tokens <- client.expect[JWT.AuthTokens](POST(data, uri"/register"))
+        user <- JWT.decodeToken(tokens.accessToken, JWT.UserAccess).orFail
         loginData = User.LoginData(user.email, data.password)
         authTokens <- client.expect[JWT.AuthTokens](
           POST(loginData, uri"/login")

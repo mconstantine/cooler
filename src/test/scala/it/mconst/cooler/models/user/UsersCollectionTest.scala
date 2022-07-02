@@ -38,7 +38,7 @@ class UsersCollectionTest extends CatsEffectSuite {
       given Option[User] = none[User]
 
       for
-        user <- Users.register(userData).orFail
+        user <- Users.create(userData).orFail
         _ = assertEquals(user.email.toString, userData.email)
         _ = assert(user.password != userData.password)
         _ = assert(
@@ -69,9 +69,9 @@ class UsersCollectionTest extends CatsEffectSuite {
       given Option[User] = none[User]
 
       for
-        _ <- Users.register(firstUser).value
+        _ <- Users.create(firstUser).value
         _ <- Users
-          .register(secondUser)
+          .create(secondUser)
           .assertEquals(
             Left(Error(Status.Forbidden, __.ErrorUserRegisterForbidden))
           )
@@ -96,13 +96,13 @@ class UsersCollectionTest extends CatsEffectSuite {
       for
         firstUser <- {
           given Option[User] = none[User]
-          Users.register(firstUserData).orFail
+          Users.create(firstUserData).orFail
         }
         secondUser <- {
           given Option[User] = Some(firstUser)
 
           Users
-            .register(secondUserData)
+            .create(secondUserData)
             .orFail
             .map(_.email)
             .assertEquals(secondUserData.email)
@@ -130,12 +130,12 @@ class UsersCollectionTest extends CatsEffectSuite {
       for
         firstUser <- {
           given Option[User] = none[User]
-          Users.register(firstUserData).orFail
+          Users.create(firstUserData).orFail
         }
         _ <- {
           given Option[User] = Some(firstUser)
           Users
-            .register(secondUserData)
+            .create(secondUserData)
             .assertEquals(Left(Error(Status.Conflict, __.ErrorUserConflict)))
         }
       yield ()
@@ -159,7 +159,7 @@ class UsersCollectionTest extends CatsEffectSuite {
       for
         original <- {
           given Option[User] = none[User]
-          Users.register(userData).orFail
+          Users.create(userData).orFail
         }
         _ <- IO.delay(Thread.sleep(500))
         updated <- {
@@ -195,7 +195,7 @@ class UsersCollectionTest extends CatsEffectSuite {
       for
         original <- {
           given Option[User] = none[User]
-          Users.register(userData).orFail
+          Users.create(userData).orFail
         }
         updated <- {
           given User = original
@@ -225,11 +225,11 @@ class UsersCollectionTest extends CatsEffectSuite {
       for
         firstUser <- {
           given Option[User] = none[User]
-          Users.register(firstUserData).orFail
+          Users.create(firstUserData).orFail
         }
         secondUser <- {
           given Option[User] = Some(firstUser)
-          Users.register(secondUserData).orFail
+          Users.create(secondUserData).orFail
         }
         _ <- {
           given User = secondUser
@@ -258,7 +258,7 @@ class UsersCollectionTest extends CatsEffectSuite {
       for
         user <- {
           given Option[User] = none[User]
-          Users.register(userData).orFail
+          Users.create(userData).orFail
         }
         authTokens <- Users
           .login(User.LoginData(user.email, userData.password))
@@ -303,7 +303,7 @@ class UsersCollectionTest extends CatsEffectSuite {
       for
         user <- {
           given Option[User] = none[User]
-          Users.register(userData).orFail
+          Users.create(userData).orFail
         }
         _ <- Users
           .login(
@@ -330,7 +330,7 @@ class UsersCollectionTest extends CatsEffectSuite {
       for
         user <- {
           given Option[User] = none[User]
-          Users.register(userData).orFail
+          Users.create(userData).orFail
         }
         _ <- Users
           .login(User.LoginData(user.email, "someOtherPassword"))
@@ -352,7 +352,7 @@ class UsersCollectionTest extends CatsEffectSuite {
       for
         user <- {
           given Option[User] = none[User]
-          Users.register(userData).orFail
+          Users.create(userData).orFail
         }
         authTokens <- Users
           .login(User.LoginData(user.email, userData.password))
@@ -381,7 +381,7 @@ class UsersCollectionTest extends CatsEffectSuite {
       for
         user <- {
           given Option[User] = none[User]
-          Users.register(userData).orFail
+          Users.create(userData).orFail
         }
         authTokens <- Users
           .login(User.LoginData(user.email, userData.password))
@@ -408,7 +408,7 @@ class UsersCollectionTest extends CatsEffectSuite {
       for
         user <- {
           given Option[User] = none[User]
-          Users.register(userData).orFail
+          Users.create(userData).orFail
         }
         _ <- {
           given User = user

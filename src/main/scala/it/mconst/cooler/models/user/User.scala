@@ -143,7 +143,7 @@ object User {
 object Users {
   val collection = Collection[IO, User.CreationData, User]("users")
 
-  def register(
+  def create(
       user: User.CreationData
   )(using customer: Option[User])(using Lang): EitherT[IO, Error, User] =
     collection.use(c =>
@@ -168,6 +168,11 @@ object Users {
           EitherT.fromEither(User.fromCreationData(user)).flatMap(c.create)
         )
     )
+
+  def register(
+      user: User.CreationData
+  )(using Option[User], Lang): EitherT[IO, Error, JWT.AuthTokens] =
+    create(user).map(JWT.generateAuthTokens(_))
 
   def update(
       data: User.UpdateData

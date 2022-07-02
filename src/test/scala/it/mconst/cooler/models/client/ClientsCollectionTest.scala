@@ -23,7 +23,7 @@ class ClientsCollectionTest extends CatsEffectSuite {
       given Option[User] = none[User]
 
       Users
-        .register(
+        .create(
           User.CreationData(
             "Client collection test admin",
             "client-test-admin@example.com",
@@ -77,7 +77,7 @@ class ClientsCollectionTest extends CatsEffectSuite {
         given Option[User] = Some(adminFixture())
 
         Users
-          .register(
+          .create(
             User.CreationData(
               "Client exclusivity test",
               "client-exclusivity-test@example.com",
@@ -151,7 +151,7 @@ class ClientsCollectionTest extends CatsEffectSuite {
         given Option[User] = Some(adminFixture())
 
         Users
-          .register(
+          .create(
             User.CreationData(
               "Update exclusivity test",
               "update-exclusivity-test@example.com",
@@ -192,7 +192,7 @@ class ClientsCollectionTest extends CatsEffectSuite {
         given Option[User] = Some(adminFixture())
 
         Users
-          .register(
+          .create(
             User.CreationData(
               "Delete exclusivity test",
               "delete-exclusivity-test@example.com",
@@ -262,7 +262,7 @@ class ClientsCollectionTest extends CatsEffectSuite {
         user <- {
           given Option[User] = Some(adminFixture())
           Users
-            .register(
+            .create(
               User.CreationData(
                 "Find exclusivity test",
                 "find-exclusivity-test@example.com",

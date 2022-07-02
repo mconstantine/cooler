@@ -41,7 +41,7 @@ class ClientRoutesTest extends CatsEffectSuite {
       given Option[User] = none[User]
 
       Users
-        .register(
+        .create(
           User.CreationData(
             "Client routes test admin",
             "client-routes-test-admin@example.com",

@@ -48,7 +48,7 @@ class ProjectRoutesTest extends CatsEffectSuite {
         user <- {
           given Option[User] = none[User]
           Users
-            .register(
+            .create(
               User.CreationData(
                 "Project routes test admin",
                 "project-routes-test-admin@example.com",

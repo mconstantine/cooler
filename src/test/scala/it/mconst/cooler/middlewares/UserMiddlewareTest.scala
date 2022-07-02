@@ -58,7 +58,7 @@ class UserMiddlewareTest extends CatsEffectSuite {
       for
         user <- {
           given Option[User] = none[User]
-          Users.register(userData).orFail
+          Users.create(userData).orFail
         }
         authTokens <- Users
           .login(User.LoginData(user.email, userData.password))
