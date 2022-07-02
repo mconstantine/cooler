@@ -1,10 +1,9 @@
 import { boolean, option, readerTaskEither, taskEither } from 'fp-ts'
 import { constNull, flow, pipe } from 'fp-ts/function'
-import { IO } from 'fp-ts/IO'
 import { Option } from 'fp-ts/Option'
 import { ReaderTaskEither } from 'fp-ts/ReaderTaskEither'
 import { skull } from 'ionicons/icons'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { a18n, formatDateTime } from '../../a18n'
 import { Button } from '../../components/Button/Button/Button'
 import { Buttons } from '../../components/Button/Buttons/Buttons'
@@ -14,28 +13,43 @@ import { UserForm } from '../../components/Form/Forms/UserForm'
 import { ReadOnlyInput } from '../../components/Form/Input/ReadOnlyInput/ReadOnlyInput'
 import { LoadingBlock } from '../../components/Loading/LoadingBlock'
 import { Panel } from '../../components/Panel/Panel'
+import { useAccount } from '../../contexts/AccountContext'
 import { query } from '../../effects/api/api'
-import { Query } from '../../effects/api/Query'
+import { useDelete, usePut, useReactiveCommand } from '../../effects/api/useApi'
 import { useDialog } from '../../effects/useDialog'
 import { LocalizedString } from '../../globalDomain'
-import { Profile, ProfileUpdateInput } from './domain'
+import {
+  deleteProfileRequest,
+  getProfileRequest,
+  ProfileUpdateInput,
+  updateProfileRequest
+} from './domain'
 
-interface Props {
-  profile: Query<LocalizedString, Profile>
-  onUpdate: ReaderTaskEither<ProfileUpdateInput, LocalizedString, void>
-  onDelete: ReaderTaskEither<void, LocalizedString, unknown>
-  onLogout: IO<void>
-}
+export function ProfileData() {
+  const { logout } = useAccount()
 
-export function ProfileData(props: Props) {
+  const [profile, setProfile, getProfile] =
+    useReactiveCommand(getProfileRequest)
+
+  const updateProfileCommand = usePut(updateProfileRequest)
+  const deleteProfileCommand = useDelete(deleteProfileRequest)
+
+  const onUpdate: ReaderTaskEither<ProfileUpdateInput, LocalizedString, void> =
+    pipe(updateProfileCommand, readerTaskEither.map(setProfile))
+
+  const onDelete: ReaderTaskEither<void, LocalizedString, void> = pipe(
+    deleteProfileCommand,
+    readerTaskEither.map(logout)
+  )
+
   const [isEditing, setIsEditing] = useState(false)
   const [error, setError] = useState<Option<LocalizedString>>(option.none)
 
-  const [Dialog, deleteProfile] = useDialog<void, void, unknown>(
+  const [Dialog, deleteProfile] = useDialog<void, void, void>(
     () =>
       pipe(
         taskEither.rightIO(() => setError(option.none)),
-        taskEither.chain(props.onDelete),
+        taskEither.chain(onDelete),
         taskEither.mapLeft(flow(option.some, setError))
       ),
     {
@@ -47,14 +61,18 @@ export function ProfileData(props: Props) {
 
   const onSubmit: ReaderTaskEither<ProfileUpdateInput, LocalizedString, void> =
     flow(
-      props.onUpdate,
+      onUpdate,
       taskEither.chain(readerTaskEither.fromIO(() => setIsEditing(false)))
     )
 
   const onCancel = () => setIsEditing(false)
 
+  useEffect(() => {
+    getProfile()()
+  }, [getProfile])
+
   return pipe(
-    props.profile,
+    profile,
     query.fold(
       () => <LoadingBlock />,
       error => <ErrorPanel error={error} />,
@@ -99,7 +117,7 @@ export function ProfileData(props: Props) {
                   <Button
                     type="button"
                     label={a18n`Logout`}
-                    action={props.onLogout}
+                    action={logout}
                     icon={option.none}
                     flat
                   />
