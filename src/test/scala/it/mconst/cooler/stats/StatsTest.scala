@@ -21,6 +21,8 @@ import munit.Assertions
 import org.bson.BsonDateTime
 
 class StatsTest extends CatsEffectSuite {
+  val now = System.currentTimeMillis
+
   val adminFixture = ResourceSuiteLocalFixture(
     "admin",
     Resource.make {
@@ -67,25 +69,29 @@ class StatsTest extends CatsEffectSuite {
             projects(0)._id,
             name = "Stats test task 11",
             expectedWorkingHours = 10,
-            hourlyCost = 10
+            hourlyCost = 10,
+            startTime = BsonDateTime(now - 3600000 * 20).toISOString
           ),
           makeTestTask(
             projects(0)._id,
             name = "Stats test task 12",
             expectedWorkingHours = 10,
-            hourlyCost = 10
+            hourlyCost = 10,
+            startTime = BsonDateTime(now - 3600000 * 10).toISOString
           ),
           makeTestTask(
             projects(1)._id,
             name = "Stats test task 21",
             expectedWorkingHours = 10,
-            hourlyCost = 10
+            hourlyCost = 10,
+            startTime = BsonDateTime(now - 3600000 * 5).toISOString
           ),
           makeTestTask(
             projects(1)._id,
             name = "Stats test task 22",
             expectedWorkingHours = 10,
-            hourlyCost = 10
+            hourlyCost = 10,
+            startTime = BsonDateTime(now - 3600000 * 100).toISOString
           )
         )
           .map(Tasks.create(_).orFail)
@@ -93,8 +99,6 @@ class StatsTest extends CatsEffectSuite {
       }
       _ <- {
         given User = adminFixture()
-        val now = System.currentTimeMillis
-
         List(
           makeTestSession(
             tasks(0)._id,
@@ -110,6 +114,11 @@ class StatsTest extends CatsEffectSuite {
             tasks(2)._id,
             startTime = Some(BsonDateTime(now - 3600000 * 5).toISOString),
             endTime = Some(BsonDateTime(now - 3600000 * 0).toISOString)
+          ),
+          makeTestSession(
+            tasks(3)._id,
+            startTime = Some(BsonDateTime(now - 3600000 * 100).toISOString),
+            endTime = Some(BsonDateTime(now - 3600000 * 90).toISOString)
           )
         )
           .map(Sessions.start(_).orFail)
@@ -130,21 +139,25 @@ class StatsTest extends CatsEffectSuite {
 
   test("should get the stats of a user (empty)") {
     given User = adminFixture()
-    Users.getStats.assertEquals(UserStats.empty)
+    Users
+      .getStats(BsonDateTime(now - 3600000 * 100))
+      .assertEquals(UserStats.empty)
   }
 
   test("should get the stats of a user (with data)") {
     testData.use { _ =>
       given User = adminFixture()
 
-      Users.getStats.assertEquals(
-        UserStats(
-          NonNegativeFloat.unsafe(40f),
-          NonNegativeFloat.unsafe(20f),
-          NonNegativeFloat.unsafe(400f),
-          NonNegativeFloat.unsafe(200f)
+      Users
+        .getStats(BsonDateTime(now - 3600000 * 50))
+        .assertEquals(
+          UserStats(
+            NonNegativeFloat.unsafe(30f),
+            NonNegativeFloat.unsafe(20f),
+            NonNegativeFloat.unsafe(300f),
+            NonNegativeFloat.unsafe(200f)
+          )
         )
-      )
     }
   }
 }

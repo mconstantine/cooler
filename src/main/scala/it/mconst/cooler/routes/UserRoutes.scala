@@ -4,6 +4,7 @@ import cats.effect.IO
 import com.osinka.i18n.Lang
 import it.mconst.cooler.middlewares.UserMiddleware
 import it.mconst.cooler.middlewares.UserMiddleware.UserContext
+import it.mconst.cooler.models.*
 import it.mconst.cooler.models.user.given
 import it.mconst.cooler.models.user.User
 import it.mconst.cooler.models.user.Users
@@ -22,6 +23,7 @@ object UserRoutes {
         response <- Users.register(data).toResponse
       yield response
     }
+
     case ctxReq @ PUT -> Root / "me" as context => {
       given Lang = context.lang
       given User = context.user
@@ -31,18 +33,21 @@ object UserRoutes {
         response <- Users.update(data).toResponse
       yield response
     }
+
     case ctxReq @ DELETE -> Root / "me" as context => {
       given Lang = context.lang
       given User = context.user
 
       Users.delete.toResponse
     }
+
     case GET -> Root / "me" as context => Ok(context.user)
-    case GET -> Root / "stats" as context => {
+
+    case GET -> Root / "stats" :? DateTimeMatcher(since) as context => {
       given Lang = context.lang
       given User = context.user
 
-      Ok(Users.getStats)
+      Ok.apply(Users.getStats(since))
     }
   }
 

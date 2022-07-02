@@ -189,7 +189,9 @@ object Users {
         )
     )
 
-  def getStats(using customer: User)(using Lang): IO[UserStats] =
+  def getStats(
+      since: BsonDateTime
+  )(using customer: User)(using Lang): IO[UserStats] =
     collection.use(c =>
       c.raw(
         _.aggregateWithCodec[UserStats](
@@ -224,6 +226,9 @@ object Users {
                 "foreignField" -> "project",
                 "as" -> "tasks",
                 "pipeline" -> Seq(
+                  Aggregates.`match`(
+                    Filters.gte("startTime", since.toISOString)
+                  ),
                   Document(
                     "$project" -> Document(
                       "_id" -> 1,
