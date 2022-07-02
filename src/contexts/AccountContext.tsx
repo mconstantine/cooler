@@ -10,9 +10,12 @@ import {
 } from 'react'
 import {
   foldAccountState,
+  foldFormMode,
+  initialState,
   logoutAction,
   reducer,
   refreshTokenAction,
+  setFormModeAction,
   setLoginAction
 } from './AccountContextState'
 import { boolean, option, readerTaskEither, taskEither } from 'fp-ts'
@@ -21,10 +24,27 @@ import { EmailString, LocalizedString } from '../globalDomain'
 import { makeRequest, Request } from '../effects/api/useApi'
 import { useStorage } from '../effects/useStorage'
 import { IO } from 'fp-ts/IO'
-import { FormData, LoginForm } from '../components/Form/Forms/LoginForm'
+import {
+  FormData as LoginFormData,
+  LoginForm
+} from '../components/Form/Forms/LoginForm'
 import { ReaderTaskEither } from 'fp-ts/ReaderTaskEither'
 import { Content } from '../components/Content/Content'
 import { TaskEither } from 'fp-ts/TaskEither'
+import {
+  FormData as RegistrationFormData,
+  RegistrationForm
+} from '../components/Form/Forms/RegistrationForm'
+
+const RegistrationInput = t.type(
+  {
+    name: NonEmptyString,
+    email: EmailString,
+    password: NonEmptyString
+  },
+  'RegistrationInput'
+)
+type RegistrationInput = t.TypeOf<typeof RegistrationInput>
 
 const LoginInput = t.type(
   {
@@ -73,13 +93,30 @@ export function useAccount() {
 }
 
 export function AccountProvider(props: PropsWithChildren) {
-  const [state, dispatch] = useReducer(reducer, { type: 'ANONYMOUS' })
+  const [state, dispatch] = useReducer(reducer, initialState())
   const { readStorage, writeStorage, clearStorage } = useStorage()
+
+  const onRegistrationLinkClick = () =>
+    dispatch(setFormModeAction('Registration'))
+
+  const onLoginButtonClick = () => dispatch(setFormModeAction('Login'))
 
   const logout = () => {
     clearStorage('account')
     dispatch(logoutAction())
   }
+
+  const registrationCommand = (input: RegistrationInput) =>
+    makeRequest(
+      {
+        method: 'POST',
+        url: '/register',
+        inputCodec: RegistrationInput,
+        outputCodec: LoginOutput
+      },
+      option.none,
+      input
+    )
 
   const loginCommand = (input: LoginInput) =>
     makeRequest(
@@ -105,12 +142,28 @@ export function AccountProvider(props: PropsWithChildren) {
       { refreshToken }
     )
 
-  const login: ReaderTaskEither<FormData, LocalizedString, void> = pipe(
+  const register: ReaderTaskEither<
+    RegistrationFormData,
+    LocalizedString,
+    void
+  > = pipe(
+    registrationCommand,
+    readerTaskEither.chain(response =>
+      readerTaskEither.fromIO(() => {
+        writeStorage('account', response)
+        dispatch(setLoginAction(response))
+      })
+    )
+  )
+
+  const login: ReaderTaskEither<LoginFormData, LocalizedString, void> = pipe(
     loginCommand,
-    readerTaskEither.map(response => {
-      writeStorage('account', response)
-      dispatch(setLoginAction(response))
-    })
+    readerTaskEither.chain(response =>
+      readerTaskEither.fromIO(() => {
+        writeStorage('account', response)
+        dispatch(setLoginAction(response))
+      })
+    )
   )
 
   const withLogin = <I, II, O, OO>(request: Request<I, II, O, OO>, input: I) =>
@@ -152,9 +205,25 @@ export function AccountProvider(props: PropsWithChildren) {
       {pipe(
         state,
         foldAccountState<ReactNode>({
-          ANONYMOUS: () => (
+          ANONYMOUS: state => (
             <Content>
-              <LoginForm onSubmit={login} />
+              {pipe(
+                state.formMode,
+                foldFormMode({
+                  Login: () => (
+                    <LoginForm
+                      onRegistrationLinkClick={onRegistrationLinkClick}
+                      onSubmit={login}
+                    />
+                  ),
+                  Registration: () => (
+                    <RegistrationForm
+                      onLoginLinkClick={onLoginButtonClick}
+                      onSubmit={register}
+                    />
+                  )
+                })
+              )}
             </Content>
           ),
           LOGGED_IN: () => props.children

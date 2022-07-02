@@ -6,23 +6,23 @@ import { Reader } from 'fp-ts/Reader'
 import { unsafeLocalizedString } from '../../a18n'
 import { Content } from '../../components/Content/Content'
 import {
-  LoginForm as LoginFormComponent,
-  FormData
-} from '../../components/Form/Forms/LoginForm'
+  FormData,
+  RegistrationForm as RegistrationFormComponent
+} from '../../components/Form/Forms/RegistrationForm'
 import { CoolerStory } from '../CoolerStory'
 
 interface Args {
-  onLogin: Reader<FormData, void>
-  onRegistrationLinkClick: IO<void>
+  onSubmit: Reader<FormData, void>
+  onLoginLinkClick: IO<void>
   shouldFail: boolean
 }
 
-const LoginFormTemplate: Story<Args> = props => {
+const RegistrationFormTemplate: Story<Args> = props => {
   const onSubmit = (data: FormData) =>
     pipe(
       props.shouldFail,
       boolean.fold(
-        () => taskEither.rightIO(() => props.onLogin(data)),
+        () => taskEither.rightIO(() => props.onSubmit(data)),
         () => taskEither.left(unsafeLocalizedString("I'm an error!"))
       )
     )
@@ -30,8 +30,8 @@ const LoginFormTemplate: Story<Args> = props => {
   return (
     <CoolerStory>
       <Content>
-        <LoginFormComponent
-          onRegistrationLinkClick={props.onRegistrationLinkClick}
+        <RegistrationFormComponent
+          onLoginLinkClick={props.onLoginLinkClick}
           onSubmit={onSubmit}
         />
       </Content>
@@ -39,24 +39,24 @@ const LoginFormTemplate: Story<Args> = props => {
   )
 }
 
-export const LoginForm = LoginFormTemplate.bind({})
+export const RegistrationForm = RegistrationFormTemplate.bind({})
 
-LoginForm.args = {
+RegistrationForm.args = {
   shouldFail: false
 }
 
-LoginForm.argTypes = {
+RegistrationForm.argTypes = {
   shouldFail: {
     name: 'Should fail',
     control: 'boolean',
     description: 'Set this to true to make the form submission fail'
   },
-  onLogin: { action: 'logged in' },
-  onRegistrationLinkClick: { action: 'registration link clicked' }
+  onSubmit: { action: 'registered' },
+  onLoginLinkClick: { action: 'login link clicked' }
 }
 
 const meta: Meta = {
-  title: 'Cooler/Form/Login Form'
+  title: 'Cooler/Form/Registration Form'
 }
 
 export default meta
