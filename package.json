@@ -53,6 +53,8 @@
     "@storybook/addon-essentials": "^6.5.9",
     "@storybook/addon-links": "^6.5.9",
     "@storybook/addons": "^6.5.9",
+    "@storybook/builder-webpack5": "^6.5.9",
+    "@storybook/manager-webpack5": "^6.5.9",
     "@storybook/node-logger": "^6.5.9",
     "@storybook/preset-create-react-app": "^4.1.2",
     "@storybook/react": "^6.5.9",
@@ -69,6 +71,7 @@
     "eslint-plugin-fp-ts": "^0.3.2",
     "fp-ts": "^2.12.1",
     "prettier": "^2.7.1",
-    "storybook-dark-mode": "^1.1.0"
+    "storybook-dark-mode": "^1.1.0",
+    "webpack": "5"
   }
 }
