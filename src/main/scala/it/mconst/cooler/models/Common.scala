@@ -131,6 +131,47 @@ extension (pi: PositiveInteger) {
   def toInt: Int = pi
 }
 
+opaque type PositiveFloat = Float
+
+object PositiveFloat extends Validator[Float, PositiveFloat] {
+  override def name = "PositiveFloat"
+
+  override def decode(n: Float): Option[PositiveFloat] = Option.when(n > 0)(n)
+
+  override def validate(fieldName: String, value: Float)(using
+      Lang
+  ): Validation[PositiveFloat] =
+    validate(
+      value,
+      ValidationError(fieldName, __.ErrorDecodeInvalidPositiveFloat)
+    )
+
+  extension (pf: PositiveFloat) {
+    def toFloat: Float = pf
+  }
+}
+
+opaque type NonNegativeFloat = Float
+
+object NonNegativeFloat extends Validator[Float, NonNegativeFloat] {
+  override def name = "NonNegativeFloat"
+
+  override def decode(n: Float): Option[NonNegativeFloat] =
+    Option.when(n >= 0)(n)
+
+  override def validate(fieldName: String, value: Float)(using
+      Lang
+  ): Validation[NonNegativeFloat] =
+    validate(
+      value,
+      ValidationError(fieldName, __.ErrorDecodeInvalidNonNegative)
+    )
+
+  extension (pf: NonNegativeFloat) {
+    def toFloat: Float = pf
+  }
+}
+
 final case class PageInfo(
     totalCount: Int,
     startCursor: Option[String],

@@ -6,6 +6,7 @@ error.decode.emptyString=The field cannot be empty
 error.decode.invalidCountryCode=Invalid country code
 error.decode.invalidDateTime=Invalid date. Please use ISO 8601 format
 error.decode.invalidEmailFormat=Invalid e-mail address format
+error.decode.invalidNonNegative=Invalid non negative number. It should be greater than or equal to zero
 error.decode.invalidObjectId=Invalid Object ID
 error.decode.invalidPasswordFormat=Invalid password format
 error.decode.invalidPercentage=Invalid percentage. It should be a number between zero and one

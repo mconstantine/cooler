@@ -37,7 +37,13 @@ object UserRoutes {
 
       Users.delete.toResponse
     }
-    case _ @GET -> Root / "me" as context => Ok(context.user)
+    case GET -> Root / "me" as context => Ok(context.user)
+    case GET -> Root / "stats" as context => {
+      given Lang = context.lang
+      given User = context.user
+
+      Ok(Users.getStats)
+    }
   }
 
   def apply() = UserMiddleware(routes)

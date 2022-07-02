@@ -5,7 +5,10 @@ import cats.data.OptionT
 import cats.effect.IO
 import cats.syntax.apply.*
 import com.github.t3hnar.bcrypt.*
+import com.mongodb.client.model.Aggregates
+import com.mongodb.client.model.BsonField
 import com.mongodb.client.model.Filters
+import com.mongodb.client.model.UnwindOptions
 import com.osinka.i18n.Lang
 import io.circe.Decoder
 import io.circe.DecodingFailure
@@ -17,6 +20,7 @@ import it.mconst.cooler.utils.Collection
 import it.mconst.cooler.utils.DbDocument
 import it.mconst.cooler.utils.Error
 import it.mconst.cooler.utils.given
+import mongo4cats.bson.Document
 import mongo4cats.bson.ObjectId
 import mongo4cats.circe.*
 import mongo4cats.collection.operations.Filter
@@ -60,6 +64,22 @@ final case class User(
     createdAt: BsonDateTime,
     updatedAt: BsonDateTime
 ) extends DbDocument
+
+final case class UserStats(
+    expectedWorkingHours: NonNegativeFloat,
+    actualWorkingHours: NonNegativeFloat,
+    budget: NonNegativeFloat,
+    balance: NonNegativeFloat
+)
+
+object UserStats {
+  def empty = UserStats(
+    NonNegativeFloat.unsafe(0f),
+    NonNegativeFloat.unsafe(0f),
+    NonNegativeFloat.unsafe(0f),
+    NonNegativeFloat.unsafe(0f)
+  )
+}
 
 object User {
   final case class CreationData(
@@ -169,6 +189,131 @@ object Users {
         )
     )
 
+  def getStats(using customer: User)(using Lang): IO[UserStats] =
+    collection.use(c =>
+      c.raw(
+        _.aggregateWithCodec[UserStats](
+          Seq(
+            Aggregates.`match`(Filters.eq("_id", customer._id)),
+            Aggregates.lookup("clients", "_id", "user", "clients"),
+            Aggregates.unwind(
+              "$clients",
+              UnwindOptions().preserveNullAndEmptyArrays(false)
+            ),
+            Aggregates.project(
+              Document(
+                "_id" -> 1,
+                "client" -> "$clients._id"
+              )
+            ),
+            Aggregates.lookup("projects", "client", "client", "projects"),
+            Aggregates.unwind(
+              "$projects",
+              UnwindOptions().preserveNullAndEmptyArrays(false)
+            ),
+            Aggregates.project(
+              Document(
+                "_id" -> 1,
+                "project" -> "$projects._id"
+              )
+            ),
+            Document(
+              "$lookup" -> Document(
+                "from" -> "tasks",
+                "localField" -> "project",
+                "foreignField" -> "project",
+                "as" -> "tasks",
+                "pipeline" -> Seq(
+                  Document(
+                    "$project" -> Document(
+                      "_id" -> 1,
+                      "expectedWorkingHours" -> 1,
+                      "hourlyCost" -> 1
+                    )
+                  ),
+                  Document(
+                    "$addFields" -> Document(
+                      "budget" -> Document(
+                        "$multiply" -> Seq(
+                          "$expectedWorkingHours",
+                          "$hourlyCost"
+                        )
+                      )
+                    )
+                  ),
+                  Document(
+                    "$lookup" -> Document(
+                      "from" -> "sessions",
+                      "localField" -> "_id",
+                      "foreignField" -> "task",
+                      "as" -> "sessions",
+                      "pipeline" -> Seq(
+                        Document(
+                          "$project" -> Document(
+                            "_id" -> 0,
+                            "actualWorkingHours" -> Document(
+                              "$dateDiff" -> Document(
+                                "startDate" -> Document(
+                                  "$dateFromString" -> Document(
+                                    "dateString" -> "$startTime"
+                                  )
+                                ),
+                                "endDate" -> Document(
+                                  "$dateFromString" -> Document(
+                                    "dateString" -> "$endTime"
+                                  )
+                                ),
+                                "unit" -> "hour"
+                              )
+                            )
+                          )
+                        )
+                      )
+                    )
+                  ),
+                  Document(
+                    "$addFields" -> Document(
+                      "actualWorkingHours" -> Document(
+                        "$sum" -> "$sessions.actualWorkingHours"
+                      )
+                    )
+                  ),
+                  Document(
+                    "$addFields" -> Document(
+                      "balance" -> Document(
+                        "$multiply" -> Seq(
+                          "$actualWorkingHours",
+                          "$hourlyCost"
+                        )
+                      )
+                    )
+                  )
+                )
+              )
+            ),
+            Aggregates.unwind(
+              "$tasks",
+              UnwindOptions().preserveNullAndEmptyArrays(false)
+            ),
+            Aggregates.group(
+              "$_id",
+              BsonField(
+                "expectedWorkingHours",
+                Document("$sum" -> "$tasks.expectedWorkingHours")
+              ),
+              BsonField(
+                "actualWorkingHours",
+                Document("$sum" -> "$tasks.actualWorkingHours")
+              ),
+              BsonField("budget", Document("$sum" -> "$tasks.budget")),
+              BsonField("balance", Document("$sum" -> "$tasks.balance"))
+            ),
+            Aggregates.project(Document("_id" -> 0))
+          )
+        ).first.map(_.getOrElse(UserStats.empty))
+      )
+    )
+
   def register(
       user: User.CreationData
   )(using Option[User], Lang): EitherT[IO, Error, JWT.AuthTokens] =
@@ -248,3 +393,5 @@ object Users {
 
 given EntityEncoder[IO, User] = jsonEncoderOf[IO, User]
 given EntityDecoder[IO, User] = jsonOf[IO, User]
+given EntityEncoder[IO, UserStats] = jsonEncoderOf[IO, UserStats]
+given EntityDecoder[IO, UserStats] = jsonOf[IO, UserStats]

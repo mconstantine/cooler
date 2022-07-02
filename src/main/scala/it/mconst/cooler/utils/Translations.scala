@@ -14,6 +14,8 @@ enum __(val key: String):
   case ErrorDecodeInvalidDateTime extends __("error.decode.invalidDateTime")
   case ErrorDecodeInvalidEmailFormat
       extends __("error.decode.invalidEmailFormat")
+  case ErrorDecodeInvalidNonNegative
+      extends __("error.decode.invalidNonNegative")
   case ErrorDecodeInvalidObjectId extends __("error.decode.invalidObjectId")
   case ErrorDecodeInvalidPasswordFormat
       extends __("error.decode.invalidPasswordFormat")

@@ -36,26 +36,6 @@ import org.http4s.EntityDecoder
 import org.http4s.EntityEncoder
 import org.http4s.Status
 
-opaque type PositiveFloat = Float
-
-object PositiveFloat extends Validator[Float, PositiveFloat] {
-  override def name = "PositiveFloat"
-
-  override def decode(n: Float): Option[PositiveFloat] = Option.when(n > 0)(n)
-
-  override def validate(fieldName: String, value: Float)(using
-      Lang
-  ): Validation[PositiveFloat] =
-    validate(
-      value,
-      ValidationError(fieldName, __.ErrorDecodeInvalidPositiveFloat)
-    )
-}
-
-extension (pf: PositiveFloat) {
-  def toFloat: Float = pf
-}
-
 sealed abstract trait Task(
     _id: ObjectId,
     name: NonEmptyString,
