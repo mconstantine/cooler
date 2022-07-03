@@ -7,6 +7,7 @@ import cats.syntax.apply.*
 import com.github.t3hnar.bcrypt.*
 import com.mongodb.client.model.Aggregates
 import com.mongodb.client.model.BsonField
+import com.mongodb.client.model.Field
 import com.mongodb.client.model.Filters
 import com.mongodb.client.model.UnwindOptions
 import com.osinka.i18n.Lang
@@ -15,6 +16,12 @@ import io.circe.DecodingFailure
 import io.circe.Encoder
 import io.circe.generic.auto.*
 import it.mconst.cooler.models.*
+import it.mconst.cooler.models.client.Clients
+import it.mconst.cooler.models.project.Projects
+import it.mconst.cooler.models.session.Session
+import it.mconst.cooler.models.session.Sessions
+import it.mconst.cooler.models.task.Tasks
+import it.mconst.cooler.models.tax.Taxes
 import it.mconst.cooler.utils.__
 import it.mconst.cooler.utils.Collection
 import it.mconst.cooler.utils.DbDocument
@@ -401,7 +408,58 @@ object Users {
       .map(JWT.generateAuthTokens(_))
 
   def delete(using customer: User)(using Lang): EitherT[IO, Error, User] =
-    collection.use(_.delete(customer._id))
+    for
+      user <- collection.use(_.delete(customer._id))
+      sessions <- EitherT.right(
+        Sessions.collection.use(
+          _.raw(
+            _.aggregateWithCodec[Session](
+              Seq(
+                Aggregates.lookup("tasks", "task", "_id", "task"),
+                Aggregates.unwind("$task"),
+                Aggregates.lookup("projects", "task.project", "_id", "project"),
+                Aggregates.unwind("$project"),
+                Aggregates.lookup("clients", "project.client", "_id", "client"),
+                Aggregates.unwind("$client"),
+                Aggregates.`match`(Filters.eq("client.user", user._id)),
+                Aggregates.addFields(Field("task", "$task._id")),
+                Aggregates.project(Document("project" -> 0, "client" -> 0))
+              )
+            ).all
+          )
+        )
+      )
+      clients <- EitherT.right(
+        Clients.collection.use(
+          _.raw(_.find(Filter.eq("user", user._id)).all)
+        )
+      )
+      _ <- EitherT.right(
+        Sessions.collection.use(
+          _.raw(_.deleteMany(Filter.in("_id", Seq.from(sessions.map(_._id)))))
+        )
+      )
+      _ <- EitherT.right(
+        Tasks.collection.use(
+          _.raw(_.deleteMany(Filter.in("_id", Seq.from(sessions.map(_.task)))))
+        )
+      )
+      _ <- EitherT.right(
+        Projects.collection.use(
+          _.raw(_.deleteMany(Filter.in("client", Seq.from(clients.map(_._id)))))
+        )
+      )
+      _ <- EitherT.right(
+        Clients.collection.use(
+          _.raw(_.deleteMany(Filter.in("_id", Seq.from(clients.map(_._id)))))
+        )
+      )
+      _ <- EitherT.right(
+        Taxes.collection.use(
+          _.raw(_.deleteMany(Filter.eq("user", user._id)))
+        )
+      )
+    yield user
 }
 
 given EntityEncoder[IO, User] = jsonEncoderOf[IO, User]

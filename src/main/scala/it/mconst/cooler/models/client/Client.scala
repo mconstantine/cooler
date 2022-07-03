@@ -16,6 +16,10 @@ import io.circe.HCursor
 import io.circe.Json
 import io.circe.syntax.*
 import it.mconst.cooler.models.*
+import it.mconst.cooler.models.project.Projects
+import it.mconst.cooler.models.session.Session
+import it.mconst.cooler.models.session.Sessions
+import it.mconst.cooler.models.task.Tasks
 import it.mconst.cooler.models.user.User
 import it.mconst.cooler.utils.__
 import it.mconst.cooler.utils.Collection
@@ -455,7 +459,42 @@ object Clients {
   def delete(
       _id: ObjectId
   )(using customer: User)(using Lang): EitherT[IO, Error, Client] =
-    findById(_id).flatMap(client => collection.use(_.delete(client._id)))
+    for
+      client <- findById(_id)
+      _ <- collection.use(_.delete(client._id))
+      sessions <- EitherT.right(
+        Sessions.collection.use(
+          _.raw(
+            _.aggregateWithCodec[Session](
+              Seq(
+                Aggregates.lookup("tasks", "task", "_id", "task"),
+                Aggregates.unwind("$task"),
+                Aggregates.lookup("projects", "task.project", "_id", "project"),
+                Aggregates.unwind("$project"),
+                Aggregates.`match`(Filters.eq("project.client", client._id)),
+                Aggregates.addFields(Field("task", "$task._id")),
+                Aggregates.project(Document("project" -> 0))
+              )
+            ).all
+          )
+        )
+      )
+      _ <- EitherT.right(
+        Sessions.collection.use(
+          _.raw(_.deleteMany(Filter.in("_id", Seq.from(sessions.map(_._id)))))
+        )
+      )
+      _ <- EitherT.right(
+        Tasks.collection.use(
+          _.raw(_.deleteMany(Filter.in("_id", Seq.from(sessions.map(_.task)))))
+        )
+      )
+      _ <- EitherT.right(
+        Projects.collection.use(
+          _.raw(_.deleteMany(Filter.eq("client", client._id)))
+        )
+      )
+    yield client
 
   def find(query: CursorQuery)(using
       customer: User

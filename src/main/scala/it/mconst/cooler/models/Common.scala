@@ -230,6 +230,8 @@ object CursorQuery {
         .getOrElse(Right(CursorQueryAsc(query, none[PositiveInteger], after)))
     else Right(CursorQueryAsc(query))
   }
+
+  def empty = CursorQueryAsc(none[String], none[PositiveInteger], none[String])
 }
 
 final case class CursorQueryAsc(

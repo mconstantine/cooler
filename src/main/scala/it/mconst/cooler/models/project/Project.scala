@@ -8,6 +8,7 @@ import cats.syntax.all.none
 import cats.syntax.apply.*
 import com.mongodb.client.model.Aggregates
 import com.mongodb.client.model.BsonField
+import com.mongodb.client.model.Field
 import com.mongodb.client.model.Filters
 import com.osinka.i18n.Lang
 import io.circe.Decoder
@@ -22,6 +23,9 @@ import it.mconst.cooler.models.*
 import it.mconst.cooler.models.client.Client
 import it.mconst.cooler.models.client.Clients
 import it.mconst.cooler.models.client.given
+import it.mconst.cooler.models.session.Session
+import it.mconst.cooler.models.session.Sessions
+import it.mconst.cooler.models.task.Tasks
 import it.mconst.cooler.models.user.User
 import it.mconst.cooler.utils.__
 import it.mconst.cooler.utils.Collection
@@ -31,6 +35,7 @@ import it.mconst.cooler.utils.given
 import mongo4cats.bson.Document
 import mongo4cats.bson.ObjectId
 import mongo4cats.circe.*
+import mongo4cats.collection.operations.Filter
 import org.bson.BsonDateTime
 import org.http4s.circe.*
 import org.http4s.EntityDecoder
@@ -217,6 +222,30 @@ object Projects {
     for
       project <- findById(_id)
       result <- collection.use(_.delete(project._id))
+      sessions <- EitherT.right(
+        Sessions.collection.use(
+          _.raw(
+            _.aggregateWithCodec[Session](
+              Seq(
+                Aggregates.lookup("tasks", "task", "_id", "task"),
+                Aggregates.unwind("$task"),
+                Aggregates.`match`(Filters.eq("task.project", project._id)),
+                Aggregates.addFields(Field("task", "$task._id"))
+              )
+            ).all
+          )
+        )
+      )
+      _ <- EitherT.right(
+        Sessions.collection.use(
+          _.raw(_.deleteMany(Filter.in("_id", Seq.from(sessions.map(_._id)))))
+        )
+      )
+      _ <- EitherT.right(
+        Tasks.collection.use(
+          _.raw(_.deleteMany(Filter.eq("project", project._id)))
+        )
+      )
     yield result
 
   def getCashedBalance(since: BsonDateTime, to: Option[BsonDateTime])(using

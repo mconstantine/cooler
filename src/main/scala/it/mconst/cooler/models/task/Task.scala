@@ -21,6 +21,7 @@ import it.mconst.cooler.models.client.given
 import it.mconst.cooler.models.project.DbProject
 import it.mconst.cooler.models.project.Projects
 import it.mconst.cooler.models.project.ProjectWithClient
+import it.mconst.cooler.models.session.Sessions
 import it.mconst.cooler.models.user.User
 import it.mconst.cooler.utils.__
 import it.mconst.cooler.utils.Collection
@@ -30,6 +31,7 @@ import it.mconst.cooler.utils.given
 import mongo4cats.bson.Document
 import mongo4cats.bson.ObjectId
 import mongo4cats.circe.*
+import mongo4cats.collection.operations.Filter
 import org.bson.BsonDateTime
 import org.http4s.circe.*
 import org.http4s.EntityDecoder
@@ -182,6 +184,17 @@ object Tasks {
           Error(Status.NotFound, __.ErrorProjectNotFound)
         )
         task <- c.create(data)
+        _ <- Projects.collection.use(
+          _.update(
+            task match
+              case task: DbTask          => task.project
+              case task: TaskWithProject => task.project._id
+            ,
+            Projects.collection.Update
+              .`with`("updatedAt" -> BsonDateTime(System.currentTimeMillis))
+              .build
+          )
+        )
       yield task
     }
 
@@ -298,6 +311,14 @@ object Tasks {
               .build
           )
         )
+      _ <- Projects.collection.use(
+        _.update(
+          projectId,
+          Projects.collection.Update
+            .`with`("updatedAt" -> BsonDateTime(System.currentTimeMillis))
+            .build
+        )
+      )
     yield result
 
   def delete(_id: ObjectId)(using customer: User)(using
@@ -306,6 +327,11 @@ object Tasks {
     for
       task <- findById(_id)
       result <- collection.use(_.delete(task._id))
+      _ <- EitherT.right(
+        Sessions.collection.use(
+          _.raw(_.deleteMany(Filter.eq("task", task._id)))
+        )
+      )
     yield result
 }
 

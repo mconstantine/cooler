@@ -13,6 +13,8 @@ import io.circe.generic.auto.*
 import it.mconst.cooler.models.*
 import it.mconst.cooler.models.client.Client
 import it.mconst.cooler.models.client.given
+import it.mconst.cooler.models.project.Projects
+import it.mconst.cooler.models.project.ProjectWithClient
 import it.mconst.cooler.models.task.DbTask
 import it.mconst.cooler.models.task.Tasks
 import it.mconst.cooler.models.task.Tasks
@@ -26,6 +28,7 @@ import it.mconst.cooler.utils.given
 import mongo4cats.bson.Document
 import mongo4cats.bson.ObjectId
 import mongo4cats.circe.*
+import mongo4cats.collection.operations.Filter
 import org.bson.BsonDateTime
 import org.http4s.circe.*
 import org.http4s.EntityDecoder
@@ -85,36 +88,39 @@ object Session {
 object Sessions {
   val collection = Collection[IO, Session.InputData, Session]("sessions")
 
-  private def findClient(taskId: ObjectId)(using
+  private def findProject(taskId: ObjectId)(using
       customer: User
-  )(using Lang): EitherT[IO, Error, Client] = Tasks.collection.use(c =>
-    EitherT.fromOptionF(
-      c.raw(
-        _.aggregateWithCodec[Client](
-          Seq(
-            Aggregates.`match`(Filters.eq("_id", taskId)),
-            Aggregates.project(Document("_id" -> false, "project" -> 1)),
-            Document(
-              "$lookup" -> Document(
-                "from" -> "projects",
-                "localField" -> "project",
-                "foreignField" -> "_id",
-                "as" -> "project",
-                "pipeline" -> Seq(
-                  Aggregates.lookup("clients", "client", "_id", "client"),
-                  Aggregates.unwind("$client")
+  )(using Lang): EitherT[IO, Error, ProjectWithClient] =
+    Tasks.collection.use(c =>
+      EitherT.fromOptionF(
+        c.raw(
+          _.aggregateWithCodec[ProjectWithClient](
+            Seq(
+              Aggregates.`match`(Filters.eq("_id", taskId)),
+              Aggregates.project(Document("_id" -> false, "project" -> 1)),
+              Document(
+                "$lookup" -> Document(
+                  "from" -> "projects",
+                  "localField" -> "project",
+                  "foreignField" -> "_id",
+                  "as" -> "project",
+                  "pipeline" -> Seq(
+                    Aggregates.lookup("clients", "client", "_id", "client"),
+                    Aggregates.unwind("$client")
+                  )
                 )
-              )
-            ),
-            Aggregates.unwind("$project"),
-            Aggregates.`match`(Filters.eq("project.client.user", customer._id)),
-            Aggregates.replaceRoot("$project.client")
-          )
-        ).first
-      ),
-      Error(Status.NotFound, __.ErrorClientNotFound)
+              ),
+              Aggregates.unwind("$project"),
+              Aggregates.`match`(
+                Filters.eq("project.client.user", customer._id)
+              ),
+              Aggregates.replaceRoot("$project")
+            )
+          ).first
+        ),
+        Error(Status.NotFound, __.ErrorClientNotFound)
+      )
     )
-  )
 
   private def findById(_id: ObjectId)(using customer: User)(using
       Lang
@@ -173,17 +179,36 @@ object Sessions {
   ): EitherT[IO, Error, Session] =
     for
       data <- EitherT.fromEither(Session.fromInputData(data))
-      _ <- findClient(data.task).leftMap(_ =>
+      project <- findProject(data.task).leftMap(_ =>
         Error(Status.NotFound, __.ErrorTaskNotFound)
       )
       session <- collection.use(_.create(data))
+      _ <- Tasks.collection.use(
+        _.update(
+          session.task,
+          Tasks.collection.Update
+            .`with`("updatedAt" -> BsonDateTime(System.currentTimeMillis))
+            .build
+        )
+      )
+      _ <- Projects.collection.use(
+        _.update(
+          project._id,
+          Projects.collection.Update
+            .`with`("updatedAt" -> BsonDateTime(System.currentTimeMillis))
+            .build
+        )
+      )
     yield session
 
   def stop(_id: ObjectId)(using customer: User)(using
       Lang
   ): EitherT[IO, Error, Session] =
     for
-      session <- findById(_id)
+      session <- collection.use(_.findOne(Filter.eq("_id", _id)))
+      project <- findProject(session.task).leftMap(_ =>
+        Error(Status.NotFound, __.ErrorSessionNotFound)
+      )
       result <- collection.use(
         _.update(
           session._id,
@@ -191,6 +216,22 @@ object Sessions {
             .`with`(
               "endTime" -> BsonDateTime(System.currentTimeMillis).toISOString
             )
+            .build
+        )
+      )
+      _ <- Tasks.collection.use(
+        _.update(
+          session.task,
+          Tasks.collection.Update
+            .`with`("updatedAt" -> BsonDateTime(System.currentTimeMillis))
+            .build
+        )
+      )
+      _ <- Projects.collection.use(
+        _.update(
+          project._id,
+          Projects.collection.Update
+            .`with`("updatedAt" -> BsonDateTime(System.currentTimeMillis))
             .build
         )
       )
@@ -256,22 +297,13 @@ object Sessions {
     for
       session <- findById(_id)
       data <- EitherT.fromEither[IO](Session.validateInputData(data).toResult)
-      taskId <- Tasks
-        .findById(data.task)
-        .flatMap(_ match
-          case _: DbTask =>
-            EitherT.leftT[IO, ObjectId](
-              Error(Status.InternalServerError, __.ErrorUnknown)
-            )
-          case task: TaskWithProject =>
-            EitherT.rightT[IO, Error](task._id)
-        )
+      task <- Tasks.findById(data.task)
       result <- collection
         .use(
           _.update(
             session._id,
             collection.Update
-              .`with`("task" -> taskId)
+              .`with`("task" -> task._id)
               .`with`(
                 "startTime" -> data.startTime,
                 collection.UpdateStrategy.IgnoreIfEmpty
@@ -283,6 +315,25 @@ object Sessions {
               .build
           )
         )
+      _ <- Tasks.collection.use(
+        _.update(
+          session.task,
+          Tasks.collection.Update
+            .`with`("updatedAt" -> BsonDateTime(System.currentTimeMillis))
+            .build
+        )
+      )
+      _ <- Projects.collection.use(
+        _.update(
+          task match
+            case task: TaskWithProject => task.project._id
+            case task: DbTask          => task.project
+          ,
+          Projects.collection.Update
+            .`with`("updatedAt" -> BsonDateTime(System.currentTimeMillis))
+            .build
+        )
+      )
     yield result
 
   def delete(_id: ObjectId)(using customer: User)(using
