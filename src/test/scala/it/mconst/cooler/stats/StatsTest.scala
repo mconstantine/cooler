@@ -100,11 +100,13 @@ class StatsTest extends CatsEffectSuite {
       _ <- {
         given User = adminFixture()
         List(
+          // Ten hours on task 0 (project 0)
           makeTestSession(
             tasks(0)._id,
             startTime = Some(BsonDateTime(now - 3600000 * 20).toISOString),
             endTime = Some(BsonDateTime(now - 3600000 * 10).toISOString)
           ),
+          // Ten hours in two different sessions on task 1 (project 0)
           makeTestSession(
             tasks(1)._id,
             startTime = Some(BsonDateTime(now - 3600000 * 10).toISOString),
@@ -115,10 +117,16 @@ class StatsTest extends CatsEffectSuite {
             startTime = Some(BsonDateTime(now - 3600000 * 5).toISOString),
             endTime = Some(BsonDateTime(now - 3600000 * 0).toISOString)
           ),
+          // Two sessions out of the time range (one in the past, one in the future)
           makeTestSession(
             tasks(3)._id,
             startTime = Some(BsonDateTime(now - 3600000 * 100).toISOString),
-            endTime = Some(BsonDateTime(now - 3600000 * 90).toISOString)
+            endTime = Some(BsonDateTime(now - 3600000 * 95).toISOString)
+          ),
+          makeTestSession(
+            tasks(3)._id,
+            startTime = Some(BsonDateTime(now + 3600000 * 0).toISOString),
+            endTime = Some(BsonDateTime(now + 3600000 * 5).toISOString)
           )
         )
           .map(Sessions.start(_).orFail)
@@ -140,7 +148,7 @@ class StatsTest extends CatsEffectSuite {
   test("should get the stats of a user (empty)") {
     given User = adminFixture()
     Users
-      .getStats(BsonDateTime(now - 3600000 * 100))
+      .getStats(BsonDateTime(now - 3600000 * 100), none[BsonDateTime])
       .assertEquals(UserStats.empty)
   }
 
@@ -149,7 +157,7 @@ class StatsTest extends CatsEffectSuite {
       given User = adminFixture()
 
       Users
-        .getStats(BsonDateTime(now - 3600000 * 50))
+        .getStats(BsonDateTime(now - 3600000 * 50), none[BsonDateTime])
         .assertEquals(
           UserStats(
             NonNegativeFloat.unsafe(30f),

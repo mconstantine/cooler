@@ -190,7 +190,8 @@ object Users {
     )
 
   def getStats(
-      since: BsonDateTime
+      since: BsonDateTime,
+      to: Option[BsonDateTime]
   )(using customer: User)(using Lang): IO[UserStats] =
     collection.use(c =>
       c.raw(
@@ -227,7 +228,14 @@ object Users {
                 "as" -> "tasks",
                 "pipeline" -> Seq(
                   Aggregates.`match`(
-                    Filters.gte("startTime", since.toISOString)
+                    Filters.and(
+                      Filters.gte("startTime", since.toISOString),
+                      Filters.lt(
+                        "startTime",
+                        to.getOrElse(BsonDateTime(System.currentTimeMillis))
+                          .toISOString
+                      )
+                    )
                   ),
                   Document(
                     "$project" -> Document(

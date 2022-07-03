@@ -28,6 +28,9 @@ given QueryParamDecoder[BsonDateTime] =
 
 object DateTimeMatcher extends QueryParamDecoderMatcher[BsonDateTime]("since")
 
+object OptionalDateTimeMatcher
+    extends OptionalQueryParamDecoderMatcher[BsonDateTime]("since")
+
 object ObjectIdParam {
   def unapply(string: String): Option[ObjectId] =
     ObjectId.from(string).toOption
