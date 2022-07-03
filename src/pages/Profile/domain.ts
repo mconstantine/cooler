@@ -72,13 +72,13 @@ export const ProfileUpdateInput = t.type(
 export type ProfileUpdateInput = t.TypeOf<typeof ProfileUpdateInput>
 
 export const updateProfileRequest = makePutRequest({
-  url: '/profile',
+  url: '/users/me',
   inputCodec: ProfileUpdateInput,
   outputCodec: Profile
 })
 
 export const deleteProfileRequest = makeDeleteRequest({
-  url: '/profile',
+  url: '/users/me',
   inputCodec: t.void,
   outputCodec: Profile
 })
