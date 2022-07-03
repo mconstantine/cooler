@@ -44,6 +44,13 @@ object ProjectRoutes {
         .toResponse
     }
 
+    case GET -> Root / "cashedBalance" :?
+        DateTimeMatcher(since) +&
+        OptionalDateTimeMatcher(to) as context => {
+      given User = context.user
+      Ok(Projects.getCashedBalance(since, to))
+    }
+
     case GET -> Root / ObjectIdParam(id) as context => {
       given Lang = context.lang
       given User = context.user
@@ -66,13 +73,6 @@ object ProjectRoutes {
       given User = context.user
 
       Projects.delete(id).toResponse
-    }
-
-    case GET -> Root / "cashedBalance" :?
-        DateTimeMatcher(since) +&
-        OptionalDateTimeMatcher(to) as context => {
-      given User = context.user
-      Ok(Projects.getCashedBalance(since, to))
     }
   }
 
