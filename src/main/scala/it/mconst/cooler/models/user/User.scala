@@ -192,7 +192,7 @@ object Users {
   def getStats(
       since: BsonDateTime,
       to: Option[BsonDateTime]
-  )(using customer: User)(using Lang): IO[UserStats] =
+  )(using customer: User): IO[UserStats] =
     collection.use(c =>
       c.raw(
         _.aggregateWithCodec[UserStats](

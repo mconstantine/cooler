@@ -10,6 +10,8 @@ import cats.syntax.parallel.*
 import com.osinka.i18n.Lang
 import it.mconst.cooler.models.*
 import it.mconst.cooler.models.client.Clients
+import it.mconst.cooler.models.project.ProjectCashedBalance
+import it.mconst.cooler.models.project.ProjectCashData
 import it.mconst.cooler.models.project.Projects
 import it.mconst.cooler.models.session.Sessions
 import it.mconst.cooler.models.task.Tasks
@@ -56,8 +58,37 @@ class StatsTest extends CatsEffectSuite {
       projects <- {
         given User = adminFixture()
         List(
-          makeTestProject(client._id, name = "Stats test project 1"),
-          makeTestProject(client._id, name = "Stats test project 2")
+          // Two cashed projects, one not cashed, two cashed out of the time range (one in the past, one
+          // in the future)
+          makeTestProject(
+            client._id,
+            name = "Stats test project 1",
+            cashData =
+              Some(ProjectCashData(BsonDateTime(now - 3600000 * 20), 100))
+          ),
+          makeTestProject(
+            client._id,
+            name = "Stats test project 2",
+            cashData =
+              Some(ProjectCashData(BsonDateTime(now - 3600000 * 10), 100))
+          ),
+          makeTestProject(
+            client._id,
+            name = "Stats test project 3",
+            cashData = none[ProjectCashData]
+          ),
+          makeTestProject(
+            client._id,
+            name = "Stats test project 4",
+            cashData =
+              Some(ProjectCashData(BsonDateTime(now - 3600000 * 100), 100))
+          ),
+          makeTestProject(
+            client._id,
+            name = "Stats test project 5",
+            cashData =
+              Some(ProjectCashData(BsonDateTime(now + 3600000 * 5), 100))
+          )
         )
           .map(Projects.create(_).orFail)
           .parSequence
@@ -166,6 +197,23 @@ class StatsTest extends CatsEffectSuite {
             NonNegativeFloat.unsafe(200f)
           )
         )
+    }
+  }
+
+  test("should get the balance of the projects of a user (empty)") {
+    given User = adminFixture()
+    Projects
+      .getCashedBalance(BsonDateTime(now - 3600000 * 100), none[BsonDateTime])
+      .assertEquals(ProjectCashedBalance(NonNegativeFloat.unsafe(0f)))
+  }
+
+  test("should get the balance of the projects of a user (with data)") {
+    testData.use { _ =>
+      given User = adminFixture()
+
+      Projects
+        .getCashedBalance(BsonDateTime(now - 3600000 * 50), none[BsonDateTime])
+        .assertEquals(ProjectCashedBalance(NonNegativeFloat.unsafe(200f)))
     }
   }
 }

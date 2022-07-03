@@ -67,6 +67,13 @@ object ProjectRoutes {
 
       Projects.delete(id).toResponse
     }
+
+    case GET -> Root / "cashedBalance" :?
+        DateTimeMatcher(since) +&
+        OptionalDateTimeMatcher(to) as context => {
+      given User = context.user
+      Ok(Projects.getCashedBalance(since, to))
+    }
   }
 
   def apply() = UserMiddleware(routes)

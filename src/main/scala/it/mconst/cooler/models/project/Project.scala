@@ -7,6 +7,7 @@ import cats.effect.IO
 import cats.syntax.all.none
 import cats.syntax.apply.*
 import com.mongodb.client.model.Aggregates
+import com.mongodb.client.model.BsonField
 import com.mongodb.client.model.Filters
 import com.osinka.i18n.Lang
 import io.circe.Decoder
@@ -37,6 +38,11 @@ import org.http4s.EntityEncoder
 import org.http4s.Status
 
 final case class ProjectCashData(at: BsonDateTime, amount: BigDecimal)
+final case class ProjectCashedBalance(balance: NonNegativeFloat)
+
+object ProjectCashedBalance {
+  def empty = ProjectCashedBalance(NonNegativeFloat.unsafe(0f))
+}
 
 sealed abstract trait Project(
     _id: ObjectId,
@@ -212,6 +218,41 @@ object Projects {
       project <- findById(_id)
       result <- collection.use(_.delete(project._id))
     yield result
+
+  def getCashedBalance(since: BsonDateTime, to: Option[BsonDateTime])(using
+      customer: User
+  ): IO[ProjectCashedBalance] = {
+    collection
+      .use(
+        _.raw(
+          _.aggregateWithCodec[ProjectCashedBalance](
+            Seq(
+              Aggregates.lookup("clients", "client", "_id", "client"),
+              Aggregates.unwind("$client"),
+              Aggregates.`match`(
+                Filters.and(
+                  Filters.eq("client.user", customer._id),
+                  Filters.and(
+                    Filters.gte("cashData.at", since.toISOString),
+                    Filters.lt(
+                      "cashData.at",
+                      to.getOrElse(BsonDateTime(System.currentTimeMillis))
+                        .toISOString
+                    )
+                  )
+                )
+              ),
+              Aggregates.group(
+                "$client.user",
+                BsonField("balance", Document("$sum" -> "$cashData.amount"))
+              ),
+              Aggregates.project(Document("_id" -> 0))
+            )
+          ).first
+            .map(_.getOrElse(ProjectCashedBalance.empty))
+        )
+      )
+  }
 }
 
 given Encoder[Project] with Decoder[Project] with {
@@ -225,5 +266,10 @@ given Encoder[Project] with Decoder[Project] with {
 
 given EntityEncoder[IO, Project] = jsonEncoderOf[IO, Project]
 given EntityDecoder[IO, Project] = jsonOf[IO, Project]
+
+given EntityEncoder[IO, ProjectCashedBalance] =
+  jsonEncoderOf[IO, ProjectCashedBalance]
+
+given EntityDecoder[IO, ProjectCashedBalance] = jsonOf[IO, ProjectCashedBalance]
 
 given EntityEncoder[IO, Cursor[Project]] = jsonEncoderOf[IO, Cursor[Project]]

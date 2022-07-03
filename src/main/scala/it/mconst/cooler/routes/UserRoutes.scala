@@ -46,10 +46,8 @@ object UserRoutes {
     case GET -> Root / "stats" :?
         DateTimeMatcher(since) +&
         OptionalDateTimeMatcher(to) as context => {
-      given Lang = context.lang
       given User = context.user
-
-      Ok.apply(Users.getStats(since, to))
+      Ok(Users.getStats(since, to))
     }
   }
 
