@@ -1,5 +1,5 @@
 import { TaxesProvider } from '../../contexts/TaxesContext'
-// import { CashedBalance } from './CashedBalance'
+import { CashedBalance } from './CashedBalance'
 // import { LatestProjects } from './LatestProjects'
 import { ProfileData } from './ProfileData'
 import { ProfileStats } from './ProfileStats'
@@ -10,7 +10,7 @@ export default function ProfilePage() {
     <TaxesProvider>
       <ProfileData />
       <ProfileStats />
-      {/* <CashedBalance /> */}
+      <CashedBalance />
       {/* <TasksDueToday /> */}
       {/* <LatestProjects /> */}
     </TaxesProvider>
