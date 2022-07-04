@@ -189,6 +189,21 @@ object Projects {
       )(query)
     )
 
+  def getLatest(query: CursorQuery)(using
+      customer: User
+  )(using Lang): EitherT[IO, Error, Cursor[Project]] = collection.use(
+    _.find(
+      "updatedAt",
+      Seq(
+        Aggregates
+          .lookup(Clients.collection.name, "client", "_id", "tmpClient"),
+        Aggregates.unwind("$tmpClient"),
+        Aggregates.`match`(Filters.eq("tmpClient.user", customer._id)),
+        Aggregates.project(Document("tmpClient" -> false))
+      )
+    )(query)
+  )
+
   def update(_id: ObjectId, data: Project.InputData)(using customer: User)(using
       Lang
   ): EitherT[IO, Error, Project] =

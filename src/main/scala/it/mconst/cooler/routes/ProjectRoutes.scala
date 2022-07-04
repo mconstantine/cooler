@@ -44,6 +44,21 @@ object ProjectRoutes {
         .toResponse
     }
 
+    case GET -> Root / "latest" :?
+        QueryMatcher(query) +&
+        FirstMatcher(first) +&
+        AfterMatcher(after) +&
+        LastMatcher(last) +&
+        BeforeMatcher(before) as context => {
+      given Lang = context.lang
+      given User = context.user
+
+      EitherT
+        .fromEither[IO](CursorQuery(query, first, after, last, before))
+        .flatMap(Projects.getLatest(_))
+        .toResponse
+    }
+
     case GET -> Root / "cashedBalance" :?
         DateTimeMatcher(since) +&
         OptionalDateTimeMatcher(to) as context => {
