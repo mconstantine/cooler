@@ -14,8 +14,8 @@ import { getProjectsRequest, ProjectForList } from './domain'
 
 export default function ProjectsList() {
   const [input, setInput] = useState<ConnectionQueryInput>({
+    query: option.none,
     first: unsafePositiveInteger(20),
-    name: option.none,
     after: option.none
   })
 

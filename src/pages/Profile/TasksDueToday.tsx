@@ -19,7 +19,7 @@ export function TasksDueToday() {
     const now = new Date()
 
     return {
-      from: new Date(now.getFullYear(), now.getMonth(), now.getDate()),
+      since: new Date(now.getFullYear(), now.getMonth(), now.getDate()),
       to: new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1)
     }
   }, [])

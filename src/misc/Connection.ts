@@ -65,12 +65,26 @@ export interface Connection<T> {
   }
 }
 
-export const ConnectionQueryInput = t.type(
+const ConnectionQueryInputAsc = t.type(
   {
-    name: optionFromNullable(NonEmptyString),
+    query: optionFromNullable(NonEmptyString),
     first: PositiveInteger,
     after: optionFromNullable(Cursor)
   },
+  'ConnectionQueryInputAsc'
+)
+
+const ConnectionQueryInputDesc = t.type(
+  {
+    query: optionFromNullable(NonEmptyString),
+    last: PositiveInteger,
+    before: optionFromNullable(Cursor)
+  },
+  'ConnectionQueryInputDesc'
+)
+
+export const ConnectionQueryInput = t.union(
+  [ConnectionQueryInputAsc, ConnectionQueryInputDesc],
   'ConnectionQueryInput'
 )
 export type ConnectionQueryInput = t.TypeOf<typeof ConnectionQueryInput>

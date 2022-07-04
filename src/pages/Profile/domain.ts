@@ -85,7 +85,7 @@ export const deleteProfileRequest = makeDeleteRequest({
 
 const TasksDueTodayInput = t.type(
   {
-    from: DateFromISOString,
+    since: DateFromISOString,
     to: DateFromISOString
   },
   'TasksDueTodayInput'

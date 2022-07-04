@@ -81,7 +81,7 @@ export function ProjectData(props: Props) {
   > = query =>
     pipe(
       findClientsCommand({
-        name: pipe(query, NonEmptyString.decode, option.fromEither),
+        query: pipe(query, NonEmptyString.decode, option.fromEither),
         first: unsafePositiveInteger(10),
         after: option.none
       }),

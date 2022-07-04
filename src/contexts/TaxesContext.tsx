@@ -159,7 +159,7 @@ export function TaxesProvider(props: PropsWithChildren<{}>) {
 
   useEffect(() => {
     fetchTaxes({
-      name: option.none,
+      query: option.none,
       first: unsafePositiveInteger(1000),
       after: option.none
     })()
