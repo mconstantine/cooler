@@ -278,6 +278,58 @@ object Tasks {
       )(query)
     )
 
+  def getDue(since: BsonDateTime, to: Option[BsonDateTime])(using
+      customer: User
+  ): IO[Iterable[Task]] =
+    collection.use(
+      _.raw(
+        _.aggregateWithCodec[Task](
+          Seq(
+            Aggregates.`match`(
+              Filters.and(
+                Filters.gte("startTime", since.toISOString),
+                Filters.lt(
+                  "startTime",
+                  to.getOrElse(BsonDateTime(System.currentTimeMillis))
+                    .toISOString
+                )
+              )
+            ),
+            Document(
+              "$lookup" -> Document(
+                "from" -> "projects",
+                "localField" -> "project",
+                "foreignField" -> "_id",
+                "as" -> "project",
+                "pipeline" -> Seq(
+                  Document(
+                    "$lookup" -> Document(
+                      "from" -> "clients",
+                      "localField" -> "client",
+                      "foreignField" -> "_id",
+                      "as" -> "client"
+                    )
+                  ),
+                  Document(
+                    "$match" -> Document(
+                      "client.user" -> customer._id
+                    )
+                  )
+                )
+              )
+            ),
+            Document(
+              "$match" -> Document(
+                "project" -> Document("$not" -> Document("$size", 0))
+              )
+            ),
+            Aggregates.unwind("$project"),
+            Aggregates.addFields(Field("project", "$project._id"))
+          )
+        ).all
+      )
+    )
+
   def update(_id: ObjectId, data: Task.InputData)(using customer: User)(using
       Lang
   ): EitherT[IO, Error, Task] =
@@ -348,3 +400,4 @@ given EntityEncoder[IO, Task] = jsonEncoderOf[IO, Task]
 given EntityDecoder[IO, Task] = jsonOf[IO, Task]
 
 given EntityEncoder[IO, Cursor[Task]] = jsonEncoderOf[IO, Cursor[Task]]
+given EntityEncoder[IO, Iterable[Task]] = jsonEncoderOf[IO, Iterable[Task]]

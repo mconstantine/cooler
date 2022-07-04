@@ -7,6 +7,7 @@ import munit.CatsEffectSuite
 import cats.effect.IO
 import cats.effect.kernel.Resource
 import cats.syntax.all.none
+import cats.syntax.traverse.*
 import com.osinka.i18n.Lang
 import it.mconst.cooler.models.*
 import it.mconst.cooler.models.client.Client
@@ -20,6 +21,7 @@ import it.mconst.cooler.utils.__
 import it.mconst.cooler.utils.Error
 import java.time.format.DateTimeFormatter
 import java.time.LocalDateTime
+import java.time.ZoneOffset
 import mongo4cats.collection.operations.Filter
 import org.bson.BsonDateTime
 import org.http4s.Status
@@ -213,6 +215,120 @@ class TasksCollectionTest extends CatsEffectSuite {
           _ = assertEquals(result, List("Adam"))
         yield ()
       }
+    }
+  }
+
+  test("should get tasks due today") {
+    val currentUserProject = testDataFixture().project
+    val now = LocalDateTime.now
+
+    val todayAtMidnight = LocalDateTime.of(
+      now.getYear(),
+      now.getMonth(),
+      now.getDayOfMonth(),
+      0,
+      0,
+      0
+    )
+
+    val todayAt9AM = LocalDateTime.of(
+      now.getYear(),
+      now.getMonth(),
+      now.getDayOfMonth(),
+      9,
+      0,
+      0
+    )
+
+    val todayAt10AM = LocalDateTime.of(
+      now.getYear(),
+      now.getMonth(),
+      now.getDayOfMonth(),
+      10,
+      0,
+      0
+    )
+
+    val todayAt11AM = LocalDateTime.of(
+      now.getYear(),
+      now.getMonth(),
+      now.getDayOfMonth(),
+      11,
+      0,
+      0
+    )
+
+    val yesterdayAt9AM = todayAt9AM.minusDays(1)
+    val tomorrowAtMidnight = todayAtMidnight.plusDays(1)
+    val tomorrowAt9AM = todayAt9AM.plusDays(1)
+
+    otherUser.use { otherUser =>
+      for
+        otherUserClient <- {
+          given User = otherUser
+          Clients.create(makeTestBusinessClient()).orFail
+        }
+        otherUserProject <- {
+          given User = otherUser
+          Projects.create(makeTestProject(otherUserClient._id)).orFail
+        }
+        // Create three tasks today, one being of another user, one task yesterday, one task tomorrow
+        tasksData = List(
+          makeTestTask(
+            currentUserProject._id,
+            startTime = BsonDateTime(
+              todayAt9AM.toEpochSecond(ZoneOffset.UTC) * 1000
+            ).toISOString
+          ),
+          makeTestTask(
+            currentUserProject._id,
+            startTime = BsonDateTime(
+              todayAt10AM.toEpochSecond(ZoneOffset.UTC) * 1000
+            ).toISOString
+          ),
+          makeTestTask(
+            otherUserProject._id,
+            startTime = BsonDateTime(
+              todayAt11AM.toEpochSecond(ZoneOffset.UTC) * 1000
+            ).toISOString
+          ),
+          makeTestTask(
+            currentUserProject._id,
+            startTime = BsonDateTime(
+              yesterdayAt9AM.toEpochSecond(ZoneOffset.UTC) * 1000
+            ).toISOString
+          ),
+          makeTestTask(
+            currentUserProject._id,
+            startTime = BsonDateTime(
+              tomorrowAt9AM.toEpochSecond(ZoneOffset.UTC) * 1000
+            ).toISOString
+          )
+        )
+        _ <- Tasks.collection.use(_.raw(_.deleteMany(Filter.empty)))
+        currentUserTasks <- List(
+          tasksData(0),
+          tasksData(1),
+          tasksData(3),
+          tasksData(4)
+        ).traverse(Tasks.create(_)).orFail
+        _ <- {
+          given User = otherUser
+          Tasks.create(tasksData(2)).orFail
+        }
+        result <- Tasks
+          .getDue(
+            BsonDateTime(todayAtMidnight.toEpochSecond(ZoneOffset.UTC) * 1000),
+            Some(
+              BsonDateTime(
+                tomorrowAtMidnight.toEpochSecond(ZoneOffset.UTC) * 1000
+              )
+            )
+          )
+          .map(List.from(_))
+          .assertEquals(currentUserTasks.slice(0, 2))
+        _ <- Tasks.collection.use(_.raw(_.deleteMany(Filter.empty)))
+      yield ()
     }
   }
 

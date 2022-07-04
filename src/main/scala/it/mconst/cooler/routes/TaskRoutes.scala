@@ -44,6 +44,13 @@ object TaskRoutes {
         .toResponse
     }
 
+    case GET -> Root / "due" :?
+        DateTimeMatcher(since) +&
+        OptionalDateTimeMatcher(to) as context => {
+      given User = context.user
+      Ok(Tasks.getDue(since, to))
+    }
+
     case GET -> Root / ObjectIdParam(id) as context => {
       given Lang = context.lang
       given User = context.user
