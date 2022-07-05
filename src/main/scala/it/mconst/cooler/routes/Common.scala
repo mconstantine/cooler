@@ -29,7 +29,7 @@ given QueryParamDecoder[BsonDateTime] =
 object DateTimeMatcher extends QueryParamDecoderMatcher[BsonDateTime]("since")
 
 object OptionalDateTimeMatcher
-    extends OptionalQueryParamDecoderMatcher[BsonDateTime]("since")
+    extends OptionalQueryParamDecoderMatcher[BsonDateTime]("to")
 
 object ObjectIdParam {
   def unapply(string: String): Option[ObjectId] =
