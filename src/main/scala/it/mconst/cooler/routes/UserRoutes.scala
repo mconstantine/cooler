@@ -5,7 +5,6 @@ import com.osinka.i18n.Lang
 import it.mconst.cooler.middlewares.UserMiddleware
 import it.mconst.cooler.middlewares.UserMiddleware.UserContext
 import it.mconst.cooler.models.*
-import it.mconst.cooler.models.user.given
 import it.mconst.cooler.models.user.User
 import it.mconst.cooler.models.user.Users
 import it.mconst.cooler.utils.given

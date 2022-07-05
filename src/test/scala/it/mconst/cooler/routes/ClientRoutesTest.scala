@@ -12,7 +12,6 @@ import it.mconst.cooler.middlewares.UserMiddleware
 import it.mconst.cooler.models.*
 import it.mconst.cooler.models.client.Client
 import it.mconst.cooler.models.client.Clients
-import it.mconst.cooler.models.client.given
 import it.mconst.cooler.models.user.User
 import it.mconst.cooler.models.user.Users
 import it.mconst.cooler.utils.__

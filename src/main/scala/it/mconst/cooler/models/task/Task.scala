@@ -17,10 +17,8 @@ import io.circe.Json
 import io.circe.syntax.*
 import it.mconst.cooler.models.*
 import it.mconst.cooler.models.client.Client
-import it.mconst.cooler.models.client.given
 import it.mconst.cooler.models.project.DbProject
 import it.mconst.cooler.models.project.Projects
-import it.mconst.cooler.models.project.ProjectWithClient
 import it.mconst.cooler.models.session.Sessions
 import it.mconst.cooler.models.user.User
 import it.mconst.cooler.utils.__
@@ -70,6 +68,14 @@ final case class DbTask(
       updatedAt: BsonDateTime
     )
 
+object DbTask {
+  given EntityEncoder[IO, DbTask] = jsonEncoderOf[IO, DbTask]
+  given EntityEncoder[IO, Cursor[DbTask]] = jsonEncoderOf[IO, Cursor[DbTask]]
+
+  given EntityEncoder[IO, Iterable[DbTask]] =
+    jsonEncoderOf[IO, Iterable[DbTask]]
+}
+
 final case class ProjectLabel(_id: ObjectId, name: NonEmptyString)
 
 final case class TaskWithProjectLabel(
@@ -113,6 +119,10 @@ final case class TaskWithProject(
       createdAt: BsonDateTime,
       updatedAt: BsonDateTime
     )
+
+object TaskWithProject {
+  given EntityEncoder[IO, TaskWithProject] = jsonEncoderOf[IO, TaskWithProject]
+}
 
 object Task {
   final case class InputData(
@@ -174,7 +184,7 @@ object Task {
 }
 
 object Tasks {
-  val collection = Collection[IO, Task.InputData, Task]("tasks")
+  val collection = Collection[IO, Task.InputData, DbTask]("tasks")
 
   private def findClient(projectId: ObjectId)(using
       customer: User
@@ -199,7 +209,7 @@ object Tasks {
 
   def create(
       data: Task.InputData
-  )(using customer: User)(using Lang): EitherT[IO, Error, Task] =
+  )(using customer: User)(using Lang): EitherT[IO, Error, DbTask] =
     collection.use { c =>
       for
         data <- EitherT.fromEither[IO](Task.fromInputData(data))
@@ -209,11 +219,7 @@ object Tasks {
         task <- c.create(data)
         _ <- Projects.collection.use(
           _.update(
-            task match
-              case task: DbTask               => task.project
-              case task: TaskWithProject      => task.project._id
-              case task: TaskWithProjectLabel => task.project._id
-            ,
+            task.project,
             Projects.collection.Update
               .`with`("updatedAt" -> BsonDateTime(System.currentTimeMillis))
               .build
@@ -224,7 +230,7 @@ object Tasks {
 
   def findById(
       _id: ObjectId
-  )(using customer: User)(using Lang): EitherT[IO, Error, Task] =
+  )(using customer: User)(using Lang): EitherT[IO, Error, TaskWithProject] =
     EitherT.fromOptionF(
       collection
         .use(
@@ -263,9 +269,9 @@ object Tasks {
 
   def find(query: CursorQuery)(using customer: User)(using
       Lang
-  ): EitherT[IO, Error, Cursor[Task]] =
+  ): EitherT[IO, Error, Cursor[DbTask]] =
     collection.use(
-      _.find(
+      _.find[DbTask](
         "name",
         Seq(
           Document(
@@ -304,10 +310,10 @@ object Tasks {
 
   def getDue(since: BsonDateTime, to: Option[BsonDateTime])(using
       customer: User
-  ): IO[Iterable[Task]] =
+  ): IO[Iterable[DbTask]] =
     collection.use(
       _.raw(
-        _.aggregateWithCodec[Task](
+        _.aggregateWithCodec[DbTask](
           Seq(
             Aggregates.`match`(
               Filters.and(
@@ -364,20 +370,11 @@ object Tasks {
 
   def update(_id: ObjectId, data: Task.InputData)(using customer: User)(using
       Lang
-  ): EitherT[IO, Error, Task] =
+  ): EitherT[IO, Error, DbTask] =
     for
       task <- findById(_id)
       data <- EitherT.fromEither[IO](Task.validateInputData(data).toResult)
-      projectId <- Projects
-        .findById(data.project)
-        .flatMap(_ match
-          case _: DbProject =>
-            EitherT.leftT[IO, ObjectId](
-              Error(Status.InternalServerError, __.ErrorUnknown)
-            )
-          case project: ProjectWithClient =>
-            EitherT.rightT[IO, Error](project._id)
-        )
+      projectId <- Projects.findById(data.project).map(_._id)
       result <- collection
         .use(
           _.update(
@@ -407,7 +404,7 @@ object Tasks {
 
   def delete(_id: ObjectId)(using customer: User)(using
       Lang
-  ): EitherT[IO, Error, Task] =
+  ): EitherT[IO, Error, DbTask] =
     for
       task <- findById(_id)
       result <- collection.use(_.delete(task._id))
@@ -418,21 +415,3 @@ object Tasks {
       )
     yield result
 }
-
-given Encoder[Task] with Decoder[Task] with {
-  override def apply(task: Task): Json = task match
-    case task: DbTask               => task.asJson
-    case task: TaskWithProject      => task.asJson
-    case task: TaskWithProjectLabel => task.asJson
-
-  override def apply(c: HCursor): Result[Task] =
-    c.as[DbTask]
-      .orElse[DecodingFailure, Task](c.as[TaskWithProject])
-      .orElse[DecodingFailure, Task](c.as[TaskWithProjectLabel])
-}
-
-given EntityEncoder[IO, Task] = jsonEncoderOf[IO, Task]
-given EntityDecoder[IO, Task] = jsonOf[IO, Task]
-
-given EntityEncoder[IO, Cursor[Task]] = jsonEncoderOf[IO, Cursor[Task]]
-given EntityEncoder[IO, Iterable[Task]] = jsonEncoderOf[IO, Iterable[Task]]

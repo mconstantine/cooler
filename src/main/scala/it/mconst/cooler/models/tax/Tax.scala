@@ -54,6 +54,9 @@ final case class Tax(
 ) extends DbDocument
 
 object Tax {
+  given EntityEncoder[IO, Tax] = jsonEncoderOf[IO, Tax]
+  given EntityEncoder[IO, Cursor[Tax]] = jsonEncoderOf[IO, Cursor[Tax]]
+
   final case class InputData(
       label: String,
       value: BigDecimal
@@ -107,7 +110,7 @@ object Taxes {
       _id: ObjectId
   )(using customer: User)(using Lang): EitherT[IO, Error, Tax] =
     collection.use(
-      _.findOne(
+      _.findOne[Tax](
         Filter.eq("_id", _id).and(Filter.eq("user", customer._id))
       )
         .leftMap(_ => Error(Status.NotFound, __.ErrorTaxNotFound))
@@ -116,9 +119,10 @@ object Taxes {
   def find(query: CursorQuery)(using customer: User)(using
       Lang
   ): EitherT[IO, Error, Cursor[Tax]] = collection.use(
-    _.find("label", Seq(Aggregates.`match`(Filters.eq("user", customer._id))))(
-      query
-    )
+    _.find[Tax](
+      "label",
+      Seq(Aggregates.`match`(Filters.eq("user", customer._id)))
+    )(query)
   )
 
   def update(_id: ObjectId, data: Tax.InputData)(using customer: User)(using
@@ -146,8 +150,3 @@ object Taxes {
       result <- collection.use(_.delete(tax._id))
     yield result
 }
-
-given EntityEncoder[IO, Tax] = jsonEncoderOf[IO, Tax]
-given EntityDecoder[IO, Tax] = jsonOf[IO, Tax]
-
-given EntityEncoder[IO, Cursor[Tax]] = jsonEncoderOf[IO, Cursor[Tax]]

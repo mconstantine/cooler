@@ -3,21 +3,17 @@ package it.mconst.cooler.routes
 import cats.data.EitherT
 import cats.effect.IO
 import com.osinka.i18n.Lang
-import io.circe.generic.auto.*
 import it.mconst.cooler.middlewares.UserMiddleware
 import it.mconst.cooler.middlewares.UserMiddleware.UserContext
 import it.mconst.cooler.models.*
 import it.mconst.cooler.models.client.Client
 import it.mconst.cooler.models.client.Clients
-import it.mconst.cooler.models.client.given
 import it.mconst.cooler.models.user.User
 import it.mconst.cooler.utils.__
 import it.mconst.cooler.utils.Error
 import it.mconst.cooler.utils.given
 import org.http4s.AuthedRoutes
-import org.http4s.circe.*
 import org.http4s.dsl.io.*
-import org.http4s.EntityEncoder
 
 object ClientRoutes {
   val routes: AuthedRoutes[UserContext, IO] = AuthedRoutes.of {

@@ -10,10 +10,13 @@ import cats.syntax.*
 import cats.syntax.all.none
 import com.github.t3hnar.bcrypt.*
 import com.osinka.i18n.Lang
+import io.circe.generic.auto.*
 import it.mconst.cooler.models.Email
 import it.mconst.cooler.utils.__
 import it.mconst.cooler.utils.Error
+import it.mconst.cooler.utils.given
 import mongo4cats.bson.ObjectId
+import mongo4cats.circe.*
 import mongo4cats.collection.operations.Filter
 import org.bson.BsonDateTime
 import org.http4s.Status
@@ -417,7 +420,7 @@ class UsersCollectionTest extends CatsEffectSuite {
         _ <- {
           given User = user
           Users.collection
-            .use(_.findOne(Filter.eq("_id", user._id)))
+            .use(_.findOne[User](Filter.eq("_id", user._id)))
             .assertEquals(
               Left(Error(Status.NotFound, __.ErrorDocumentNotFound))
             )

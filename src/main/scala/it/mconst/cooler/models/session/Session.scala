@@ -12,14 +12,9 @@ import com.osinka.i18n.Lang
 import io.circe.generic.auto.*
 import it.mconst.cooler.models.*
 import it.mconst.cooler.models.client.Client
-import it.mconst.cooler.models.client.given
 import it.mconst.cooler.models.project.Projects
 import it.mconst.cooler.models.project.ProjectWithClient
-import it.mconst.cooler.models.task.DbTask
 import it.mconst.cooler.models.task.Tasks
-import it.mconst.cooler.models.task.Tasks
-import it.mconst.cooler.models.task.TaskWithProject
-import it.mconst.cooler.models.task.TaskWithProjectLabel
 import it.mconst.cooler.models.user.User
 import it.mconst.cooler.utils.__
 import it.mconst.cooler.utils.Collection
@@ -46,6 +41,9 @@ final case class Session(
 ) extends DbDocument
 
 object Session {
+  given EntityEncoder[IO, Session] = jsonEncoderOf[IO, Session]
+  given EntityEncoder[IO, Cursor[Session]] = jsonEncoderOf[IO, Cursor[Session]]
+
   final case class InputData(
       task: String,
       startTime: Option[String],
@@ -206,7 +204,7 @@ object Sessions {
       Lang
   ): EitherT[IO, Error, Session] =
     for
-      session <- collection.use(_.findOne(Filter.eq("_id", _id)))
+      session <- collection.use(_.findOne[Session](Filter.eq("_id", _id)))
       project <- findProject(session.task).leftMap(_ =>
         Error(Status.NotFound, __.ErrorSessionNotFound)
       )
@@ -242,7 +240,7 @@ object Sessions {
       using Lang
   ): EitherT[IO, Error, Cursor[Session]] =
     collection.use(
-      _.find(
+      _.find[Session](
         "startTime",
         Seq(
           Aggregates.`match`(Filters.eq("task", task)),
@@ -326,11 +324,7 @@ object Sessions {
       )
       _ <- Projects.collection.use(
         _.update(
-          task match
-            case task: TaskWithProject      => task.project._id
-            case task: DbTask               => task.project
-            case task: TaskWithProjectLabel => task.project._id
-          ,
+          task.project._id,
           Projects.collection.Update
             .`with`("updatedAt" -> BsonDateTime(System.currentTimeMillis))
             .build
@@ -343,8 +337,3 @@ object Sessions {
   ): EitherT[IO, Error, Session] =
     findById(_id).flatMap(session => collection.use(_.delete(session._id)))
 }
-
-given EntityEncoder[IO, Session] = jsonEncoderOf[IO, Session]
-given EntityDecoder[IO, Session] = jsonOf[IO, Session]
-
-given EntityEncoder[IO, Cursor[Session]] = jsonEncoderOf[IO, Cursor[Session]]

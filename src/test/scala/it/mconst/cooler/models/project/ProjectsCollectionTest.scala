@@ -69,7 +69,7 @@ class ProjectsCollectionTest extends CatsEffectSuite {
           Some(ProjectCashData(BsonDateTime(System.currentTimeMillis), 1000.0))
       )
 
-    Projects.create(data).orFail.map(_.asDbProject.name).assertEquals(data.name)
+    Projects.create(data).orFail.map(_.name).assertEquals(data.name)
   }
 
   def otherUser = Resource.make {
@@ -113,10 +113,8 @@ class ProjectsCollectionTest extends CatsEffectSuite {
     for
       project <- Projects.create(data).orFail
       result <- Projects.findById(project._id).orFail
-      _ = assert(result.asProjectWithClient.name == data.name)
-      _ = assert(
-        result.asProjectWithClient.client._id == testDataFixture().client._id
-      )
+      _ = assert(result.name == data.name)
+      _ = assert(result.client._id == testDataFixture().client._id)
     yield ()
   }
 
@@ -159,7 +157,7 @@ class ProjectsCollectionTest extends CatsEffectSuite {
         .map(Projects.create(_).orFail)
         .parSequence
         .map(
-          _.sortWith(_.asDbProject.name.toString < _.asDbProject.name.toString)
+          _.sortWith(_.name.toString < _.name.toString)
         )
     })
   }(_ => Projects.collection.use(_.raw(_.deleteMany(Filter.empty)).void))
@@ -203,7 +201,7 @@ class ProjectsCollectionTest extends CatsEffectSuite {
           result <- Projects
             .find(CursorQueryAsc(query = Some("a")))
             .orFail
-            .map(_.edges.map(_.node.asDbProject.name.toString))
+            .map(_.edges.map(_.node.name.toString))
           _ = assertEquals(result, List("Adam"))
         yield ()
       }
@@ -227,7 +225,7 @@ class ProjectsCollectionTest extends CatsEffectSuite {
         Some(ProjectCashData(BsonDateTime(System.currentTimeMillis), 42.0))
       )
       _ <- IO.delay(Thread.sleep(500))
-      updated <- Projects.update(project._id, update).orFail.map(_.asDbProject)
+      updated <- Projects.update(project._id, update).orFail
       _ = assertEquals(updated.client.toString, update.client)
       _ = assertEquals(updated.name.toString, update.name)
       _ = assertEquals(updated.description.map(_.toString), update.description)
@@ -247,7 +245,7 @@ class ProjectsCollectionTest extends CatsEffectSuite {
         none[String],
         none[ProjectCashData]
       )
-      updated <- Projects.update(project._id, update).orFail.map(_.asDbProject)
+      updated <- Projects.update(project._id, update).orFail
       _ = assertEquals(updated.description.map(_.toString), none[String])
       _ = assertEquals(updated.cashData, none[ProjectCashData])
     yield ()

@@ -9,22 +9,27 @@ import cats.effect.kernel.Resource
 import cats.syntax.all.none
 import com.github.t3hnar.bcrypt.*
 import com.osinka.i18n.Lang
-import it.mconst.cooler.models.user.given
+import io.circe.generic.auto.*
 import it.mconst.cooler.models.user.JWT
 import it.mconst.cooler.models.user.User
 import it.mconst.cooler.models.user.Users
 import it.mconst.cooler.utils.__
 import it.mconst.cooler.utils.Error
 import it.mconst.cooler.utils.given
+import mongo4cats.circe.*
+import org.http4s.circe.*
 import org.http4s.client.Client
 import org.http4s.client.dsl.io.*
 import org.http4s.dsl.io.*
+import org.http4s.EntityDecoder
 import org.http4s.implicits.*
 import org.http4s.Request
 
 class UserRoutesTest extends CatsEffectSuite {
   given Lang = Lang.Default
   given Assertions = this
+
+  given EntityDecoder[IO, User] = jsonOf[IO, User]
 
   val app = UserRoutes().orNotFound
   val client: Client[IO] = Client.fromHttpApp(app)

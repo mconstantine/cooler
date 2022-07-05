@@ -8,6 +8,7 @@ import cats.effect.IO
 import cats.effect.kernel.Resource
 import cats.syntax.all.none
 import com.osinka.i18n.Lang
+import io.circe.generic.auto.*
 import it.mconst.cooler.models.*
 import it.mconst.cooler.models.client.Client
 import it.mconst.cooler.models.client.Clients
@@ -19,6 +20,8 @@ import it.mconst.cooler.models.user.User
 import it.mconst.cooler.models.user.Users
 import it.mconst.cooler.utils.__
 import it.mconst.cooler.utils.Error
+import it.mconst.cooler.utils.given
+import mongo4cats.circe.*
 import mongo4cats.collection.operations.Filter
 import org.bson.BsonDateTime
 import org.http4s.Status
@@ -278,7 +281,7 @@ class SessionsCollectionTest extends CatsEffectSuite {
       makeTestTask(project._id, name = "New session task")
 
     for
-      newTask <- Tasks.create(newTaskData).orFail.map(_.asDbTask)
+      newTask <- Tasks.create(newTaskData).orFail
       session <- Sessions.start(data).orFail
       update = Session.InputData(
         newTask._id.toHexString,

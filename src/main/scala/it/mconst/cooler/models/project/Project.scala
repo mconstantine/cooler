@@ -22,7 +22,6 @@ import io.circe.syntax.*
 import it.mconst.cooler.models.*
 import it.mconst.cooler.models.client.Client
 import it.mconst.cooler.models.client.Clients
-import it.mconst.cooler.models.client.given
 import it.mconst.cooler.models.session.Session
 import it.mconst.cooler.models.session.Sessions
 import it.mconst.cooler.models.task.Tasks
@@ -46,6 +45,9 @@ final case class ProjectCashData(at: BsonDateTime, amount: BigDecimal)
 final case class ProjectCashedBalance(balance: NonNegativeFloat)
 
 object ProjectCashedBalance {
+  given EntityEncoder[IO, ProjectCashedBalance] =
+    jsonEncoderOf[IO, ProjectCashedBalance]
+
   def empty = ProjectCashedBalance(NonNegativeFloat.unsafe(0f))
 }
 
@@ -57,6 +59,8 @@ sealed abstract trait Project(
     createdAt: BsonDateTime,
     updatedAt: BsonDateTime
 ) extends DbDocument {}
+
+final case class ClientLabel(_id: ObjectId, name: NonEmptyString)
 
 final case class DbProject(
     _id: ObjectId,
@@ -75,6 +79,34 @@ final case class DbProject(
       updatedAt
     )
 
+object DbProject {
+  given EntityEncoder[IO, DbProject] = jsonEncoderOf[IO, DbProject]
+  given EntityEncoder[IO, Cursor[DbProject]] =
+    jsonEncoderOf[IO, Cursor[DbProject]]
+}
+
+final case class ProjectWithClientLabel(
+    _id: ObjectId,
+    name: NonEmptyString,
+    description: Option[NonEmptyString],
+    cashData: Option[ProjectCashData],
+    createdAt: BsonDateTime,
+    updatedAt: BsonDateTime,
+    client: ClientLabel
+) extends Project(
+      _id,
+      name,
+      description,
+      cashData,
+      createdAt,
+      updatedAt
+    )
+
+object ProjectWithClientLabel {
+  given EntityEncoder[IO, Cursor[ProjectWithClientLabel]] =
+    jsonEncoderOf[IO, Cursor[ProjectWithClientLabel]]
+}
+
 final case class ProjectWithClient(
     _id: ObjectId,
     name: NonEmptyString,
@@ -91,6 +123,11 @@ final case class ProjectWithClient(
       createdAt,
       updatedAt
     )
+
+object ProjectWithClient {
+  given EntityEncoder[IO, ProjectWithClient] =
+    jsonEncoderOf[IO, ProjectWithClient]
+}
 
 object Project {
   final case class InputData(
@@ -136,11 +173,11 @@ object Project {
 }
 
 object Projects {
-  val collection = Collection[IO, Project.InputData, Project]("projects")
+  val collection = Collection[IO, Project.InputData, DbProject]("projects")
 
   def create(
       data: Project.InputData
-  )(using customer: User)(using Lang): EitherT[IO, Error, Project] =
+  )(using customer: User)(using Lang): EitherT[IO, Error, DbProject] =
     collection.use { c =>
       for
         data <- EitherT.fromEither[IO](Project.fromInputData(data))
@@ -151,7 +188,7 @@ object Projects {
 
   def findById(
       _id: ObjectId
-  )(using customer: User)(using Lang): EitherT[IO, Error, Project] =
+  )(using customer: User)(using Lang): EitherT[IO, Error, ProjectWithClient] =
     EitherT.fromOptionF(
       collection.use(
         _.raw(
@@ -175,44 +212,63 @@ object Projects {
 
   def find(query: CursorQuery)(using customer: User)(using
       Lang
-  ): EitherT[IO, Error, Cursor[Project]] =
+  ): EitherT[IO, Error, Cursor[DbProject]] =
     collection.use(
-      _.find(
+      _.find[DbProject](
         "name",
         Seq(
           Aggregates
-            .lookup(Clients.collection.name, "client", "_id", "tmpClient"),
-          Aggregates.unwind("$tmpClient"),
-          Aggregates.`match`(Filters.eq("tmpClient.user", customer._id)),
-          Aggregates.project(Document("tmpClient" -> false))
+            .lookup(Clients.collection.name, "client", "_id", "client"),
+          Aggregates.unwind("$client"),
+          Aggregates.`match`(Filters.eq("client.user", customer._id)),
+          Aggregates.addFields(Field("client", "$client._id"))
         )
       )(query)
     )
 
   def getLatest(query: CursorQuery)(using
       customer: User
-  )(using Lang): EitherT[IO, Error, Cursor[Project]] = collection.use(
-    _.find(
-      "updatedAt",
-      Seq(
-        Aggregates
-          .lookup(Clients.collection.name, "client", "_id", "tmpClient"),
-        Aggregates.unwind("$tmpClient"),
-        Aggregates.`match`(Filters.eq("tmpClient.user", customer._id)),
-        Aggregates.project(Document("tmpClient" -> false))
-      )
-    )(query)
-  )
+  )(using Lang): EitherT[IO, Error, Cursor[ProjectWithClientLabel]] =
+    collection.use(
+      _.find[ProjectWithClientLabel](
+        "updatedAt",
+        Seq(
+          Aggregates
+            .lookup(Clients.collection.name, "client", "_id", "client"),
+          Aggregates.unwind("$client"),
+          Aggregates.`match`(Filters.eq("client.user", customer._id)),
+          Aggregates.addFields(
+            Field(
+              "client",
+              Document(
+                "_id" -> "$client._id",
+                "name" -> Document(
+                  "$cond" -> Document(
+                    "if" -> Document(
+                      "$gt" -> List("$firstName", null)
+                    ),
+                    "then" -> Document(
+                      "$concat" -> List("$firstName", " ", "$lastName")
+                    ),
+                    "else" -> "$businessName"
+                  )
+                )
+              )
+            )
+          )
+        )
+      )(query)
+    )
 
   def update(_id: ObjectId, data: Project.InputData)(using customer: User)(using
       Lang
-  ): EitherT[IO, Error, Project] =
+  ): EitherT[IO, Error, DbProject] =
     for
       project <- findById(_id)
       data <- EitherT.fromEither[IO](Project.validateInputData(data).toResult)
       client <- Clients.findById(data.client)
       result <- collection
-        .useWithCodec[ProjectCashData, Error, Project](
+        .useWithCodec[ProjectCashData, Error, DbProject](
           _.update(
             project._id,
             collection.Update
@@ -233,7 +289,7 @@ object Projects {
 
   def delete(_id: ObjectId)(using customer: User)(using
       Lang
-  ): EitherT[IO, Error, Project] =
+  ): EitherT[IO, Error, DbProject] =
     for
       project <- findById(_id)
       result <- collection.use(_.delete(project._id))
@@ -298,22 +354,3 @@ object Projects {
       )
   }
 }
-
-given Encoder[Project] with Decoder[Project] with {
-  override def apply(project: Project): Json = project match
-    case dbProject: DbProject                 => dbProject.asJson
-    case projectWithClient: ProjectWithClient => projectWithClient.asJson
-
-  override def apply(c: HCursor): Result[Project] =
-    c.as[DbProject].orElse[DecodingFailure, Project](c.as[ProjectWithClient])
-}
-
-given EntityEncoder[IO, Project] = jsonEncoderOf[IO, Project]
-given EntityDecoder[IO, Project] = jsonOf[IO, Project]
-
-given EntityEncoder[IO, ProjectCashedBalance] =
-  jsonEncoderOf[IO, ProjectCashedBalance]
-
-given EntityDecoder[IO, ProjectCashedBalance] = jsonOf[IO, ProjectCashedBalance]
-
-given EntityEncoder[IO, Cursor[Project]] = jsonEncoderOf[IO, Cursor[Project]]

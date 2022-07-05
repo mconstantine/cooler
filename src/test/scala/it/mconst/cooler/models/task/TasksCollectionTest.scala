@@ -12,7 +12,6 @@ import com.osinka.i18n.Lang
 import it.mconst.cooler.models.*
 import it.mconst.cooler.models.client.Client
 import it.mconst.cooler.models.client.Clients
-import it.mconst.cooler.models.client.given
 import it.mconst.cooler.models.project.Project
 import it.mconst.cooler.models.project.Projects
 import it.mconst.cooler.models.user.User
@@ -82,7 +81,7 @@ class TasksCollectionTest extends CatsEffectSuite {
         name = "Task creation test"
       )
 
-    Tasks.create(data).orFail.map(_.asDbTask.name).assertEquals(data.name)
+    Tasks.create(data).orFail.map(_.name).assertEquals(data.name)
   }
 
   def otherUser = Resource.make {
@@ -123,9 +122,9 @@ class TasksCollectionTest extends CatsEffectSuite {
     for
       task <- Tasks.create(data).orFail
       result <- Tasks.findById(task._id).orFail
-      _ = assert(result.asTaskWithProject.name == data.name)
+      _ = assert(result.name == data.name)
       _ = assert(
-        result.asTaskWithProject.project._id == testDataFixture().project._id
+        result.project._id == testDataFixture().project._id
       )
     yield ()
   }
@@ -168,7 +167,7 @@ class TasksCollectionTest extends CatsEffectSuite {
         .map(Tasks.create(_).orFail)
         .parSequence
         .map(
-          _.sortWith(_.asDbTask.name.toString < _.asDbTask.name.toString)
+          _.sortWith(_.name.toString < _.name.toString)
         )
     })
   }(_ => Tasks.collection.use(_.raw(_.deleteMany(Filter.empty)).void))
@@ -211,7 +210,7 @@ class TasksCollectionTest extends CatsEffectSuite {
           result <- Tasks
             .find(CursorQueryAsc(query = Some("a")))
             .orFail
-            .map(_.edges.map(_.node.asDbTask.name.toString))
+            .map(_.edges.map(_.node.name.toString))
           _ = assertEquals(result, List("Adam"))
         yield ()
       }
@@ -346,18 +345,18 @@ class TasksCollectionTest extends CatsEffectSuite {
       makeTestProject(client._id, name = "New task project")
 
     for
-      newProject <- Projects.create(newProjectData).orFail.map(_.asDbProject)
+      newProject <- Projects.create(newProjectData).orFail
       task <- Tasks.create(data).orFail
       update = Task.InputData(
         newProject._id.toString,
         "Updated name",
         none[String],
         BsonDateTime(System.currentTimeMillis).toISOString,
-        task.asDbTask.expectedWorkingHours.toFloat + 10f,
-        task.asDbTask.hourlyCost.toFloat + 10f
+        task.expectedWorkingHours.toFloat + 10f,
+        task.hourlyCost.toFloat + 10f
       )
       _ <- IO.delay(Thread.sleep(500))
-      updated <- Tasks.update(task._id, update).orFail.map(_.asDbTask)
+      updated <- Tasks.update(task._id, update).orFail
       _ = assertEquals(updated.project.toString, update.project)
       _ = assertEquals(updated.name.toString, update.name)
       _ = assertEquals(updated.description.map(_.toString), none[String])

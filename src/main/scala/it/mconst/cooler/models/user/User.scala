@@ -80,6 +80,8 @@ final case class UserStats(
 )
 
 object UserStats {
+  given EntityEncoder[IO, UserStats] = jsonEncoderOf[IO, UserStats]
+
   def empty = UserStats(
     NonNegativeFloat.unsafe(0f),
     NonNegativeFloat.unsafe(0f),
@@ -89,6 +91,8 @@ object UserStats {
 }
 
 object User {
+  given EntityEncoder[IO, User] = jsonEncoderOf[IO, User]
+
   final case class CreationData(
       name: String,
       email: String,
@@ -186,13 +190,15 @@ object Users {
           )
         )(_ => OptionT.none[IO, Error])
         .orElse(
-          c.findOne(Filter.eq("email", user.email))
+          c.findOne[User](Filter.eq("email", user.email))
             .toOption
             .map(_ => Error(Status.Conflict, __.ErrorUserConflict))
         )
         .toLeft[User](null)
         .flatMap(_ =>
-          EitherT.fromEither(User.fromCreationData(user)).flatMap(c.create)
+          EitherT
+            .fromEither(User.fromCreationData(user))
+            .flatMap(c.create)
         )
     )
 
@@ -386,7 +392,7 @@ object Users {
     collection.use { c =>
       val error = Error(Status.BadRequest, __.ErrorInvalidEmailOrPassword)
 
-      c.findOne(Filter.eq("email", data.email))
+      c.findOne[User](Filter.eq("email", data.email))
         .leftMap(_ => error)
         .flatMap(user =>
           EitherT.cond(
@@ -461,8 +467,3 @@ object Users {
       )
     yield user
 }
-
-given EntityEncoder[IO, User] = jsonEncoderOf[IO, User]
-given EntityDecoder[IO, User] = jsonOf[IO, User]
-given EntityEncoder[IO, UserStats] = jsonEncoderOf[IO, UserStats]
-given EntityDecoder[IO, UserStats] = jsonOf[IO, UserStats]

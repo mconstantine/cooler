@@ -14,7 +14,6 @@ import it.mconst.cooler.models.client.Client
 import it.mconst.cooler.models.client.Clients
 import it.mconst.cooler.models.project.Project
 import it.mconst.cooler.models.project.Projects
-import it.mconst.cooler.models.session.given
 import it.mconst.cooler.models.session.Session
 import it.mconst.cooler.models.session.Sessions
 import it.mconst.cooler.models.task.Task
@@ -29,6 +28,7 @@ import org.http4s.circe.*
 import org.http4s.client.{Client as HttpClient}
 import org.http4s.client.dsl.io.*
 import org.http4s.dsl.io.*
+import org.http4s.EntityDecoder
 import org.http4s.EntityEncoder
 import org.http4s.implicits.*
 import org.http4s.syntax.*
@@ -41,6 +41,8 @@ class SessionRoutesTest extends CatsEffectSuite {
   given Lang = Lang.Default
   given Assertions = this
   given HttpClient[IO] = client
+
+  given EntityDecoder[IO, Session] = jsonOf[IO, Session]
 
   final case class TestData(
       user: User,

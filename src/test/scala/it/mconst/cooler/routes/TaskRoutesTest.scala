@@ -14,15 +14,17 @@ import it.mconst.cooler.models.client.Client
 import it.mconst.cooler.models.client.Clients
 import it.mconst.cooler.models.project.Project
 import it.mconst.cooler.models.project.Projects
-import it.mconst.cooler.models.task.given
-import it.mconst.cooler.models.task.Task
+import it.mconst.cooler.models.task.DbTask
 import it.mconst.cooler.models.task.Tasks
+import it.mconst.cooler.models.task.TaskWithProject
 import it.mconst.cooler.models.user.User
 import it.mconst.cooler.models.user.Users
 import it.mconst.cooler.utils.__
 import it.mconst.cooler.utils.Error
+import it.mconst.cooler.utils.given
 import java.time.format.DateTimeFormatter
 import java.time.LocalDateTime
+import mongo4cats.circe.*
 import mongo4cats.collection.operations.Filter
 import org.bson.BsonDateTime
 import org.http4s.circe.*
@@ -41,6 +43,10 @@ class TaskRoutesTest extends CatsEffectSuite {
   given Lang = Lang.Default
   given Assertions = this
   given HttpClient[IO] = client
+
+  given EntityDecoder[IO, Cursor[DbTask]] = jsonOf[IO, Cursor[DbTask]]
+  given EntityDecoder[IO, DbTask] = jsonOf[IO, DbTask]
+  given EntityDecoder[IO, TaskWithProject] = jsonOf[IO, TaskWithProject]
 
   final case class TestData(user: User, client: Client, project: Project)
 
@@ -104,7 +110,7 @@ class TaskRoutesTest extends CatsEffectSuite {
     POST(data, uri"/")
       .sign(testDataFixture().user)
       .shouldRespondLike(
-        (t: Task) => t.asDbTask.name,
+        (t: DbTask) => t.name,
         data.name
       )
   }
@@ -129,12 +135,10 @@ class TaskRoutesTest extends CatsEffectSuite {
 
   test("should find tasks (asc)") {
     tasksList.use { tasks =>
-      given EntityDecoder[IO, Cursor[Task]] = jsonOf[IO, Cursor[Task]]
-
       GET(uri"/?query=task&first=2&after=Task%20B")
         .sign(testDataFixture().user)
         .shouldRespond(
-          Cursor[Task](
+          Cursor[DbTask](
             PageInfo(6, Some("Task C"), Some("Task D"), true, true),
             List(Edge(tasks(2), "Task C"), Edge(tasks(3), "Task D"))
           )
@@ -144,12 +148,10 @@ class TaskRoutesTest extends CatsEffectSuite {
 
   test("should find tasks (desc)") {
     tasksList.use { tasks =>
-      given EntityDecoder[IO, Cursor[Task]] = jsonOf[IO, Cursor[Task]]
-
       GET(uri"/?query=task&last=2&before=Task%20E")
         .sign(testDataFixture().user)
         .shouldRespond(
-          Cursor[Task](
+          Cursor[DbTask](
             PageInfo(6, Some("Task D"), Some("Task C"), true, true),
             List(Edge(tasks(3), "Task D"), Edge(tasks(2), "Task C"))
           )
@@ -172,7 +174,7 @@ class TaskRoutesTest extends CatsEffectSuite {
       _ <- GET(Uri.fromString(s"/${task._id.toString}").getOrElse(fail("")))
         .sign(user)
         .shouldRespondLike(
-          (t: Task) => t.asTaskWithProject.name,
+          (t: TaskWithProject) => t.name,
           data.name
         )
     yield ()
@@ -198,13 +200,12 @@ class TaskRoutesTest extends CatsEffectSuite {
     for
       task <- Tasks.create(taskData).orFail
       result <- client
-        .expect[Task](
+        .expect[DbTask](
           PUT(
             updateData,
             Uri.fromString(s"/${task._id.toString}").getOrElse(fail(""))
           ).sign(user)
         )
-        .map(_.asDbTask)
       _ = assertEquals(result.name.toString, updateData.name)
       _ = assertEquals(result.description.map(_.toString), none[String])
     yield ()
@@ -223,7 +224,7 @@ class TaskRoutesTest extends CatsEffectSuite {
       )
         .sign(testDataFixture().user)
         .shouldRespondLike(
-          (t: Task) => t.asDbTask.name,
+          (t: DbTask) => t.name,
           taskData.name
         )
       _ <- Tasks

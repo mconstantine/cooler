@@ -14,6 +14,7 @@ import it.mconst.cooler.utils.Error
 import it.mconst.cooler.utils.given
 import java.time.Instant
 import mongo4cats.bson.ObjectId
+import mongo4cats.circe.*
 import mongo4cats.collection.operations.Filter
 import org.bson.BsonDateTime
 import org.http4s.circe.*
@@ -142,7 +143,7 @@ object JWT {
       )
       .flatMap(_id =>
         Users.collection
-          .use(_.findOne(Filter.eq("_id", _id)))
+          .use(_.findOne[User](Filter.eq("_id", _id)))
           .leftMap(_ => Error(Forbidden, __.ErrorInvalidAccessToken))
       )
   }

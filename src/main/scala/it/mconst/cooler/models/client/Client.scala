@@ -116,6 +116,20 @@ final case class BusinessClient(
 }
 
 object Client {
+  given Encoder[Client] with Decoder[Client] with {
+    override def apply(client: Client): Json = client match
+      case privateClient: PrivateClient   => privateClient.asJson
+      case businessClient: BusinessClient => businessClient.asJson
+
+    override def apply(c: HCursor): Decoder.Result[Client] =
+      c.as[BusinessClient].orElse[DecodingFailure, Client](c.as[PrivateClient])
+  }
+
+  given EntityEncoder[IO, Client] = jsonEncoderOf[IO, Client]
+  given EntityDecoder[IO, Client] = jsonOf[IO, Client]
+
+  given EntityEncoder[IO, Cursor[Client]] = jsonEncoderOf[IO, Cursor[Client]]
+
   sealed abstract trait InputData(
       addressCountry: String,
       addressProvince: String,
@@ -406,8 +420,9 @@ object Clients {
       _id: ObjectId
   )(using customer: User)(using Lang): EitherT[IO, Error, Client] =
     collection.use(c =>
-      c.findOne(Filter.eq("_id", _id).and(Filter.eq("user", customer._id)))
-        .leftMap(_ => Error(Status.NotFound, __.ErrorClientNotFound))
+      c.findOne[Client](
+        Filter.eq("_id", _id).and(Filter.eq("user", customer._id))
+      ).leftMap(_ => Error(Status.NotFound, __.ErrorClientNotFound))
     )
 
   def update(_id: ObjectId, data: Client.InputData)(using customer: User)(using
@@ -500,7 +515,7 @@ object Clients {
       customer: User
   )(using Lang): EitherT[IO, Error, Cursor[Client]] =
     collection.use(
-      _.find(
+      _.find[Client](
         "name",
         Seq(
           Aggregates.`match`(Filters.eq("user", customer._id)),
@@ -524,20 +539,6 @@ object Clients {
       )(query)
     )
 }
-
-given Encoder[Client] with Decoder[Client] with {
-  override def apply(client: Client): Json = client match
-    case privateClient: PrivateClient   => privateClient.asJson
-    case businessClient: BusinessClient => businessClient.asJson
-
-  override def apply(c: HCursor): Decoder.Result[Client] =
-    c.as[BusinessClient].orElse[DecodingFailure, Client](c.as[PrivateClient])
-}
-
-given EntityEncoder[IO, Client] = jsonEncoderOf[IO, Client]
-given EntityDecoder[IO, Client] = jsonOf[IO, Client]
-
-given EntityEncoder[IO, Cursor[Client]] = jsonEncoderOf[IO, Cursor[Client]]
 
 opaque type CountryCode = String
 opaque type ProvinceCode = String

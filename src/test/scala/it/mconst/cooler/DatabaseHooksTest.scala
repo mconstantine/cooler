@@ -7,18 +7,25 @@ import cats.effect.IO
 import cats.effect.kernel.Resource
 import cats.syntax.all.none
 import com.osinka.i18n.Lang
+import io.circe.generic.auto.*
 import it.mconst.cooler.models.*
+import it.mconst.cooler.models.client.Client
 import it.mconst.cooler.models.client.Clients
+import it.mconst.cooler.models.project.DbProject
 import it.mconst.cooler.models.project.Projects
 import it.mconst.cooler.models.session.Session
 import it.mconst.cooler.models.session.Sessions
+import it.mconst.cooler.models.task.DbTask
 import it.mconst.cooler.models.task.Task
 import it.mconst.cooler.models.task.Tasks
+import it.mconst.cooler.models.tax.Tax
 import it.mconst.cooler.models.tax.Taxes
 import it.mconst.cooler.models.user.User
 import it.mconst.cooler.models.user.Users
 import it.mconst.cooler.utils.__
 import it.mconst.cooler.utils.Error
+import it.mconst.cooler.utils.given
+import mongo4cats.circe.*
 import mongo4cats.collection.operations.Filter
 import munit.Assertions
 import org.bson.BsonDateTime
@@ -81,10 +88,10 @@ class DatabaseHooksTest extends CatsEffectSuite {
       updatedTask <- Tasks.findById(task._id).orFail
       updatedProject <- Projects.findById(project._id).orFail
       _ = assert(
-        updatedTask.asTaskWithProject.updatedAt.getValue - task.asDbTask.updatedAt.getValue >= 500L
+        updatedTask.updatedAt.getValue - task.updatedAt.getValue >= 500L
       )
       _ = assert(
-        updatedProject.asProjectWithClient.updatedAt.getValue - project.asDbProject.updatedAt.getValue >= 500L
+        updatedProject.updatedAt.getValue - project.updatedAt.getValue >= 500L
       )
       _ <- Clients.collection
         .use(_.raw(_.deleteMany(Filter.empty)))
@@ -123,10 +130,10 @@ class DatabaseHooksTest extends CatsEffectSuite {
       updatedTask <- Tasks.findById(task._id).orFail
       updatedProject <- Projects.findById(project._id).orFail
       _ = assert(
-        updatedTask.asTaskWithProject.updatedAt.getValue - task.asDbTask.updatedAt.getValue >= 500L
+        updatedTask.updatedAt.getValue - task.updatedAt.getValue >= 500L
       )
       _ = assert(
-        updatedProject.asProjectWithClient.updatedAt.getValue - project.asDbProject.updatedAt.getValue >= 500L
+        updatedProject.updatedAt.getValue - project.updatedAt.getValue >= 500L
       )
       _ <- Clients.collection
         .use(_.raw(_.deleteMany(Filter.empty)))
@@ -170,10 +177,10 @@ class DatabaseHooksTest extends CatsEffectSuite {
       updatedTask <- Tasks.findById(task._id).orFail
       updatedProject <- Projects.findById(project._id).orFail
       _ = assert(
-        updatedTask.asTaskWithProject.updatedAt.getValue - task.asDbTask.updatedAt.getValue >= 500L
+        updatedTask.updatedAt.getValue - task.updatedAt.getValue >= 500L
       )
       _ = assert(
-        updatedProject.asProjectWithClient.updatedAt.getValue - project.asDbProject.updatedAt.getValue >= 500L
+        updatedProject.updatedAt.getValue - project.updatedAt.getValue >= 500L
       )
       _ <- Clients.collection
         .use(_.raw(_.deleteMany(Filter.empty)))
@@ -207,7 +214,7 @@ class DatabaseHooksTest extends CatsEffectSuite {
         .orFail
       updatedProject <- Projects.findById(project._id).orFail
       _ = assert(
-        updatedProject.asProjectWithClient.updatedAt.getValue - project.asDbProject.updatedAt.getValue >= 500L
+        updatedProject.updatedAt.getValue - project.updatedAt.getValue >= 500L
       )
       _ <- Clients.collection
         .use(_.raw(_.deleteMany(Filter.empty)))
@@ -253,7 +260,7 @@ class DatabaseHooksTest extends CatsEffectSuite {
         .orFail
       updatedProject <- Projects.findById(project._id).orFail
       _ = assert(
-        updatedProject.asProjectWithClient.updatedAt.getValue - project.asDbProject.updatedAt.getValue >= 500L
+        updatedProject.updatedAt.getValue - project.updatedAt.getValue >= 500L
       )
       _ <- Clients.collection
         .use(_.raw(_.deleteMany(Filter.empty)))
@@ -323,7 +330,7 @@ class DatabaseHooksTest extends CatsEffectSuite {
       session <- Sessions.start(makeTestSession(task._id)).orFail
       _ <- Projects.delete(project._id).orFail
       _ <- Tasks.collection
-        .use(_.findOne(Filter.eq("_id", task._id)))
+        .use(_.findOne[DbTask](Filter.eq("_id", task._id)))
         .assertEquals(Left(Error(Status.NotFound, __.ErrorDocumentNotFound)))
       _ <- Sessions.collection
         .use(
@@ -365,10 +372,10 @@ class DatabaseHooksTest extends CatsEffectSuite {
       session <- Sessions.start(makeTestSession(task._id)).orFail
       _ <- Clients.delete(client._id).orFail
       _ <- Projects.collection
-        .use(_.findOne(Filter.eq("_id", project._id)))
+        .use(_.findOne[DbProject](Filter.eq("_id", project._id)))
         .assertEquals(Left(Error(Status.NotFound, __.ErrorDocumentNotFound)))
       _ <- Tasks.collection
-        .use(_.findOne(Filter.eq("_id", task._id)))
+        .use(_.findOne[DbTask](Filter.eq("_id", task._id)))
         .assertEquals(Left(Error(Status.NotFound, __.ErrorDocumentNotFound)))
       _ <- Sessions.collection
         .use(
@@ -427,22 +434,22 @@ class DatabaseHooksTest extends CatsEffectSuite {
           session <- Sessions.start(makeTestSession(task._id)).orFail
           _ <- Users.delete.orFail
           _ <- Clients.collection
-            .use(_.findOne(Filter.eq("_id", client._id)))
+            .use(_.findOne[Client](Filter.eq("_id", client._id)))
             .assertEquals(
               Left(Error(Status.NotFound, __.ErrorDocumentNotFound))
             )
           _ <- Projects.collection
-            .use(_.findOne(Filter.eq("_id", project._id)))
+            .use(_.findOne[DbProject](Filter.eq("_id", project._id)))
             .assertEquals(
               Left(Error(Status.NotFound, __.ErrorDocumentNotFound))
             )
           _ <- Tasks.collection
-            .use(_.findOne(Filter.eq("_id", task._id)))
+            .use(_.findOne[DbTask](Filter.eq("_id", task._id)))
             .assertEquals(
               Left(Error(Status.NotFound, __.ErrorDocumentNotFound))
             )
           _ <- Taxes.collection
-            .use(_.findOne(Filter.eq("_id", tax._id)))
+            .use(_.findOne[Tax](Filter.eq("_id", tax._id)))
             .assertEquals(
               Left(Error(Status.NotFound, __.ErrorDocumentNotFound))
             )

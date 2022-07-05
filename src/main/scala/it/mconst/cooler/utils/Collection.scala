@@ -124,7 +124,7 @@ final case class Collection[F[
 
     def `with`(value: (String, Option[_])): Nothing =
       throw new IllegalArgumentException(
-        "You mst provide an UpdateStrategy when updating an optional field"
+        "You must provide an UpdateStrategy when updating an optional field"
       )
 
     def `with`[T](
@@ -147,21 +147,25 @@ final case class Collection[F[
       MongoCodecProvider[Input],
       MongoCodecProvider[Doc]
   ) {
-    def findOne(filter: Filter)(using Lang): EitherT[F, Error, Doc] =
+    def findOne[T: ClassTag](
+        filter: Filter
+    )(using Lang, MongoCodecProvider[T]): EitherT[F, Error, T] =
       EitherT.fromOptionF(
-        db.getCollectionWithCodec[Doc](name).flatMap(_.find(filter).first),
+        db.getCollectionWithCodec[T](name).flatMap(_.find(filter).first),
         Error(NotFound, __.ErrorDocumentNotFound)
       )
 
-    def create(doc: Doc)(using Lang): EitherT[F, Error, Doc] =
+    def create(
+        doc: Doc
+    )(using Lang): EitherT[F, Error, Doc] = {
       for
         result <- EitherT.liftF(
           db.getCollectionWithCodec[Doc](name).flatMap(_.insertOne(doc))
         )
-        inserted <- findOne(Filter.eq("_id", result.getInsertedId)).leftMap(_ =>
-          Error(NotFound, __.ErrorDocumentNotFoundAfterInsert)
-        )
+        inserted <- findOne[Doc](Filter.eq("_id", result.getInsertedId))
+          .leftMap(_ => Error(NotFound, __.ErrorDocumentNotFoundAfterInsert))
       yield inserted
+    }
 
     def update(_id: ObjectId, update: BuiltUpdate)(using
         Lang
@@ -218,7 +222,7 @@ final case class Collection[F[
               )
             )
         )
-        updated <- findOne(Filter.eq("_id", _id)).leftMap(_ =>
+        updated <- findOne[Doc](Filter.eq("_id", _id)).leftMap(_ =>
           Error(NotFound, __.ErrorDocumentNotFoundAfterUpdate)
         )
       yield updated
@@ -228,7 +232,7 @@ final case class Collection[F[
       val filter = Filter.eq("_id", _id)
 
       for
-        original <- findOne(filter).leftMap(_ =>
+        original <- findOne[Doc](filter).leftMap(_ =>
           Error(NotFound, __.ErrorDocumentNotFoundBeforeDelete)
         )
         deleted <- EitherT.liftF(
@@ -242,14 +246,14 @@ final case class Collection[F[
     def raw[R](op: MongoCollection[F, Doc] => F[R]): F[R] =
       db.getCollectionWithCodec[Doc](name).flatMap(op)
 
-    def find(
+    def find[O](
         searchKey: String,
         initialFilters: Seq[Bson]
     )(using
         Lang,
-        Encoder[Doc],
-        Decoder[Doc]
-    ): CursorQuery => EitherT[F, Error, Cursor[Doc]] = { query =>
+        Encoder[O],
+        Decoder[O]
+    ): CursorQuery => EitherT[F, Error, Cursor[O]] = { query =>
       val queryString = query match
         case q: CursorQueryAsc  => q.query
         case q: CursorQueryDesc => q.query
@@ -371,7 +375,7 @@ final case class Collection[F[
 
       EitherT.fromOptionF(
         db.getCollection(name)
-          .flatMap(_.aggregateWithCodec[Cursor[Doc]](aggregation).first),
+          .flatMap(_.aggregateWithCodec[Cursor[O]](aggregation).first),
         Error(InternalServerError, __.ErrorUnknown)
       )
     }

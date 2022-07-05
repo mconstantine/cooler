@@ -6,7 +6,6 @@ import com.osinka.i18n.Lang
 import it.mconst.cooler.middlewares.UserMiddleware
 import it.mconst.cooler.middlewares.UserMiddleware.UserContext
 import it.mconst.cooler.models.*
-import it.mconst.cooler.models.tax.given
 import it.mconst.cooler.models.tax.Tax
 import it.mconst.cooler.models.tax.Taxes
 import it.mconst.cooler.models.user.User

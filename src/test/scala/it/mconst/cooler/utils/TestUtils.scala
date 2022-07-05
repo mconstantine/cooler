@@ -22,6 +22,7 @@ import it.mconst.cooler.models.project.DbProject
 import it.mconst.cooler.models.project.Project
 import it.mconst.cooler.models.project.ProjectCashData
 import it.mconst.cooler.models.project.ProjectWithClient
+import it.mconst.cooler.models.project.ProjectWithClientLabel
 import it.mconst.cooler.models.session.Session
 import it.mconst.cooler.models.task.DbTask
 import it.mconst.cooler.models.task.Task
@@ -193,19 +194,6 @@ object TestUtils {
       cashData: Option[ProjectCashData] = none[ProjectCashData]
   ) = Project.InputData(client.toHexString, name, description, cashData)
 
-  extension (project: Project) {
-    def asDbProject(using a: Assertions): DbProject = project match
-      case p: DbProject => p
-      case _: ProjectWithClient =>
-        a.fail("Trying to cast project with client to DB project")
-
-    def asProjectWithClient(using a: Assertions): ProjectWithClient =
-      project match
-        case p: ProjectWithClient => p
-        case _: DbProject =>
-          a.fail("Trying to cast DB project to project with client")
-  }
-
   def makeTestTask(
       project: ObjectId,
       name: String = "Test task",
@@ -221,23 +209,6 @@ object TestUtils {
     expectedWorkingHours,
     hourlyCost
   )
-
-  extension (task: Task) {
-    def asDbTask(using a: Assertions): DbTask = task match
-      case t: DbTask => t
-      case _: TaskWithProject =>
-        a.fail("Trying to cast task with project to DB task")
-      case _: TaskWithProjectLabel =>
-        a.fail("Trying to cast task with project to task with project label")
-
-    def asTaskWithProject(using a: Assertions): TaskWithProject =
-      task match
-        case t: TaskWithProject => t
-        case _: DbTask =>
-          a.fail("Trying to cast DB task to task with project")
-        case _: TaskWithProjectLabel =>
-          a.fail("Trying to cast DB task to task with project label")
-  }
 
   def makeTestSession(
       task: ObjectId,

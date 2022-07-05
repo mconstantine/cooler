@@ -10,7 +10,6 @@ import cats.syntax.all.none
 import com.osinka.i18n.Lang
 import io.circe.generic.auto.*
 import it.mconst.cooler.models.*
-import it.mconst.cooler.models.tax.given
 import it.mconst.cooler.models.tax.Tax
 import it.mconst.cooler.models.tax.Taxes
 import it.mconst.cooler.models.tax.toBigDecimal
@@ -23,6 +22,7 @@ import org.http4s.circe.*
 import org.http4s.client.{Client as HttpClient}
 import org.http4s.client.dsl.io.*
 import org.http4s.dsl.io.*
+import org.http4s.EntityDecoder
 import org.http4s.EntityEncoder
 import org.http4s.implicits.*
 import org.http4s.syntax.*
@@ -35,6 +35,8 @@ class TaxRoutesTest extends CatsEffectSuite {
   given Lang = Lang.Default
   given Assertions = this
   given HttpClient[IO] = client
+
+  given EntityDecoder[IO, Tax] = jsonOf[IO, Tax]
 
   val adminFixture = ResourceSuiteLocalFixture(
     "admin",

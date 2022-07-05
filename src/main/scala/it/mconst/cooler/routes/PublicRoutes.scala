@@ -5,7 +5,6 @@ import cats.syntax.all.none
 import com.osinka.i18n.Lang
 import it.mconst.cooler.middlewares.LanguageMiddleware
 import it.mconst.cooler.middlewares.LanguageRoutes
-import it.mconst.cooler.models.user.given
 import it.mconst.cooler.models.user.User
 import it.mconst.cooler.models.user.Users
 import it.mconst.cooler.utils.given

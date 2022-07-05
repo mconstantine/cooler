@@ -112,7 +112,7 @@ class CollectionTest extends CatsEffectSuite {
         .use(_.delete(person._id))
         .assertEquals(Right(person))
       _ <- people
-        .use(_.findOne(Filter.eq("_id", person._id)))
+        .use(_.findOne[Person](Filter.eq("_id", person._id)))
         .assertEquals(Left(Error(Status.NotFound, __.ErrorDocumentNotFound)))
     yield ()
   }
@@ -122,7 +122,9 @@ class CollectionTest extends CatsEffectSuite {
       for
         result <- people
           .use(
-            _.find("firstName", Seq.empty)(CursorQueryAsc(query = Some("a")))
+            _.find[Person]("firstName", Seq.empty)(
+              CursorQueryAsc(query = Some("a"))
+            )
           )
           .orFail
         _ = assertEquals(result.pageInfo.totalCount, 1)
@@ -140,7 +142,7 @@ class CollectionTest extends CatsEffectSuite {
       for
         result <- people
           .use(
-            _.find("firstName", Seq.empty)(
+            _.find[Person]("firstName", Seq.empty)(
               CursorQueryAsc(
                 query = Some("sd"),
                 first = Some(PositiveInteger.unsafe(2))
@@ -163,7 +165,7 @@ class CollectionTest extends CatsEffectSuite {
       for
         result <- people
           .use(
-            _.find("firstName", Seq.empty)(
+            _.find[Person]("firstName", Seq.empty)(
               CursorQueryAsc(
                 query = Some("sd"),
                 first = Some(PositiveInteger.unsafe(2)),
@@ -187,7 +189,7 @@ class CollectionTest extends CatsEffectSuite {
       for
         result <- people
           .use(
-            _.find("firstName", Seq.empty)(
+            _.find[Person]("firstName", Seq.empty)(
               CursorQueryAsc(
                 query = Some("sd"),
                 first = Some(PositiveInteger.unsafe(2)),
@@ -211,7 +213,7 @@ class CollectionTest extends CatsEffectSuite {
       for
         result <- people
           .use(
-            _.find("firstName", Seq.empty)(
+            _.find[Person]("firstName", Seq.empty)(
               CursorQueryDesc(
                 query = Some("sd"),
                 last = Some(PositiveInteger.unsafe(2))
@@ -237,7 +239,7 @@ class CollectionTest extends CatsEffectSuite {
       for
         result <- people
           .use(
-            _.find("firstName", Seq.empty)(
+            _.find[Person]("firstName", Seq.empty)(
               CursorQueryDesc(
                 query = Some("sd"),
                 last = Some(PositiveInteger.unsafe(2)),
@@ -264,7 +266,7 @@ class CollectionTest extends CatsEffectSuite {
       for
         result <- people
           .use(
-            _.find("firstName", Seq.empty)(
+            _.find[Person]("firstName", Seq.empty)(
               CursorQueryDesc(
                 query = Some("sd"),
                 last = Some(PositiveInteger.unsafe(2)),

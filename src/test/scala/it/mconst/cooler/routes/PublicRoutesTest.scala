@@ -9,7 +9,6 @@ import cats.effect.kernel.Resource
 import cats.syntax.all.none
 import com.osinka.i18n.Lang
 import io.circe.generic.auto.*
-import it.mconst.cooler.models.user.given
 import it.mconst.cooler.models.user.JWT
 import it.mconst.cooler.models.user.User
 import it.mconst.cooler.models.user.Users
