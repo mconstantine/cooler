@@ -325,8 +325,8 @@ class TasksCollectionTest extends CatsEffectSuite {
               )
             )
           )
-          .map(List.from(_))
-          .assertEquals(currentUserTasks.slice(0, 2))
+          .map(List.from(_).map(_._id))
+          .assertEquals(currentUserTasks.slice(0, 2).map(_._id))
         _ <- Tasks.collection.use(_.raw(_.deleteMany(Filter.empty)))
       yield ()
     }

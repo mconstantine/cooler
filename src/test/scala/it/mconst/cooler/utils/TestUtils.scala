@@ -26,6 +26,7 @@ import it.mconst.cooler.models.session.Session
 import it.mconst.cooler.models.task.DbTask
 import it.mconst.cooler.models.task.Task
 import it.mconst.cooler.models.task.TaskWithProject
+import it.mconst.cooler.models.task.TaskWithProjectLabel
 import it.mconst.cooler.models.tax.Tax
 import it.mconst.cooler.models.user.JWT
 import it.mconst.cooler.models.user.User
@@ -226,12 +227,16 @@ object TestUtils {
       case t: DbTask => t
       case _: TaskWithProject =>
         a.fail("Trying to cast task with project to DB task")
+      case _: TaskWithProjectLabel =>
+        a.fail("Trying to cast task with project to task with project label")
 
     def asTaskWithProject(using a: Assertions): TaskWithProject =
       task match
         case t: TaskWithProject => t
         case _: DbTask =>
           a.fail("Trying to cast DB task to task with project")
+        case _: TaskWithProjectLabel =>
+          a.fail("Trying to cast DB task to task with project label")
   }
 
   def makeTestSession(

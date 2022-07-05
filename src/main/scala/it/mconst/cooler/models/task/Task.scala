@@ -70,6 +70,29 @@ final case class DbTask(
       updatedAt: BsonDateTime
     )
 
+final case class ProjectLabel(_id: ObjectId, name: NonEmptyString)
+
+final case class TaskWithProjectLabel(
+    _id: ObjectId,
+    name: NonEmptyString,
+    description: Option[NonEmptyString],
+    startTime: BsonDateTime,
+    expectedWorkingHours: PositiveFloat,
+    hourlyCost: PositiveFloat,
+    createdAt: BsonDateTime,
+    updatedAt: BsonDateTime,
+    project: ProjectLabel
+) extends Task(
+      _id: ObjectId,
+      name: NonEmptyString,
+      description: Option[NonEmptyString],
+      startTime: BsonDateTime,
+      expectedWorkingHours: PositiveFloat,
+      hourlyCost: PositiveFloat,
+      createdAt: BsonDateTime,
+      updatedAt: BsonDateTime
+    )
+
 final case class TaskWithProject(
     _id: ObjectId,
     name: NonEmptyString,
@@ -187,8 +210,9 @@ object Tasks {
         _ <- Projects.collection.use(
           _.update(
             task match
-              case task: DbTask          => task.project
-              case task: TaskWithProject => task.project._id
+              case task: DbTask               => task.project
+              case task: TaskWithProject      => task.project._id
+              case task: TaskWithProjectLabel => task.project._id
             ,
             Projects.collection.Update
               .`with`("updatedAt" -> BsonDateTime(System.currentTimeMillis))
@@ -324,7 +348,15 @@ object Tasks {
               )
             ),
             Aggregates.unwind("$project"),
-            Aggregates.addFields(Field("project", "$project._id"))
+            Aggregates.addFields(
+              Field(
+                "project",
+                Document(
+                  "_id" -> "$project._id",
+                  "name" -> "$project.name"
+                )
+              )
+            )
           )
         ).all
       )
@@ -389,11 +421,14 @@ object Tasks {
 
 given Encoder[Task] with Decoder[Task] with {
   override def apply(task: Task): Json = task match
-    case dbTask: DbTask                   => dbTask.asJson
-    case taskWithProject: TaskWithProject => taskWithProject.asJson
+    case task: DbTask               => task.asJson
+    case task: TaskWithProject      => task.asJson
+    case task: TaskWithProjectLabel => task.asJson
 
   override def apply(c: HCursor): Result[Task] =
-    c.as[DbTask].orElse[DecodingFailure, Task](c.as[TaskWithProject])
+    c.as[DbTask]
+      .orElse[DecodingFailure, Task](c.as[TaskWithProject])
+      .orElse[DecodingFailure, Task](c.as[TaskWithProjectLabel])
 }
 
 given EntityEncoder[IO, Task] = jsonEncoderOf[IO, Task]

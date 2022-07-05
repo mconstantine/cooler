@@ -19,6 +19,7 @@ import it.mconst.cooler.models.task.DbTask
 import it.mconst.cooler.models.task.Tasks
 import it.mconst.cooler.models.task.Tasks
 import it.mconst.cooler.models.task.TaskWithProject
+import it.mconst.cooler.models.task.TaskWithProjectLabel
 import it.mconst.cooler.models.user.User
 import it.mconst.cooler.utils.__
 import it.mconst.cooler.utils.Collection
@@ -326,8 +327,9 @@ object Sessions {
       _ <- Projects.collection.use(
         _.update(
           task match
-            case task: TaskWithProject => task.project._id
-            case task: DbTask          => task.project
+            case task: TaskWithProject      => task.project._id
+            case task: DbTask               => task.project
+            case task: TaskWithProjectLabel => task.project._id
           ,
           Projects.collection.Update
             .`with`("updatedAt" -> BsonDateTime(System.currentTimeMillis))
