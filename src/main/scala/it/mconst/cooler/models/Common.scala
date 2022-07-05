@@ -189,6 +189,11 @@ final case class Edge[T](
 
 final case class Cursor[T](pageInfo: PageInfo, edges: List[Edge[T]])
 
+object Cursor {
+  def empty[T]: Cursor[T] =
+    Cursor(PageInfo(0, none[String], none[String], false, false), List.empty)
+}
+
 sealed trait CursorQuery(query: Option[String] = none[String])
 
 object CursorQuery {
