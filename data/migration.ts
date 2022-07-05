@@ -127,6 +127,8 @@ interface Session {
       label: tax.label,
       value: tax.value,
       user: usersIdsMap[tax.user],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     }))
   );
 
@@ -226,11 +228,18 @@ interface Session {
   const sessions = await getEntity<Session>(sqlite, "session");
 
   await mongo.collection("sessions").insertMany(
-    sessions.map((session) => ({
-      startTime: sqlToISODate(session.start_time),
-      endTime: sqlToISODate(session.end_time),
+    sessions.map((session) => {
+      const startTime = sqlToISODate(session.start_time);
+      const endTime = sqlToISODate(session.end_time);
+
+      return {
+        startTime,
+        endTime,
       task: tasksIdsMap[session.task],
-    }))
+        createdAt: startTime,
+        updatedAt: endTime,
+      };
+    })
   );
 
   sqlite.close();
