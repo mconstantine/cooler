@@ -5,3 +5,4 @@
 target/
 .scalafmt.conf
 node_modules/
+data/*.db
