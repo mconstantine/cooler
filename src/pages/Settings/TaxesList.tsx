@@ -8,6 +8,7 @@ import { ErrorPanel } from '../../components/ErrorPanel/ErrorPanel'
 import { TaxForm } from '../../components/Form/Forms/TaxForm'
 import { LoadingBlock } from '../../components/Loading/LoadingBlock'
 import { Panel } from '../../components/Panel/Panel'
+import { Separator } from '../../components/Separator/Separator'
 import { useTaxes } from '../../contexts/TaxesContext'
 import { query } from '../../effects/api/api'
 import { TaxCardForm } from './TaxCardForm'
@@ -35,6 +36,7 @@ export function TaxesList() {
           {taxes.map(tax => (
             <TaxCardForm key={tax._id} tax={tax} />
           ))}
+          <Separator />
           {pipe(
             isCreating,
             boolean.fold(
