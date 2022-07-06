@@ -112,8 +112,8 @@ class CollectionTest extends CatsEffectSuite {
 
     people.use { c =>
       for
-        _ <- c.create(person).value
-        _ <- c.delete(person._id).assertEquals(Right(person))
+        _ <- c.create(person).orFail
+        _ <- c.delete(person._id).orFail
         _ <- c
           .findOne[Person](Filter.eq("_id", person._id))
           .assertEquals(Left(Error(Status.NotFound, __.ErrorDocumentNotFound)))

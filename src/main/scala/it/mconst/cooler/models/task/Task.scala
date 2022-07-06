@@ -408,14 +408,14 @@ object Tasks {
 
   def delete(_id: ObjectId)(using customer: User)(using
       Lang
-  ): EitherT[IO, Error, DbTask] =
+  ): EitherT[IO, Error, TaskWithProject] =
     for
       task <- findById(_id)
-      result <- collection.use(_.delete(task._id))
+      _ <- collection.use(_.delete(task._id))
       _ <- EitherT.right(
         Sessions.collection.use(
           _.raw(_.deleteMany(Filter.eq("task", task._id)))
         )
       )
-    yield result
+    yield task
 }

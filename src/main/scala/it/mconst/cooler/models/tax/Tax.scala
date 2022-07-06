@@ -149,6 +149,6 @@ object Taxes {
   ): EitherT[IO, Error, Tax] =
     for
       tax <- findById(_id)
-      result <- collection.use(_.delete(tax._id))
-    yield result
+      _ <- collection.use(_.delete(tax._id))
+    yield tax
 }

@@ -319,7 +319,11 @@ class ProjectsCollectionTest extends CatsEffectSuite {
 
     for
       project <- Projects.create(data).orFail
-      _ <- Projects.delete(project._id).orFail.assertEquals(project)
+      _ <- Projects
+        .delete(project._id)
+        .orFail
+        .map(_._id)
+        .assertEquals(project._id)
       _ <- Projects
         .findById(project._id)
         .assertEquals(Left(Error(Status.NotFound, __.ErrorProjectNotFound)))

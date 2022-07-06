@@ -42,6 +42,7 @@ import org.bson.conversions.Bson
 import org.http4s.dsl.io.*
 import scala.collection.JavaConverters.*
 import scala.reflect.ClassTag
+import com.mongodb.client.result.DeleteResult
 
 trait DbDocument {
   def _id: ObjectId
@@ -224,18 +225,10 @@ final case class Collection[F[
       )
     }
 
-    def delete(_id: ObjectId)(using Lang): EitherT[F, Error, Doc] = {
-      val filter = Filter.eq("_id", _id)
-
-      for
-        original <- findOne[Doc](filter).leftMap(_ =>
-          Error(NotFound, __.ErrorDocumentNotFoundBeforeDelete)
-        )
-        deleted <- EitherT.liftF(
-          db.getCollection(name).flatMap(_.deleteOne(filter).map(_ => original))
-        )
-      yield deleted
-    }
+    def delete(_id: ObjectId)(using Lang): EitherT[F, Error, DeleteResult] =
+      EitherT.liftF(
+        db.getCollection(name).flatMap(_.deleteOne(Filter.eq("_id", _id)))
+      )
 
     def drop: F[Unit] = db.getCollection(name).flatMap(_.drop)
 

@@ -426,10 +426,10 @@ object Projects {
 
   def delete(_id: ObjectId)(using customer: User)(using
       Lang
-  ): EitherT[IO, Error, DbProject] =
+  ): EitherT[IO, Error, ProjectWithStats] =
     for
       project <- findById(_id)
-      result <- collection.use(_.delete(project._id))
+      _ <- collection.use(_.delete(project._id))
       sessions <- EitherT.right(
         Sessions.collection.use(
           _.raw(
@@ -454,7 +454,7 @@ object Projects {
           _.raw(_.deleteMany(Filter.eq("project", project._id)))
         )
       )
-    yield result
+    yield project
 
   def getCashedBalance(since: BsonDateTime, to: Option[BsonDateTime])(using
       customer: User

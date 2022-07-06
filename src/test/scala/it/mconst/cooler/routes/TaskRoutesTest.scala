@@ -224,7 +224,7 @@ class TaskRoutesTest extends CatsEffectSuite {
       )
         .sign(testDataFixture().user)
         .shouldRespondLike(
-          (t: DbTask) => t.name,
+          (t: TaskWithProject) => t.name,
           taskData.name
         )
       _ <- Tasks

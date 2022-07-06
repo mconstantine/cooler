@@ -338,5 +338,8 @@ object Sessions {
   def delete(_id: ObjectId)(using customer: User)(using
       Lang
   ): EitherT[IO, Error, Session] =
-    findById(_id).flatMap(session => collection.use(_.delete(session._id)))
+    for
+      session <- findById(_id)
+      _ <- collection.use(_.delete(session._id))
+    yield session
 }

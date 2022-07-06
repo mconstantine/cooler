@@ -246,7 +246,7 @@ class ProjectRoutesTest extends CatsEffectSuite {
       )
         .sign(testDataFixture().user)
         .shouldRespondLike(
-          (p: DbProject) => p.name,
+          (p: ProjectWithStats) => p.name,
           projectData.name
         )
       _ <- Projects

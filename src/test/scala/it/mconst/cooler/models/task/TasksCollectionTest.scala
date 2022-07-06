@@ -422,7 +422,7 @@ class TasksCollectionTest extends CatsEffectSuite {
 
     for
       task <- Tasks.create(data).orFail
-      _ <- Tasks.delete(task._id).orFail.assertEquals(task)
+      _ <- Tasks.delete(task._id).orFail.map(_._id).assertEquals(task._id)
       _ <- Tasks
         .findById(task._id)
         .assertEquals(Left(Error(Status.NotFound, __.ErrorTaskNotFound)))
