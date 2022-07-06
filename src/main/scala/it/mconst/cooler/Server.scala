@@ -15,6 +15,7 @@ import org.http4s.ember.server.EmberServerBuilder
 import org.http4s.server.Router
 import it.mconst.cooler.routes.TaxRoutes
 import org.http4s.server.middleware.CORS
+import org.http4s.dsl.io.*
 
 object Server extends IOApp {
   val router = Router(
@@ -58,6 +59,17 @@ object Server extends IOApp {
           )
       )
       .withHttpApp(app)
+      .withErrorHandler { error =>
+        Config.environment match
+          case "development" => println(error)
+          case "production"  => ()
+          case _ =>
+            throw new IllegalArgumentException(
+              "environment in configuration file must be either \"development\" or \"production\""
+            )
+
+        InternalServerError()
+      }
       .build
       .use(_ => IO.never)
       .as(ExitCode.Success)
