@@ -7,6 +7,7 @@ import munit.CatsEffectSuite
 import cats.effect.IO
 import cats.effect.kernel.Resource
 import cats.syntax.all.none
+import cats.syntax.traverse.*
 import com.osinka.i18n.Lang
 import it.mconst.cooler.models.*
 import it.mconst.cooler.models.client.Client
@@ -16,6 +17,7 @@ import it.mconst.cooler.models.user.Users
 import it.mconst.cooler.utils.__
 import it.mconst.cooler.utils.Error
 import mongo4cats.collection.operations.Filter
+import mongo4cats.collection.operations.Update
 import org.bson.BsonDateTime
 import org.http4s.Status
 
@@ -326,6 +328,59 @@ class ProjectsCollectionTest extends CatsEffectSuite {
             .delete(project._id)
             .assertEquals(Left(Error(Status.NotFound, __.ErrorProjectNotFound)))
         }
+      yield ()
+    }
+  }
+
+  test("should get the latest projects") {
+    val client = testDataFixture().client
+    val now = System.currentTimeMillis
+
+    projectsList.use { projects =>
+      for
+        updated <- (0 until projects.size).toList
+          .traverse { index =>
+            val project = projects(index)
+
+            Projects.collection.use(
+              _.raw(collection =>
+                collection
+                  .updateOne(
+                    Filter.eq("_id", project._id),
+                    Update.set(
+                      "updatedAt",
+                      BsonDateTime(
+                        now - (projects.size * index) * 3600000
+                      ).toISOString
+                    )
+                  )
+                  .flatMap(_ =>
+                    collection
+                      .find(Filter.eq("_id", project._id))
+                      .first
+                      .map(_.get)
+                  )
+              )
+            )
+          }
+          .map(_.sortWith(_.updatedAt.getValue < _.updatedAt.getValue))
+        result <- Projects
+          .getLatest(CursorQuery.empty)
+          .orFail
+          .map(_.edges.map(_.node))
+          .assertEquals(
+            updated.map(p =>
+              ProjectWithClientLabel(
+                p._id,
+                p.name,
+                p.description,
+                p.cashData,
+                p.createdAt,
+                p.updatedAt,
+                ClientLabel(client._id, client.name)
+              )
+            )
+          )
       yield ()
     }
   }

@@ -234,28 +234,29 @@ object Projects {
         "updatedAt",
         Seq(
           Aggregates
-            .lookup(Clients.collection.name, "client", "_id", "client"),
-          Aggregates.unwind("$client"),
-          Aggregates.`match`(Filters.eq("client.user", customer._id)),
+            .lookup(Clients.collection.name, "client", "_id", "c"),
+          Aggregates.unwind("$c"),
+          Aggregates.`match`(Filters.eq("c.user", customer._id)),
           Aggregates.addFields(
             Field(
               "client",
               Document(
-                "_id" -> "$client._id",
+                "_id" -> "$c._id",
                 "name" -> Document(
                   "$cond" -> Document(
                     "if" -> Document(
-                      "$gt" -> List("$firstName", null)
+                      "$gt" -> List("$c.firstName", null)
                     ),
                     "then" -> Document(
-                      "$concat" -> List("$firstName", " ", "$lastName")
+                      "$concat" -> List("$c.firstName", " ", "$c.lastName")
                     ),
-                    "else" -> "$businessName"
+                    "else" -> "$c.businessName"
                   )
                 )
               )
             )
-          )
+          ),
+          Aggregates.project(Document("c" -> 0))
         )
       )(query)
     )

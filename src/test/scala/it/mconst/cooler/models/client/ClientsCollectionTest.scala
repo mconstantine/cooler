@@ -229,7 +229,7 @@ class ClientsCollectionTest extends CatsEffectSuite {
       clients
         .map(Clients.create(_).orFail)
         .parSequence
-        .map(_.sortWith(_.name < _.name))
+        .map(_.sortWith(_.name.toString < _.name.toString))
     })
   }(_ => Clients.collection.use(_.raw(_.deleteMany(Filter.empty)).void))
 

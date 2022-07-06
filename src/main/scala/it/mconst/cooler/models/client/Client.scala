@@ -50,7 +50,7 @@ sealed abstract trait Client(
     createdAt: BsonDateTime,
     updatedAt: BsonDateTime
 ) extends DbDocument {
-  def name: String
+  def name: NonEmptyString
 }
 
 final case class PrivateClient(
@@ -81,7 +81,8 @@ final case class PrivateClient(
       createdAt,
       updatedAt
     ) {
-  override def name: String = s"$firstName $lastName"
+  override def name: NonEmptyString =
+    NonEmptyString.unsafe(s"$firstName $lastName")
 }
 
 final case class BusinessClient(
@@ -112,7 +113,7 @@ final case class BusinessClient(
       createdAt,
       updatedAt
     ) {
-  override def name: String = s"$businessName"
+  override def name: NonEmptyString = NonEmptyString.unsafe(s"$businessName")
 }
 
 object Client {
