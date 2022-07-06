@@ -156,7 +156,7 @@ interface Session {
         addressCountry: client.address_country,
         addressProvince: client.address_province,
         addressCity: client.address_city,
-        addressZip: client.address_zip,
+        addressZIP: client.address_zip,
         addressStreet: client.address_street,
         addressStreetNumber: client.address_street_number,
         addressEmail: client.address_email,

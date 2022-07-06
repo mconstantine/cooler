@@ -18,16 +18,10 @@ import it.mconst.cooler.models.*
 import it.mconst.cooler.models.client.BusinessClient
 import it.mconst.cooler.models.client.Client
 import it.mconst.cooler.models.client.PrivateClient
-import it.mconst.cooler.models.project.DbProject
 import it.mconst.cooler.models.project.Project
 import it.mconst.cooler.models.project.ProjectCashData
-import it.mconst.cooler.models.project.ProjectWithClient
-import it.mconst.cooler.models.project.ProjectWithClientLabel
 import it.mconst.cooler.models.session.Session
-import it.mconst.cooler.models.task.DbTask
 import it.mconst.cooler.models.task.Task
-import it.mconst.cooler.models.task.TaskWithProject
-import it.mconst.cooler.models.task.TaskWithProjectLabel
 import it.mconst.cooler.models.tax.Tax
 import it.mconst.cooler.models.user.JWT
 import it.mconst.cooler.models.user.User

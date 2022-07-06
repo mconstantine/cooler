@@ -107,14 +107,18 @@ object ProjectWithClientLabel {
     jsonEncoderOf[IO, Cursor[ProjectWithClientLabel]]
 }
 
-final case class ProjectWithClient(
+final case class ProjectWithStats(
     _id: ObjectId,
     name: NonEmptyString,
     description: Option[NonEmptyString],
     cashData: Option[ProjectCashData],
     createdAt: BsonDateTime,
     updatedAt: BsonDateTime,
-    client: Client
+    client: ClientLabel,
+    expectedWorkingHours: NonNegativeFloat,
+    actualWorkingHours: NonNegativeFloat,
+    budget: NonNegativeFloat,
+    balance: NonNegativeFloat
 ) extends Project(
       _id,
       name,
@@ -124,9 +128,9 @@ final case class ProjectWithClient(
       updatedAt
     )
 
-object ProjectWithClient {
-  given EntityEncoder[IO, ProjectWithClient] =
-    jsonEncoderOf[IO, ProjectWithClient]
+object ProjectWithStats {
+  given EntityEncoder[IO, ProjectWithStats] =
+    jsonEncoderOf[IO, ProjectWithStats]
 }
 
 object Project {
@@ -188,21 +192,132 @@ object Projects {
 
   def findById(
       _id: ObjectId
-  )(using customer: User)(using Lang): EitherT[IO, Error, ProjectWithClient] =
+  )(using customer: User)(using Lang): EitherT[IO, Error, ProjectWithStats] =
     EitherT.fromOptionF(
       collection.use(
         _.raw(
-          _.aggregateWithCodec[ProjectWithClient](
+          _.aggregateWithCodec[ProjectWithStats](
             Seq(
               Aggregates.`match`(Filters.eq("_id", _id)),
               Aggregates.lookup(
                 Clients.collection.name,
                 "client",
                 "_id",
-                "client"
+                "c"
               ),
-              Aggregates.unwind("$client"),
-              Aggregates.`match`(Filters.eq("client.user", customer._id))
+              Aggregates.unwind("$c"),
+              Aggregates.`match`(Filters.eq("c.user", customer._id)),
+              Aggregates.addFields(
+                Field(
+                  "client",
+                  Document(
+                    "_id" -> "$c._id",
+                    "name" -> Document(
+                      "$cond" -> Document(
+                        "if" -> Document(
+                          "$gt" -> List("$c.firstName", null)
+                        ),
+                        "then" -> Document(
+                          "$concat" -> List(
+                            "$c.firstName",
+                            " ",
+                            "$c.lastName"
+                          )
+                        ),
+                        "else" -> "$c.businessName"
+                      )
+                    )
+                  )
+                )
+              ),
+              Aggregates.project(Document("c" -> 0)),
+              Document(
+                "$lookup" -> Document(
+                  "from" -> "tasks",
+                  "localField" -> "_id",
+                  "foreignField" -> "project",
+                  "as" -> "tasks",
+                  "pipeline" -> Seq(
+                    Document(
+                      "$project" -> Document(
+                        "_id" -> 1,
+                        "expectedWorkingHours" -> 1,
+                        "hourlyCost" -> 1
+                      )
+                    ),
+                    Document(
+                      "$addFields" -> Document(
+                        "budget" -> Document(
+                          "$multiply" -> Seq(
+                            "$expectedWorkingHours",
+                            "$hourlyCost"
+                          )
+                        )
+                      )
+                    ),
+                    Document(
+                      "$lookup" -> Document(
+                        "from" -> "sessions",
+                        "localField" -> "_id",
+                        "foreignField" -> "task",
+                        "as" -> "sessions",
+                        "pipeline" -> Seq(
+                          Document(
+                            "$project" -> Document(
+                              "_id" -> 0,
+                              "actualWorkingHours" -> Document(
+                                "$dateDiff" -> Document(
+                                  "startDate" -> Document(
+                                    "$dateFromString" -> Document(
+                                      "dateString" -> "$startTime"
+                                    )
+                                  ),
+                                  "endDate" -> Document(
+                                    "$dateFromString" -> Document(
+                                      "dateString" -> "$endTime"
+                                    )
+                                  ),
+                                  "unit" -> "hour"
+                                )
+                              )
+                            )
+                          )
+                        )
+                      )
+                    ),
+                    Document(
+                      "$addFields" -> Document(
+                        "actualWorkingHours" -> Document(
+                          "$sum" -> "$sessions.actualWorkingHours"
+                        )
+                      )
+                    ),
+                    Document(
+                      "$addFields" -> Document(
+                        "balance" -> Document(
+                          "$multiply" -> Seq(
+                            "$actualWorkingHours",
+                            "$hourlyCost"
+                          )
+                        )
+                      )
+                    )
+                  )
+                )
+              ),
+              Aggregates.addFields(
+                Field(
+                  "expectedWorkingHours",
+                  Document("$sum" -> "$tasks.expectedWorkingHours")
+                ),
+                Field(
+                  "actualWorkingHours",
+                  Document("$sum" -> "$tasks.actualWorkingHours")
+                ),
+                Field("budget", Document("$sum" -> "$tasks.budget")),
+                Field("balance", Document("$sum" -> "$tasks.balance"))
+              ),
+              Aggregates.project(Document("tasks" -> 0))
             )
           ).first
         )

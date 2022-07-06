@@ -9,11 +9,15 @@ import cats.syntax.all.none
 import cats.syntax.parallel.*
 import com.osinka.i18n.Lang
 import it.mconst.cooler.models.*
+import it.mconst.cooler.models.client.Client
 import it.mconst.cooler.models.client.Clients
-import it.mconst.cooler.models.project.ProjectCashedBalance
+import it.mconst.cooler.models.project.DbProject
 import it.mconst.cooler.models.project.ProjectCashData
+import it.mconst.cooler.models.project.ProjectCashedBalance
 import it.mconst.cooler.models.project.Projects
+import it.mconst.cooler.models.session.Session
 import it.mconst.cooler.models.session.Sessions
+import it.mconst.cooler.models.task.DbTask
 import it.mconst.cooler.models.task.Tasks
 import it.mconst.cooler.models.user.User
 import it.mconst.cooler.models.user.Users
@@ -42,6 +46,13 @@ class StatsTest extends CatsEffectSuite {
   )
 
   override def munitFixtures = Seq(adminFixture)
+
+  final case class TestData(
+      client: Client,
+      projects: List[DbProject],
+      tasks: List[DbTask],
+      sessions: List[Session]
+  )
 
   def testData = Resource.make(
     for
@@ -128,7 +139,7 @@ class StatsTest extends CatsEffectSuite {
           .map(Tasks.create(_).orFail)
           .parSequence
       }
-      _ <- {
+      sessions <- {
         given User = adminFixture()
         List(
           // Ten hours on task 0 (project 0)
@@ -163,7 +174,7 @@ class StatsTest extends CatsEffectSuite {
           .map(Sessions.start(_).orFail)
           .parSequence
       }
-    yield ()
+    yield TestData(client, projects, tasks, sessions)
   )(_ =>
     Clients.collection
       .use(_.raw(_.deleteMany(Filter.empty)))
@@ -214,6 +225,42 @@ class StatsTest extends CatsEffectSuite {
       Projects
         .getCashedBalance(BsonDateTime(now - 3600000 * 50), none[BsonDateTime])
         .assertEquals(ProjectCashedBalance(NonNegativeFloat.unsafe(200f)))
+    }
+  }
+
+  test("should get the stats of a project (empty)") {
+    given User = adminFixture()
+
+    testData.use { data =>
+      for
+        project <- Projects
+          .create(
+            makeTestProject(
+              data.client._id,
+              name = "Project stats empty test"
+            )
+          )
+          .orFail
+        result <- Projects.findById(project._id).orFail
+        _ = assertEquals(result.expectedWorkingHours.toFloat, 0f)
+        _ = assertEquals(result.actualWorkingHours.toFloat, 0f)
+        _ = assertEquals(result.budget.toFloat, 0f)
+        _ = assertEquals(result.balance.toFloat, 0f)
+      yield ()
+    }
+  }
+
+  test("should get the stats of a project (with data)") {
+    testData.use { data =>
+      given User = adminFixture()
+
+      for
+        result <- Projects.findById(data.projects(0)._id).orFail
+        _ = assertEquals(result.expectedWorkingHours.toFloat, 20f)
+        _ = assertEquals(result.actualWorkingHours.toFloat, 15f)
+        _ = assertEquals(result.budget.toFloat, 200f)
+        _ = assertEquals(result.balance.toFloat, 150f)
+      yield ()
     }
   }
 }

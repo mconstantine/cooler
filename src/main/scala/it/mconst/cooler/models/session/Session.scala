@@ -12,8 +12,8 @@ import com.osinka.i18n.Lang
 import io.circe.generic.auto.*
 import it.mconst.cooler.models.*
 import it.mconst.cooler.models.client.Client
+import it.mconst.cooler.models.project.DbProject
 import it.mconst.cooler.models.project.Projects
-import it.mconst.cooler.models.project.ProjectWithClient
 import it.mconst.cooler.models.task.Tasks
 import it.mconst.cooler.models.user.User
 import it.mconst.cooler.utils.__
@@ -89,11 +89,11 @@ object Sessions {
 
   private def findProject(taskId: ObjectId)(using
       customer: User
-  )(using Lang): EitherT[IO, Error, ProjectWithClient] =
+  )(using Lang): EitherT[IO, Error, DbProject] =
     Tasks.collection.use(c =>
       EitherT.fromOptionF(
         c.raw(
-          _.aggregateWithCodec[ProjectWithClient](
+          _.aggregateWithCodec[DbProject](
             Seq(
               Aggregates.`match`(Filters.eq("_id", taskId)),
               Aggregates.project(Document("_id" -> false, "project" -> 1)),
@@ -113,7 +113,8 @@ object Sessions {
               Aggregates.`match`(
                 Filters.eq("project.client.user", customer._id)
               ),
-              Aggregates.replaceRoot("$project")
+              Aggregates.replaceRoot("$project"),
+              Aggregates.addFields(Field("client", "$client._id"))
             )
           ).first
         ),

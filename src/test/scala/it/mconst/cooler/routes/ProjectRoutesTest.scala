@@ -12,10 +12,12 @@ import io.circe.generic.auto.*
 import it.mconst.cooler.models.*
 import it.mconst.cooler.models.client.Client
 import it.mconst.cooler.models.client.Clients
+import it.mconst.cooler.models.project.ClientLabel
 import it.mconst.cooler.models.project.DbProject
 import it.mconst.cooler.models.project.ProjectCashData
 import it.mconst.cooler.models.project.Projects
-import it.mconst.cooler.models.project.ProjectWithClient
+import it.mconst.cooler.models.project.ProjectWithClientLabel
+import it.mconst.cooler.models.project.ProjectWithStats
 import it.mconst.cooler.models.user.User
 import it.mconst.cooler.models.user.Users
 import it.mconst.cooler.utils.__
@@ -42,7 +44,7 @@ class ProjectRoutesTest extends CatsEffectSuite {
   given HttpClient[IO] = client
 
   given EntityDecoder[IO, DbProject] = jsonOf[IO, DbProject]
-  given EntityDecoder[IO, ProjectWithClient] = jsonOf[IO, ProjectWithClient]
+  given EntityDecoder[IO, ProjectWithStats] = jsonOf[IO, ProjectWithStats]
 
   final case class TestData(user: User, client: Client)
 
@@ -121,14 +123,29 @@ class ProjectRoutesTest extends CatsEffectSuite {
 
   test("should find projects (asc)") {
     projectsList.use { projects =>
-      given EntityDecoder[IO, Cursor[DbProject]] = jsonOf[IO, Cursor[DbProject]]
+      val client = testDataFixture().client
+      val projectsWithClientLabel: List[ProjectWithClientLabel] =
+        projects.map(p =>
+          ProjectWithClientLabel(
+            p._id,
+            p.name,
+            p.description,
+            p.cashData,
+            p.createdAt,
+            p.updatedAt,
+            ClientLabel(client._id, client.name)
+          )
+        )
 
       GET(uri"/?query=project&first=2&after=Project%20B")
         .sign(testDataFixture().user)
         .shouldRespond(
-          Cursor[DbProject](
+          Cursor[ProjectWithClientLabel](
             PageInfo(6, Some("Project C"), Some("Project D"), true, true),
-            List(Edge(projects(2), "Project C"), Edge(projects(3), "Project D"))
+            List(
+              Edge(projectsWithClientLabel(2), "Project C"),
+              Edge(projectsWithClientLabel(3), "Project D")
+            )
           )
         )
     }
@@ -136,14 +153,29 @@ class ProjectRoutesTest extends CatsEffectSuite {
 
   test("should find projects (desc)") {
     projectsList.use { projects =>
-      given EntityDecoder[IO, Cursor[DbProject]] = jsonOf[IO, Cursor[DbProject]]
+      val client = testDataFixture().client
+      val projectsWithClientLabel: List[ProjectWithClientLabel] =
+        projects.map(p =>
+          ProjectWithClientLabel(
+            p._id,
+            p.name,
+            p.description,
+            p.cashData,
+            p.createdAt,
+            p.updatedAt,
+            ClientLabel(client._id, client.name)
+          )
+        )
 
       GET(uri"/?query=project&last=2&before=Project%20E")
         .sign(testDataFixture().user)
         .shouldRespond(
-          Cursor[DbProject](
+          Cursor[ProjectWithClientLabel](
             PageInfo(6, Some("Project D"), Some("Project C"), true, true),
-            List(Edge(projects(3), "Project D"), Edge(projects(2), "Project C"))
+            List(
+              Edge(projectsWithClientLabel(3), "Project D"),
+              Edge(projectsWithClientLabel(2), "Project C")
+            )
           )
         )
     }
@@ -164,7 +196,7 @@ class ProjectRoutesTest extends CatsEffectSuite {
       _ <- GET(Uri.fromString(s"/${project._id.toString}").getOrElse(fail("")))
         .sign(user)
         .shouldRespondLike(
-          (p: ProjectWithClient) => p.name,
+          (p: ProjectWithStats) => p.name,
           data.name
         )
     yield ()
