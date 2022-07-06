@@ -71,9 +71,6 @@ final case class DbTask(
 object DbTask {
   given EntityEncoder[IO, DbTask] = jsonEncoderOf[IO, DbTask]
   given EntityEncoder[IO, Cursor[DbTask]] = jsonEncoderOf[IO, Cursor[DbTask]]
-
-  given EntityEncoder[IO, Iterable[DbTask]] =
-    jsonEncoderOf[IO, Iterable[DbTask]]
 }
 
 final case class ProjectLabel(_id: ObjectId, name: NonEmptyString)
@@ -98,6 +95,11 @@ final case class TaskWithProjectLabel(
       createdAt: BsonDateTime,
       updatedAt: BsonDateTime
     )
+
+object TaskWithProjectLabel {
+  given EntityEncoder[IO, Iterable[TaskWithProjectLabel]] =
+    jsonEncoderOf[IO, Iterable[TaskWithProjectLabel]]
+}
 
 final case class TaskWithProject(
     _id: ObjectId,
@@ -310,10 +312,10 @@ object Tasks {
 
   def getDue(since: BsonDateTime, to: Option[BsonDateTime])(using
       customer: User
-  ): IO[Iterable[DbTask]] =
+  ): IO[Iterable[TaskWithProjectLabel]] =
     collection.use(
       _.raw(
-        _.aggregateWithCodec[DbTask](
+        _.aggregateWithCodec[TaskWithProjectLabel](
           Seq(
             Aggregates.`match`(
               Filters.and(
@@ -330,7 +332,7 @@ object Tasks {
                 "from" -> "projects",
                 "localField" -> "project",
                 "foreignField" -> "_id",
-                "as" -> "project",
+                "as" -> "p",
                 "pipeline" -> Seq(
                   Document(
                     "$lookup" -> Document(
@@ -350,19 +352,20 @@ object Tasks {
             ),
             Document(
               "$match" -> Document(
-                "project" -> Document("$not" -> Document("$size", 0))
+                "p" -> Document("$not" -> Document("$size", 0))
               )
             ),
-            Aggregates.unwind("$project"),
+            Aggregates.unwind("$p"),
             Aggregates.addFields(
               Field(
                 "project",
                 Document(
-                  "_id" -> "$project._id",
-                  "name" -> "$project.name"
+                  "_id" -> "$p._id",
+                  "name" -> "$p.name"
                 )
               )
-            )
+            ),
+            Aggregates.project(Document("p" -> 0))
           )
         ).all
       )
