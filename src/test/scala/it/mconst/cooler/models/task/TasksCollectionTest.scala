@@ -357,7 +357,7 @@ class TasksCollectionTest extends CatsEffectSuite {
       )
       _ <- IO.delay(Thread.sleep(500))
       updated <- Tasks.update(task._id, update).orFail
-      _ = assertEquals(updated.project.toString, update.project)
+      _ = assertEquals(updated.project._id.toString, update.project)
       _ = assertEquals(updated.name.toString, update.name)
       _ = assertEquals(updated.description.map(_.toString), none[String])
       _ = assertEquals(

@@ -70,51 +70,55 @@ class CollectionTest extends CatsEffectSuite {
   }
 
   test("should update a document") {
-    val person = Person(new ObjectId(), "John", "Doe")
+    val data = Person(new ObjectId(), "John", "Doe")
 
     val updates = people.Update
       .`with`("firstName" -> "Mario")
       .`with`("lastName" -> "Martino")
       .build
 
-    for
-      update <- people
-        .use(_.create(person))
-        .orFail
-        .flatMap(person => people.use(_.update(person._id, updates)).orFail)
-      _ = assertEquals(update.firstName, "Mario")
-      _ = assertEquals(update.lastName, "Martino")
-    yield ()
+    people.use { c =>
+      for
+        person <- c.create(data)
+        _ <- c.update(person._id, updates)
+        update <- c.findOne[Person](Filter.eq("_id", person._id))
+        _ = assertEquals(update.firstName, "Mario")
+        _ = assertEquals(update.lastName, "Martino")
+      yield ()
+    }
   }
 
   test("should register the time of the update") {
-    val person = Person(new ObjectId(), "John", "Doe")
+    val data = Person(new ObjectId(), "John", "Doe")
 
     val updates = people.Update
       .`with`("firstName" -> "Mario")
       .`with`("lastName" -> "Martino")
       .build
 
-    for
-      person <- people.use(_.create(person)).orFail
-      _ <- IO.delay(500)
-      updated <- people.use(_.update(person._id, updates)).orFail
-      _ = assert(updated.updatedAt.getValue > person.updatedAt.getValue)
-    yield ()
+    people.use { c =>
+      for
+        person <- c.create(data).orFail
+        _ <- IO.delay(500)
+        _ <- c.update(person._id, updates).orFail
+        updated <- c.findOne[Person](Filter.eq("_id", person._id)).orFail
+        _ = assert(updated.updatedAt.getValue > person.updatedAt.getValue)
+      yield ()
+    }
   }
 
   test("should delete a document") {
     val person = Person(new ObjectId(), "John", "Doe")
 
-    for
-      _ <- people.use(_.create(person)).value
-      _ <- people
-        .use(_.delete(person._id))
-        .assertEquals(Right(person))
-      _ <- people
-        .use(_.findOne[Person](Filter.eq("_id", person._id)))
-        .assertEquals(Left(Error(Status.NotFound, __.ErrorDocumentNotFound)))
-    yield ()
+    people.use { c =>
+      for
+        _ <- c.create(person).value
+        _ <- c.delete(person._id).assertEquals(Right(person))
+        _ <- c
+          .findOne[Person](Filter.eq("_id", person._id))
+          .assertEquals(Left(Error(Status.NotFound, __.ErrorDocumentNotFound)))
+      yield ()
+    }
   }
 
   test("should find a document") {

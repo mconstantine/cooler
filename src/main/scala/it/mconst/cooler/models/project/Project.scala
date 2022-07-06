@@ -10,6 +10,7 @@ import com.mongodb.client.model.Aggregates
 import com.mongodb.client.model.BsonField
 import com.mongodb.client.model.Field
 import com.mongodb.client.model.Filters
+import com.mongodb.client.result.UpdateResult
 import com.osinka.i18n.Lang
 import io.circe.Decoder
 import io.circe.Decoder.Result
@@ -397,13 +398,13 @@ object Projects {
 
   def update(_id: ObjectId, data: Project.InputData)(using customer: User)(using
       Lang
-  ): EitherT[IO, Error, DbProject] =
+  ): EitherT[IO, Error, ProjectWithStats] =
     for
       project <- findById(_id)
       data <- EitherT.fromEither[IO](Project.validateInputData(data).toResult)
       client <- Clients.findById(data.client)
-      result <- collection
-        .useWithCodec[ProjectCashData, Error, DbProject](
+      _ <- collection
+        .useWithCodec[ProjectCashData, Error, UpdateResult](
           _.update(
             project._id,
             collection.Update
@@ -420,6 +421,7 @@ object Projects {
               .build
           )
         )
+      result <- findById(_id)
     yield result
 
   def delete(_id: ObjectId)(using customer: User)(using

@@ -5,6 +5,7 @@ import cats.effect.IO
 import cats.syntax.apply.*
 import com.mongodb.client.model.Aggregates
 import com.mongodb.client.model.Filters
+import com.mongodb.client.result.UpdateResult
 import com.osinka.i18n.Lang
 import io.circe.generic.auto.*
 import it.mconst.cooler.models.*
@@ -131,7 +132,7 @@ object Taxes {
     for
       tax <- findById(_id)
       update <- EitherT.fromEither[IO](Tax.validateInputData(data).toResult)
-      result <- collection.useWithCodec[BigDecimal, Error, Tax](
+      _ <- collection.useWithCodec[BigDecimal, Error, UpdateResult](
         _.update(
           tax._id,
           collection.Update
@@ -140,6 +141,7 @@ object Taxes {
             .build
         )
       )
+      result <- findById(_id)
     yield result
 
   def delete(_id: ObjectId)(using customer: User)(using

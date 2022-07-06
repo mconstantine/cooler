@@ -209,7 +209,7 @@ object Sessions {
       project <- findProject(session.task).leftMap(_ =>
         Error(Status.NotFound, __.ErrorSessionNotFound)
       )
-      result <- collection.use(
+      _ <- collection.use(
         _.update(
           session._id,
           collection.Update
@@ -235,6 +235,7 @@ object Sessions {
             .build
         )
       )
+      result <- collection.use(_.findOne[Session](Filter.eq("_id", _id)))
     yield result
 
   def getSessions(task: ObjectId, query: CursorQuery)(using customer: User)(
@@ -298,7 +299,7 @@ object Sessions {
       session <- findById(_id)
       data <- EitherT.fromEither[IO](Session.validateInputData(data).toResult)
       task <- Tasks.findById(data.task)
-      result <- collection
+      _ <- collection
         .use(
           _.update(
             session._id,
@@ -331,6 +332,7 @@ object Sessions {
             .build
         )
       )
+      result <- findById(_id)
     yield result
 
   def delete(_id: ObjectId)(using customer: User)(using

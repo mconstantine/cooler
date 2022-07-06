@@ -242,7 +242,7 @@ class ProjectsCollectionTest extends CatsEffectSuite {
       )
       _ <- IO.delay(Thread.sleep(500))
       updated <- Projects.update(project._id, update).orFail
-      _ = assertEquals(updated.client.toString, update.client)
+      _ = assertEquals(updated.client._id.toString, update.client)
       _ = assertEquals(updated.name.toString, update.name)
       _ = assertEquals(updated.description.map(_.toString), update.description)
       _ = assertEquals(updated.cashData, update.cashData)

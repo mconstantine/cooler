@@ -222,7 +222,7 @@ class ProjectRoutesTest extends CatsEffectSuite {
     for
       project <- Projects.create(projectData).orFail
       result <- client
-        .expect[DbProject](
+        .expect[ProjectWithStats](
           PUT(
             updateData,
             Uri.fromString(s"/${project._id.toString}").getOrElse(fail(""))

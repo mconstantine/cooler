@@ -200,7 +200,7 @@ class TaskRoutesTest extends CatsEffectSuite {
     for
       task <- Tasks.create(taskData).orFail
       result <- client
-        .expect[DbTask](
+        .expect[TaskWithProject](
           PUT(
             updateData,
             Uri.fromString(s"/${task._id.toString}").getOrElse(fail(""))

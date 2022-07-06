@@ -366,7 +366,7 @@ object Users {
                 .leftMap(_ => Error(Status.Conflict, __.ErrorUserConflict))
             )
           )
-        result <- c.update(
+        _ <- c.update(
           customer._id,
           collection.Update
             .`with`(
@@ -383,6 +383,7 @@ object Users {
             )
             .build
         )
+        result <- c.findOne[User](Filter.eq("_id", customer._id))
       yield result
     )
 

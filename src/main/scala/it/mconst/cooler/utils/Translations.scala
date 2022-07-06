@@ -30,8 +30,6 @@ enum __(val key: String):
   case ErrorDecodeValidationErrors extends __("error.decode.validationErrors")
   case ErrorDocumentNotFoundAfterInsert
       extends __("error.document.notFound.afterInsert")
-  case ErrorDocumentNotFoundAfterUpdate
-      extends __("error.document.notFound.afterUpdate")
   case ErrorDocumentNotFoundBeforeDelete
       extends __("error.document.notFound.beforeDelete")
   case ErrorDocumentNotFound extends __("error.document.notFound")

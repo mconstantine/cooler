@@ -373,12 +373,12 @@ object Tasks {
 
   def update(_id: ObjectId, data: Task.InputData)(using customer: User)(using
       Lang
-  ): EitherT[IO, Error, DbTask] =
+  ): EitherT[IO, Error, TaskWithProject] =
     for
       task <- findById(_id)
       data <- EitherT.fromEither[IO](Task.validateInputData(data).toResult)
       projectId <- Projects.findById(data.project).map(_._id)
-      result <- collection
+      _ <- collection
         .use(
           _.update(
             task._id,
@@ -403,6 +403,7 @@ object Tasks {
             .build
         )
       )
+      result <- findById(_id)
     yield result
 
   def delete(_id: ObjectId)(using customer: User)(using

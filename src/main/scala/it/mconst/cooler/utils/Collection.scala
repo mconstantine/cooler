@@ -11,6 +11,7 @@ import com.mongodb.client.model.BsonField
 import com.mongodb.client.model.Facet
 import com.mongodb.client.model.Filters
 import com.mongodb.client.model.Updates
+import com.mongodb.client.result.UpdateResult
 import com.osinka.i18n.Lang
 import io.circe.Decoder
 import io.circe.Decoder.Result
@@ -169,7 +170,7 @@ final case class Collection[F[
 
     def update(_id: ObjectId, update: BuiltUpdate)(using
         Lang
-    ): EitherT[F, Error, Doc] = {
+    ): EitherT[F, Error, UpdateResult] = {
       val providedUpdates = update.values
         .map(
           _ match
@@ -211,21 +212,16 @@ final case class Collection[F[
 
       val allUpdates = providedUpdates ++ updatedAtUpdate
 
-      for
-        result <- EitherT.liftF(
-          db.getCollection(name)
-            .map(collectionCodecDecorator)
-            .flatMap(
-              _.updateOne(
-                Filters.eq("_id", _id),
-                Updates.combine(allUpdates.asJava)
-              )
+      EitherT.liftF(
+        db.getCollection(name)
+          .map(collectionCodecDecorator)
+          .flatMap(
+            _.updateOne(
+              Filters.eq("_id", _id),
+              Updates.combine(allUpdates.asJava)
             )
-        )
-        updated <- findOne[Doc](Filter.eq("_id", _id)).leftMap(_ =>
-          Error(NotFound, __.ErrorDocumentNotFoundAfterUpdate)
-        )
-      yield updated
+          )
+      )
     }
 
     def delete(_id: ObjectId)(using Lang): EitherT[F, Error, Doc] = {

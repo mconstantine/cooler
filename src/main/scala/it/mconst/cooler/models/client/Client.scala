@@ -432,7 +432,7 @@ object Clients {
     for
       client <- findById(_id)
       data <- EitherT.fromEither[IO](Client.validateInputData(data).toResult)
-      result <- collection.use(
+      _ <- collection.use(
         _.update(
           client._id,
           data match
@@ -470,6 +470,7 @@ object Clients {
                 .build
         )
       )
+      result <- findById(_id)
     yield result
 
   def delete(
