@@ -166,6 +166,20 @@ class ProjectsCollectionTest extends CatsEffectSuite {
 
   test("should find a project") {
     projectsList.use { projects =>
+      val client = testDataFixture().client
+      val projectsWithClientLabels: List[ProjectWithClientLabel] =
+        projects.map(p =>
+          ProjectWithClientLabel(
+            p._id,
+            p.name,
+            p.description,
+            p.cashData,
+            p.createdAt,
+            p.updatedAt,
+            ClientLabel(client._id, client.name)
+          )
+        )
+
       for
         result <- Projects
           .find(
@@ -184,7 +198,7 @@ class ProjectsCollectionTest extends CatsEffectSuite {
         _ = assertEquals(result.edges.length, 2)
         _ = assertEquals(
           result.edges.map(_.node),
-          List(projects(2), projects(3))
+          List(projectsWithClientLabels(2), projectsWithClientLabels(3))
         )
       yield ()
     }
