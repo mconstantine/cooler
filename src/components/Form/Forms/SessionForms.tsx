@@ -3,8 +3,9 @@ import { Option } from 'fp-ts/Option'
 import { useState } from 'react'
 import {
   LocalizedString,
-  PositiveInteger,
-  PositiveIntegerFromString
+  ObjectId,
+  ObjectIdFromString,
+  PositiveInteger
 } from '../../../globalDomain'
 import { Session, SessionCreationInput } from '../../../entities/Session'
 import { useForm } from '../useForm'
@@ -34,7 +35,7 @@ export function SessionForm(props: Props) {
     pipe(
       props.session,
       option.fold(constFalse, session =>
-        pipe(session.end_time, option.fold(constFalse, constTrue))
+        pipe(session.endTime, option.fold(constFalse, constTrue))
       )
     )
   )
@@ -45,14 +46,14 @@ export function SessionForm(props: Props) {
         props.session,
         option.fold(
           () => ({
-            task: toSelectState<PositiveInteger>({}, option.none),
-            start_time: new Date(Math.floor(Date.now() / 60000) * 60000),
-            end_time: option.none
+            task: toSelectState<ObjectId>({}, option.none),
+            startTime: new Date(Math.floor(Date.now() / 60000) * 60000),
+            endTime: option.none
           }),
           session => ({
-            task: toSelectState({}, option.some(session.task.id)),
-            start_time: session.start_time,
-            end_time: session.end_time
+            task: toSelectState({}, option.some(session.task)),
+            startTime: session.startTime,
+            endTime: session.endTime
           })
         )
       ),
@@ -68,10 +69,10 @@ export function SessionForm(props: Props) {
         data =>
           pipe(data as SessionCreationInput, data =>
             pipe(
-              data.end_time,
+              data.endTime,
               option.fold(
                 constTrue,
-                end_time => end_time.getTime() - data.start_time.getTime() > 0
+                endTime => endTime.getTime() - data.startTime.getTime() > 0
               )
             )
           ),
@@ -86,11 +87,11 @@ export function SessionForm(props: Props) {
   const onToggleChange = (value: boolean) => {
     setDidSessionEnd(value)
     setValues({
-      end_time: pipe(
+      endTime: pipe(
         value,
         boolean.fold(
           () => option.none,
-          () => option.some(values.start_time)
+          () => option.some(values.startTime)
         )
       )
     })
@@ -110,12 +111,12 @@ export function SessionForm(props: Props) {
             label={a18n`Task`}
             {...fieldProps('task')}
             onQueryChange={findTasks}
-            codec={PositiveIntegerFromString}
+            codec={ObjectIdFromString}
             emptyPlaceholder={a18n`No tasks found`}
           />
         ))
       )}
-      <DateTimePicker label={a18n`Start time`} {...fieldProps('start_time')} />
+      <DateTimePicker label={a18n`Start time`} {...fieldProps('startTime')} />
       <Toggle
         name="didSessionEnd"
         label={a18n`This session already ended`}
@@ -125,18 +126,18 @@ export function SessionForm(props: Props) {
         warning={option.none}
       />
       {pipe(
-        values.end_time,
-        option.fold(constNull, end_time => {
-          const duration = end_time.getTime() - values.start_time.getTime()
+        values.endTime,
+        option.fold(constNull, endTime => {
+          const duration = endTime.getTime() - values.startTime.getTime()
           const durationString = formatDuration(duration)
 
           return (
             <>
               <DateTimePicker
                 label={a18n`End time`}
-                {...fieldProps('end_time')}
-                value={end_time}
-                onChange={time => setValues({ end_time: option.some(time) })}
+                {...fieldProps('endTime')}
+                value={endTime}
+                onChange={time => setValues({ endTime: option.some(time) })}
               />
               <Body
                 color={duration > 0 ? 'primary' : 'danger'}

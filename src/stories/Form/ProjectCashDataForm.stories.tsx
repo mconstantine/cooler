@@ -5,18 +5,18 @@ import { IO } from 'fp-ts/IO'
 import { unsafeLocalizedString } from '../../a18n'
 import { Content } from '../../components/Content/Content'
 import { ProjectCashDataForm as ProjectCashDataFormComponent } from '../../components/Form/Forms/ProjectCashDataForm'
-import { CashData } from '../../entities/Project'
+import { ProjectCashData } from '../../entities/Project'
 import { CoolerStory } from '../CoolerStory'
 import { fakeProject } from '../utils'
 
 interface Args {
   shouldFail: boolean
-  onSubmit: (data: CashData) => void
+  onSubmit: (data: ProjectCashData) => void
   onCancel: IO<void>
 }
 
 const ProjectCashDataFormTemplate: Story<Args> = props => {
-  const onSubmit = (data: CashData) =>
+  const onSubmit = (data: ProjectCashData) =>
     pipe(
       props.shouldFail,
       boolean.fold(

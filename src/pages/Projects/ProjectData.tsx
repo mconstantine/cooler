@@ -19,10 +19,14 @@ import { ReadOnlyInput } from '../../components/Form/Input/ReadOnlyInput/ReadOnl
 import { Panel } from '../../components/Panel/Panel'
 import { useDelete, useLazyGet, usePut } from '../../effects/api/useApi'
 import { getClientName } from '../../entities/Client'
-import { Project, ProjectCreationInput } from '../../entities/Project'
+import {
+  Project,
+  ProjectCreationInput,
+  ProjectWithStats
+} from '../../entities/Project'
 import {
   LocalizedString,
-  PositiveInteger,
+  ObjectId,
   unsafePositiveInteger
 } from '../../globalDomain'
 import { getConnectionNodes } from '../../misc/Connection'
@@ -40,8 +44,8 @@ import { List } from '../../components/List/List'
 import { calculateNetValue, renderTaxItem } from '../Profile/utils'
 
 interface Props {
-  project: Project
-  onUpdate: Reader<Project, void>
+  project: ProjectWithStats
+  onUpdate: Reader<ProjectWithStats, void>
   onDelete: Reader<Project, void>
 }
 
@@ -50,10 +54,10 @@ export function ProjectData(props: Props) {
   const findClientsCommand = useLazyGet(clientsQuery)
   const [isEditing, setIsEditing] = useState(false)
   const updateProjectCommand = usePut(
-    makeUpdateProjectRequest(props.project.id)
+    makeUpdateProjectRequest(props.project._id)
   )
   const deleteProjectCommand = useDelete(
-    makeDeleteProjectRequest(props.project.id)
+    makeDeleteProjectRequest(props.project._id)
   )
   const [error, setError] = useState<Option<LocalizedString>>(option.none)
 
@@ -77,7 +81,7 @@ export function ProjectData(props: Props) {
   const findClients: ReaderTaskEither<
     string,
     LocalizedString,
-    Record<PositiveInteger, LocalizedString>
+    Record<ObjectId, LocalizedString>
   > = query =>
     pipe(
       findClientsCommand({
@@ -90,7 +94,7 @@ export function ProjectData(props: Props) {
           getConnectionNodes,
           array.reduce({}, (res, client) => ({
             ...res,
-            [client.id]: getClientName(client)
+            [client._id]: getClientName(client)
           }))
         )
       )
@@ -134,26 +138,26 @@ export function ProjectData(props: Props) {
             value={props.project.client.name}
           />
           <ReadOnlyInput
-            name="created_at"
+            name="createdAt"
             label={a18n`Created at`}
-            value={formatDateTime(props.project.created_at)}
+            value={formatDateTime(props.project.createdAt)}
           />
           <ReadOnlyInput
-            name="updated_at"
+            name="updatedAt"
             label={a18n`Last updated at`}
-            value={formatDateTime(props.project.updated_at)}
+            value={formatDateTime(props.project.updatedAt)}
           />
           {pipe(
-            props.project.cashed,
+            props.project.cashData,
             option.fold(
               () => (
                 <ReadOnlyInput
-                  name="cashed_status"
+                  name="cashedStatus"
                   label={a18n`Cashed status`}
                   value={a18n`Not cashed`}
                 />
               ),
-              ({ at, balance }) =>
+              ({ at, amount }) =>
                 pipe(
                   taxes,
                   query.fold(
@@ -173,25 +177,25 @@ export function ProjectData(props: Props) {
                             progress: option.none
                           },
                           {
-                            key: 'grossCashedBalance',
+                            key: 'grossCashedAmount',
                             type: 'valued',
                             label: option.none,
-                            content: a18n`Cashed balance (gross)`,
+                            content: a18n`Cashed amount (gross)`,
                             description: option.none,
-                            value: formatMoneyAmount(balance),
+                            value: formatMoneyAmount(amount),
                             progress: option.none
                           },
                           ...taxes.map(tax =>
-                            renderTaxItem('cashedBalance', balance, tax)
+                            renderTaxItem('cashedAmount', amount, tax)
                           ),
                           {
-                            key: 'netCashedBalance',
+                            key: 'netCashedAmount',
                             type: 'valued',
                             label: option.none,
-                            content: a18n`Cashed balance (net)`,
+                            content: a18n`Cashed amount (net)`,
                             description: option.none,
                             value: formatMoneyAmount(
-                              calculateNetValue(balance, taxes)
+                              calculateNetValue(amount, taxes)
                             ),
                             progress: option.none
                           }

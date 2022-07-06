@@ -3,6 +3,7 @@ import * as t from 'io-ts'
 import { NonEmptyString, optionFromNullable } from 'io-ts-types'
 import {
   NonNegativeInteger,
+  ObjectId,
   PositiveInteger,
   unsafeNonNegativeInteger
 } from '../globalDomain'
@@ -93,7 +94,7 @@ export function getConnectionNodes<T>(connection: Connection<T>): T[] {
   return connection.edges.map(edge => edge.node)
 }
 
-export function addToConnection<T extends { id: PositiveInteger }>(
+export function addToConnection<T extends { _id: ObjectId }>(
   connection: Connection<T>,
   newNode: T
 ): Connection<T> {
@@ -105,7 +106,7 @@ export function addToConnection<T extends { id: PositiveInteger }>(
     },
     edges: [
       {
-        cursor: unsafeCursor(newNode.id.toString()),
+        cursor: unsafeCursor(newNode._id),
         node: newNode
       },
       ...connection.edges
@@ -113,7 +114,7 @@ export function addToConnection<T extends { id: PositiveInteger }>(
   }
 }
 
-export function updateConnection<T extends { id: PositiveInteger }>(
+export function updateConnection<T extends { _id: ObjectId }>(
   connection: Connection<T>,
   updatedNode: T
 ): Connection<T> {
@@ -122,7 +123,7 @@ export function updateConnection<T extends { id: PositiveInteger }>(
     edges: connection.edges.map(edge => ({
       ...edge,
       node: pipe(
-        edge.node.id === updatedNode.id,
+        edge.node._id === updatedNode._id,
         boolean.fold(
           () => edge.node,
           () => updatedNode
@@ -132,7 +133,7 @@ export function updateConnection<T extends { id: PositiveInteger }>(
   }
 }
 
-export function deleteFromConnection<T extends { id: PositiveInteger }>(
+export function deleteFromConnection<T extends { _id: ObjectId }>(
   connection: Connection<T>,
   deletedNode: T
 ): Connection<T> {
@@ -142,6 +143,6 @@ export function deleteFromConnection<T extends { id: PositiveInteger }>(
       ...connection.pageInfo,
       totalCount: unsafeNonNegativeInteger(connection.pageInfo.totalCount - 1)
     },
-    edges: connection.edges.filter(({ node }) => node.id !== deletedNode.id)
+    edges: connection.edges.filter(({ node }) => node._id !== deletedNode._id)
   }
 }

@@ -16,7 +16,7 @@ import {
 import { Tax, TaxCreationInput, TaxUpdateInput } from '../entities/Tax'
 import {
   LocalizedString,
-  PositiveInteger,
+  ObjectId,
   unsafePositiveInteger
 } from '../globalDomain'
 import {
@@ -34,10 +34,10 @@ interface TaxesContext {
   taxes: Query<LocalizedString, Tax[]>
   createTax: ReaderTaskEither<TaxCreationInput, LocalizedString, void>
   updateTax: Reader<
-    PositiveInteger,
+    ObjectId,
     ReaderTaskEither<TaxUpdateInput, LocalizedString, void>
   >
-  deleteTax: ReaderTaskEither<PositiveInteger, LocalizedString, void>
+  deleteTax: ReaderTaskEither<ObjectId, LocalizedString, void>
 }
 
 const TaxesContext = createContext<TaxesContext>({
@@ -63,16 +63,16 @@ const createTaxRequest = makePostRequest({
   outputCodec: Tax
 })
 
-const makeUpdateTaxRequest = (id: PositiveInteger) =>
+const makeUpdateTaxRequest = (_id: ObjectId) =>
   makePutRequest({
-    url: `/taxes/${id}`,
+    url: `/taxes/${_id}`,
     inputCodec: TaxUpdateInput,
     outputCodec: Tax
   })
 
-const makeDeleteTaxRequest = (id: PositiveInteger) =>
+const makeDeleteTaxRequest = (_id: ObjectId) =>
   makeDeleteRequest({
-    url: `/taxes/${id}`,
+    url: `/taxes/${_id}`,
     inputCodec: t.void,
     outputCodec: Tax
   })
@@ -104,10 +104,10 @@ export function TaxesProvider(props: PropsWithChildren<{}>) {
     )
 
   const updateTax: Reader<
-    PositiveInteger,
+    ObjectId,
     ReaderTaskEither<TaxUpdateInput, LocalizedString, void>
-  > = id => {
-    const updateTaxCommand = makeUpdateTaxRequest(id)
+  > = _id => {
+    const updateTaxCommand = makeUpdateTaxRequest(_id)
 
     return input =>
       pipe(
@@ -130,12 +130,8 @@ export function TaxesProvider(props: PropsWithChildren<{}>) {
       )
   }
 
-  const deleteTax: ReaderTaskEither<
-    PositiveInteger,
-    LocalizedString,
-    void
-  > = id => {
-    const deleteTaxCommand = makeDeleteTaxRequest(id)
+  const deleteTax: ReaderTaskEither<ObjectId, LocalizedString, void> = _id => {
+    const deleteTaxCommand = makeDeleteTaxRequest(_id)
 
     return pipe(
       withLogin(deleteTaxCommand, void 0),

@@ -9,8 +9,9 @@ import {
   NonNegativeInteger,
   NonNegativeNumber,
   NonNegativeNumberFromString,
-  PositiveInteger,
-  PositiveIntegerFromString
+  ObjectId,
+  ObjectIdFromString,
+  PositiveInteger
 } from '../../../globalDomain'
 import { commonErrors } from '../../../misc/commonErrors'
 import { Form } from '../Form'
@@ -24,9 +25,9 @@ import * as validators from '../validators'
 import { toSelectState } from '../Input/Select/Select'
 import { AsyncSelect } from '../Input/AsyncSelect'
 import {
-  Task,
   TaskCreationInput,
-  TasksBatchCreationInput
+  TasksBatchCreationInput,
+  TaskWithStats
 } from '../../../entities/Task'
 import { Body } from '../../Body/Body'
 import { Modal } from '../../Modal/Modal'
@@ -46,7 +47,7 @@ export interface TasksBatchFormData extends TasksBatchCreationInput {
 export type FormData = SingleTaskFormData | TasksBatchFormData
 
 interface CommonProps {
-  task: Option<Task>
+  task: Option<TaskWithStats>
   findProjects: Option<
     (
       input: string
@@ -110,29 +111,29 @@ export function TaskForm(props: Props) {
           shouldRepeat: false,
           project: toSelectState(
             {
-              [task.project.id]: task.project.name
+              [task.project._id]: task.project.name
             },
-            option.some(task.project.id)
+            option.some(task.project._id)
           ),
-          from: task.start_time,
-          to: task.start_time,
+          from: task.startTime,
+          to: task.startTime,
           repeat: 0 as NonNegativeInteger
         })),
         option.getOrElse(() => ({
           shouldRepeat: false,
-          project: toSelectState<PositiveInteger>({}, option.none),
+          project: toSelectState<ObjectId>({}, option.none),
           name: '',
           description: '',
           expectedWorkingHours: '',
           hourlyCost: '',
-          start_time: new Date(),
+          startTime: new Date(),
           from: new Date(),
           to: new Date(),
           repeat: 0 as NonNegativeInteger
         }))
       ),
       validators: ({ shouldRepeat }) => ({
-        project: validators.fromSelectState<PositiveInteger>(
+        project: validators.fromSelectState<ObjectId>(
           a18n`Please choose a project`
         ),
         name: validators.nonBlankString(commonErrors.nonBlank),
@@ -186,7 +187,7 @@ export function TaskForm(props: Props) {
             {...fieldProps('project')}
             onQueryChange={findProjects}
             emptyPlaceholder={a18n`No projects found`}
-            codec={PositiveIntegerFromString}
+            codec={ObjectIdFromString}
           />
         ))
       )}
@@ -214,7 +215,7 @@ export function TaskForm(props: Props) {
       <Input label={a18n`Hourly cost`} {...fieldProps('hourlyCost')} />
       <DateTimePicker
         label={a18n`Starting at`}
-        {...fieldProps('start_time')}
+        {...fieldProps('startTime')}
         mode={pipe(
           values.shouldRepeat,
           boolean.fold(

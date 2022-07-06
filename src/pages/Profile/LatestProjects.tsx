@@ -47,12 +47,12 @@ export function LatestProjects() {
                   items={pipe(
                     projects,
                     nonEmptyArray.map<Project, RoutedItem>(project => ({
-                      key: project.id,
+                      key: project._id,
                       type: 'routed',
                       label: option.some(project.client.name),
                       content: project.name,
                       description: project.description,
-                      action: () => setRoute(projectsRoute(project.id)),
+                      action: () => setRoute(projectsRoute(project._id)),
                       details: true
                     }))
                   )}

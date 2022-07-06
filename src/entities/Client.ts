@@ -379,13 +379,13 @@ export type Country = t.TypeOf<typeof Country>
 
 export const ClientCreationCommonInput = t.type(
   {
-    address_country: Country,
-    address_province: Province,
-    address_city: LocalizedString,
-    address_zip: LocalizedString,
-    address_street: LocalizedString,
-    address_street_number: optionFromNullable(LocalizedString),
-    address_email: EmailString
+    addressCountry: Country,
+    addressProvince: Province,
+    addressCity: LocalizedString,
+    addressZip: LocalizedString,
+    addressStreet: LocalizedString,
+    addressStreetNumber: optionFromNullable(LocalizedString),
+    addressEmail: EmailString
   },
   'ClientCreationCommonInput'
 )
@@ -398,9 +398,9 @@ export const PrivateClientCreationInput = t.intersection([
   t.type(
     {
       type: t.literal('PRIVATE'),
-      fiscal_code: LocalizedString,
-      first_name: LocalizedString,
-      last_name: LocalizedString
+      fiscalCode: LocalizedString,
+      firstName: LocalizedString,
+      lastName: LocalizedString
     },
     'PrivateClientCreationInput'
   )
@@ -414,9 +414,9 @@ export const BusinessClientCreationInput = t.intersection(
     ClientCreationCommonInput,
     t.type({
       type: t.literal('BUSINESS'),
-      country_code: Country,
-      vat_number: LocalizedString,
-      business_name: LocalizedString
+      countryCode: Country,
+      vatNumber: LocalizedString,
+      businessName: LocalizedString
     })
   ],
   'BusinessClientCreationInput'
@@ -448,8 +448,8 @@ export function foldClientCreationInput<T>(
 const ClientData = t.type(
   {
     id: PositiveInteger,
-    created_at: DateFromISOString,
-    updated_at: DateFromISOString
+    createdAt: DateFromISOString,
+    updatedAt: DateFromISOString
   },
   'ClientData'
 )
@@ -485,13 +485,13 @@ export function foldClient<T>(
 
 export function getClientName(
   client:
-    | Pick<PrivateClient, 'type' | 'first_name' | 'last_name'>
-    | Pick<BusinessClient, 'type' | 'business_name'>
+    | Pick<PrivateClient, 'type' | 'firstName' | 'lastName'>
+    | Pick<BusinessClient, 'type' | 'businessName'>
 ): LocalizedString {
   switch (client.type) {
     case 'PRIVATE':
-      return unsafeLocalizedString(`${client.first_name} ${client.last_name}`)
+      return unsafeLocalizedString(`${client.firstName} ${client.lastName}`)
     case 'BUSINESS':
-      return client.business_name
+      return client.businessName
   }
 }

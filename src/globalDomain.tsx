@@ -1,3 +1,4 @@
+import ObjectID from 'bson-objectid'
 import { boolean, either, option } from 'fp-ts'
 import { flow, identity, pipe } from 'fp-ts/function'
 import { Option } from 'fp-ts/Option'
@@ -110,6 +111,35 @@ export const ObjectId = new t.Type<ObjectIdString, ObjectIdStringFromServer>(
   objectIdString => ({ $oid: objectIdString })
 )
 export type ObjectId = t.TypeOf<typeof ObjectId>
+
+export const ObjectIdFromString: t.Type<ObjectId, string, unknown> = new t.Type(
+  'ObjectIdFromString',
+  ObjectId.is,
+  (u, c) =>
+    pipe(
+      t.string.decode(u),
+      either.chain(s =>
+        pipe(
+          ObjectID.isValid(s),
+          boolean.fold(
+            () => t.failure(u, c),
+            () => t.success(s as ObjectId)
+          )
+        )
+      )
+    ),
+  identity
+)
+export type ObjectIdFromString = t.TypeOf<typeof ObjectIdFromString>
+
+export function unsafeObjectId(oid: ObjectID): ObjectId {
+  return pipe(
+    ObjectId.decode(oid),
+    either.fold(() => {
+      throw new Error('Called unsafeObjectId with invalid ObjectId')
+    }, identity)
+  )
+}
 
 interface PositiveIntegerBrand {
   readonly PositiveInteger: unique symbol

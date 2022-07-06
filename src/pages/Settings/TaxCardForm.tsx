@@ -19,10 +19,10 @@ export function TaxCardForm(props: Props) {
   const { updateTax, deleteTax } = useTaxes()
   const [isEditing, setIsEditing] = useState(false)
 
-  const updateTaxCommand = updateTax(props.tax.id)
+  const updateTaxCommand = updateTax(props.tax._id)
 
   const [DeleteTaxDialog, deleteTaxCommand] = useDialog(
-    () => deleteTax(props.tax.id),
+    () => deleteTax(props.tax._id),
     {
       title: () => a18n`Are you sure you want to delete "${props.tax.label}"?`,
       message: () => a18n`This action cannot be undone.`

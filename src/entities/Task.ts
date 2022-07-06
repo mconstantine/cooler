@@ -4,30 +4,35 @@ import {
   LocalizedString,
   NonNegativeInteger,
   NonNegativeNumber,
-  PositiveInteger
+  ObjectId
 } from '../globalDomain'
 
 const Project = t.type({
-  id: PositiveInteger,
+  _id: ObjectId,
   name: LocalizedString
 })
 
 export const Task = t.type(
   {
-    id: PositiveInteger,
+    _id: ObjectId,
     name: LocalizedString,
     description: optionFromNullable(LocalizedString),
-    expectedWorkingHours: NonNegativeNumber,
-    actualWorkingHours: NonNegativeNumber,
-    hourlyCost: NonNegativeNumber,
     project: Project,
-    start_time: DateFromISOString,
-    created_at: DateFromISOString,
-    updated_at: DateFromISOString
+    expectedWorkingHours: NonNegativeNumber,
+    hourlyCost: NonNegativeNumber,
+    startTime: DateFromISOString,
+    createdAt: DateFromISOString,
+    updatedAt: DateFromISOString
   },
   'Task'
 )
 export type Task = t.TypeOf<typeof Task>
+
+export const TaskWithStats = t.intersection(
+  [Task, t.type({ actualWorkingHours: NonNegativeNumber })],
+  'TaskWithProject'
+)
+export type TaskWithStats = t.TypeOf<typeof TaskWithStats>
 
 export const TaskCreationInput = t.type(
   {
@@ -35,8 +40,8 @@ export const TaskCreationInput = t.type(
     description: optionFromNullable(LocalizedString),
     expectedWorkingHours: NonNegativeNumber,
     hourlyCost: NonNegativeNumber,
-    project: PositiveInteger,
-    start_time: DateFromISOString
+    project: ObjectId,
+    startTime: DateFromISOString
   },
   'TaskCreationInput'
 )
@@ -47,8 +52,8 @@ export const TasksBatchCreationInput = t.type(
     name: LocalizedString,
     expectedWorkingHours: NonNegativeNumber,
     hourlyCost: NonNegativeNumber,
-    project: PositiveInteger,
-    start_time: DateFromISOString,
+    project: ObjectId,
+    startTime: DateFromISOString,
     from: DateFromISOString,
     to: DateFromISOString,
     repeat: NonNegativeInteger

@@ -7,12 +7,12 @@ import { LoadingBlock } from '../../components/Loading/LoadingBlock'
 import { Panel } from '../../components/Panel/Panel'
 import { useTaxes } from '../../contexts/TaxesContext'
 import { query } from '../../effects/api/api'
-import { Project } from '../../entities/Project'
+import { ProjectWithStats } from '../../entities/Project'
 import { computePercentage, formatPercentarge } from '../../globalDomain'
 import { calculateNetValue, renderTaxItem } from '../Profile/utils'
 
 interface Props {
-  project: Project
+  project: ProjectWithStats
 }
 
 export function ProjectProgress(props: Props) {

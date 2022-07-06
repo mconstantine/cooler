@@ -2,46 +2,48 @@ import { option, task, taskEither } from 'fp-ts'
 import { pipe } from 'fp-ts/function'
 import { TaskEither } from 'fp-ts/TaskEither'
 import { unsafeLocalizedString } from '../a18n'
-import { Project } from '../entities/Project'
-import { Task } from '../entities/Task'
+import { ProjectWithStats } from '../entities/Project'
+import { TaskWithStats } from '../entities/Task'
 import { Tax } from '../entities/Tax'
 import {
   LocalizedString,
+  ObjectId,
   PositiveInteger,
   unsafeNonNegativeNumber,
-  unsafePercentage,
-  unsafePositiveInteger
+  unsafeObjectId,
+  unsafePercentage
 } from '../globalDomain'
+import ObjectID from 'bson-objectid'
 
 export const fakeTaxes: Tax[] = [
   {
-    id: unsafePositiveInteger(1),
+    _id: unsafeObjectId(ObjectID()),
     label: unsafeLocalizedString('Some tax'),
     value: unsafePercentage(0.2572)
   },
   {
-    id: unsafePositiveInteger(2),
+    _id: unsafeObjectId(ObjectID()),
     label: unsafeLocalizedString('Some other tax'),
     value: unsafePercentage(0.1005)
   }
 ]
 
 interface FakeClient {
-  id: PositiveInteger
+  _id: ObjectId
   name: LocalizedString
-  user: PositiveInteger
+  user: ObjectId
 }
 
 export const fakeClients: FakeClient[] = [
   {
-    id: unsafePositiveInteger(1),
+    _id: unsafeObjectId(ObjectID()),
     name: unsafeLocalizedString('John Doe'),
-    user: unsafePositiveInteger(1)
+    user: unsafeObjectId(ObjectID())
   },
   {
-    id: unsafePositiveInteger(2),
+    _id: unsafeObjectId(ObjectID()),
     name: unsafeLocalizedString('Some Company'),
-    user: unsafePositiveInteger(1)
+    user: unsafeObjectId(ObjectID())
   }
 ]
 
@@ -53,8 +55,8 @@ export const findClients = (
   return pipe(
     fakeClients
       .filter(({ name }) => regex.test(name))
-      .reduce<Record<PositiveInteger, LocalizedString>>(
-        (res, { id, name }) => ({ ...res, [id]: name }),
+      .reduce<Record<ObjectId, LocalizedString>>(
+        (res, { _id, name }) => ({ ...res, [_id]: name }),
         {}
       ),
     options => task.fromIO(() => options),
@@ -64,17 +66,17 @@ export const findClients = (
 }
 
 interface FakeProject {
-  id: PositiveInteger
+  _id: ObjectId
   name: LocalizedString
 }
 
 export const fakeProjects: FakeProject[] = [
   {
-    id: unsafePositiveInteger(1),
+    _id: unsafeObjectId(ObjectID()),
     name: unsafeLocalizedString('Some Project')
   },
   {
-    id: unsafePositiveInteger(2),
+    _id: unsafeObjectId(ObjectID()),
     name: unsafeLocalizedString('Another Project')
   }
 ]
@@ -87,8 +89,8 @@ export const findProjects = (
   return pipe(
     fakeProjects
       .filter(({ name }) => regex.test(name))
-      .reduce<Record<PositiveInteger, LocalizedString>>(
-        (res, { id, name }) => ({ ...res, [id]: name }),
+      .reduce<Record<ObjectId, LocalizedString>>(
+        (res, { _id, name }) => ({ ...res, [_id]: name }),
         {}
       ),
     options => task.fromIO(() => options),
@@ -97,8 +99,8 @@ export const findProjects = (
   )
 }
 
-export const fakeProject: Project = {
-  id: unsafePositiveInteger(42),
+export const fakeProject: ProjectWithStats = {
+  _id: unsafeObjectId(ObjectID()),
   name: unsafeLocalizedString('Some Project'),
   description: option.some(
     unsafeLocalizedString(
@@ -106,12 +108,12 @@ export const fakeProject: Project = {
     )
   ),
   client: fakeClients[0],
-  cashed: option.some({
+  cashData: option.some({
     at: new Date(2021, 0, 1, 15, 30),
-    balance: unsafeNonNegativeNumber(1500)
+    amount: unsafeNonNegativeNumber(1500)
   }),
-  created_at: new Date(2020, 8, 20, 9, 30),
-  updated_at: new Date(2021, 0, 1, 15, 45),
+  createdAt: new Date(2020, 8, 20, 9, 30),
+  updatedAt: new Date(2021, 0, 1, 15, 45),
   expectedWorkingHours: unsafeNonNegativeNumber(100),
   actualWorkingHours: unsafeNonNegativeNumber(98),
   budget: unsafeNonNegativeNumber(1500),
@@ -119,17 +121,17 @@ export const fakeProject: Project = {
 }
 
 interface FakeTask {
-  id: PositiveInteger
+  _id: ObjectId
   name: LocalizedString
 }
 
 export const fakeTasks: FakeTask[] = [
   {
-    id: unsafePositiveInteger(1),
+    _id: unsafeObjectId(ObjectID()),
     name: unsafeLocalizedString('Some Task')
   },
   {
-    id: unsafePositiveInteger(2),
+    _id: unsafeObjectId(ObjectID()),
     name: unsafeLocalizedString('Another Task')
   }
 ]
@@ -143,7 +145,7 @@ export const findTasks = (
     fakeTasks
       .filter(({ name }) => regex.test(name))
       .reduce<Record<PositiveInteger, LocalizedString>>(
-        (res, { id, name }) => ({ ...res, [id]: name }),
+        (res, { _id, name }) => ({ ...res, [_id]: name }),
         {}
       ),
     options => task.fromIO(() => options),
@@ -152,8 +154,8 @@ export const findTasks = (
   )
 }
 
-export const fakeTask: Task = {
-  id: unsafePositiveInteger(2),
+export const fakeTask: TaskWithStats = {
+  _id: unsafeObjectId(ObjectID()),
   name: unsafeLocalizedString('Some Task'),
   description: option.some(
     unsafeLocalizedString(
@@ -163,8 +165,8 @@ export const fakeTask: Task = {
   expectedWorkingHours: unsafeNonNegativeNumber(8),
   actualWorkingHours: unsafeNonNegativeNumber(6),
   hourlyCost: unsafeNonNegativeNumber(15),
-  start_time: new Date(2020, 8, 20, 9, 30),
+  startTime: new Date(2020, 8, 20, 9, 30),
   project: fakeProjects[0],
-  created_at: new Date(2020, 8, 20, 9, 30),
-  updated_at: new Date(2021, 0, 1, 15, 45)
+  createdAt: new Date(2020, 8, 20, 9, 30),
+  updatedAt: new Date(2021, 0, 1, 15, 45)
 }

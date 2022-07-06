@@ -7,15 +7,15 @@ import {
   makePutRequest
 } from '../../effects/api/useApi'
 import { Client, ClientCreationInput } from '../../entities/Client'
-import { LocalizedString, PositiveInteger } from '../../globalDomain'
+import { LocalizedString, ObjectId, PositiveInteger } from '../../globalDomain'
 import { Connection, ConnectionQueryInput } from '../../misc/Connection'
 
 const PrivateClientForList = t.type(
   {
-    id: PositiveInteger,
+    _id: ObjectId,
     type: t.literal('PRIVATE'),
-    first_name: LocalizedString,
-    last_name: LocalizedString
+    firstName: LocalizedString,
+    lastName: LocalizedString
   },
   'PrivateClientForList'
 )
@@ -23,9 +23,9 @@ type PrivateClientForList = t.TypeOf<typeof PrivateClientForList>
 
 const BusinessClientForList = t.type(
   {
-    id: PositiveInteger,
+    _id: ObjectId,
     type: t.literal('BUSINESS'),
-    business_name: LocalizedString
+    businessName: LocalizedString
   },
   'BusinessClientForList'
 )

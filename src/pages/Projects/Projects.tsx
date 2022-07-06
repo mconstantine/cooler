@@ -14,6 +14,6 @@ export default function Projects(props: Props) {
   } else if (props.routeSubject === 'new') {
     return <p>New project</p>
   } else {
-    return <Project id={props.routeSubject} />
+    return <Project _id={props.routeSubject} />
   }
 }

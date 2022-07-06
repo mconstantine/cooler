@@ -33,7 +33,7 @@ export function TaxesList() {
       taxes => (
         <Panel title={a18n`Taxes`} action={option.none} framed>
           {taxes.map(tax => (
-            <TaxCardForm key={tax.id} tax={tax} />
+            <TaxCardForm key={tax._id} tax={tax} />
           ))}
           {pipe(
             isCreating,

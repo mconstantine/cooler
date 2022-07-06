@@ -43,11 +43,11 @@ export function TasksDueToday() {
                   heading={option.none}
                   items={tasks.map(task => ({
                     type: 'routed',
-                    key: task.id,
+                    key: task._id,
                     label: option.some(task.project.name),
                     content: task.name,
                     description: task.description,
-                    action: () => setRoute(tasksRoute(task.id)),
+                    action: () => setRoute(tasksRoute(task._id)),
                     details: true
                   }))}
                 />

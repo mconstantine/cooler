@@ -1,5 +1,4 @@
 import * as t from 'io-ts'
-import { optionFromNullable } from 'io-ts-types'
 import {
   makeDeleteRequest,
   makeGetRequest,
@@ -7,59 +6,42 @@ import {
   makePutRequest
 } from '../../effects/api/useApi'
 import {
-  ProjectFromAPI,
-  ProjectCreationInputFromAPI
+  Project,
+  ProjectCreationInput,
+  ProjectWithStats
 } from '../../entities/Project'
-import { LocalizedString, PositiveInteger } from '../../globalDomain'
+import { ObjectId } from '../../globalDomain'
 import { Connection, ConnectionQueryInput } from '../../misc/Connection'
-
-const ProjectForListClient = t.type(
-  {
-    name: LocalizedString
-  },
-  'ProjectForListClient'
-)
-
-const ProjectForList = t.type(
-  {
-    id: PositiveInteger,
-    name: LocalizedString,
-    description: optionFromNullable(LocalizedString),
-    client: ProjectForListClient
-  },
-  'ProjectForList'
-)
-export type ProjectForList = t.TypeOf<typeof ProjectForList>
 
 export const getProjectsRequest = makeGetRequest({
   url: '/projects',
   inputCodec: ConnectionQueryInput,
-  outputCodec: Connection(ProjectForList)
+  outputCodec: Connection(Project)
 })
 
-export const makeProjectQuery = (id: PositiveInteger) =>
+export const makeProjectQuery = (_id: ObjectId) =>
   makeGetRequest({
-    url: `/projects/${id}`,
+    url: `/projects/${_id}`,
     inputCodec: t.void,
-    outputCodec: ProjectFromAPI
+    outputCodec: ProjectWithStats
   })
 
 export const createProjectRequest = makePostRequest({
   url: '/projects',
-  inputCodec: ProjectCreationInputFromAPI,
-  outputCodec: ProjectFromAPI
+  inputCodec: ProjectCreationInput,
+  outputCodec: Project
 })
 
-export const makeUpdateProjectRequest = (id: PositiveInteger) =>
+export const makeUpdateProjectRequest = (_id: ObjectId) =>
   makePutRequest({
-    url: `/projects/${id}`,
-    inputCodec: ProjectCreationInputFromAPI,
-    outputCodec: ProjectFromAPI
+    url: `/projects/${_id}`,
+    inputCodec: ProjectCreationInput,
+    outputCodec: ProjectWithStats
   })
 
-export const makeDeleteProjectRequest = (id: PositiveInteger) =>
+export const makeDeleteProjectRequest = (_id: ObjectId) =>
   makeDeleteRequest({
-    url: `/projects/${id}`,
+    url: `/projects/${_id}`,
     inputCodec: t.void,
-    outputCodec: ProjectFromAPI
+    outputCodec: Project
   })

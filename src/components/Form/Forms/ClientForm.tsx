@@ -68,87 +68,87 @@ export function ClientForm(props: Props) {
         option.fold(
           () => ({
             type: 'BUSINESS' as FormType,
-            fiscal_code: '',
-            first_name: '',
-            last_name: '',
-            country_code: toSelectState<Country>(CountryValues, option.none),
-            vat_number: '',
-            business_name: '',
-            address_country: toSelectState<Country>(CountryValues, option.none),
-            address_province: toSelectState<Province>(
+            fiscalCode: '',
+            firstName: '',
+            lastName: '',
+            countryCode: toSelectState<Country>(CountryValues, option.none),
+            vatNumber: '',
+            businessName: '',
+            addressCountry: toSelectState<Country>(CountryValues, option.none),
+            addressProvince: toSelectState<Province>(
               ProvinceValues,
               option.none
             ),
-            address_city: '',
-            address_zip: '',
-            address_street: '',
-            address_street_number: '',
-            address_email: ''
+            addressCity: '',
+            addressZip: '',
+            addressStreet: '',
+            addressStreetNumber: '',
+            addressEmail: ''
           }),
           client => ({
             ...client,
-            fiscal_code: pipe(
+            fiscalCode: pipe(
               client,
               foldClient(
-                client => client.fiscal_code,
+                client => client.fiscalCode,
                 () => ''
               )
             ),
-            first_name: pipe(
+            firstName: pipe(
               client,
               foldClient(
-                client => client.first_name,
+                client => client.firstName,
                 () => ''
               )
             ),
-            last_name: pipe(
+            lastName: pipe(
               client,
               foldClient(
-                client => client.last_name,
+                client => client.lastName,
                 () => ''
               )
             ),
-            country_code: toSelectState(
+            countryCode: toSelectState(
               CountryValues,
               pipe(
                 client,
                 foldClient(
                   () => option.none,
-                  client => option.some(client.country_code)
+                  client => option.some(client.countryCode)
                 )
               )
             ),
-            vat_number: pipe(
+            vatNumber: pipe(
               client,
               foldClient(
                 () => '',
-                client => client.vat_number
+                client => client.vatNumber
               )
             ),
-            business_name: pipe(
+            businessName: pipe(
               client,
               foldClient(
                 () => '',
-                client => client.business_name
+                client => client.businessName
               )
             ),
-            address_country: toSelectState(
+            addressCountry: toSelectState(
               CountryValues,
-              option.some(client.address_country)
+              option.some(client.addressCountry)
             ),
-            address_province: toSelectState(
+            addressProvince: toSelectState(
               ProvinceValues,
-              option.some(client.address_province)
+              option.some(client.addressProvince)
             ),
-            address_street_number: pipe(
-              client.address_street_number,
+            addressStreetNumber: pipe(
+              client.addressStreetNumber,
               option.getOrElse(() => '')
             )
           })
         )
       ),
       validators: ({ type }) => ({
-        fiscal_code: pipe(
+        fiscalCode: pipe(
           type,
           foldFormType(
             () =>
@@ -159,21 +159,21 @@ export function ClientForm(props: Props) {
             constUndefined
           )
         ),
-        first_name: pipe(
+        firstName: pipe(
           type,
           foldFormType(
             () => validators.nonBlankString(commonErrors.nonBlank),
             constUndefined
           )
         ),
-        last_name: pipe(
+        lastName: pipe(
           type,
           foldFormType(
             () => validators.nonBlankString(commonErrors.nonBlank),
             constUndefined
           )
         ),
-        country_code: pipe(
+        countryCode: pipe(
           type,
           foldFormType(constUndefined, () =>
             validators.fromSelectState<Country>(
@@ -181,48 +181,48 @@ export function ClientForm(props: Props) {
             )
           )
         ),
-        vat_number: pipe(
+        vatNumber: pipe(
           type,
           foldFormType(constUndefined, () =>
             validators.nonBlankString(commonErrors.nonBlank)
           )
         ),
-        business_name: pipe(
+        businessName: pipe(
           type,
           foldFormType(constUndefined, () =>
             validators.nonBlankString(commonErrors.nonBlank)
           )
         ),
-        address_country: validators.fromSelectState<Country>(
+        addressCountry: validators.fromSelectState<Country>(
           a18n`This is not a valid country`
         ),
-        address_province: validators.fromSelectState<Province>(
+        addressProvince: validators.fromSelectState<Province>(
           a18n`This is not a valid province`
         ),
-        address_city: validators.nonBlankString(commonErrors.nonBlank),
-        address_zip: validators.nonBlankString(commonErrors.nonBlank),
-        address_street: validators.nonBlankString(commonErrors.nonBlank),
-        address_street_number: validators.optionalString(),
-        address_email: validators.fromCodec(
+        addressCity: validators.nonBlankString(commonErrors.nonBlank),
+        addressZip: validators.nonBlankString(commonErrors.nonBlank),
+        addressStreet: validators.nonBlankString(commonErrors.nonBlank),
+        addressStreetNumber: validators.optionalString(),
+        addressEmail: validators.fromCodec(
           EmailString,
           commonErrors.invalidEmail
         )
       }),
       linters: () => ({
-        fiscal_code: fiscalCodeLinter,
-        vat_number: vatNumberLinter
+        fiscalCode: fiscalCodeLinter,
+        vatNumber: vatNumberLinter
       })
     },
     {
       onSubmit: data => {
         const commonData = {
-          address_country: data.address_country,
-          address_province: data.address_province,
-          address_city: data.address_city,
-          address_zip: data.address_zip,
-          address_street: data.address_street,
-          address_street_number: data.address_street_number,
-          address_email: data.address_email
+          addressCountry: data.addressCountry,
+          addressProvince: data.addressProvince,
+          addressCity: data.addressCity,
+          addressZip: data.addressZip,
+          addressStreet: data.addressStreet,
+          addressStreetNumber: data.addressStreetNumber,
+          addressEmail: data.addressEmail
         }
 
         return pipe(
@@ -231,16 +231,16 @@ export function ClientForm(props: Props) {
             input => ({
               type: input.type,
               ...commonData,
-              fiscal_code: input.fiscal_code,
-              first_name: input.first_name,
-              last_name: input.last_name
+              fiscalCode: input.fiscalCode,
+              firstName: input.firstName,
+              lastName: input.lastName
             }),
             input => ({
               type: input.type,
               ...commonData,
-              country_code: input.country_code,
-              vat_number: input.vat_number,
-              business_name: input.business_name
+              countryCode: input.countryCode,
+              vatNumber: input.vatNumber,
+              businessName: input.businessName
             })
           ),
           props.onSubmit
@@ -249,54 +249,54 @@ export function ClientForm(props: Props) {
     }
   )
 
-  const onCountryChange = (address_country: SelectState<Country>) => {
+  const onCountryChange = (addressCountry: SelectState<Country>) => {
     pipe(
-      sequenceS(option.option)({
-        country: getOptionValue(address_country),
-        province: getOptionValue(values.address_province)
+      sequenceS(option.Apply)({
+        country: getOptionValue(addressCountry),
+        province: getOptionValue(values.addressProvince)
       }),
       option.fold(
-        () => setValues({ address_country }),
+        () => setValues({ addressCountry }),
         ({ country, province }) => {
           if (country === 'IT' && province === 'EE') {
             setValues({
-              address_country,
-              address_province: toSelectState(ProvinceValues, option.some('AG'))
+              addressCountry,
+              addressProvince: toSelectState(ProvinceValues, option.some('AG'))
             })
           } else if (country !== 'IT' && province !== 'EE') {
             setValues({
-              address_country,
-              address_province: toSelectState(ProvinceValues, option.some('EE'))
+              addressCountry,
+              addressProvince: toSelectState(ProvinceValues, option.some('EE'))
             })
           } else {
-            setValues({ address_country })
+            setValues({ addressCountry })
           }
         }
       )
     )
   }
 
-  const onProvinceChange = (address_province: SelectState<Province>) => {
+  const onProvinceChange = (addressProvince: SelectState<Province>) => {
     pipe(
-      sequenceS(option.option)({
-        province: getOptionValue(address_province),
-        country: getOptionValue(values.address_country)
+      sequenceS(option.Apply)({
+        province: getOptionValue(addressProvince),
+        country: getOptionValue(values.addressCountry)
       }),
       option.fold(
-        () => setValues({ address_province }),
+        () => setValues({ addressProvince }),
         ({ province, country }) => {
           if (province === 'EE' && country === 'IT') {
             setValues({
-              address_province,
-              address_country: toSelectState(CountryValues, option.some('AD'))
+              addressProvince,
+              addressCountry: toSelectState(CountryValues, option.some('AD'))
             })
           } else if (province !== 'EE' && country !== 'IT') {
             setValues({
-              address_province,
-              address_country: toSelectState(CountryValues, option.some('IT'))
+              addressProvince,
+              addressCountry: toSelectState(CountryValues, option.some('IT'))
             })
           } else {
-            setValues({ address_province })
+            setValues({ addressProvince })
           }
         }
       )
@@ -334,30 +334,30 @@ export function ClientForm(props: Props) {
         foldFormType(
           () => (
             <>
-              <Input {...fieldProps('first_name')} label={a18n`First name`} />
-              <Input {...fieldProps('last_name')} label={a18n`Last name`} />
+              <Input {...fieldProps('firstName')} label={a18n`First name`} />
+              <Input {...fieldProps('lastName')} label={a18n`Last name`} />
               <Input
-                {...fieldProps('fiscal_code')}
+                {...fieldProps('fiscalCode')}
                 label={a18n`Fiscal code`}
-                value={fieldProps('fiscal_code').value.toUpperCase()}
+                value={fieldProps('fiscalCode').value.toUpperCase()}
               />
             </>
           ),
           () => (
             <>
               <Input
-                {...fieldProps('business_name')}
+                {...fieldProps('businessName')}
                 label={a18n`Business name`}
               />
               <Select
                 type="default"
-                {...fieldProps('country_code')}
+                {...fieldProps('countryCode')}
                 label={a18n`Country`}
                 options={CountryValues}
                 codec={Country}
                 emptyPlaceholder={a18n`No country found`}
               />
-              <Input {...fieldProps('vat_number')} label={a18n`VAT number`} />
+              <Input {...fieldProps('vatNumber')} label={a18n`VAT number`} />
             </>
           )
         )
@@ -365,7 +365,7 @@ export function ClientForm(props: Props) {
 
       <Select
         type="default"
-        {...fieldProps('address_country')}
+        {...fieldProps('addressCountry')}
         label={a18n`Address – country`}
         options={CountryValues}
         codec={Country}
@@ -374,21 +374,21 @@ export function ClientForm(props: Props) {
       />
       <Select
         type="default"
-        {...fieldProps('address_province')}
+        {...fieldProps('addressProvince')}
         label={a18n`Address – province`}
         options={ProvinceValues}
         codec={Province}
         onChange={onProvinceChange}
         emptyPlaceholder={a18n`No Province found`}
       />
-      <Input {...fieldProps('address_city')} label={a18n`Address – city`} />
-      <Input {...fieldProps('address_zip')} label={a18n`Address – ZIP code`} />
-      <Input {...fieldProps('address_street')} label={a18n`Address – street`} />
+      <Input {...fieldProps('addressCity')} label={a18n`Address – city`} />
+      <Input {...fieldProps('addressZip')} label={a18n`Address – ZIP code`} />
+      <Input {...fieldProps('addressStreet')} label={a18n`Address – street`} />
       <Input
-        {...fieldProps('address_street_number')}
+        {...fieldProps('addressStreetNumber')}
         label={a18n`Address – street number`}
       />
-      <Input {...fieldProps('address_email')} label={a18n`E-mail address`} />
+      <Input {...fieldProps('addressEmail')} label={a18n`E-mail address`} />
     </Form>
   )
 }

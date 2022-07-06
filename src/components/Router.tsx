@@ -2,7 +2,7 @@ import { end, format, lit, parse, Route, type, zero } from 'fp-ts-routing'
 import { Reader } from 'fp-ts/Reader'
 import { createContext, useContext, useEffect, useState } from 'react'
 import { constVoid, pipe } from 'fp-ts/function'
-import { PositiveInteger, PositiveIntegerFromString } from '../globalDomain'
+import { ObjectId, ObjectIdFromString } from '../globalDomain'
 import { IO } from 'fp-ts/IO'
 import * as t from 'io-ts'
 
@@ -15,7 +15,7 @@ const RouteSubjectKey = t.keyof(
 )
 
 export const RouteSubject = t.union(
-  [RouteSubjectKey, PositiveIntegerFromString],
+  [RouteSubjectKey, ObjectIdFromString],
   'RouteSubject'
 )
 export type RouteSubject = t.TypeOf<typeof RouteSubject>
@@ -23,7 +23,7 @@ export type RouteSubject = t.TypeOf<typeof RouteSubject>
 export function foldRouteSubject<T>(
   whenAll: IO<T>,
   whenNew: IO<T>,
-  whenDetails: Reader<PositiveInteger, T>
+  whenDetails: Reader<ObjectId, T>
 ): Reader<RouteSubject, T> {
   return subject => {
     switch (subject) {

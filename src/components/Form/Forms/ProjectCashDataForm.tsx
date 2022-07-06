@@ -1,6 +1,6 @@
 import { IO } from 'fp-ts/IO'
 import { ReaderTaskEither } from 'fp-ts/ReaderTaskEither'
-import { CashData, Project } from '../../../entities/Project'
+import { ProjectCashData, ProjectWithStats } from '../../../entities/Project'
 import {
   LocalizedString,
   NonNegativeNumberFromString
@@ -19,10 +19,10 @@ import { option } from 'fp-ts'
 import { Option } from 'fp-ts/Option'
 
 interface Props {
-  data: Option<CashData>
-  budget: Project['budget']
-  balance: Project['balance']
-  onSubmit: ReaderTaskEither<CashData, LocalizedString, unknown>
+  data: Option<ProjectCashData>
+  budget: ProjectWithStats['budget']
+  balance: ProjectWithStats['balance']
+  onSubmit: ReaderTaskEither<ProjectCashData, LocalizedString, unknown>
   onCancel: IO<void>
 }
 
@@ -57,12 +57,12 @@ export function ProjectCashDataForm(props: Props) {
       initialValues: {
         type: pipe(
           props.data,
-          option.fold<CashData, CashBalanceType>(
+          option.fold<ProjectCashData, CashBalanceType>(
             () => 'balance',
             data => {
-              if (data.balance === props.budget) {
+              if (data.amount === props.budget) {
                 return 'budget'
-              } else if (data.balance === props.balance) {
+              } else if (data.amount === props.balance) {
                 return 'balance'
               } else {
                 return 'custom'
@@ -75,14 +75,14 @@ export function ProjectCashDataForm(props: Props) {
           option.map(data => data.at),
           option.getOrElse(() => new Date())
         ),
-        balance: pipe(
+        amount: pipe(
           props.data,
-          option.map(data => data.balance.toString(10)),
+          option.map(data => data.amount.toString(10)),
           option.getOrElse(() => props.balance.toString(10))
         )
       },
       validators: () => ({
-        balance: validators.fromCodec(
+        amount: validators.fromCodec(
           NonNegativeNumberFromString,
           commonErrors.moneyAmount
         )
@@ -97,12 +97,12 @@ export function ProjectCashDataForm(props: Props) {
   const onCashBalanceTypeChange = (type: CashBalanceType) => {
     setValues({
       type,
-      balance: pipe(
+      amount: pipe(
         type,
         foldCashBalanceType(
           () => props.budget.toString(10),
           () => props.balance.toString(10),
-          () => values.balance
+          () => values.amount
         )
       )
     })
@@ -137,7 +137,7 @@ export function ProjectCashDataForm(props: Props) {
       <Input
         type="number"
         label={a18n`Cashed balance`}
-        {...fieldProps('balance')}
+        {...fieldProps('amount')}
         disabled={values.type !== 'custom'}
       />
     </Form>

@@ -1,22 +1,18 @@
 import * as t from 'io-ts'
 import { DateFromISOString, optionFromNullable } from 'io-ts-types'
-import { LocalizedString, PositiveInteger } from '../globalDomain'
+import { ObjectId, PositiveInteger } from '../globalDomain'
 
-const Task = t.type(
+const SessionData = t.type(
   {
-    id: PositiveInteger,
-    name: LocalizedString
+    _id: ObjectId,
+    startTime: DateFromISOString,
+    endTime: optionFromNullable(DateFromISOString)
   },
-  'Task'
+  'SessionData'
 )
 
-export const Session = t.type(
-  {
-    id: PositiveInteger,
-    task: Task,
-    start_time: DateFromISOString,
-    end_time: optionFromNullable(DateFromISOString)
-  },
+export const Session = t.intersection(
+  [SessionData, t.type({ task: ObjectId })],
   'Session'
 )
 export type Session = t.TypeOf<typeof Session>
@@ -24,8 +20,8 @@ export type Session = t.TypeOf<typeof Session>
 export const SessionCreationInput = t.type(
   {
     task: PositiveInteger,
-    start_time: DateFromISOString,
-    end_time: optionFromNullable(DateFromISOString)
+    startTime: DateFromISOString,
+    endTime: optionFromNullable(DateFromISOString)
   },
   'SessionCreationInput'
 )

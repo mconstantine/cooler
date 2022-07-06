@@ -5,9 +5,10 @@ import { a18n } from '../../../a18n'
 import {
   LocalizedString,
   NonNegativeNumberFromString,
+  ObjectId,
+  ObjectIdFromString,
   OptionFromEmptyString,
-  PositiveInteger,
-  PositiveIntegerFromString
+  PositiveInteger
 } from '../../../globalDomain'
 import { commonErrors } from '../../../misc/commonErrors'
 import { Form } from '../Form'
@@ -19,12 +20,15 @@ import { useForm } from '../useForm'
 import * as validators from '../validators'
 import { Input } from '../Input/Input/Input'
 import { AsyncSelect } from '../Input/AsyncSelect'
-import { Project, ProjectCreationInput } from '../../../entities/Project'
+import {
+  ProjectCreationInput,
+  ProjectWithStats
+} from '../../../entities/Project'
 import { IO } from 'fp-ts/IO'
 import { ReaderTaskEither } from 'fp-ts/ReaderTaskEither'
 
 interface Props {
-  project: Option<Project>
+  project: Option<ProjectWithStats>
   findClients: ReaderTaskEither<
     string,
     LocalizedString,
@@ -40,33 +44,33 @@ export function ProjectForm(props: Props) {
       initialValues: pipe(
         props.project,
         option.map(project => ({
-          ...project,
+          name: project.name,
           description: pipe(
             project.description,
             option.getOrElse(() => '')
           ),
           client: toSelectState(
             {
-              [project.client.id]: project.client.name
+              [project.client._id]: project.client.name
             },
-            option.some(project.client.id)
+            option.some(project.client._id)
           ),
-          cashed: option.isSome(project.cashed),
+          cashed: option.isSome(project.cashData),
           cashedAt: pipe(
-            project.cashed,
+            project.cashData,
             option.map(({ at }) => at),
             option.getOrElse(() => new Date())
           ),
           cashedBalance: pipe(
-            project.cashed,
-            option.map(({ balance }) => balance.toString(10)),
+            project.cashData,
+            option.map(({ amount }) => amount.toString(10)),
             option.getOrElse(() => '')
           )
         })),
         option.getOrElse(() => ({
           name: '',
           description: '',
-          client: toSelectState<PositiveInteger>({}, option.none),
+          client: toSelectState<ObjectId>({}, option.none),
           cashed: false,
           cashedAt: new Date(),
           cashedBalance: ''
@@ -100,14 +104,14 @@ export function ProjectForm(props: Props) {
             () =>
               option.some({
                 at: input.cashedAt,
-                balance: input.cashedBalance
+                amount: input.cashedBalance
               })
           ),
-          cashed => ({
+          cashData => ({
             name: input.name,
             description: input.description,
             client: input.client,
-            cashed
+            cashData
           }),
           taskEither.right
         )
@@ -146,7 +150,7 @@ export function ProjectForm(props: Props) {
         {...fieldProps('client')}
         onQueryChange={props.findClients}
         emptyPlaceholder={a18n`No clients found`}
-        codec={PositiveIntegerFromString}
+        codec={ObjectIdFromString}
       />
 
       <Toggle label={a18n`Cashed`} {...fieldProps('cashed')} />

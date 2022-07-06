@@ -7,24 +7,27 @@ import { projectsRoute, useRouter } from '../../components/Router'
 import { TaxesProvider } from '../../contexts/TaxesContext'
 import { query } from '../../effects/api/api'
 import { useReactiveCommand } from '../../effects/api/useApi'
-import { Project as ProjectType } from '../../entities/Project'
-import { PositiveInteger } from '../../globalDomain'
+import {
+  Project as ProjectType,
+  ProjectWithStats
+} from '../../entities/Project'
+import { ObjectId } from '../../globalDomain'
 import { makeProjectQuery } from './domain'
 import { ProjectData } from './ProjectData'
 import { ProjectProgress } from './ProjectProgress'
 
 interface Props {
-  id: PositiveInteger
+  _id: ObjectId
 }
 
 export default function Project(props: Props) {
   const { setRoute } = useRouter()
 
   const [project, setProject, getProjectCommand] = useReactiveCommand(
-    makeProjectQuery(props.id)
+    makeProjectQuery(props._id)
   )
 
-  const onUpdate: Reader<ProjectType, void> = setProject
+  const onUpdate: Reader<ProjectWithStats, void> = setProject
 
   const onDelete: Reader<ProjectType, void> = () =>
     setRoute(projectsRoute('all'))
