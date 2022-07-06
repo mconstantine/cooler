@@ -24,16 +24,14 @@ export default function ProjectsList() {
   const { setRoute } = useRouter()
 
   const onSearchQueryChange: Reader<string, void> = query =>
-    pipe(query, NonEmptyString.decode, option.fromEither, name =>
-      setInput(input => ({ ...input, name }))
+    pipe(query, NonEmptyString.decode, option.fromEither, query =>
+      setInput(input => ({ ...input, query }))
     )
 
   const renderProjectItem: Reader<Project, RoutedItem> = project => ({
     type: 'routed',
     key: project._id,
-    // FIXME:
-    // label: option.some(project.client.name),
-    label: option.none,
+    label: option.some(project.client.name),
     content: project.name,
     description: project.description,
     action: () => setRoute(projectsRoute(project._id)),
