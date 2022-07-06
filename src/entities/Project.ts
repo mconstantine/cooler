@@ -1,9 +1,5 @@
 import * as t from 'io-ts'
-import {
-  DateFromISOString,
-  option as optionCodec,
-  optionFromNullable
-} from 'io-ts-types'
+import { DateFromISOString, optionFromNullable } from 'io-ts-types'
 import { LocalizedString, NonNegativeNumber, ObjectId } from '../globalDomain'
 
 const Client = t.type(
@@ -54,7 +50,7 @@ export type ProjectWithStats = t.TypeOf<typeof ProjectWithStats>
 export const ProjectCreationInput = t.type(
   {
     name: LocalizedString,
-    description: optionCodec(LocalizedString),
+    description: optionFromNullable(LocalizedString),
     client: ObjectId,
     cashData: optionFromNullable(ProjectCashData)
   },

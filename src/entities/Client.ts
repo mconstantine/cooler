@@ -485,13 +485,12 @@ export function foldClient<T>(
 
 export function getClientName(
   client:
-    | Pick<PrivateClient, 'type' | 'firstName' | 'lastName'>
-    | Pick<BusinessClient, 'type' | 'businessName'>
+    | Pick<PrivateClient, 'firstName' | 'lastName'>
+    | Pick<BusinessClient, 'businessName'>
 ): LocalizedString {
-  switch (client.type) {
-    case 'PRIVATE':
-      return unsafeLocalizedString(`${client.firstName} ${client.lastName}`)
-    case 'BUSINESS':
-      return client.businessName
+  if ('firstName' in client) {
+    return unsafeLocalizedString(`${client.firstName} ${client.lastName}`)
+  } else {
+    return client.businessName
   }
 }

@@ -108,7 +108,9 @@ export const ObjectId = new t.Type<ObjectIdString, ObjectIdStringFromServer>(
       ObjectIdFromServer.validate(u, c),
       either.map(objectIdFromServer => objectIdFromServer.$oid)
     ),
-  objectIdString => ({ $oid: objectIdString })
+  // objectIdString => ({ $oid: objectIdString })
+  // @ts-ignore the server sends { $oid } but it wants back strings
+  identity
 )
 export type ObjectId = t.TypeOf<typeof ObjectId>
 
@@ -134,7 +136,7 @@ export type ObjectIdFromString = t.TypeOf<typeof ObjectIdFromString>
 
 export function unsafeObjectId(oid: ObjectID): ObjectId {
   return pipe(
-    ObjectId.decode(oid),
+    ObjectId.decode({ $oid: oid.toHexString() }),
     either.fold(() => {
       throw new Error('Called unsafeObjectId with invalid ObjectId')
     }, identity)
