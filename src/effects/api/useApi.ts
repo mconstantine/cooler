@@ -247,7 +247,7 @@ function useQuery<I, II, O, OO>(
 
   useEffect(() => {
     reloadQuery(request, input)
-    // eslint-disable-next-line
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [input])
 
   return [queryState, () => reloadQuery(request, input)]
