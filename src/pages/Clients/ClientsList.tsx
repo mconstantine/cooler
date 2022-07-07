@@ -6,47 +6,51 @@ import { useState } from 'react'
 import { a18n } from '../../a18n'
 import { ConnectionList } from '../../components/ConnectionList/ConnectionList'
 import { RoutedItem } from '../../components/List/List'
-import { projectsRoute, useRouter } from '../../components/Router'
+import { clientsRoute, useRouter } from '../../components/Router'
 import { useGet } from '../../effects/api/useApi'
-import { Project } from '../../entities/Project'
+import { getClientName } from '../../entities/Client'
 import { unsafePositiveInteger } from '../../globalDomain'
 import { ConnectionQueryInput } from '../../misc/Connection'
-import { getProjectsRequest } from './domain'
+import { ClientForList, clientsQuery } from './domain'
 
-export default function ProjectsList() {
+export default function ClientsList() {
   const [input, setInput] = useState<ConnectionQueryInput>({
     query: option.none,
     first: unsafePositiveInteger(20),
     after: option.none
   })
 
-  const [projects] = useGet(getProjectsRequest, input)
+  const [clients] = useGet(clientsQuery, input)
   const { setRoute } = useRouter()
 
   const onSearchQueryChange: Reader<string, void> = flow(
     NonEmptyString.decode,
     option.fromEither,
-    query => setInput(input => ({ ...input, query }))
+    query =>
+      setInput({
+        ...input,
+        query
+      })
   )
 
-  const renderProjectItem: Reader<Project, RoutedItem> = project => ({
+  const renderClientItem: Reader<ClientForList, RoutedItem> = client => ({
     type: 'routed',
-    key: project._id,
-    label: option.some(project.client.name),
-    content: project.name,
-    description: project.description,
-    action: () => setRoute(projectsRoute(project._id)),
+    key: client._id,
+    label: option.none,
+    content: getClientName(client),
+    description: option.none,
+    action: () => setRoute(clientsRoute(client._id)),
     details: true
   })
 
   return (
     <ConnectionList
-      query={projects}
-      title={a18n`Projects`}
-      onLoadMore={option.none}
-      action={option.none}
+      title={a18n`Clients`}
+      query={clients}
       onSearchQueryChange={onSearchQueryChange}
-      renderListItem={renderProjectItem}
+      action={option.none}
+      onLoadMore={option.none}
+      renderListItem={renderClientItem}
     />
   )
 }

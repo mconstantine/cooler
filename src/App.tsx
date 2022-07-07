@@ -9,6 +9,7 @@ import { pipe } from 'fp-ts/function'
 import { Menu } from './components/Menu/Menu'
 import { Content } from './components/Content/Content'
 
+const Clients = lazy(() => import('./pages/Clients/Clients'))
 const Projects = lazy(() => import('./pages/Projects/Projects'))
 const Profile = lazy(() => import('./pages/Profile/Profile'))
 const Settings = lazy(() => import('./pages/Settings/Settings'))
@@ -29,7 +30,9 @@ export function App() {
                         location,
                         foldLocation({
                           Home: () => <Profile />,
-                          Clients: () => <p>Clients</p>,
+                          Clients: ({ subject }) => (
+                            <Clients routeSubject={subject} />
+                          ),
                           Projects: ({ subject }) => (
                             <Projects routeSubject={subject} />
                           ),

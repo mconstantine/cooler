@@ -30,7 +30,7 @@ import {
   unsafePositiveInteger
 } from '../../globalDomain'
 import { getConnectionNodes } from '../../misc/Connection'
-import { clientsQuery } from '../Client/domain'
+import { clientsQuery } from '../Clients/domain'
 import { makeDeleteProjectRequest, makeUpdateProjectRequest } from './domain'
 import { LoadingButton } from '../../components/Button/LoadingButton/LoadingButton'
 import { skull } from 'ionicons/icons'
