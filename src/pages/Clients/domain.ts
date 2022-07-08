@@ -7,7 +7,7 @@ import {
   makePutRequest
 } from '../../effects/api/useApi'
 import { Client, ClientCreationInput } from '../../entities/Client'
-import { LocalizedString, ObjectId, PositiveInteger } from '../../globalDomain'
+import { LocalizedString, ObjectId } from '../../globalDomain'
 import { Connection, ConnectionQueryInput } from '../../misc/Connection'
 
 const PrivateClientForList = t.type(
@@ -49,9 +49,9 @@ export const clientsQuery = makeGetRequest({
   outputCodec: Connection(ClientForList)
 })
 
-export const makeClientQuery = (id: PositiveInteger) =>
+export const makeClientQuery = (_id: ObjectId) =>
   makeGetRequest({
-    url: `/clients/${id}`,
+    url: `/clients/${_id}`,
     inputCodec: t.void,
     outputCodec: Client
   })
@@ -62,16 +62,16 @@ export const createClientRequest = makePostRequest({
   outputCodec: Client
 })
 
-export const makeUpdateClientMutation = (id: PositiveInteger) =>
+export const makeUpdateClientRequest = (_id: ObjectId) =>
   makePutRequest({
-    url: `/clients/${id}`,
+    url: `/clients/${_id}`,
     inputCodec: ClientCreationInput,
     outputCodec: Client
   })
 
-export const makeDeleteClientRequest = (id: PositiveInteger) =>
+export const makeDeleteClientRequest = (_id: ObjectId) =>
   makeDeleteRequest({
-    url: `/clients/${id}`,
+    url: `/clients/${_id}`,
     inputCodec: t.void,
     outputCodec: Client
   })

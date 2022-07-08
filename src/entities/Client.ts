@@ -1,7 +1,7 @@
 import * as t from 'io-ts'
 import { DateFromISOString, optionFromNullable } from 'io-ts-types'
 import { unsafeLocalizedString } from '../a18n'
-import { EmailString, LocalizedString, PositiveInteger } from '../globalDomain'
+import { EmailString, LocalizedString, ObjectId } from '../globalDomain'
 
 export const ProvinceValues = {
   AG: unsafeLocalizedString('Agrigento'),
@@ -382,7 +382,7 @@ export const ClientCreationCommonInput = t.type(
     addressCountry: Country,
     addressProvince: Province,
     addressCity: LocalizedString,
-    addressZip: LocalizedString,
+    addressZIP: LocalizedString,
     addressStreet: LocalizedString,
     addressStreetNumber: optionFromNullable(LocalizedString),
     addressEmail: EmailString
@@ -397,7 +397,6 @@ export const PrivateClientCreationInput = t.intersection([
   ClientCreationCommonInput,
   t.type(
     {
-      type: t.literal('PRIVATE'),
       fiscalCode: LocalizedString,
       firstName: LocalizedString,
       lastName: LocalizedString
@@ -413,7 +412,6 @@ export const BusinessClientCreationInput = t.intersection(
   [
     ClientCreationCommonInput,
     t.type({
-      type: t.literal('BUSINESS'),
       countryCode: Country,
       vatNumber: LocalizedString,
       businessName: LocalizedString
@@ -436,18 +434,17 @@ export function foldClientCreationInput<T>(
   whenBusiness: (input: BusinessClientCreationInput) => T
 ): (input: ClientCreationInput) => T {
   return input => {
-    switch (input.type) {
-      case 'PRIVATE':
-        return whenPrivate(input)
-      case 'BUSINESS':
-        return whenBusiness(input)
+    if ('firstName' in input && input.firstName) {
+      return whenPrivate(input)
+    } else {
+      return whenBusiness(input as BusinessClientCreationInput)
     }
   }
 }
 
 const ClientData = t.type(
   {
-    id: PositiveInteger,
+    _id: ObjectId,
     createdAt: DateFromISOString,
     updatedAt: DateFromISOString
   },
@@ -474,11 +471,10 @@ export function foldClient<T>(
   whenBusiness: (client: BusinessClient) => T
 ): (client: Client) => T {
   return client => {
-    switch (client.type) {
-      case 'PRIVATE':
-        return whenPrivate(client)
-      case 'BUSINESS':
-        return whenBusiness(client)
+    if ('firstName' in client) {
+      return whenPrivate(client)
+    } else {
+      return whenBusiness(client)
     }
   }
 }

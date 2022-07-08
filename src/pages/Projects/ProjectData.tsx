@@ -53,15 +53,18 @@ export function ProjectData(props: Props) {
   const { taxes } = useTaxes()
   const findClientsCommand = useLazyGet(clientsQuery)
   const [isEditing, setIsEditing] = useState(false)
+
   const updateProjectCommand = usePut(
     makeUpdateProjectRequest(props.project._id)
   )
+
   const deleteProjectCommand = useDelete(
     makeDeleteProjectRequest(props.project._id)
   )
+
   const [error, setError] = useState<Option<LocalizedString>>(option.none)
 
-  const [Dialog, deleteProject] = useDialog<void, void, void>(
+  const [Dialog, deleteProject] = useDialog<ProjectWithStats, void, void>(
     () =>
       pipe(
         taskEither.rightIO(() => setError(option.none)),
@@ -72,9 +75,9 @@ export function ProjectData(props: Props) {
         )
       ),
     {
-      title: () => a18n`Are you sure you want to delete your account?`,
-      message: () =>
-        a18n`All your data, clients, projects, tasks and sessions will be deleted!`
+      title: project =>
+        a18n`Are you sure you want to delete the project "${project.name}"?`,
+      message: () => a18n`All your data, tasks and sessions will be deleted!`
     }
   )
 
@@ -223,7 +226,7 @@ export function ProjectData(props: Props) {
               label={a18n`Delete project`}
               color="danger"
               flat
-              action={deleteProject()}
+              action={deleteProject(props.project)}
               icon={skull}
             />
           </Buttons>

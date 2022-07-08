@@ -2,6 +2,7 @@ import { lazy } from 'react'
 import { RouteSubject } from '../../components/Router'
 
 const ClientsList = lazy(() => import('./ClientsList'))
+const Client = lazy(() => import('./Client'))
 
 interface Props {
   routeSubject: RouteSubject
@@ -13,6 +14,6 @@ export default function Clients(props: Props) {
   } else if (props.routeSubject === 'new') {
     return null
   } else {
-    return null
+    return <Client _id={props.routeSubject} />
   }
 }

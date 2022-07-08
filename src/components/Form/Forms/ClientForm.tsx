@@ -80,13 +80,17 @@ export function ClientForm(props: Props) {
               option.none
             ),
             addressCity: '',
-            addressZip: '',
+            addressZIP: '',
             addressStreet: '',
             addressStreetNumber: '',
             addressEmail: ''
           }),
           client => ({
             ...client,
+            type:
+              'firstName' in client
+                ? ('PRIVATE' as const)
+                : ('BUSINESS' as const),
             fiscalCode: pipe(
               client,
               foldClient(
@@ -200,7 +204,7 @@ export function ClientForm(props: Props) {
           a18n`This is not a valid province`
         ),
         addressCity: validators.nonBlankString(commonErrors.nonBlank),
-        addressZip: validators.nonBlankString(commonErrors.nonBlank),
+        addressZIP: validators.nonBlankString(commonErrors.nonBlank),
         addressStreet: validators.nonBlankString(commonErrors.nonBlank),
         addressStreetNumber: validators.optionalString(),
         addressEmail: validators.fromCodec(
@@ -219,7 +223,7 @@ export function ClientForm(props: Props) {
           addressCountry: data.addressCountry,
           addressProvince: data.addressProvince,
           addressCity: data.addressCity,
-          addressZip: data.addressZip,
+          addressZIP: data.addressZIP,
           addressStreet: data.addressStreet,
           addressStreetNumber: data.addressStreetNumber,
           addressEmail: data.addressEmail
@@ -229,14 +233,12 @@ export function ClientForm(props: Props) {
           data as ClientCreationInput,
           foldClientCreationInput<ClientCreationInput>(
             input => ({
-              type: input.type,
               ...commonData,
               fiscalCode: input.fiscalCode,
               firstName: input.firstName,
               lastName: input.lastName
             }),
             input => ({
-              type: input.type,
               ...commonData,
               countryCode: input.countryCode,
               vatNumber: input.vatNumber,
@@ -382,7 +384,7 @@ export function ClientForm(props: Props) {
         emptyPlaceholder={a18n`No Province found`}
       />
       <Input {...fieldProps('addressCity')} label={a18n`Address – city`} />
-      <Input {...fieldProps('addressZip')} label={a18n`Address – ZIP code`} />
+      <Input {...fieldProps('addressZIP')} label={a18n`Address – ZIP code`} />
       <Input {...fieldProps('addressStreet')} label={a18n`Address – street`} />
       <Input
         {...fieldProps('addressStreetNumber')}
