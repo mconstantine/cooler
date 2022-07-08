@@ -25,7 +25,7 @@ export default function ClientsList() {
     results: clients,
     onSearchQueryChange,
     onLoadMore
-  } = useConnection(clientsQuery)
+  } = useConnection(clientsQuery, 'ASC')
 
   return (
     <ConnectionList

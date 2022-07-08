@@ -31,14 +31,35 @@ interface UseConnectionHookOutput<T extends t.Mixed> {
   onLoadMore: IO<void>
 }
 
+type ConnectionOrder = 'ASC' | 'DESC'
+
+function foldOrder<T>(
+  cases: Record<ConnectionOrder, IO<T>>
+): Reader<ConnectionOrder, T> {
+  return order => cases[order]()
+}
+
 export function useConnection<T extends t.Mixed, C extends ConnectionC<T>>(
-  request: ConnectionRequest<T, C>
+  request: ConnectionRequest<T, C>,
+  order: ConnectionOrder
 ): UseConnectionHookOutput<T> {
-  const [input, setInput] = useState<ConnectionQueryInput>({
-    query: option.none,
-    first: unsafePositiveInteger(20),
-    after: option.none
-  })
+  const [input, setInput] = useState<ConnectionQueryInput>(
+    pipe(
+      order,
+      foldOrder<ConnectionQueryInput>({
+        ASC: () => ({
+          query: option.none,
+          first: unsafePositiveInteger(20),
+          after: option.none
+        }),
+        DESC: () => ({
+          query: option.none,
+          last: unsafePositiveInteger(20),
+          before: option.none
+        })
+      })
+    )
+  )
 
   const [connection] = useGet(request, input)
 
@@ -63,10 +84,21 @@ export function useConnection<T extends t.Mixed, C extends ConnectionC<T>>(
               pipe(
                 connection.pageInfo.endCursor,
                 option.fold(constVoid, endCursor =>
-                  setInput(input => ({
-                    ...input,
-                    after: option.some(endCursor)
-                  }))
+                  setInput(input =>
+                    pipe(
+                      order,
+                      foldOrder<ConnectionQueryInput>({
+                        ASC: () => ({
+                          ...input,
+                          after: option.some(endCursor)
+                        }),
+                        DESC: () => ({
+                          ...input,
+                          before: option.some(endCursor)
+                        })
+                      })
+                    )
+                  )
                 )
               )
             )

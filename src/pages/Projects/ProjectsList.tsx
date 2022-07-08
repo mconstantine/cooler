@@ -14,7 +14,7 @@ export default function ProjectsList() {
     results: projects,
     onSearchQueryChange,
     onLoadMore
-  } = useConnection(getProjectsRequest)
+  } = useConnection(getProjectsRequest, 'ASC')
 
   const renderProjectItem: Reader<Project, RoutedItem> = project => ({
     type: 'routed',
