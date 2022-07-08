@@ -29,7 +29,7 @@ const BusinessClientForList = t.type(
 )
 type BusinessClientForList = t.TypeOf<typeof BusinessClientForList>
 
-const ClientForList = t.union(
+export const ClientForList = t.union(
   [PrivateClientForList, BusinessClientForList],
   'ClientForList'
 )

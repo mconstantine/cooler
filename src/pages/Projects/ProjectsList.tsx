@@ -1,33 +1,20 @@
 import { option } from 'fp-ts'
-import { flow } from 'fp-ts/function'
 import { Reader } from 'fp-ts/Reader'
-import { NonEmptyString } from 'io-ts-types'
-import { useState } from 'react'
 import { a18n } from '../../a18n'
 import { ConnectionList } from '../../components/ConnectionList/ConnectionList'
 import { RoutedItem } from '../../components/List/List'
 import { projectsRoute, useRouter } from '../../components/Router'
-import { useGet } from '../../effects/api/useApi'
+import { useConnection } from '../../effects/useConnection'
 import { Project } from '../../entities/Project'
-import { unsafePositiveInteger } from '../../globalDomain'
-import { ConnectionQueryInput } from '../../misc/Connection'
 import { getProjectsRequest } from './domain'
 
 export default function ProjectsList() {
-  const [input, setInput] = useState<ConnectionQueryInput>({
-    query: option.none,
-    first: unsafePositiveInteger(20),
-    after: option.none
-  })
-
-  const [projects] = useGet(getProjectsRequest, input)
   const { setRoute } = useRouter()
-
-  const onSearchQueryChange: Reader<string, void> = flow(
-    NonEmptyString.decode,
-    option.fromEither,
-    query => setInput(input => ({ ...input, query }))
-  )
+  const {
+    results: projects,
+    onSearchQueryChange,
+    onLoadMore
+  } = useConnection(getProjectsRequest)
 
   const renderProjectItem: Reader<Project, RoutedItem> = project => ({
     type: 'routed',
@@ -43,7 +30,7 @@ export default function ProjectsList() {
     <ConnectionList
       query={projects}
       title={a18n`Projects`}
-      onLoadMore={option.none}
+      onLoadMore={option.some(onLoadMore)}
       action={option.none}
       onSearchQueryChange={onSearchQueryChange}
       renderListItem={renderProjectItem}

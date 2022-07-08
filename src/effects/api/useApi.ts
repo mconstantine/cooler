@@ -41,7 +41,7 @@ export interface Request<I, II, O, OO> {
   outputCodec: t.Type<O, OO>
 }
 
-interface GetRequest<I, II, O, OO>
+export interface GetRequest<I, II, O, OO>
   extends Omit<Request<I, II, O, OO>, 'method'> {
   method: 'GET'
 }

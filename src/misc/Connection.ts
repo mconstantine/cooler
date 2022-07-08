@@ -55,6 +55,7 @@ export const Connection = <T extends t.Mixed>(T: T) =>
     },
     `Connection<${T.name}>`
   )
+
 export interface Connection<T> {
   edges: Edge<T>[]
   pageInfo: {
@@ -65,6 +66,9 @@ export interface Connection<T> {
     hasPreviousPage: boolean
   }
 }
+
+export interface ConnectionC<T extends t.Mixed>
+  extends t.Type<Connection<t.TypeOf<T>>, t.OutputOf<T>, unknown> {}
 
 const ConnectionQueryInputAsc = t.type(
   {
