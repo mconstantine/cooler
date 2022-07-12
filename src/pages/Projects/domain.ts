@@ -10,6 +10,7 @@ import {
   ProjectCreationInput,
   ProjectWithStats
 } from '../../entities/Project'
+import { Task } from '../../entities/Task'
 import { ObjectId } from '../../globalDomain'
 import { Connection, ConnectionQueryInput } from '../../misc/Connection'
 
@@ -45,3 +46,22 @@ export const makeDeleteProjectRequest = (_id: ObjectId) =>
     inputCodec: t.void,
     outputCodec: Project
   })
+
+const ProjectTasksConnectionQueryInput = t.intersection(
+  [
+    ConnectionQueryInput,
+    t.type({
+      project: ObjectId
+    })
+  ],
+  'ProjectTasksConnectionQueryInput'
+)
+export type ProjectTasksConnectionQueryInput = t.TypeOf<
+  typeof ProjectTasksConnectionQueryInput
+>
+
+export const getProjectTasksRequest = makeGetRequest({
+  url: `/tasks`,
+  inputCodec: ProjectTasksConnectionQueryInput,
+  outputCodec: Connection(Task)
+})

@@ -15,6 +15,7 @@ import { ObjectId } from '../../globalDomain'
 import { makeProjectQuery } from './domain'
 import { ProjectData } from './ProjectData'
 import { ProjectProgress } from './ProjectProgress'
+import { ProjectTasks } from './ProjectTasks'
 
 interface Props {
   _id: ObjectId
@@ -50,6 +51,7 @@ export default function Project(props: Props) {
             onDelete={onDelete}
           />
           <ProjectProgress project={project} />
+          <ProjectTasks project={project} />
         </TaxesProvider>
       )
     )
