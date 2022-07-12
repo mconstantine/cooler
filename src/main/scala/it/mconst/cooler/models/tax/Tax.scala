@@ -103,7 +103,7 @@ object Taxes {
   ): EitherT[IO, Error, Tax] = collection.use(c =>
     for
       data <- EitherT.fromEither[IO](Tax.fromInputData(data))
-      tax <- c.create(data)
+      tax <- c.createAndReturn(data)
     yield tax
   )
 

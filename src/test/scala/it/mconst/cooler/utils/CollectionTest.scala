@@ -57,7 +57,7 @@ class CollectionTest extends CatsEffectSuite {
 
     people.use { c =>
       c.raw(_.deleteMany(Filter.empty)).flatMap { _ =>
-        peopleData.map(c.create(_).orFail).parSequence
+        peopleData.map(c.createAndReturn(_).orFail).parSequence
       }
     }
   }(_ => people.use(_.raw(_.deleteMany(Filter.empty).void)))
@@ -66,7 +66,7 @@ class CollectionTest extends CatsEffectSuite {
 
   test("should create a document") {
     val person = Person(new ObjectId(), "John", "Doe")
-    people.use(_.create(person)).assertEquals(Right(person))
+    people.use(_.createAndReturn(person)).assertEquals(Right(person))
   }
 
   test("should update a document") {
@@ -79,7 +79,7 @@ class CollectionTest extends CatsEffectSuite {
 
     people.use { c =>
       for
-        person <- c.create(data)
+        person <- c.createAndReturn(data)
         _ <- c.update(person._id, updates)
         update <- c.findOne[Person](Filter.eq("_id", person._id))
         _ = assertEquals(update.firstName, "Mario")
@@ -98,7 +98,7 @@ class CollectionTest extends CatsEffectSuite {
 
     people.use { c =>
       for
-        person <- c.create(data).orFail
+        person <- c.createAndReturn(data).orFail
         _ <- IO.delay(500)
         _ <- c.update(person._id, updates).orFail
         updated <- c.findOne[Person](Filter.eq("_id", person._id)).orFail

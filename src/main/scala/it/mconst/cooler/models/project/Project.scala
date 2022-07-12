@@ -109,6 +109,9 @@ final case class ProjectWithClientLabel(
     )
 
 object ProjectWithClientLabel {
+  given EntityEncoder[IO, ProjectWithClientLabel] =
+    jsonEncoderOf[IO, ProjectWithClientLabel]
+
   given EntityEncoder[IO, Cursor[ProjectWithClientLabel]] =
     jsonEncoderOf[IO, Cursor[ProjectWithClientLabel]]
 }
@@ -187,14 +190,63 @@ object Projects {
 
   def create(
       data: Project.InputData
-  )(using customer: User)(using Lang): EitherT[IO, Error, DbProject] =
+  )(using
+      customer: User
+  )(using Lang): EitherT[IO, Error, ProjectWithClientLabel] =
     collection.use { c =>
       for
         data <- EitherT.fromEither[IO](Project.fromInputData(data))
         _ <- Clients.findById(data.client)
-        project <- c.create(data)
+        result <- c.create(data)
+        project <- findByIdNoStats(result)
       yield project
     }
+
+  private def findByIdNoStats(_id: ObjectId)(using
+      Lang
+  ): EitherT[IO, Error, ProjectWithClientLabel] = EitherT.fromOptionF(
+    collection.use(
+      _.raw(
+        _.aggregateWithCodec[ProjectWithClientLabel](
+          Seq(
+            Aggregates.`match`(Filters.eq("_id", _id)),
+            Aggregates.lookup(
+              Clients.collection.name,
+              "client",
+              "_id",
+              "c"
+            ),
+            Aggregates.unwind("$c"),
+            Aggregates.addFields(
+              Field(
+                "client",
+                Document(
+                  "_id" -> "$c._id",
+                  "type" -> "$c.type",
+                  "name" -> Document(
+                    "$cond" -> Document(
+                      "if" -> Document(
+                        "$gt" -> List("$c.firstName", null)
+                      ),
+                      "then" -> Document(
+                        "$concat" -> List(
+                          "$c.firstName",
+                          " ",
+                          "$c.lastName"
+                        )
+                      ),
+                      "else" -> "$c.businessName"
+                    )
+                  )
+                )
+              )
+            )
+          )
+        ).first
+      )
+    ),
+    Error(Status.NotFound, __.ErrorProjectNotFound)
+  )
 
   def findById(
       _id: ObjectId

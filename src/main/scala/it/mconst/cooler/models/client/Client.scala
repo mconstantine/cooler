@@ -493,7 +493,7 @@ object Clients {
     collection.use(c =>
       for
         data <- EitherT.fromEither[IO](Client.fromInputData(data, customer))
-        client <- c.create(data)
+        client <- c.createAndReturn(data)
       yield client
     )
 

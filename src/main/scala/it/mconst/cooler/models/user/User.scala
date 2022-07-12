@@ -198,7 +198,7 @@ object Users {
         .flatMap(_ =>
           EitherT
             .fromEither(User.fromCreationData(user))
-            .flatMap(c.create)
+            .flatMap(c.createAndReturn)
         )
     )
 

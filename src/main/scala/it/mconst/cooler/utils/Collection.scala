@@ -11,6 +11,7 @@ import com.mongodb.client.model.BsonField
 import com.mongodb.client.model.Facet
 import com.mongodb.client.model.Filters
 import com.mongodb.client.model.Updates
+import com.mongodb.client.result.DeleteResult
 import com.mongodb.client.result.UpdateResult
 import com.osinka.i18n.Lang
 import io.circe.Decoder
@@ -40,9 +41,9 @@ import mongo4cats.database.MongoDatabase
 import org.bson.BsonDateTime
 import org.bson.conversions.Bson
 import org.http4s.dsl.io.*
+import org.http4s.Status
 import scala.collection.JavaConverters.*
 import scala.reflect.ClassTag
-import com.mongodb.client.result.DeleteResult
 
 trait DbDocument {
   def _id: ObjectId
@@ -159,7 +160,23 @@ final case class Collection[F[
 
     def create(
         doc: Doc
-    )(using Lang): EitherT[F, Error, Doc] = {
+    )(using Lang): EitherT[F, Error, ObjectId] =
+      EitherT(
+        db.getCollectionWithCodec[Doc](name)
+          .flatMap(
+            _.insertOne(doc).map(result =>
+              Option(result.getInsertedId)
+                .map(_.asObjectId.getValue)
+                .toRight(
+                  Error(Status.NotFound, __.ErrorDocumentNotFoundAfterInsert)
+                )
+            )
+          )
+      )
+
+    def createAndReturn(
+        doc: Doc
+    )(using Lang): EitherT[F, Error, Doc] =
       for
         result <- EitherT.liftF(
           db.getCollectionWithCodec[Doc](name).flatMap(_.insertOne(doc))
@@ -167,7 +184,6 @@ final case class Collection[F[
         inserted <- findOne[Doc](Filter.eq("_id", result.getInsertedId))
           .leftMap(_ => Error(NotFound, __.ErrorDocumentNotFoundAfterInsert))
       yield inserted
-    }
 
     def update(_id: ObjectId, update: BuiltUpdate)(using
         Lang

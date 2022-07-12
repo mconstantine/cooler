@@ -182,7 +182,7 @@ object Sessions {
       project <- findProject(data.task).leftMap(_ =>
         Error(Status.NotFound, __.ErrorTaskNotFound)
       )
-      session <- collection.use(_.create(data))
+      session <- collection.use(_.createAndReturn(data))
       _ <- Tasks.collection.use(
         _.update(
           session.task,

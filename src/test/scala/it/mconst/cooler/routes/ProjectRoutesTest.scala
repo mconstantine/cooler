@@ -14,7 +14,6 @@ import it.mconst.cooler.models.client.Client
 import it.mconst.cooler.models.client.Clients
 import it.mconst.cooler.models.client.ClientType
 import it.mconst.cooler.models.project.ClientLabel
-import it.mconst.cooler.models.project.DbProject
 import it.mconst.cooler.models.project.ProjectCashData
 import it.mconst.cooler.models.project.Projects
 import it.mconst.cooler.models.project.ProjectWithClientLabel
@@ -44,7 +43,9 @@ class ProjectRoutesTest extends CatsEffectSuite {
   given Assertions = this
   given HttpClient[IO] = client
 
-  given EntityDecoder[IO, DbProject] = jsonOf[IO, DbProject]
+  given EntityDecoder[IO, ProjectWithClientLabel] =
+    jsonOf[IO, ProjectWithClientLabel]
+
   given EntityDecoder[IO, ProjectWithStats] = jsonOf[IO, ProjectWithStats]
 
   final case class TestData(user: User, client: Client)
@@ -99,7 +100,7 @@ class ProjectRoutesTest extends CatsEffectSuite {
     POST(data, uri"/")
       .sign(testDataFixture().user)
       .shouldRespondLike(
-        (p: DbProject) => p.name,
+        (p: ProjectWithClientLabel) => p.name,
         data.name
       )
   }

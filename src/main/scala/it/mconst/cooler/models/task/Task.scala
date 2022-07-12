@@ -218,7 +218,7 @@ object Tasks {
         _ <- findClient(data.project).leftMap(_ =>
           Error(Status.NotFound, __.ErrorProjectNotFound)
         )
-        task <- c.create(data)
+        task <- c.createAndReturn(data)
         _ <- Projects.collection.use(
           _.update(
             task.project,

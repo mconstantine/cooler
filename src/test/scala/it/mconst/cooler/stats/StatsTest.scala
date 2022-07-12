@@ -11,10 +11,10 @@ import com.osinka.i18n.Lang
 import it.mconst.cooler.models.*
 import it.mconst.cooler.models.client.Client
 import it.mconst.cooler.models.client.Clients
-import it.mconst.cooler.models.project.DbProject
 import it.mconst.cooler.models.project.ProjectCashData
 import it.mconst.cooler.models.project.ProjectCashedBalance
 import it.mconst.cooler.models.project.Projects
+import it.mconst.cooler.models.project.ProjectWithClientLabel
 import it.mconst.cooler.models.session.Session
 import it.mconst.cooler.models.session.Sessions
 import it.mconst.cooler.models.task.DbTask
@@ -49,7 +49,7 @@ class StatsTest extends CatsEffectSuite {
 
   final case class TestData(
       client: Client,
-      projects: List[DbProject],
+      projects: List[ProjectWithClientLabel],
       tasks: List[DbTask],
       sessions: List[Session]
   )
