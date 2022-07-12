@@ -269,9 +269,29 @@ object Tasks {
       Error(Status.NotFound, __.ErrorTaskNotFound)
     )
 
-  def find(query: CursorQuery)(using customer: User)(using
-      Lang
-  ): EitherT[IO, Error, Cursor[DbTask]] =
+  def find(query: CursorQuery, project: Option[ObjectId])(using customer: User)(
+      using Lang
+  ): EitherT[IO, Error, Cursor[DbTask]] = {
+    val projectMatch = project.fold(Seq.empty)(_id =>
+      Seq(Aggregates.`match`(Filters.eq("_id", _id)))
+    )
+
+    val projectsLookupPipeline = projectMatch ++ Seq(
+      Document(
+        "$lookup" -> Document(
+          "from" -> "clients",
+          "localField" -> "client",
+          "foreignField" -> "_id",
+          "as" -> "client"
+        )
+      ),
+      Document(
+        "$match" -> Document(
+          "client.user" -> customer._id
+        )
+      )
+    )
+
     collection.use(
       _.find[DbTask](
         "name",
@@ -282,21 +302,7 @@ object Tasks {
               "localField" -> "project",
               "foreignField" -> "_id",
               "as" -> "project",
-              "pipeline" -> Seq(
-                Document(
-                  "$lookup" -> Document(
-                    "from" -> "clients",
-                    "localField" -> "client",
-                    "foreignField" -> "_id",
-                    "as" -> "client"
-                  )
-                ),
-                Document(
-                  "$match" -> Document(
-                    "client.user" -> customer._id
-                  )
-                )
-              )
+              "pipeline" -> projectsLookupPipeline
             )
           ),
           Document(
@@ -309,6 +315,7 @@ object Tasks {
         )
       )(query)
     )
+  }
 
   def getDue(since: BsonDateTime, to: Option[BsonDateTime])(using
       customer: User

@@ -10,8 +10,13 @@ import it.mconst.cooler.models.task.Task
 import it.mconst.cooler.models.task.Tasks
 import it.mconst.cooler.models.user.User
 import it.mconst.cooler.utils.given
+import mongo4cats.bson.ObjectId
 import org.http4s.AuthedRoutes
+import org.http4s.dsl.impl.OptionalQueryParamDecoderMatcher
 import org.http4s.dsl.io.*
+
+object ProjectIdMatcher
+    extends OptionalQueryParamDecoderMatcher[ObjectId]("project")
 
 object TaskRoutes {
   val routes: AuthedRoutes[UserContext, IO] = AuthedRoutes.of {
@@ -26,6 +31,7 @@ object TaskRoutes {
     }
 
     case GET -> Root :?
+        ProjectIdMatcher(project) +&
         QueryMatcher(query) +&
         FirstMatcher(first) +&
         AfterMatcher(after) +&
@@ -36,7 +42,7 @@ object TaskRoutes {
 
       EitherT
         .fromEither[IO](CursorQuery(query, first, after, last, before))
-        .flatMap(Tasks.find(_))
+        .flatMap(Tasks.find(_, project))
         .toResponse
     }
 

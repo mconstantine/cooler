@@ -21,6 +21,7 @@ import it.mconst.cooler.utils.Error
 import java.time.format.DateTimeFormatter
 import java.time.LocalDateTime
 import java.time.ZoneOffset
+import mongo4cats.bson.ObjectId
 import mongo4cats.collection.operations.Filter
 import org.bson.BsonDateTime
 import org.http4s.Status
@@ -172,7 +173,7 @@ class TasksCollectionTest extends CatsEffectSuite {
     })
   }(_ => Tasks.collection.use(_.raw(_.deleteMany(Filter.empty)).void))
 
-  test("should find a project") {
+  test("should find a task") {
     tasksList.use { tasks =>
       for
         result <- Tasks
@@ -181,7 +182,8 @@ class TasksCollectionTest extends CatsEffectSuite {
               query = Some("a"),
               first = Some(PositiveInteger.unsafe(2)),
               after = Some("Alice")
-            )
+            ),
+            none[ObjectId]
           )
           .orFail
         _ = assertEquals(result.pageInfo.totalCount, 4)
@@ -198,6 +200,31 @@ class TasksCollectionTest extends CatsEffectSuite {
     }
   }
 
+  test("should find tasks by project") {
+    tasksList.use { _ =>
+      for
+        otherProject <- Projects
+          .create(
+            makeTestProject(testDataFixture().client._id)
+          )
+          .orFail
+        task <- Tasks.create(makeTestTask(otherProject._id)).orFail
+        result <- Tasks
+          .find(
+            CursorQueryAsc(
+              query = none[String],
+              first = Some(PositiveInteger.unsafe(10)),
+              after = none[String]
+            ),
+            Some(otherProject._id)
+          )
+          .orFail
+        _ = assertEquals(result.pageInfo.totalCount, 1)
+        _ = assertEquals(result.edges.map(_.node._id), List(task._id))
+      yield ()
+    }
+  }
+
   test("should not include tasks of clients of other users when searching") {
     tasksList.use { _ =>
       otherUser.use { user =>
@@ -208,7 +235,7 @@ class TasksCollectionTest extends CatsEffectSuite {
           project <- Projects.create(makeTestProject(client._id)).orFail
           task <- Tasks.create(makeTestTask(project._id, name = "Adam")).orFail
           result <- Tasks
-            .find(CursorQueryAsc(query = Some("a")))
+            .find(CursorQueryAsc(query = Some("a")), none[ObjectId])
             .orFail
             .map(_.edges.map(_.node.name.toString))
           _ = assertEquals(result, List("Adam"))

@@ -19,6 +19,15 @@ object AfterMatcher extends OptionalQueryParamDecoderMatcher[String]("after")
 object LastMatcher extends OptionalQueryParamDecoderMatcher[Int]("last")
 object BeforeMatcher extends OptionalQueryParamDecoderMatcher[String]("before")
 
+given QueryParamDecoder[ObjectId] =
+  QueryParamDecoder[String].map(string =>
+    ObjectId
+      .from(string)
+      .getOrElse(
+        throw new IllegalArgumentException("Invalid ObjectId")
+      )
+  )
+
 given QueryParamDecoder[BsonDateTime] =
   QueryParamDecoder[String].map(
     _.toBsonDateTime.getOrElse(
