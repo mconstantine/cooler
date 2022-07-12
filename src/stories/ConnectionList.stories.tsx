@@ -164,7 +164,7 @@ const ConnectionListTemplate: Story<Args> = props => {
             action: props.action
           })}
           query={request}
-          onSearchQueryChange={onQuerySearchChange}
+          onSearchQueryChange={option.some(onQuerySearchChange)}
           onLoadMore={option.some(onLoadMore)}
           renderListItem={renderListItem}
         />

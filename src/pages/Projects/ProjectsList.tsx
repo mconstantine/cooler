@@ -38,7 +38,7 @@ export default function ProjectsList() {
         icon: option.some(add),
         action: () => setRoute(projectsRoute('new'))
       })}
-      onSearchQueryChange={onSearchQueryChange}
+      onSearchQueryChange={option.some(onSearchQueryChange)}
       renderListItem={renderProjectItem}
     />
   )

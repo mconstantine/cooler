@@ -1,8 +1,7 @@
 import { boolean, option } from 'fp-ts'
-import { constVoid, flow, pipe } from 'fp-ts/function'
+import { constVoid, pipe } from 'fp-ts/function'
 import { IO } from 'fp-ts/IO'
 import { Reader } from 'fp-ts/Reader'
-import { NonEmptyString } from 'io-ts-types'
 import { useEffect, useState } from 'react'
 import { a18n } from '../../a18n'
 import { ConnectionList } from '../../components/ConnectionList/ConnectionList'
@@ -30,8 +29,8 @@ export function ProjectTasks(props: Props) {
   const [input, setInput] = useState<ProjectTasksConnectionQueryInput>({
     project: props.project._id,
     query: option.none,
-    first: unsafePositiveInteger(10),
-    after: option.none
+    last: unsafePositiveInteger(10),
+    before: option.none
   })
 
   const [tasks, setTasks] = useState<Query<LocalizedString, Connection<Task>>>(
@@ -39,12 +38,6 @@ export function ProjectTasks(props: Props) {
   )
 
   const [searchResults] = useGet(getProjectTasksRequest, input)
-
-  const onSearchQueryChange: Reader<string, void> = flow(
-    NonEmptyString.decode,
-    option.fromEither,
-    query => setInput({ ...input, query })
-  )
 
   const onLoadMore: IO<void> = () =>
     pipe(
@@ -59,7 +52,7 @@ export function ProjectTasks(props: Props) {
                 option.fold(constVoid, cursor =>
                   setInput({
                     ...input,
-                    after: option.some(cursor)
+                    before: option.some(cursor)
                   })
                 )
               )
@@ -106,7 +99,7 @@ export function ProjectTasks(props: Props) {
       action={option.none}
       query={tasks}
       onLoadMore={option.some(onLoadMore)}
-      onSearchQueryChange={onSearchQueryChange}
+      onSearchQueryChange={option.none}
       renderListItem={renderTaskItem}
     />
   )

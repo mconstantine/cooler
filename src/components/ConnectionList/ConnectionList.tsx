@@ -1,5 +1,5 @@
 import { boolean, option } from 'fp-ts'
-import { constNull, pipe } from 'fp-ts/function'
+import { constNull, constVoid, pipe } from 'fp-ts/function'
 import { IO } from 'fp-ts/IO'
 import { Reader } from 'fp-ts/Reader'
 import { refresh } from 'ionicons/icons'
@@ -26,13 +26,20 @@ interface Props<T> {
   action: Option<HeadingAction>
   query: Query<any, Connection<T>>
   renderListItem: Reader<T, Item>
-  onSearchQueryChange: Reader<string, unknown>
+  onSearchQueryChange: Option<Reader<string, unknown>>
   onLoadMore: Option<IO<unknown>>
 }
 
 export function ConnectionList<T>(props: Props<T>) {
   const [queryString, setQueryString] = useState('')
-  const debouncedSearch = useDebounce(props.onSearchQueryChange)
+
+  const debouncedSearch = useDebounce(
+    pipe(
+      props.onSearchQueryChange,
+      option.getOrElse<Reader<string, void>>(() => constVoid)
+    )
+  )
+
   const searchInputRef = useRef<HTMLInputElement | null>(null)
 
   useEffect(() => {
@@ -45,24 +52,29 @@ export function ConnectionList<T>(props: Props<T>) {
 
   return (
     <Panel title={props.title} framed action={props.action}>
-      <Input
-        type="text"
-        name="search"
-        label={a18n`Search`}
-        value={queryString}
-        onChange={setQueryString}
-        color={pipe(
-          props.query,
-          query.fold(
-            () => 'default',
-            () => 'default',
-            () => 'danger'
-          )
-        )}
-        error={option.none}
-        warning={option.none}
-        ref={searchInputRef}
-      />
+      {pipe(
+        props.onSearchQueryChange,
+        option.fold(constNull, () => (
+          <Input
+            type="text"
+            name="search"
+            label={a18n`Search`}
+            value={queryString}
+            onChange={setQueryString}
+            color={pipe(
+              props.query,
+              query.fold(
+                () => 'default',
+                () => 'default',
+                () => 'danger'
+              )
+            )}
+            error={option.none}
+            warning={option.none}
+            ref={searchInputRef}
+          />
+        ))
+      )}
       {pipe(
         props.query,
         query.fold(

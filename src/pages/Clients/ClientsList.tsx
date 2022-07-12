@@ -32,7 +32,7 @@ export default function ClientsList() {
     <ConnectionList
       title={a18n`Clients`}
       query={clients}
-      onSearchQueryChange={onSearchQueryChange}
+      onSearchQueryChange={option.some(onSearchQueryChange)}
       action={option.some({
         type: 'sync',
         label: a18n`Create new client`,
