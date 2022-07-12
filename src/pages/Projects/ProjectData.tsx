@@ -1,8 +1,7 @@
-import { array, boolean, option, taskEither } from 'fp-ts'
+import { boolean, option, taskEither } from 'fp-ts'
 import { constNull, flow, pipe } from 'fp-ts/function'
 import { IO } from 'fp-ts/IO'
 import { ReaderTaskEither } from 'fp-ts/ReaderTaskEither'
-import { NonEmptyString } from 'io-ts-types'
 import { useState } from 'react'
 import {
   a18n,
@@ -17,20 +16,13 @@ import { ErrorPanel } from '../../components/ErrorPanel/ErrorPanel'
 import { ProjectForm } from '../../components/Form/Forms/ProjectForm'
 import { ReadOnlyInput } from '../../components/Form/Input/ReadOnlyInput/ReadOnlyInput'
 import { Panel } from '../../components/Panel/Panel'
-import { useDelete, useLazyGet, usePut } from '../../effects/api/useApi'
-import { getClientName } from '../../entities/Client'
+import { useDelete, usePut } from '../../effects/api/useApi'
 import {
   Project,
   ProjectCreationInput,
   ProjectWithStats
 } from '../../entities/Project'
-import {
-  LocalizedString,
-  ObjectId,
-  unsafePositiveInteger
-} from '../../globalDomain'
-import { getConnectionNodes } from '../../misc/Connection'
-import { clientsQuery } from '../Clients/domain'
+import { LocalizedString } from '../../globalDomain'
 import { makeDeleteProjectRequest, makeUpdateProjectRequest } from './domain'
 import { LoadingButton } from '../../components/Button/LoadingButton/LoadingButton'
 import { skull } from 'ionicons/icons'
@@ -42,6 +34,7 @@ import { query } from '../../effects/api/api'
 import { LoadingBlock } from '../../components/Loading/LoadingBlock'
 import { List } from '../../components/List/List'
 import { calculateNetValue, renderTaxItem } from '../Profile/utils'
+import { useFindClients } from './useFindClients'
 
 interface Props {
   project: ProjectWithStats
@@ -51,7 +44,7 @@ interface Props {
 
 export function ProjectData(props: Props) {
   const { taxes } = useTaxes()
-  const findClientsCommand = useLazyGet(clientsQuery)
+  const findClients = useFindClients()
   const [isEditing, setIsEditing] = useState(false)
 
   const updateProjectCommand = usePut(
@@ -80,28 +73,6 @@ export function ProjectData(props: Props) {
       message: () => a18n`All your data, tasks and sessions will be deleted!`
     }
   )
-
-  const findClients: ReaderTaskEither<
-    string,
-    LocalizedString,
-    Record<ObjectId, LocalizedString>
-  > = query =>
-    pipe(
-      findClientsCommand({
-        query: pipe(query, NonEmptyString.decode, option.fromEither),
-        first: unsafePositiveInteger(10),
-        after: option.none
-      }),
-      taskEither.map(
-        flow(
-          getConnectionNodes,
-          array.reduce({}, (res, client) => ({
-            ...res,
-            [client._id]: getClientName(client)
-          }))
-        )
-      )
-    )
 
   const onCancel: IO<void> = () => setIsEditing(false)
 

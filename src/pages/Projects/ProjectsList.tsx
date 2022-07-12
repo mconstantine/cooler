@@ -1,5 +1,6 @@
 import { option } from 'fp-ts'
 import { Reader } from 'fp-ts/Reader'
+import { add } from 'ionicons/icons'
 import { a18n } from '../../a18n'
 import { ConnectionList } from '../../components/ConnectionList/ConnectionList'
 import { RoutedItem } from '../../components/List/List'
@@ -31,7 +32,12 @@ export default function ProjectsList() {
       query={projects}
       title={a18n`Projects`}
       onLoadMore={option.some(onLoadMore)}
-      action={option.none}
+      action={option.some({
+        type: 'sync',
+        label: a18n`Create new project`,
+        icon: option.some(add),
+        action: () => setRoute(projectsRoute('new'))
+      })}
       onSearchQueryChange={onSearchQueryChange}
       renderListItem={renderProjectItem}
     />
