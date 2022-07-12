@@ -7,6 +7,7 @@ import munit.CatsEffectSuite
 import cats.effect.IO
 import cats.effect.kernel.Resource
 import cats.syntax.all.none
+import cats.syntax.traverse.*
 import com.osinka.i18n.Lang
 import io.circe.generic.auto.*
 import it.mconst.cooler.models.*
@@ -121,25 +122,32 @@ class TaskRoutesTest extends CatsEffectSuite {
 
   def tasksList = Resource.make {
     val tasks = List(
-      makeTestTask(testDataFixture().project._id, name = "Task A"),
-      makeTestTask(testDataFixture().project._id, name = "Task B"),
-      makeTestTask(testDataFixture().project._id, name = "Task C"),
-      makeTestTask(testDataFixture().project._id, name = "Task D"),
-      makeTestTask(testDataFixture().project._id, name = "Task E"),
-      makeTestTask(testDataFixture().project._id, name = "Task F")
+      makeTestTask(testDataFixture().project._id),
+      makeTestTask(testDataFixture().project._id),
+      makeTestTask(testDataFixture().project._id),
+      makeTestTask(testDataFixture().project._id),
+      makeTestTask(testDataFixture().project._id),
+      makeTestTask(testDataFixture().project._id)
     )
 
-    import cats.syntax.parallel.*
     given User = testDataFixture().user
 
     Tasks.collection
       .use(_.raw(_.deleteMany(Filter.empty)))
-      .flatMap(_ => tasks.map(Tasks.create(_).orFail).parSequence)
+      .flatMap(_ =>
+        tasks.traverse(data =>
+          IO.delay(Thread.sleep(1)).flatMap(_ => Tasks.create(data).orFail)
+        )
+      )
   }(_ => Tasks.collection.use(_.raw(_.deleteMany(Filter.empty)).void))
 
   test("should find tasks (asc)") {
     tasksList.use { tasks =>
-      GET(uri"/?query=task&first=2&after=Task%20B")
+      GET(
+        Uri
+          .fromString(s"/?first=2&after=${tasks(1).updatedAt.toISOString}")
+          .getOrElse(fail(""))
+      )
         .sign(testDataFixture().user)
         .shouldRespondLike(
           (result: Cursor[TaskWithProjectLabel]) =>
@@ -148,8 +156,17 @@ class TaskRoutesTest extends CatsEffectSuite {
               result.edges.map(e => Edge(e.node._id, e.cursor))
             ),
           Cursor[ObjectId](
-            PageInfo(6, Some("Task C"), Some("Task D"), true, true),
-            List(Edge(tasks(2)._id, "Task C"), Edge(tasks(3)._id, "Task D"))
+            PageInfo(
+              6,
+              Some(tasks(2).updatedAt.toISOString),
+              Some(tasks(3).updatedAt.toISOString),
+              true,
+              true
+            ),
+            List(
+              Edge(tasks(2)._id, tasks(2).updatedAt.toISOString),
+              Edge(tasks(3)._id, tasks(3).updatedAt.toISOString)
+            )
           )
         )
     }
@@ -157,7 +174,11 @@ class TaskRoutesTest extends CatsEffectSuite {
 
   test("should find tasks (desc)") {
     tasksList.use { tasks =>
-      GET(uri"/?query=task&last=2&before=Task%20E")
+      GET(
+        Uri
+          .fromString(s"/?last=2&before=${tasks(4).updatedAt.toISOString}")
+          .getOrElse(fail(""))
+      )
         .sign(testDataFixture().user)
         .shouldRespondLike(
           (result: Cursor[TaskWithProjectLabel]) =>
@@ -166,8 +187,17 @@ class TaskRoutesTest extends CatsEffectSuite {
               result.edges.map(e => Edge(e.node._id, e.cursor))
             ),
           Cursor[ObjectId](
-            PageInfo(6, Some("Task D"), Some("Task C"), true, true),
-            List(Edge(tasks(3)._id, "Task D"), Edge(tasks(2)._id, "Task C"))
+            PageInfo(
+              6,
+              Some(tasks(3).updatedAt.toISOString),
+              Some(tasks(2).updatedAt.toISOString),
+              true,
+              true
+            ),
+            List(
+              Edge(tasks(3)._id, tasks(3).updatedAt.toISOString),
+              Edge(tasks(2)._id, tasks(2).updatedAt.toISOString)
+            )
           )
         )
     }

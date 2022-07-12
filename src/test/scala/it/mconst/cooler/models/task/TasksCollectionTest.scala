@@ -153,23 +153,18 @@ class TasksCollectionTest extends CatsEffectSuite {
     val project = testDataFixture().project
 
     val tasks: List[Task.InputData] = List(
-      makeTestTask(project._id, name = "Alice"),
-      makeTestTask(project._id, name = "Bob"),
-      makeTestTask(project._id, name = "Charlie"),
-      makeTestTask(project._id, name = "Daniel"),
-      makeTestTask(project._id, name = "Eleanor"),
-      makeTestTask(project._id, name = "Frederick")
+      makeTestTask(project._id),
+      makeTestTask(project._id),
+      makeTestTask(project._id),
+      makeTestTask(project._id),
+      makeTestTask(project._id),
+      makeTestTask(project._id)
     )
 
-    import cats.syntax.parallel.*
-
     Tasks.collection.use(_.raw(_.deleteMany(Filter.empty)).flatMap { _ =>
-      tasks
-        .map(Tasks.create(_).orFail)
-        .parSequence
-        .map(
-          _.sortWith(_.name.toString < _.name.toString)
-        )
+      tasks.traverse(data =>
+        IO.delay(Thread.sleep(1)).flatMap(_ => Tasks.create(data).orFail)
+      )
     })
   }(_ => Tasks.collection.use(_.raw(_.deleteMany(Filter.empty)).void))
 
@@ -178,17 +173,22 @@ class TasksCollectionTest extends CatsEffectSuite {
       for
         result <- Tasks
           .find(
-            CursorQueryAsc(
-              query = Some("a"),
+            CursorNoQueryAsc(
               first = Some(PositiveInteger.unsafe(2)),
-              after = Some("Alice")
+              after = Some(tasks(1).updatedAt.toISOString)
             ),
             none[ObjectId]
           )
           .orFail
-        _ = assertEquals(result.pageInfo.totalCount, 4)
-        _ = assertEquals(result.pageInfo.startCursor, Some("Charlie"))
-        _ = assertEquals(result.pageInfo.endCursor, Some("Daniel"))
+        _ = assertEquals(result.pageInfo.totalCount, 6)
+        _ = assertEquals(
+          result.pageInfo.startCursor,
+          Some(tasks(2).updatedAt.toISOString)
+        )
+        _ = assertEquals(
+          result.pageInfo.endCursor,
+          Some(tasks(3).updatedAt.toISOString)
+        )
         _ = assertEquals(result.pageInfo.hasPreviousPage, true)
         _ = assertEquals(result.pageInfo.hasNextPage, true)
         _ = assertEquals(result.edges.length, 2)
@@ -211,8 +211,7 @@ class TasksCollectionTest extends CatsEffectSuite {
         task <- Tasks.create(makeTestTask(otherProject._id)).orFail
         result <- Tasks
           .find(
-            CursorQueryAsc(
-              query = none[String],
+            CursorNoQueryAsc(
               first = Some(PositiveInteger.unsafe(10)),
               after = none[String]
             ),
@@ -235,7 +234,7 @@ class TasksCollectionTest extends CatsEffectSuite {
           project <- Projects.create(makeTestProject(client._id)).orFail
           task <- Tasks.create(makeTestTask(project._id, name = "Adam")).orFail
           result <- Tasks
-            .find(CursorQueryAsc(query = Some("a")), none[ObjectId])
+            .find(CursorNoQueryAsc(), none[ObjectId])
             .orFail
             .map(_.edges.map(_.node.name.toString))
           _ = assertEquals(result, List("Adam"))

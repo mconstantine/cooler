@@ -237,6 +237,10 @@ object CursorQuery {
   }
 
   def empty = CursorQueryAsc(none[String], none[PositiveInteger], none[String])
+
+  def fromCursorNoQuery(c: CursorNoQuery): CursorQuery = c match
+    case c: CursorNoQueryAsc  => CursorQueryAsc(none[String], c.first, c.after)
+    case c: CursorNoQueryDesc => CursorQueryDesc(none[String], c.last, c.before)
 }
 
 final case class CursorQueryAsc(
@@ -250,6 +254,36 @@ final case class CursorQueryDesc(
     last: Option[PositiveInteger] = none[PositiveInteger],
     before: Option[String] = none[String]
 ) extends CursorQuery(query)
+
+sealed trait CursorNoQuery
+
+object CursorNoQuery {
+  def apply(
+      first: Option[Int] = none[Int],
+      after: Option[String] = none[String],
+      last: Option[Int] = none[Int],
+      before: Option[String] = none[String]
+  )(using Lang): Either[Error, CursorNoQuery] =
+    CursorQuery(none[String], first, after, last, before).map(
+      fromCursorQuery(_)
+    )
+
+  def empty = CursorNoQueryAsc(none[PositiveInteger], none[String])
+
+  def fromCursorQuery(c: CursorQuery): CursorNoQuery = c match
+    case c: CursorQueryAsc  => CursorNoQueryAsc(c.first, c.after)
+    case c: CursorQueryDesc => CursorNoQueryDesc(c.last, c.before)
+}
+
+final case class CursorNoQueryAsc(
+    first: Option[PositiveInteger] = none[PositiveInteger],
+    after: Option[String] = none[String]
+) extends CursorNoQuery
+
+final case class CursorNoQueryDesc(
+    last: Option[PositiveInteger] = none[PositiveInteger],
+    before: Option[String] = none[String]
+) extends CursorNoQuery
 
 extension (s: String) {
   def toObjectId: Either[String, ObjectId] = ObjectId.from(s)

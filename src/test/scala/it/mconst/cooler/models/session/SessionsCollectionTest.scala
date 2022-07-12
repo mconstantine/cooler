@@ -193,12 +193,11 @@ class SessionsCollectionTest extends CatsEffectSuite {
     sessionsList.use(sessions =>
       Sessions
         .getSessions(
-          testDataFixture().task._id,
-          CursorQueryAsc(
-            none[String],
+          CursorNoQueryAsc(
             Some(PositiveInteger.unsafe(2)),
             Some(sessions.head.startTime.toISOString)
-          )
+          ),
+          testDataFixture().task._id
         )
         .orFail
         .assertEquals(
@@ -222,12 +221,11 @@ class SessionsCollectionTest extends CatsEffectSuite {
     sessionsList.use(sessions =>
       Sessions
         .getSessions(
-          testDataFixture().task._id,
-          CursorQueryDesc(
-            none[String],
+          CursorNoQueryDesc(
             Some(PositiveInteger.unsafe(2)),
             Some(sessions.last.startTime.toISOString)
-          )
+          ),
+          testDataFixture().task._id
         )
         .orFail
         .assertEquals(
@@ -254,8 +252,8 @@ class SessionsCollectionTest extends CatsEffectSuite {
       sessionsList.use(sessions =>
         Sessions
           .getSessions(
-            testDataFixture().task._id,
-            CursorQueryAsc(none[String], none[PositiveInteger], none[String])
+            CursorNoQueryAsc(none[PositiveInteger], none[String]),
+            testDataFixture().task._id
           )
           .orFail
           .assertEquals(
@@ -353,8 +351,8 @@ class SessionsCollectionTest extends CatsEffectSuite {
       _ <- Sessions.delete(session._id).orFail.assertEquals(session)
       _ <- Sessions
         .getSessions(
-          task._id,
-          CursorQueryAsc(none[String], none[PositiveInteger], none[String])
+          CursorNoQueryAsc(none[PositiveInteger], none[String]),
+          task._id
         )
         .orFail
         .map(_.edges.length)

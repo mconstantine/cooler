@@ -35,8 +35,8 @@ object SessionRoutes {
       given User = context.user
 
       EitherT
-        .fromEither[IO](CursorQuery(none[String], first, after, last, before))
-        .flatMap(Sessions.getSessions(id, _))
+        .fromEither[IO](CursorNoQuery(first, after, last, before))
+        .flatMap(Sessions.getSessions(_, id))
         .toResponse
     }
 

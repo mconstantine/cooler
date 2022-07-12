@@ -2,6 +2,7 @@ package it.mconst.cooler.routes
 
 import cats.data.EitherT
 import cats.effect.IO
+import cats.syntax.all.none
 import com.osinka.i18n.Lang
 import it.mconst.cooler.middlewares.UserMiddleware
 import it.mconst.cooler.middlewares.UserMiddleware.UserContext
@@ -32,7 +33,6 @@ object TaskRoutes {
 
     case GET -> Root :?
         ProjectIdMatcher(project) +&
-        QueryMatcher(query) +&
         FirstMatcher(first) +&
         AfterMatcher(after) +&
         LastMatcher(last) +&
@@ -41,7 +41,7 @@ object TaskRoutes {
       given User = context.user
 
       EitherT
-        .fromEither[IO](CursorQuery(query, first, after, last, before))
+        .fromEither[IO](CursorNoQuery(first, after, last, before))
         .flatMap(Tasks.find(_, project))
         .toResponse
     }

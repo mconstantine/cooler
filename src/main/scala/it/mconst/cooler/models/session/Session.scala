@@ -238,7 +238,7 @@ object Sessions {
       result <- collection.use(_.findOne[Session](Filter.eq("_id", _id)))
     yield result
 
-  def getSessions(task: ObjectId, query: CursorQuery)(using customer: User)(
+  def getSessions(query: CursorNoQuery, task: ObjectId)(using customer: User)(
       using Lang
   ): EitherT[IO, Error, Cursor[Session]] =
     collection.use(
@@ -283,13 +283,7 @@ object Sessions {
           Aggregates.addFields(Field("task", "$task._id")),
           Aggregates.unwind("$task")
         )
-      )(
-        query match
-          case q: CursorQueryAsc =>
-            CursorQueryAsc(none[String], q.first, q.after)
-          case q: CursorQueryDesc =>
-            CursorQueryDesc(none[String], q.last, q.before)
-      )
+      )(CursorQuery.fromCursorNoQuery(query))
     )
 
   def update(_id: ObjectId, data: Session.InputData)(using customer: User)(using

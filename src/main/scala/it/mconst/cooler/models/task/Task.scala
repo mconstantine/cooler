@@ -271,8 +271,10 @@ object Tasks {
       Error(Status.NotFound, __.ErrorTaskNotFound)
     )
 
-  def find(query: CursorQuery, project: Option[ObjectId])(using customer: User)(
-      using Lang
+  def find(query: CursorNoQuery, project: Option[ObjectId])(using
+      customer: User
+  )(using
+      Lang
   ): EitherT[IO, Error, Cursor[TaskWithProjectLabel]] = {
     val projectMatch = project.fold(Seq.empty)(_id =>
       Seq(Aggregates.`match`(Filters.eq("_id", _id)))
@@ -296,7 +298,7 @@ object Tasks {
 
     collection.use(
       _.find[TaskWithProjectLabel](
-        "name",
+        "updatedAt",
         Seq(
           Document(
             "$lookup" -> Document(
@@ -323,7 +325,7 @@ object Tasks {
             )
           )
         )
-      )(query)
+      )(CursorQuery.fromCursorNoQuery(query))
     )
   }
 

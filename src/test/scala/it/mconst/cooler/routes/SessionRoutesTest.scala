@@ -265,12 +265,11 @@ class SessionRoutesTest extends CatsEffectSuite {
         .shouldRespond(session)
       _ <- Sessions
         .getSessions(
-          taskId,
-          CursorQueryAsc(
-            none[String],
+          CursorNoQueryAsc(
             Some(PositiveInteger.unsafe(1000000)),
             none[String]
-          )
+          ),
+          taskId
         )
         .orFail
         .map(_.edges.map(_.node._id).contains(session._id))
