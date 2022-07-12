@@ -133,6 +133,7 @@ object TestUtils {
       addressStreetNumber: Option[String] = Some("42"),
       addressEmail: String = "john.doe@example.com"
   ) = Client.PrivateInputData(
+    "PRIVATE",
     fiscalCode,
     firstName,
     lastName,
@@ -157,6 +158,7 @@ object TestUtils {
       addressStreetNumber: Option[String] = Some("42"),
       addressEmail: String = "john.doe@example.com"
   ) = Client.BusinessInputData(
+    "BUSINESS",
     countryCode,
     businessName,
     vatNumber,

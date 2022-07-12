@@ -10,6 +10,7 @@ import com.osinka.i18n.Lang
 import io.circe.generic.auto.*
 import it.mconst.cooler.middlewares.UserMiddleware
 import it.mconst.cooler.models.*
+import it.mconst.cooler.models.client.BusinessClientType
 import it.mconst.cooler.models.client.Client
 import it.mconst.cooler.models.client.Clients
 import it.mconst.cooler.models.user.User
@@ -145,16 +146,18 @@ class ClientRoutesTest extends CatsEffectSuite {
     given User = admin
 
     for
-      client <- Clients.create(clientData).orFail
-      _ <- PUT(
-        updateData,
-        Uri.fromString(s"/${client._id.toString}").getOrElse(fail(""))
-      )
-        .sign(admin)
-        .shouldRespondLike(
-          (c: Client) => c.asBusiness.addressEmail,
-          updateData.addressEmail
+      c <- Clients.create(clientData).orFail
+      result <- client
+        .expect[Client](
+          PUT(
+            updateData,
+            Uri.fromString(s"/${c._id.toString}").getOrElse(fail(""))
+          )
+            .sign(admin)
         )
+        .map(_.asBusiness)
+      _ = assertEquals(result.addressEmail.toString, updateData.addressEmail)
+      _ = assertEquals(result.`type`, BusinessClientType.value)
     yield ()
   }
 

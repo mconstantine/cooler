@@ -136,6 +136,7 @@ interface Session {
 
   const clientsResult = await mongo.collection("clients").insertMany(
     clients.map((client) => ({
+      type: client.type,
       ...(() => {
         switch (client.type) {
           case "PRIVATE":

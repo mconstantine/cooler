@@ -12,6 +12,7 @@ import com.osinka.i18n.Lang
 import it.mconst.cooler.models.*
 import it.mconst.cooler.models.client.Client
 import it.mconst.cooler.models.client.Clients
+import it.mconst.cooler.models.client.ClientType
 import it.mconst.cooler.models.user.User
 import it.mconst.cooler.models.user.Users
 import it.mconst.cooler.utils.__
@@ -166,7 +167,8 @@ class ProjectsCollectionTest extends CatsEffectSuite {
 
   test("should find a project") {
     projectsList.use { projects =>
-      val client = testDataFixture().client
+      val client = testDataFixture().client.asPrivate
+
       val projectsWithClientLabels: List[ProjectWithClientLabel] =
         projects.map(p =>
           ProjectWithClientLabel(
@@ -176,7 +178,11 @@ class ProjectsCollectionTest extends CatsEffectSuite {
             p.cashData,
             p.createdAt,
             p.updatedAt,
-            ClientLabel(client._id, client.name)
+            ClientLabel(
+              client._id,
+              ClientType.fromPrivate(client.`type`),
+              client.name
+            )
           )
         )
 
@@ -351,7 +357,7 @@ class ProjectsCollectionTest extends CatsEffectSuite {
   }
 
   test("should get the latest projects") {
-    val client = testDataFixture().client
+    val client = testDataFixture().client.asPrivate
     val now = System.currentTimeMillis
 
     projectsList.use { projects =>
@@ -395,7 +401,11 @@ class ProjectsCollectionTest extends CatsEffectSuite {
                 p.cashData,
                 p.createdAt,
                 p.updatedAt,
-                ClientLabel(client._id, client.name)
+                ClientLabel(
+                  client._id,
+                  ClientType.fromPrivate(client.`type`),
+                  client.name
+                )
               )
             )
           )

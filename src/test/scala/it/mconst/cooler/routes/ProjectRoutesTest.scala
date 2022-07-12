@@ -12,6 +12,7 @@ import io.circe.generic.auto.*
 import it.mconst.cooler.models.*
 import it.mconst.cooler.models.client.Client
 import it.mconst.cooler.models.client.Clients
+import it.mconst.cooler.models.client.ClientType
 import it.mconst.cooler.models.project.ClientLabel
 import it.mconst.cooler.models.project.DbProject
 import it.mconst.cooler.models.project.ProjectCashData
@@ -123,7 +124,7 @@ class ProjectRoutesTest extends CatsEffectSuite {
 
   test("should find projects (asc)") {
     projectsList.use { projects =>
-      val client = testDataFixture().client
+      val client = testDataFixture().client.asPrivate
       val projectsWithClientLabel: List[ProjectWithClientLabel] =
         projects.map(p =>
           ProjectWithClientLabel(
@@ -133,7 +134,11 @@ class ProjectRoutesTest extends CatsEffectSuite {
             p.cashData,
             p.createdAt,
             p.updatedAt,
-            ClientLabel(client._id, client.name)
+            ClientLabel(
+              client._id,
+              ClientType.fromPrivate(client.`type`),
+              client.name
+            )
           )
         )
 
@@ -153,7 +158,7 @@ class ProjectRoutesTest extends CatsEffectSuite {
 
   test("should find projects (desc)") {
     projectsList.use { projects =>
-      val client = testDataFixture().client
+      val client = testDataFixture().client.asPrivate
       val projectsWithClientLabel: List[ProjectWithClientLabel] =
         projects.map(p =>
           ProjectWithClientLabel(
@@ -163,7 +168,11 @@ class ProjectRoutesTest extends CatsEffectSuite {
             p.cashData,
             p.createdAt,
             p.updatedAt,
-            ClientLabel(client._id, client.name)
+            ClientLabel(
+              client._id,
+              ClientType.fromPrivate(client.`type`),
+              client.name
+            )
           )
         )
 

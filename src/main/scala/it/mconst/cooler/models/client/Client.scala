@@ -37,8 +37,65 @@ import org.http4s.EntityDecoder
 import org.http4s.EntityEncoder
 import org.http4s.Status
 
+opaque type ClientType = String
+opaque type PrivateClientType = String
+opaque type BusinessClientType = String
+
+object PrivateClientType extends Validator[String, PrivateClientType] {
+  override def name: String = "PrivateClientType"
+  def value: PrivateClientType = ClientType.PRIVATE
+
+  override def decode(s: String): Option[PrivateClientType] =
+    Option.when(s == value)(s)
+
+  override def validate(fieldName: String, input: String)(using
+      Lang
+  ): Validation[PrivateClientType] =
+    validate(
+      input,
+      ValidationError(fieldName, __.ErrorDecodeInvalidPrivateClientType)
+    )
+}
+
+object BusinessClientType extends Validator[String, BusinessClientType] {
+  override def name: String = "BusinessClientType"
+  def value: BusinessClientType = ClientType.BUSINESS
+
+  override def decode(s: String): Option[BusinessClientType] =
+    Option.when(s == value)(s)
+
+  override def validate(fieldName: String, input: String)(using
+      Lang
+  ): Validation[BusinessClientType] =
+    validate(
+      input,
+      ValidationError(fieldName, __.ErrorDecodeInvalidBusinessClientType)
+    )
+}
+
+object ClientType extends Validator[String, ClientType] {
+  def PRIVATE: ClientType = "PRIVATE"
+  def BUSINESS: ClientType = "BUSINESS"
+
+  private lazy val values = Array[String](PRIVATE, BUSINESS)
+
+  override def name: String = "ClientType"
+
+  override def decode(s: String): Option[ClientType] =
+    Option.when(values.contains(s))(s)
+
+  def fromPrivate(`private`: PrivateClientType): ClientType = `private`
+  def fromBusiness(business: BusinessClientType): ClientType = business
+
+  override def validate(fieldName: String, input: String)(using
+      Lang
+  ): Validation[ClientType] =
+    validate(input, ValidationError(fieldName, __.ErrorDecodeInvalidClientType))
+}
+
 sealed abstract trait Client(
     _id: ObjectId,
+    `type`: ClientType,
     addressCountry: CountryCode,
     addressProvince: ProvinceCode,
     addressZIP: NonEmptyString,
@@ -55,6 +112,7 @@ sealed abstract trait Client(
 
 final case class PrivateClient(
     _id: ObjectId,
+    `type`: PrivateClientType,
     fiscalCode: NonEmptyString,
     firstName: NonEmptyString,
     lastName: NonEmptyString,
@@ -70,6 +128,7 @@ final case class PrivateClient(
     updatedAt: BsonDateTime
 ) extends Client(
       _id,
+      ClientType.fromPrivate(`type`),
       addressCountry,
       addressProvince,
       addressZIP,
@@ -87,6 +146,7 @@ final case class PrivateClient(
 
 final case class BusinessClient(
     _id: ObjectId,
+    `type`: BusinessClientType,
     countryCode: CountryCode,
     businessName: NonEmptyString,
     vatNumber: NonEmptyString,
@@ -102,6 +162,7 @@ final case class BusinessClient(
     updatedAt: BsonDateTime
 ) extends Client(
       _id,
+      ClientType.fromBusiness(`type`),
       addressCountry,
       addressProvince,
       addressZIP,
@@ -119,8 +180,8 @@ final case class BusinessClient(
 object Client {
   given Encoder[Client] with Decoder[Client] with {
     override def apply(client: Client): Json = client match
-      case privateClient: PrivateClient   => privateClient.asJson
-      case businessClient: BusinessClient => businessClient.asJson
+      case client: PrivateClient  => client.asJson
+      case client: BusinessClient => client.asJson
 
     override def apply(c: HCursor): Decoder.Result[Client] =
       c.as[BusinessClient].orElse[DecodingFailure, Client](c.as[PrivateClient])
@@ -132,6 +193,7 @@ object Client {
   given EntityEncoder[IO, Cursor[Client]] = jsonEncoderOf[IO, Cursor[Client]]
 
   sealed abstract trait InputData(
+      `type`: String,
       addressCountry: String,
       addressProvince: String,
       addressZIP: String,
@@ -144,6 +206,7 @@ object Client {
   }
 
   final case class PrivateInputData(
+      `type`: String,
       fiscalCode: String,
       firstName: String,
       lastName: String,
@@ -155,6 +218,7 @@ object Client {
       addressStreetNumber: Option[String],
       addressEmail: String
   ) extends InputData(
+        `type`,
         addressCountry,
         addressProvince,
         addressZIP,
@@ -167,6 +231,7 @@ object Client {
   }
 
   final case class BusinessInputData(
+      `type`: String,
       countryCode: String,
       businessName: String,
       vatNumber: String,
@@ -178,6 +243,7 @@ object Client {
       addressStreetNumber: Option[String],
       addressEmail: String
   ) extends InputData(
+        `type`,
         addressCountry,
         addressProvince,
         addressZIP,
@@ -216,6 +282,7 @@ object Client {
   given EntityDecoder[IO, InputData] = jsonOf[IO, InputData]
 
   sealed abstract trait ValidInputData(
+      `type`: ClientType,
       addressCountry: CountryCode,
       addressProvince: ProvinceCode,
       addressZIP: NonEmptyString,
@@ -226,6 +293,7 @@ object Client {
   )
 
   final case class ValidPrivateInputData(
+      `type`: PrivateClientType,
       fiscalCode: NonEmptyString,
       firstName: NonEmptyString,
       lastName: NonEmptyString,
@@ -237,6 +305,7 @@ object Client {
       addressStreetNumber: Option[NonEmptyString],
       addressEmail: Email
   ) extends ValidInputData(
+        ClientType.fromPrivate(`type`),
         addressCountry,
         addressProvince,
         addressZIP,
@@ -247,6 +316,7 @@ object Client {
       )
 
   final case class ValidBusinessInputData(
+      `type`: BusinessClientType,
       countryCode: CountryCode,
       businessName: NonEmptyString,
       vatNumber: NonEmptyString,
@@ -258,6 +328,7 @@ object Client {
       addressStreetNumber: Option[NonEmptyString],
       addressEmail: Email
   ) extends ValidInputData(
+        ClientType.fromBusiness(`type`),
         addressCountry,
         addressProvince,
         addressZIP,
@@ -269,89 +340,96 @@ object Client {
 
   def validateInputData(data: InputData)(using
       Lang
-  ): Validation[ValidInputData] = data match
-    case d: PrivateInputData =>
-      (
-        NonEmptyString.validate("fiscalCode", d.fiscalCode),
-        NonEmptyString.validate("firstName", d.firstName),
-        NonEmptyString.validate("lastName", d.lastName),
-        CountryCode.validate("addressCountry", d.addressCountry),
-        ProvinceCode.validate("addressProvince", d.addressProvince),
-        NonEmptyString.validate("addressZIP", d.addressZIP),
-        NonEmptyString.validate("addressCity", d.addressCity),
-        NonEmptyString.validate("addressStreet", d.addressStreet),
-        NonEmptyString.validateOptional(
-          "addressStreetNumber",
-          d.addressStreetNumber
-        ),
-        Email.validate("addressEmail", d.addressEmail)
-      ).mapN(
+  ): Validation[ValidInputData] =
+    data match
+      case d: PrivateInputData =>
         (
-            fiscalCode,
-            firstName,
-            lastName,
-            addressCountry,
-            addressProvince,
-            addressZIP,
-            addressCity,
-            addressStreet,
-            addressStreetNumber,
-            addressEmail
-        ) =>
-          ValidPrivateInputData(
-            fiscalCode,
-            firstName,
-            lastName,
-            addressCountry,
-            addressProvince,
-            addressZIP,
-            addressCity,
-            addressStreet,
-            addressStreetNumber,
-            addressEmail
-          )
-      )
-    case d: BusinessInputData =>
-      (
-        CountryCode.validate("countryCode", d.countryCode),
-        NonEmptyString.validate("businessName", d.businessName),
-        NonEmptyString.validate("vatNumber", d.vatNumber),
-        CountryCode.validate("addressCountry", d.addressCountry),
-        ProvinceCode.validate("addressProvince", d.addressProvince),
-        NonEmptyString.validate("addressZIP", d.addressZIP),
-        NonEmptyString.validate("addressCity", d.addressCity),
-        NonEmptyString.validate("addressStreet", d.addressStreet),
-        NonEmptyString.validateOptional(
-          "addressStreetNumber",
-          d.addressStreetNumber
-        ),
-        Email.validate("addressEmail", d.addressEmail)
-      ).mapN(
+          PrivateClientType.validate("type", d.`type`),
+          NonEmptyString.validate("fiscalCode", d.fiscalCode),
+          NonEmptyString.validate("firstName", d.firstName),
+          NonEmptyString.validate("lastName", d.lastName),
+          CountryCode.validate("addressCountry", d.addressCountry),
+          ProvinceCode.validate("addressProvince", d.addressProvince),
+          NonEmptyString.validate("addressZIP", d.addressZIP),
+          NonEmptyString.validate("addressCity", d.addressCity),
+          NonEmptyString.validate("addressStreet", d.addressStreet),
+          NonEmptyString.validateOptional(
+            "addressStreetNumber",
+            d.addressStreetNumber
+          ),
+          Email.validate("addressEmail", d.addressEmail)
+        ).mapN(
+          (
+              `type`,
+              fiscalCode,
+              firstName,
+              lastName,
+              addressCountry,
+              addressProvince,
+              addressZIP,
+              addressCity,
+              addressStreet,
+              addressStreetNumber,
+              addressEmail
+          ) =>
+            ValidPrivateInputData(
+              `type`,
+              fiscalCode,
+              firstName,
+              lastName,
+              addressCountry,
+              addressProvince,
+              addressZIP,
+              addressCity,
+              addressStreet,
+              addressStreetNumber,
+              addressEmail
+            )
+        )
+      case d: BusinessInputData =>
         (
-            countryCode,
-            businessName,
-            vatNumber,
-            addressCountry,
-            addressProvince,
-            addressZIP,
-            addressCity,
-            addressStreet,
-            addressStreetNumber,
-            addressEmail
-        ) =>
-          ValidBusinessInputData(
-            countryCode,
-            businessName,
-            vatNumber,
-            addressCountry,
-            addressProvince,
-            addressZIP,
-            addressCity,
-            addressStreet,
-            addressStreetNumber,
-            addressEmail
-          )
-      )
+          BusinessClientType.validate("type", d.`type`),
+          CountryCode.validate("countryCode", d.countryCode),
+          NonEmptyString.validate("businessName", d.businessName),
+          NonEmptyString.validate("vatNumber", d.vatNumber),
+          CountryCode.validate("addressCountry", d.addressCountry),
+          ProvinceCode.validate("addressProvince", d.addressProvince),
+          NonEmptyString.validate("addressZIP", d.addressZIP),
+          NonEmptyString.validate("addressCity", d.addressCity),
+          NonEmptyString.validate("addressStreet", d.addressStreet),
+          NonEmptyString.validateOptional(
+            "addressStreetNumber",
+            d.addressStreetNumber
+          ),
+          Email.validate("addressEmail", d.addressEmail)
+        ).mapN(
+          (
+              `type`,
+              countryCode,
+              businessName,
+              vatNumber,
+              addressCountry,
+              addressProvince,
+              addressZIP,
+              addressCity,
+              addressStreet,
+              addressStreetNumber,
+              addressEmail
+          ) =>
+            ValidBusinessInputData(
+              `type`,
+              countryCode,
+              businessName,
+              vatNumber,
+              addressCountry,
+              addressProvince,
+              addressZIP,
+              addressCity,
+              addressStreet,
+              addressStreetNumber,
+              addressEmail
+            )
+        )
 
   def fromInputData(data: InputData, customer: User)(using
       Lang
@@ -360,6 +438,7 @@ object Client {
       case d: ValidPrivateInputData =>
         PrivateClient(
           ObjectId(),
+          d.`type`,
           d.fiscalCode,
           d.firstName,
           d.lastName,
@@ -377,6 +456,7 @@ object Client {
       case d: ValidBusinessInputData =>
         BusinessClient(
           ObjectId(),
+          d.`type`,
           d.countryCode,
           d.businessName,
           d.vatNumber,
@@ -438,9 +518,22 @@ object Clients {
           data match
             case d: Client.ValidPrivateInputData =>
               collection.Update
+                .`with`("type" -> d.`type`)
                 .`with`("fiscalCode" -> d.fiscalCode)
                 .`with`("firstName" -> d.firstName)
                 .`with`("lastName" -> d.lastName)
+                .`with`(
+                  "countryCode" -> none[CountryCode],
+                  collection.UpdateStrategy.UnsetIfEmpty
+                )
+                .`with`(
+                  "businessName" -> none[NonEmptyString],
+                  collection.UpdateStrategy.UnsetIfEmpty
+                )
+                .`with`(
+                  "vatNumber" -> none[NonEmptyString],
+                  collection.UpdateStrategy.UnsetIfEmpty
+                )
                 .`with`("addressCountry" -> d.addressCountry)
                 .`with`("addressProvince" -> d.addressProvince)
                 .`with`("addressZIP" -> d.addressZIP)
@@ -454,9 +547,22 @@ object Clients {
                 .build
             case d: Client.ValidBusinessInputData =>
               collection.Update
+                .`with`("type" -> d.`type`)
                 .`with`("countryCode" -> d.countryCode)
                 .`with`("businessName" -> d.businessName)
                 .`with`("vatNumber" -> d.vatNumber)
+                .`with`(
+                  "fiscalCode" -> none[NonEmptyString],
+                  collection.UpdateStrategy.UnsetIfEmpty
+                )
+                .`with`(
+                  "firstName" -> none[NonEmptyString],
+                  collection.UpdateStrategy.UnsetIfEmpty
+                )
+                .`with`(
+                  "lastName" -> none[NonEmptyString],
+                  collection.UpdateStrategy.UnsetIfEmpty
+                )
                 .`with`("addressCountry" -> d.addressCountry)
                 .`with`("addressProvince" -> d.addressProvince)
                 .`with`("addressZIP" -> d.addressZIP)

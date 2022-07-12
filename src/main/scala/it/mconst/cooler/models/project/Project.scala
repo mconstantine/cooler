@@ -23,6 +23,7 @@ import io.circe.syntax.*
 import it.mconst.cooler.models.*
 import it.mconst.cooler.models.client.Client
 import it.mconst.cooler.models.client.Clients
+import it.mconst.cooler.models.client.ClientType
 import it.mconst.cooler.models.session.Session
 import it.mconst.cooler.models.session.Sessions
 import it.mconst.cooler.models.task.Tasks
@@ -61,7 +62,11 @@ sealed abstract trait Project(
     updatedAt: BsonDateTime
 ) extends DbDocument {}
 
-final case class ClientLabel(_id: ObjectId, name: NonEmptyString)
+final case class ClientLabel(
+    _id: ObjectId,
+    `type`: ClientType,
+    name: NonEmptyString
+)
 
 final case class DbProject(
     _id: ObjectId,
@@ -213,6 +218,7 @@ object Projects {
                   "client",
                   Document(
                     "_id" -> "$c._id",
+                    "type" -> "$c.type",
                     "name" -> Document(
                       "$cond" -> Document(
                         "if" -> Document(
@@ -342,6 +348,7 @@ object Projects {
               "client",
               Document(
                 "_id" -> "$c._id",
+                "type" -> "$c.type",
                 "name" -> Document(
                   "$cond" -> Document(
                     "if" -> Document(
@@ -377,6 +384,7 @@ object Projects {
               "client",
               Document(
                 "_id" -> "$c._id",
+                "type" -> "$c.type",
                 "name" -> Document(
                   "$cond" -> Document(
                     "if" -> Document(

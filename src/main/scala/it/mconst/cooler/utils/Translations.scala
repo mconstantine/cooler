@@ -9,6 +9,9 @@ enum __(val key: String):
   case Test extends __("test")
   case ErrorClientNotFound extends __("error.client.notFound")
   case ErrorDecodeEmptyString extends __("error.decode.emptyString")
+  case ErrorDecodeInvalidBusinessClientType
+      extends __("error.decode.invalidBusinessClientType")
+  case ErrorDecodeInvalidClientType extends __("error.decode.invalidClientType")
   case ErrorDecodeInvalidCountryCode
       extends __("error.decode.invalidCountryCode")
   case ErrorDecodeInvalidDateTime extends __("error.decode.invalidDateTime")
@@ -24,6 +27,8 @@ enum __(val key: String):
       extends __("error.decode.invalidPasswordFormat")
   case ErrorDecodePositiveInteger
       extends __("error.decode.invalidPositiveInteger")
+  case ErrorDecodeInvalidPrivateClientType
+      extends __("error.decode.invalidPrivateClientType")
   case ErrorDecodeInvalidProvinceCode
       extends __("error.decode.invalidProvinceCode")
   case ErrorDecodeInvalidQuery extends __("error.decode.invalidQuery")
@@ -33,6 +38,7 @@ enum __(val key: String):
   case ErrorDocumentNotFoundBeforeDelete
       extends __("error.document.notFound.beforeDelete")
   case ErrorDocumentNotFound extends __("error.document.notFound")
+  case ErrorInvalidClient extends __("error.invalidClientType")
   case ErrorInvalidAccessToken extends __("error.auth.invalidAccessToken")
   case ErrorInvalidEmailOrPassword
       extends __("error.auth.invalidEmailOrPassword")

@@ -101,6 +101,7 @@ class ClientsCollectionTest extends CatsEffectSuite {
       makeTestPrivateClient(addressEmail = "update-full-test@example.com")
 
     val update = Client.PrivateInputData(
+      "PRIVATE",
       "Updated fiscalCode",
       "Updated firstName",
       "Updated lastName",
