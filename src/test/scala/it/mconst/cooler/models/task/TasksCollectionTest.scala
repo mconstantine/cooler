@@ -193,8 +193,8 @@ class TasksCollectionTest extends CatsEffectSuite {
         _ = assertEquals(result.pageInfo.hasNextPage, true)
         _ = assertEquals(result.edges.length, 2)
         _ = assertEquals(
-          result.edges.map(_.node),
-          List(tasks(2), tasks(3))
+          result.edges.map(_.node._id),
+          List(tasks(2)._id, tasks(3)._id)
         )
       yield ()
     }

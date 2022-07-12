@@ -17,6 +17,7 @@ import it.mconst.cooler.models.project.Projects
 import it.mconst.cooler.models.task.DbTask
 import it.mconst.cooler.models.task.Tasks
 import it.mconst.cooler.models.task.TaskWithProject
+import it.mconst.cooler.models.task.TaskWithProjectLabel
 import it.mconst.cooler.models.user.User
 import it.mconst.cooler.models.user.Users
 import it.mconst.cooler.utils.__
@@ -24,6 +25,7 @@ import it.mconst.cooler.utils.Error
 import it.mconst.cooler.utils.given
 import java.time.format.DateTimeFormatter
 import java.time.LocalDateTime
+import mongo4cats.bson.ObjectId
 import mongo4cats.circe.*
 import mongo4cats.collection.operations.Filter
 import org.bson.BsonDateTime
@@ -44,7 +46,9 @@ class TaskRoutesTest extends CatsEffectSuite {
   given Assertions = this
   given HttpClient[IO] = client
 
-  given EntityDecoder[IO, Cursor[DbTask]] = jsonOf[IO, Cursor[DbTask]]
+  given EntityDecoder[IO, Cursor[TaskWithProjectLabel]] =
+    jsonOf[IO, Cursor[TaskWithProjectLabel]]
+
   given EntityDecoder[IO, DbTask] = jsonOf[IO, DbTask]
   given EntityDecoder[IO, TaskWithProject] = jsonOf[IO, TaskWithProject]
 
@@ -137,10 +141,15 @@ class TaskRoutesTest extends CatsEffectSuite {
     tasksList.use { tasks =>
       GET(uri"/?query=task&first=2&after=Task%20B")
         .sign(testDataFixture().user)
-        .shouldRespond(
-          Cursor[DbTask](
+        .shouldRespondLike(
+          (result: Cursor[TaskWithProjectLabel]) =>
+            Cursor[ObjectId](
+              result.pageInfo,
+              result.edges.map(e => Edge(e.node._id, e.cursor))
+            ),
+          Cursor[ObjectId](
             PageInfo(6, Some("Task C"), Some("Task D"), true, true),
-            List(Edge(tasks(2), "Task C"), Edge(tasks(3), "Task D"))
+            List(Edge(tasks(2)._id, "Task C"), Edge(tasks(3)._id, "Task D"))
           )
         )
     }
@@ -150,10 +159,15 @@ class TaskRoutesTest extends CatsEffectSuite {
     tasksList.use { tasks =>
       GET(uri"/?query=task&last=2&before=Task%20E")
         .sign(testDataFixture().user)
-        .shouldRespond(
-          Cursor[DbTask](
+        .shouldRespondLike(
+          (result: Cursor[TaskWithProjectLabel]) =>
+            Cursor[ObjectId](
+              result.pageInfo,
+              result.edges.map(e => Edge(e.node._id, e.cursor))
+            ),
+          Cursor[ObjectId](
             PageInfo(6, Some("Task D"), Some("Task C"), true, true),
-            List(Edge(tasks(3), "Task D"), Edge(tasks(2), "Task C"))
+            List(Edge(tasks(3)._id, "Task D"), Edge(tasks(2)._id, "Task C"))
           )
         )
     }
