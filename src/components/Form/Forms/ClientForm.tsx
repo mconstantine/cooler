@@ -234,12 +234,14 @@ export function ClientForm(props: Props) {
           foldClientCreationInput<ClientCreationInput>(
             input => ({
               ...commonData,
+              type: 'PRIVATE',
               fiscalCode: input.fiscalCode,
               firstName: input.firstName,
               lastName: input.lastName
             }),
             input => ({
               ...commonData,
+              type: 'BUSINESS',
               countryCode: input.countryCode,
               vatNumber: input.vatNumber,
               businessName: input.businessName
@@ -336,13 +338,13 @@ export function ClientForm(props: Props) {
         foldFormType(
           () => (
             <>
-              <Input {...fieldProps('firstName')} label={a18n`First name`} />
-              <Input {...fieldProps('lastName')} label={a18n`Last name`} />
               <Input
                 {...fieldProps('fiscalCode')}
                 label={a18n`Fiscal code`}
                 value={fieldProps('fiscalCode').value.toUpperCase()}
               />
+              <Input {...fieldProps('firstName')} label={a18n`First name`} />
+              <Input {...fieldProps('lastName')} label={a18n`Last name`} />
             </>
           ),
           () => (

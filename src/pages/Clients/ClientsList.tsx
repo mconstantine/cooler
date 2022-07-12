@@ -7,6 +7,7 @@ import { clientsRoute, useRouter } from '../../components/Router'
 import { getClientName } from '../../entities/Client'
 import { ClientForList, clientsQuery } from './domain'
 import { useConnection } from '../../effects/useConnection'
+import { add } from 'ionicons/icons'
 
 export default function ClientsList() {
   const { setRoute } = useRouter()
@@ -32,7 +33,12 @@ export default function ClientsList() {
       title={a18n`Clients`}
       query={clients}
       onSearchQueryChange={onSearchQueryChange}
-      action={option.none}
+      action={option.some({
+        type: 'sync',
+        label: a18n`Create new client`,
+        icon: option.some(add),
+        action: () => setRoute(clientsRoute('new'))
+      })}
       onLoadMore={option.some(onLoadMore)}
       renderListItem={renderClientItem}
     />

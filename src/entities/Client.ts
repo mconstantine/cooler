@@ -397,6 +397,7 @@ export const PrivateClientCreationInput = t.intersection([
   ClientCreationCommonInput,
   t.type(
     {
+      type: t.literal('PRIVATE'),
       fiscalCode: LocalizedString,
       firstName: LocalizedString,
       lastName: LocalizedString
@@ -412,6 +413,7 @@ export const BusinessClientCreationInput = t.intersection(
   [
     ClientCreationCommonInput,
     t.type({
+      type: t.literal('BUSINESS'),
       countryCode: Country,
       vatNumber: LocalizedString,
       businessName: LocalizedString
@@ -434,10 +436,11 @@ export function foldClientCreationInput<T>(
   whenBusiness: (input: BusinessClientCreationInput) => T
 ): (input: ClientCreationInput) => T {
   return input => {
-    if ('firstName' in input && input.firstName) {
-      return whenPrivate(input)
-    } else {
-      return whenBusiness(input as BusinessClientCreationInput)
+    switch (input.type) {
+      case 'PRIVATE':
+        return whenPrivate(input)
+      case 'BUSINESS':
+        return whenBusiness(input as BusinessClientCreationInput)
     }
   }
 }
@@ -471,22 +474,24 @@ export function foldClient<T>(
   whenBusiness: (client: BusinessClient) => T
 ): (client: Client) => T {
   return client => {
-    if ('firstName' in client) {
-      return whenPrivate(client)
-    } else {
-      return whenBusiness(client)
+    switch (client.type) {
+      case 'PRIVATE':
+        return whenPrivate(client)
+      case 'BUSINESS':
+        return whenBusiness(client)
     }
   }
 }
 
 export function getClientName(
   client:
-    | Pick<PrivateClient, 'firstName' | 'lastName'>
-    | Pick<BusinessClient, 'businessName'>
+    | Pick<PrivateClient, 'type' | 'firstName' | 'lastName'>
+    | Pick<BusinessClient, 'type' | 'businessName'>
 ): LocalizedString {
-  if ('firstName' in client) {
-    return unsafeLocalizedString(`${client.firstName} ${client.lastName}`)
-  } else {
-    return client.businessName
+  switch (client.type) {
+    case 'PRIVATE':
+      return unsafeLocalizedString(`${client.firstName} ${client.lastName}`)
+    case 'BUSINESS':
+      return client.businessName
   }
 }

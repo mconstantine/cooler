@@ -5,7 +5,7 @@ import { ReaderTaskEither } from 'fp-ts/ReaderTaskEither'
 import { Option } from 'fp-ts/Option'
 import { skull } from 'ionicons/icons'
 import { useState } from 'react'
-import { a18n, unsafeLocalizedString } from '../../a18n'
+import { a18n, formatDateTime, unsafeLocalizedString } from '../../a18n'
 import { Button } from '../../components/Button/Button/Button'
 import { Buttons } from '../../components/Button/Buttons/Buttons'
 import { LoadingButton } from '../../components/Button/LoadingButton/LoadingButton'
@@ -159,6 +159,16 @@ export function ClientData(props: Props) {
             label={a18n`E-mail address`}
             name="addressEmail"
             value={unsafeLocalizedString(props.client.addressEmail)}
+          />
+          <ReadOnlyInput
+            label={a18n`Created at`}
+            name="createdAt"
+            value={formatDateTime(props.client.createdAt)}
+          />
+          <ReadOnlyInput
+            label={a18n`Last updated at`}
+            name="updatedAt"
+            value={formatDateTime(props.client.updatedAt)}
           />
           {pipe(
             error,

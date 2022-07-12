@@ -13,6 +13,7 @@ import { Connection, ConnectionQueryInput } from '../../misc/Connection'
 const PrivateClientForList = t.type(
   {
     _id: ObjectId,
+    type: t.literal('PRIVATE'),
     firstName: LocalizedString,
     lastName: LocalizedString
   },
@@ -23,6 +24,7 @@ type PrivateClientForList = t.TypeOf<typeof PrivateClientForList>
 const BusinessClientForList = t.type(
   {
     _id: ObjectId,
+    type: t.literal('BUSINESS'),
     businessName: LocalizedString
   },
   'BusinessClientForList'
