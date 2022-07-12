@@ -148,11 +148,16 @@ class StatsTest extends CatsEffectSuite {
             startTime = Some(BsonDateTime(now - 3600000 * 20).toISOString),
             endTime = Some(BsonDateTime(now - 3600000 * 10).toISOString)
           ),
-          // Ten hours in two different sessions on task 1 (project 0)
+          // Seven hours in two different sessions on task 1 (project 0)
           makeTestSession(
             tasks(1)._id,
             startTime = Some(BsonDateTime(now - 3600000 * 10).toISOString),
             endTime = Some(BsonDateTime(now - 3600000 * 5).toISOString)
+          ),
+          makeTestSession(
+            tasks(1)._id,
+            startTime = Some(BsonDateTime(now - 3600000 * 5).toISOString),
+            endTime = Some(BsonDateTime(now - 3600000 * 3).toISOString)
           ),
           makeTestSession(
             tasks(2)._id,
@@ -203,9 +208,9 @@ class StatsTest extends CatsEffectSuite {
         .assertEquals(
           UserStats(
             NonNegativeFloat.unsafe(30f),
-            NonNegativeFloat.unsafe(20f),
+            NonNegativeFloat.unsafe(22f),
             NonNegativeFloat.unsafe(300f),
-            NonNegativeFloat.unsafe(200f)
+            NonNegativeFloat.unsafe(220f)
           )
         )
     }
@@ -257,10 +262,38 @@ class StatsTest extends CatsEffectSuite {
       for
         result <- Projects.findById(data.projects(0)._id).orFail
         _ = assertEquals(result.expectedWorkingHours.toFloat, 20f)
-        _ = assertEquals(result.actualWorkingHours.toFloat, 15f)
+        _ = assertEquals(result.actualWorkingHours.toFloat, 17f)
         _ = assertEquals(result.budget.toFloat, 200f)
-        _ = assertEquals(result.balance.toFloat, 150f)
+        _ = assertEquals(result.balance.toFloat, 170f)
       yield ()
+    }
+  }
+
+  test("should get the actual working hours of a task (empty)") {
+    testData.use { data =>
+      given User = adminFixture()
+
+      for
+        task <- Tasks.create(makeTestTask(data.projects(0)._id)).orFail
+        _ <- Tasks
+          .findById(task._id)
+          .orFail
+          .map(_.actualWorkingHours.toFloat)
+          .assertEquals(0f)
+        _ <- Tasks.delete(task._id).orFail
+      yield ()
+    }
+  }
+
+  test("should get the actual working hours of a task (with data)") {
+    testData.use { data =>
+      given User = adminFixture()
+
+      Tasks
+        .findById(data.tasks(1)._id)
+        .orFail
+        .map(_.actualWorkingHours.toFloat)
+        .assertEquals(7f)
     }
   }
 }

@@ -292,7 +292,7 @@ object Projects {
               Aggregates.project(Document("c" -> 0)),
               Document(
                 "$lookup" -> Document(
-                  "from" -> "tasks",
+                  "from" -> Tasks.collection.name,
                   "localField" -> "_id",
                   "foreignField" -> "project",
                   "as" -> "tasks",
@@ -304,9 +304,10 @@ object Projects {
                         "hourlyCost" -> 1
                       )
                     ),
-                    Document(
-                      "$addFields" -> Document(
-                        "budget" -> Document(
+                    Aggregates.addFields(
+                      Field(
+                        "budget",
+                        Document(
                           "$multiply" -> Seq(
                             "$expectedWorkingHours",
                             "$hourlyCost"
@@ -316,13 +317,13 @@ object Projects {
                     ),
                     Document(
                       "$lookup" -> Document(
-                        "from" -> "sessions",
+                        "from" -> Sessions.collection.name,
                         "localField" -> "_id",
                         "foreignField" -> "task",
                         "as" -> "sessions",
                         "pipeline" -> Seq(
-                          Document(
-                            "$project" -> Document(
+                          Aggregates.project(
+                            Document(
                               "_id" -> 0,
                               "actualWorkingHours" -> Document(
                                 "$dateDiff" -> Document(
@@ -344,16 +345,18 @@ object Projects {
                         )
                       )
                     ),
-                    Document(
-                      "$addFields" -> Document(
-                        "actualWorkingHours" -> Document(
+                    Aggregates.addFields(
+                      Field(
+                        "actualWorkingHours",
+                        Document(
                           "$sum" -> "$sessions.actualWorkingHours"
                         )
                       )
                     ),
-                    Document(
-                      "$addFields" -> Document(
-                        "balance" -> Document(
+                    Aggregates.addFields(
+                      Field(
+                        "balance",
+                        Document(
                           "$multiply" -> Seq(
                             "$actualWorkingHours",
                             "$hourlyCost"
@@ -495,7 +498,7 @@ object Projects {
           _.raw(
             _.aggregateWithCodec[Session](
               Seq(
-                Aggregates.lookup("tasks", "task", "_id", "task"),
+                Aggregates.lookup(Tasks.collection.name, "task", "_id", "task"),
                 Aggregates.unwind("$task"),
                 Aggregates.`match`(Filters.eq("task.project", project._id)),
                 Aggregates.addFields(Field("task", "$task._id"))
@@ -524,7 +527,12 @@ object Projects {
         _.raw(
           _.aggregateWithCodec[ProjectCashedBalance](
             Seq(
-              Aggregates.lookup("clients", "client", "_id", "client"),
+              Aggregates.lookup(
+                Clients.collection.name,
+                "client",
+                "_id",
+                "client"
+              ),
               Aggregates.unwind("$client"),
               Aggregates.`match`(
                 Filters.and(

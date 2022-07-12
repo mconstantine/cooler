@@ -17,6 +17,7 @@ import io.circe.Json
 import io.circe.syntax.*
 import it.mconst.cooler.models.*
 import it.mconst.cooler.models.client.Client
+import it.mconst.cooler.models.client.Clients
 import it.mconst.cooler.models.project.DbProject
 import it.mconst.cooler.models.project.Projects
 import it.mconst.cooler.models.session.Sessions
@@ -103,7 +104,7 @@ object TaskWithProjectLabel {
     jsonEncoderOf[IO, Cursor[TaskWithProjectLabel]]
 }
 
-final case class TaskWithProject(
+final case class TaskWithStats(
     _id: ObjectId,
     name: NonEmptyString,
     description: Option[NonEmptyString],
@@ -112,7 +113,8 @@ final case class TaskWithProject(
     hourlyCost: PositiveFloat,
     createdAt: BsonDateTime,
     updatedAt: BsonDateTime,
-    project: DbProject
+    project: ProjectLabel,
+    actualWorkingHours: NonNegativeFloat
 ) extends Task(
       _id: ObjectId,
       name: NonEmptyString,
@@ -124,8 +126,8 @@ final case class TaskWithProject(
       updatedAt: BsonDateTime
     )
 
-object TaskWithProject {
-  given EntityEncoder[IO, TaskWithProject] = jsonEncoderOf[IO, TaskWithProject]
+object TaskWithStats {
+  given EntityEncoder[IO, TaskWithStats] = jsonEncoderOf[IO, TaskWithStats]
 }
 
 object Task {
@@ -200,7 +202,12 @@ object Tasks {
             Seq(
               Aggregates.`match`(Filters.eq("_id", projectId)),
               Aggregates.project(Document("_id" -> false, "client" -> 1)),
-              Aggregates.lookup("clients", "client", "_id", "client"),
+              Aggregates.lookup(
+                Clients.collection.name,
+                "client",
+                "_id",
+                "client"
+              ),
               Aggregates.unwind("$client"),
               Aggregates.`match`(Filters.eq("client.user", customer._id)),
               Aggregates.replaceRoot("$client")
@@ -234,22 +241,27 @@ object Tasks {
 
   def findById(
       _id: ObjectId
-  )(using customer: User)(using Lang): EitherT[IO, Error, TaskWithProject] =
+  )(using customer: User)(using Lang): EitherT[IO, Error, TaskWithStats] =
     EitherT.fromOptionF(
       collection
         .use(
           _.raw(
-            _.aggregateWithCodec[TaskWithProject](
+            _.aggregateWithCodec[TaskWithStats](
               Seq(
                 Aggregates.`match`(Filters.eq("_id", _id)),
                 Document(
                   "$lookup" -> Document(
-                    "from" -> "projects",
+                    "from" -> Projects.collection.name,
                     "localField" -> "project",
                     "foreignField" -> "_id",
-                    "as" -> "project",
+                    "as" -> "p",
                     "pipeline" -> Seq(
-                      Aggregates.lookup("clients", "client", "_id", "client"),
+                      Aggregates.lookup(
+                        Clients.collection.name,
+                        "client",
+                        "_id",
+                        "client"
+                      ),
                       Aggregates.unwind("$client"),
                       Aggregates.`match`(
                         Filters.eq("client.user", customer._id)
@@ -260,10 +272,58 @@ object Tasks {
                 ),
                 Document(
                   "$match" -> Document(
-                    "project" -> Document("$not" -> Document("$size", 0))
+                    "p" -> Document("$not" -> Document("$size", 0))
                   )
                 ),
-                Aggregates.unwind("$project")
+                Aggregates.unwind("$p"),
+                Aggregates.addFields(
+                  Field(
+                    "project",
+                    Document(
+                      "_id" -> "$p._id",
+                      "name" -> "$p.name"
+                    )
+                  )
+                ),
+                Document(
+                  "$lookup" -> Document(
+                    "from" -> Sessions.collection.name,
+                    "localField" -> "_id",
+                    "foreignField" -> "task",
+                    "as" -> "sessions",
+                    "pipeline" -> Seq(
+                      Aggregates.project(
+                        Document(
+                          "_id" -> 0,
+                          "actualWorkingHours" -> Document(
+                            "$dateDiff" -> Document(
+                              "startDate" -> Document(
+                                "$dateFromString" -> Document(
+                                  "dateString" -> "$startTime"
+                                )
+                              ),
+                              "endDate" -> Document(
+                                "$dateFromString" -> Document(
+                                  "dateString" -> "$endTime"
+                                )
+                              ),
+                              "unit" -> "hour"
+                            )
+                          )
+                        )
+                      )
+                    )
+                  )
+                ),
+                Aggregates.addFields(
+                  Field(
+                    "actualWorkingHours",
+                    Document(
+                      "$sum" -> "$sessions.actualWorkingHours"
+                    )
+                  )
+                ),
+                Aggregates.project(Document("sessions" -> 0))
               )
             ).first
           )
@@ -283,17 +343,13 @@ object Tasks {
     val projectsLookupPipeline = projectMatch ++ Seq(
       Document(
         "$lookup" -> Document(
-          "from" -> "clients",
+          "from" -> Clients.collection.name,
           "localField" -> "client",
           "foreignField" -> "_id",
           "as" -> "client"
         )
       ),
-      Document(
-        "$match" -> Document(
-          "client.user" -> customer._id
-        )
-      )
+      Aggregates.`match`(Filters.eq("client.user", customer._id))
     )
 
     collection.use(
@@ -302,7 +358,7 @@ object Tasks {
         Seq(
           Document(
             "$lookup" -> Document(
-              "from" -> "projects",
+              "from" -> Projects.collection.name,
               "localField" -> "project",
               "foreignField" -> "_id",
               "as" -> "p",
@@ -348,24 +404,18 @@ object Tasks {
             ),
             Document(
               "$lookup" -> Document(
-                "from" -> "projects",
+                "from" -> Projects.collection.name,
                 "localField" -> "project",
                 "foreignField" -> "_id",
                 "as" -> "p",
                 "pipeline" -> Seq(
-                  Document(
-                    "$lookup" -> Document(
-                      "from" -> "clients",
-                      "localField" -> "client",
-                      "foreignField" -> "_id",
-                      "as" -> "client"
-                    )
+                  Aggregates.lookup(
+                    Clients.collection.name,
+                    "client",
+                    "_id",
+                    "client"
                   ),
-                  Document(
-                    "$match" -> Document(
-                      "client.user" -> customer._id
-                    )
-                  )
+                  Aggregates.`match`(Filters.eq("client.user", customer._id))
                 )
               )
             ),
@@ -392,7 +442,7 @@ object Tasks {
 
   def update(_id: ObjectId, data: Task.InputData)(using customer: User)(using
       Lang
-  ): EitherT[IO, Error, TaskWithProject] =
+  ): EitherT[IO, Error, TaskWithStats] =
     for
       task <- findById(_id)
       data <- EitherT.fromEither[IO](Task.validateInputData(data).toResult)
@@ -427,7 +477,7 @@ object Tasks {
 
   def delete(_id: ObjectId)(using customer: User)(using
       Lang
-  ): EitherT[IO, Error, TaskWithProject] =
+  ): EitherT[IO, Error, TaskWithStats] =
     for
       task <- findById(_id)
       _ <- collection.use(_.delete(task._id))

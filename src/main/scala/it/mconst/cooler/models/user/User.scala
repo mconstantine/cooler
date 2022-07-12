@@ -211,7 +211,12 @@ object Users {
         _.aggregateWithCodec[UserStats](
           Seq(
             Aggregates.`match`(Filters.eq("_id", customer._id)),
-            Aggregates.lookup("clients", "_id", "user", "clients"),
+            Aggregates.lookup(
+              Clients.collection.name,
+              "_id",
+              "user",
+              "clients"
+            ),
             Aggregates.unwind(
               "$clients",
               UnwindOptions().preserveNullAndEmptyArrays(false)
@@ -222,7 +227,12 @@ object Users {
                 "client" -> "$clients._id"
               )
             ),
-            Aggregates.lookup("projects", "client", "client", "projects"),
+            Aggregates.lookup(
+              Projects.collection.name,
+              "client",
+              "client",
+              "projects"
+            ),
             Aggregates.unwind(
               "$projects",
               UnwindOptions().preserveNullAndEmptyArrays(false)
@@ -235,7 +245,7 @@ object Users {
             ),
             Document(
               "$lookup" -> Document(
-                "from" -> "tasks",
+                "from" -> Tasks.collection.name,
                 "localField" -> "project",
                 "foreignField" -> "project",
                 "as" -> "tasks",
@@ -250,16 +260,17 @@ object Users {
                       )
                     )
                   ),
-                  Document(
-                    "$project" -> Document(
+                  Aggregates.project(
+                    Document(
                       "_id" -> 1,
                       "expectedWorkingHours" -> 1,
                       "hourlyCost" -> 1
                     )
                   ),
-                  Document(
-                    "$addFields" -> Document(
-                      "budget" -> Document(
+                  Aggregates.addFields(
+                    Field(
+                      "budget",
+                      Document(
                         "$multiply" -> Seq(
                           "$expectedWorkingHours",
                           "$hourlyCost"
@@ -269,13 +280,13 @@ object Users {
                   ),
                   Document(
                     "$lookup" -> Document(
-                      "from" -> "sessions",
+                      "from" -> Sessions.collection.name,
                       "localField" -> "_id",
                       "foreignField" -> "task",
                       "as" -> "sessions",
                       "pipeline" -> Seq(
-                        Document(
-                          "$project" -> Document(
+                        Aggregates.project(
+                          Document(
                             "_id" -> 0,
                             "actualWorkingHours" -> Document(
                               "$dateDiff" -> Document(
@@ -297,16 +308,18 @@ object Users {
                       )
                     )
                   ),
-                  Document(
-                    "$addFields" -> Document(
-                      "actualWorkingHours" -> Document(
+                  Aggregates.addFields(
+                    Field(
+                      "actualWorkingHours",
+                      Document(
                         "$sum" -> "$sessions.actualWorkingHours"
                       )
                     )
                   ),
-                  Document(
-                    "$addFields" -> Document(
-                      "balance" -> Document(
+                  Aggregates.addFields(
+                    Field(
+                      "balance",
+                      Document(
                         "$multiply" -> Seq(
                           "$actualWorkingHours",
                           "$hourlyCost"
@@ -424,17 +437,22 @@ object Users {
             _.raw(
               _.aggregateWithCodec[Session](
                 Seq(
-                  Aggregates.lookup("tasks", "task", "_id", "task"),
+                  Aggregates.lookup(
+                    Tasks.collection.name,
+                    "task",
+                    "_id",
+                    "task"
+                  ),
                   Aggregates.unwind("$task"),
                   Aggregates.lookup(
-                    "projects",
+                    Projects.collection.name,
                     "task.project",
                     "_id",
                     "project"
                   ),
                   Aggregates.unwind("$project"),
                   Aggregates.lookup(
-                    "clients",
+                    Clients.collection.name,
                     "project.client",
                     "_id",
                     "client"

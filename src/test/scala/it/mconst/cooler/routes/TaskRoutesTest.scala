@@ -17,7 +17,7 @@ import it.mconst.cooler.models.project.Project
 import it.mconst.cooler.models.project.Projects
 import it.mconst.cooler.models.task.DbTask
 import it.mconst.cooler.models.task.Tasks
-import it.mconst.cooler.models.task.TaskWithProject
+import it.mconst.cooler.models.task.TaskWithStats
 import it.mconst.cooler.models.task.TaskWithProjectLabel
 import it.mconst.cooler.models.user.User
 import it.mconst.cooler.models.user.Users
@@ -51,7 +51,7 @@ class TaskRoutesTest extends CatsEffectSuite {
     jsonOf[IO, Cursor[TaskWithProjectLabel]]
 
   given EntityDecoder[IO, DbTask] = jsonOf[IO, DbTask]
-  given EntityDecoder[IO, TaskWithProject] = jsonOf[IO, TaskWithProject]
+  given EntityDecoder[IO, TaskWithStats] = jsonOf[IO, TaskWithStats]
 
   final case class TestData(user: User, client: Client, project: Project)
 
@@ -218,7 +218,7 @@ class TaskRoutesTest extends CatsEffectSuite {
       _ <- GET(Uri.fromString(s"/${task._id.toString}").getOrElse(fail("")))
         .sign(user)
         .shouldRespondLike(
-          (t: TaskWithProject) => t.name,
+          (t: TaskWithStats) => t.name,
           data.name
         )
     yield ()
@@ -244,7 +244,7 @@ class TaskRoutesTest extends CatsEffectSuite {
     for
       task <- Tasks.create(taskData).orFail
       result <- client
-        .expect[TaskWithProject](
+        .expect[TaskWithStats](
           PUT(
             updateData,
             Uri.fromString(s"/${task._id.toString}").getOrElse(fail(""))
@@ -268,7 +268,7 @@ class TaskRoutesTest extends CatsEffectSuite {
       )
         .sign(testDataFixture().user)
         .shouldRespondLike(
-          (t: TaskWithProject) => t.name,
+          (t: TaskWithStats) => t.name,
           taskData.name
         )
       _ <- Tasks

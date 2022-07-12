@@ -590,9 +590,14 @@ object Clients {
           _.raw(
             _.aggregateWithCodec[Session](
               Seq(
-                Aggregates.lookup("tasks", "task", "_id", "task"),
+                Aggregates.lookup(Tasks.collection.name, "task", "_id", "task"),
                 Aggregates.unwind("$task"),
-                Aggregates.lookup("projects", "task.project", "_id", "project"),
+                Aggregates.lookup(
+                  Projects.collection.name,
+                  "task.project",
+                  "_id",
+                  "project"
+                ),
                 Aggregates.unwind("$project"),
                 Aggregates.`match`(Filters.eq("project.client", client._id)),
                 Aggregates.addFields(Field("task", "$task._id")),

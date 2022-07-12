@@ -12,6 +12,7 @@ import com.osinka.i18n.Lang
 import io.circe.generic.auto.*
 import it.mconst.cooler.models.*
 import it.mconst.cooler.models.client.Client
+import it.mconst.cooler.models.client.Clients
 import it.mconst.cooler.models.project.DbProject
 import it.mconst.cooler.models.project.Projects
 import it.mconst.cooler.models.task.Tasks
@@ -99,7 +100,7 @@ object Sessions {
               Aggregates.project(Document("_id" -> false, "project" -> 1)),
               Document(
                 "$lookup" -> Document(
-                  "from" -> "projects",
+                  "from" -> Projects.collection.name,
                   "localField" -> "project",
                   "foreignField" -> "_id",
                   "as" -> "project",
@@ -133,20 +134,20 @@ object Sessions {
               Aggregates.`match`(Filters.eq("_id", _id)),
               Document(
                 "$lookup" -> Document(
-                  "from" -> "tasks",
+                  "from" -> Tasks.collection.name,
                   "localField" -> "task",
                   "foreignField" -> "_id",
                   "as" -> "task",
                   "pipeline" -> Seq(
                     Document(
                       "$lookup" -> Document(
-                        "from" -> "projects",
+                        "from" -> Projects.collection.name,
                         "localField" -> "project",
                         "foreignField" -> "_id",
                         "as" -> "project",
                         "pipeline" -> Seq(
                           Aggregates.lookup(
-                            "clients",
+                            Clients.collection.name,
                             "client",
                             "_id",
                             "client"
@@ -248,20 +249,20 @@ object Sessions {
           Aggregates.`match`(Filters.eq("task", task)),
           Document(
             "$lookup" -> Document(
-              "from" -> "tasks",
+              "from" -> Tasks.collection.name,
               "localField" -> "task",
               "foreignField" -> "_id",
               "as" -> "task",
               "pipeline" -> Seq(
                 Document(
                   "$lookup" -> Document(
-                    "from" -> "projects",
+                    "from" -> Projects.collection.name,
                     "localField" -> "project",
                     "foreignField" -> "_id",
                     "as" -> "project",
                     "pipeline" -> Seq(
                       Aggregates.lookup(
-                        "clients",
+                        Clients.collection.name,
                         "client",
                         "_id",
                         "client"
