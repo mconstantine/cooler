@@ -13,6 +13,7 @@ const Clients = lazy(() => import('./pages/Clients/Clients'))
 const Projects = lazy(() => import('./pages/Projects/Projects'))
 const Profile = lazy(() => import('./pages/Profile/Profile'))
 const Settings = lazy(() => import('./pages/Settings/Settings'))
+const Tasks = lazy(() => import('./pages/Tasks/Tasks'))
 
 export function App() {
   return (
@@ -36,7 +37,9 @@ export function App() {
                           Projects: ({ subject }) => (
                             <Projects routeSubject={subject} />
                           ),
-                          Tasks: () => <p>Tasks</p>,
+                          Tasks: ({ subject }) => (
+                            <Tasks routeSubject={subject} />
+                          ),
                           Settings: () => <Settings />
                         })
                       )}
