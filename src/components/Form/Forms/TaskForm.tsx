@@ -1,6 +1,5 @@
 import { boolean, option } from 'fp-ts'
 import { constNull, constUndefined, pipe } from 'fp-ts/function'
-import { TaskEither } from 'fp-ts/TaskEither'
 import { Option } from 'fp-ts/Option'
 import { useState } from 'react'
 import { a18n, leadZero, unsafeLocalizedString } from '../../../a18n'
@@ -35,6 +34,7 @@ import { Heading } from '../../Heading/Heading'
 import { List } from '../../List/List'
 import { close } from 'ionicons/icons'
 import { IO } from 'fp-ts/IO'
+import { ReaderTaskEither } from 'fp-ts/ReaderTaskEither'
 
 export interface SingleTaskFormData extends TaskCreationInput {
   shouldRepeat: true
@@ -49,21 +49,23 @@ export type FormData = SingleTaskFormData | TasksBatchFormData
 interface CommonProps {
   task: Option<TaskWithStats>
   findProjects: Option<
-    (
-      input: string
-    ) => TaskEither<LocalizedString, Record<PositiveInteger, LocalizedString>>
+    ReaderTaskEither<
+      string,
+      LocalizedString,
+      Record<PositiveInteger, LocalizedString>
+    >
   >
   onCancel: IO<void>
 }
 
 interface AddModeProps extends CommonProps {
   mode: 'add'
-  onSubmit: (data: FormData) => TaskEither<LocalizedString, unknown>
+  onSubmit: ReaderTaskEither<FormData, LocalizedString, unknown>
 }
 
 interface EditModeProps extends CommonProps {
   mode: 'edit'
-  onSubmit: (data: SingleTaskFormData) => TaskEither<LocalizedString, unknown>
+  onSubmit: ReaderTaskEither<SingleTaskFormData, LocalizedString, unknown>
 }
 
 type Props = AddModeProps | EditModeProps

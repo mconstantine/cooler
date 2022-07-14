@@ -3,30 +3,33 @@ import { pipe } from 'fp-ts/function'
 import { a18n, formatDuration, formatMoneyAmount } from '../../a18n'
 import { ErrorPanel } from '../../components/ErrorPanel/ErrorPanel'
 import { List } from '../../components/List/List'
-import { LoadingBlock } from '../../components/Loading/LoadingBlock'
+import { Loading } from '../../components/Loading/Loading'
 import { Panel } from '../../components/Panel/Panel'
 import { useTaxes } from '../../contexts/TaxesContext'
 import { query } from '../../effects/api/api'
-import { ProjectWithStats } from '../../entities/Project'
+import { TaskWithStats } from '../../entities/Task'
 import { computePercentage, formatPercentarge } from '../../globalDomain'
 import { calculateNetValue, renderTaxItem } from '../Profile/utils'
 
 interface Props {
-  project: ProjectWithStats
+  task: TaskWithStats
 }
 
-export function ProjectProgress(props: Props) {
+export function TaskProgress(props: Props) {
   const { taxes } = useTaxes()
 
   const progress = computePercentage(
-    props.project.expectedWorkingHours,
-    props.project.actualWorkingHours
+    props.task.expectedWorkingHours,
+    props.task.actualWorkingHours
   )
+
+  const budget = props.task.expectedWorkingHours * props.task.hourlyCost
+  const balance = props.task.actualWorkingHours * props.task.hourlyCost
 
   return pipe(
     taxes,
     query.fold(
-      () => <LoadingBlock />,
+      () => <Loading />,
       error => <ErrorPanel error={error} />,
       taxes => (
         <Panel title={a18n`Progress`} framed action={option.none}>
@@ -40,7 +43,7 @@ export function ProjectProgress(props: Props) {
                 content: a18n`Expected working hours`,
                 description: option.none,
                 value: formatDuration(
-                  props.project.expectedWorkingHours * 3600000
+                  props.task.expectedWorkingHours * 3600000
                 ),
                 progress: option.none
               },
@@ -50,9 +53,7 @@ export function ProjectProgress(props: Props) {
                 label: option.none,
                 content: a18n`Actual working hours`,
                 description: option.none,
-                value: formatDuration(
-                  props.project.actualWorkingHours * 3600000
-                ),
+                value: formatDuration(props.task.actualWorkingHours * 3600000),
                 progress: option.none
               },
               {
@@ -62,8 +63,8 @@ export function ProjectProgress(props: Props) {
                 content: a18n`Remaining time (hours)`,
                 description: option.none,
                 value: formatDuration(
-                  (props.project.expectedWorkingHours -
-                    props.project.actualWorkingHours) *
+                  (props.task.expectedWorkingHours -
+                    props.task.actualWorkingHours) *
                     3600000
                 ),
                 progress: option.none
@@ -88,21 +89,17 @@ export function ProjectProgress(props: Props) {
                 label: option.none,
                 content: a18n`Gross budget`,
                 description: option.none,
-                value: formatMoneyAmount(props.project.budget),
+                value: formatMoneyAmount(budget),
                 progress: option.none
               },
-              ...taxes.map(tax =>
-                renderTaxItem('budget', props.project.budget, tax)
-              ),
+              ...taxes.map(tax => renderTaxItem('budget', budget, tax)),
               {
                 key: 'netBudget',
                 type: 'valued',
                 label: option.none,
                 content: a18n`Net budget`,
                 description: option.none,
-                value: formatMoneyAmount(
-                  calculateNetValue(props.project.budget, taxes)
-                ),
+                value: formatMoneyAmount(calculateNetValue(budget, taxes)),
                 progress: option.none
               },
               {
@@ -111,21 +108,17 @@ export function ProjectProgress(props: Props) {
                 label: option.none,
                 content: a18n`Gross balance`,
                 description: option.none,
-                value: formatMoneyAmount(props.project.balance),
+                value: formatMoneyAmount(balance),
                 progress: option.none
               },
-              ...taxes.map(tax =>
-                renderTaxItem('balance', props.project.balance, tax)
-              ),
+              ...taxes.map(tax => renderTaxItem('balance', balance, tax)),
               {
                 key: 'netBalance',
                 type: 'valued',
                 label: option.none,
                 content: a18n`Net balance`,
                 description: option.none,
-                value: formatMoneyAmount(
-                  calculateNetValue(props.project.balance, taxes)
-                ),
+                value: formatMoneyAmount(calculateNetValue(balance, taxes)),
                 progress: option.none
               }
             ]}

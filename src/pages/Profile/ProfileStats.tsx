@@ -68,7 +68,7 @@ export function ProfileStats() {
                       heading={option.some(a18n`Time`)}
                       items={[
                         {
-                          key: 'expectingWorkingHours',
+                          key: 'expectedWorkingHours',
                           type: 'valued',
                           label: option.none,
                           content: a18n`Expected working hours`,
