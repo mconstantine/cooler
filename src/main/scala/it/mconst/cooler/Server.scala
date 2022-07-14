@@ -8,14 +8,15 @@ import com.comcast.ip4s.Port
 import it.mconst.cooler.routes.ClientRoutes
 import it.mconst.cooler.routes.ProjectRoutes
 import it.mconst.cooler.routes.PublicRoutes
+import it.mconst.cooler.routes.SessionRoutes
 import it.mconst.cooler.routes.TaskRoutes
+import it.mconst.cooler.routes.TaxRoutes
 import it.mconst.cooler.routes.UserRoutes
 import it.mconst.cooler.utils.Config
-import org.http4s.ember.server.EmberServerBuilder
-import org.http4s.server.Router
-import it.mconst.cooler.routes.TaxRoutes
-import org.http4s.server.middleware.CORS
 import org.http4s.dsl.io.*
+import org.http4s.ember.server.EmberServerBuilder
+import org.http4s.server.middleware.CORS
+import org.http4s.server.Router
 
 object Server extends IOApp {
   val router = Router(
@@ -24,6 +25,7 @@ object Server extends IOApp {
     "/clients" -> ClientRoutes(),
     "/projects" -> ProjectRoutes(),
     "/tasks" -> TaskRoutes(),
+    "/sessions" -> SessionRoutes(),
     "/taxes" -> TaxRoutes()
   )
 
