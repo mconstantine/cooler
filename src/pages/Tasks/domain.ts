@@ -3,6 +3,7 @@ import * as t from 'io-ts'
 import {
   makeDeleteRequest,
   makeGetRequest,
+  makePostRequest,
   makePutRequest
 } from '../../effects/api/useApi'
 import { Session } from '../../entities/Session'
@@ -51,3 +52,9 @@ export const makeDeleteSessionRequest = (sessionId: ObjectId) =>
     inputCodec: t.void,
     outputCodec: Session
   })
+
+export const startSessionRequest = makePostRequest({
+  url: `/sessions`,
+  inputCodec: SessionCreationInput,
+  outputCodec: Session
+})

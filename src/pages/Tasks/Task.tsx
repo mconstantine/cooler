@@ -1,11 +1,15 @@
+import { option, taskEither } from 'fp-ts'
 import { pipe } from 'fp-ts/function'
 import { IO } from 'fp-ts/IO'
+import { TaskEither } from 'fp-ts/TaskEither'
 import { Reader } from 'fp-ts/Reader'
 import { useState } from 'react'
 import { Session } from '../../entities/Session'
-import { ObjectId } from '../../globalDomain'
-import { SessionPage } from './SessionPage'
+import { LocalizedString, ObjectId } from '../../globalDomain'
+import { SessionPage } from './SessionData'
 import { TaskPage } from './TaskPage'
+import { usePost } from '../../effects/api/useApi'
+import { startSessionRequest } from './domain'
 
 interface Props {
   _id: ObjectId
@@ -43,6 +47,22 @@ export default function Task(props: Props) {
     taskId: props._id
   })
 
+  const startSessionCommand = usePost(startSessionRequest)
+
+  const onCreateSessionButtonClick: TaskEither<LocalizedString, void> = pipe(
+    startSessionCommand({
+      task: props._id,
+      startTime: new Date(),
+      endTime: option.none
+    }),
+    taskEither.chain(session =>
+      taskEither.fromIO(() => {
+        console.log('TODO: started session')
+        console.log(session)
+      })
+    )
+  )
+
   const onSessionListItemClick: Reader<Session, void> = session =>
     setSubjectMode({
       type: 'session',
@@ -61,6 +81,7 @@ export default function Task(props: Props) {
       ({ taskId }) => (
         <TaskPage
           _id={taskId}
+          onCreateSessionButtonClick={onCreateSessionButtonClick}
           onSessionListItemClick={onSessionListItemClick}
         />
       ),

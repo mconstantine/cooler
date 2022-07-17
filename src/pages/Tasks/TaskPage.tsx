@@ -12,11 +12,13 @@ import { makeTaskQuery } from './domain'
 import { SessionsList } from './SessionsList'
 import TaskData from './TaskData'
 import { TaskProgress } from './TaskProgress'
-import { ObjectId } from '../../globalDomain'
+import { LocalizedString, ObjectId } from '../../globalDomain'
 import { Session } from '../../entities/Session'
+import { TaskEither } from 'fp-ts/TaskEither'
 
 interface Props {
   _id: ObjectId
+  onCreateSessionButtonClick: TaskEither<LocalizedString, void>
   onSessionListItemClick: Reader<Session, unknown>
 }
 
@@ -46,6 +48,7 @@ export function TaskPage(props: Props) {
           <TaskProgress task={task} />
           <SessionsList
             task={task}
+            onCreateSessionButtonClick={props.onCreateSessionButtonClick}
             onSessionListItemClick={props.onSessionListItemClick}
           />
         </TaxesProvider>

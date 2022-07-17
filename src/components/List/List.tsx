@@ -141,7 +141,9 @@ export function List(props: Props) {
           props.items,
           nonEmptyArray.fromArray,
           option.fold(
-            () => [<Body>{props.emptyListMessage}</Body>],
+            () => [
+              <Body key="emptyListMessage">{props.emptyListMessage}</Body>
+            ],
             nonEmptyArray.map(item => {
               const disabledClassName = item.disabled ? 'disabled' : ''
 

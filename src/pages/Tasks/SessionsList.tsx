@@ -1,5 +1,6 @@
 import { boolean, option } from 'fp-ts'
 import { pipe } from 'fp-ts/function'
+import { TaskEither } from 'fp-ts/TaskEither'
 import { Reader } from 'fp-ts/Reader'
 import { useState } from 'react'
 import { a18n, formatDate, formatDuration, formatTime } from '../../a18n'
@@ -8,12 +9,14 @@ import { RoutedItem } from '../../components/List/List'
 import { useGet } from '../../effects/api/useApi'
 import { Session } from '../../entities/Session'
 import { TaskWithStats } from '../../entities/Task'
-import { unsafePositiveInteger } from '../../globalDomain'
+import { LocalizedString, unsafePositiveInteger } from '../../globalDomain'
 import { ConnectionQueryInput } from '../../misc/Connection'
 import { makeGetSessionsRequest } from './domain'
+import { add } from 'ionicons/icons'
 
 interface Props {
   task: TaskWithStats
+  onCreateSessionButtonClick: TaskEither<LocalizedString, unknown>
   onSessionListItemClick: Reader<Session, unknown>
 }
 
@@ -74,7 +77,12 @@ export function SessionsList(props: Props) {
     <ConnectionList
       title={a18n`Sessions`}
       query={sessions}
-      action={option.none}
+      action={option.some({
+        type: 'async',
+        label: a18n`Start new session`,
+        action: props.onCreateSessionButtonClick,
+        icon: add
+      })}
       onLoadMore={option.none}
       onSearchQueryChange={option.none}
       renderListItem={renderSessionItem}

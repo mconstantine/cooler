@@ -19,7 +19,7 @@ export type Session = t.TypeOf<typeof Session>
 
 export const SessionCreationInput = t.type(
   {
-    task: PositiveInteger,
+    task: ObjectId,
     startTime: DateFromISOString,
     endTime: optionFromNullable(DateFromISOString)
   },
