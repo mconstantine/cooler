@@ -34,6 +34,7 @@ import { Loading } from '../../../Loading/Loading'
 import './Select.scss'
 import * as t from 'io-ts'
 import { Reader } from 'fp-ts/Reader'
+import { unsafeLocalizedString } from '../../../../a18n'
 
 type Index = string | number | symbol
 
@@ -439,7 +440,11 @@ export const Select: Select = forwardRef(
           </Input>
         </div>
         <div className="options">
-          <List heading={option.none} items={optionItems} />
+          <List
+            heading={option.none}
+            items={optionItems}
+            emptyListMessage={unsafeLocalizedString('')}
+          />
         </div>
       </div>
     )

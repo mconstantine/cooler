@@ -1,49 +1,77 @@
 import { pipe } from 'fp-ts/function'
+import { IO } from 'fp-ts/IO'
 import { Reader } from 'fp-ts/Reader'
-import { useEffect } from 'react'
-import { ErrorPanel } from '../../components/ErrorPanel/ErrorPanel'
-import { Loading } from '../../components/Loading/Loading'
-import { projectsRoute, useRouter } from '../../components/Router'
-import { TaxesProvider } from '../../contexts/TaxesContext'
-import { query } from '../../effects/api/api'
-import { useReactiveCommand } from '../../effects/api/useApi'
-import { TaskWithStats } from '../../entities/Task'
+import { useState } from 'react'
+import { Session } from '../../entities/Session'
 import { ObjectId } from '../../globalDomain'
-import { makeTaskQuery } from './domain'
-import { SessionsList } from './SessionsList'
-import TaskData from './TaskData'
-import { TaskProgress } from './TaskProgress'
+import { SessionPage } from './SessionPage'
+import { TaskPage } from './TaskPage'
 
 interface Props {
   _id: ObjectId
 }
 
+interface TaskSubjectMode {
+  type: 'task'
+  taskId: ObjectId
+}
+
+interface SessionSubjectMode {
+  type: 'session'
+  session: Session
+}
+
+type SubjectMode = TaskSubjectMode | SessionSubjectMode
+
+function foldSubjectMode<T>(
+  whenTask: Reader<TaskSubjectMode, T>,
+  whenSession: Reader<SessionSubjectMode, T>
+): Reader<SubjectMode, T> {
+  return subjectMode => {
+    switch (subjectMode.type) {
+      case 'task':
+        return whenTask(subjectMode)
+      case 'session':
+        return whenSession(subjectMode)
+    }
+  }
+}
+
 export default function Task(props: Props) {
-  const { setRoute } = useRouter()
-  const [task, setTask, getTaskCommand] = useReactiveCommand(
-    makeTaskQuery(props._id)
-  )
-  const onUpdate: Reader<TaskWithStats, void> = setTask
+  const [subjectMode, setSubjectMode] = useState<SubjectMode>({
+    type: 'task',
+    taskId: props._id
+  })
 
-  const onDelete: Reader<TaskWithStats, void> = task =>
-    setRoute(projectsRoute(task.project._id))
+  const onSessionListItemClick: Reader<Session, void> = session =>
+    setSubjectMode({
+      type: 'session',
+      session
+    })
 
-  useEffect(() => {
-    const fetchTask = getTaskCommand()
-    fetchTask()
-  }, [getTaskCommand])
+  const backToTask: IO<void> = () =>
+    setSubjectMode({
+      type: 'task',
+      taskId: props._id
+    })
 
   return pipe(
-    task,
-    query.fold(
-      () => <Loading />,
-      error => <ErrorPanel error={error} />,
-      task => (
-        <TaxesProvider>
-          <TaskData task={task} onUpdate={onUpdate} onDelete={onDelete} />
-          <TaskProgress task={task} />
-          <SessionsList task={task} />
-        </TaxesProvider>
+    subjectMode,
+    foldSubjectMode(
+      ({ taskId }) => (
+        <TaskPage
+          _id={taskId}
+          onSessionListItemClick={onSessionListItemClick}
+        />
+      ),
+      ({ session }) => (
+        <SessionPage
+          session={session}
+          taskId={props._id}
+          onCancel={backToTask}
+          onUpdate={backToTask}
+          onDelete={backToTask}
+        />
       )
     )
   )

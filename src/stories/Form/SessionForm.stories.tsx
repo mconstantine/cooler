@@ -1,16 +1,18 @@
 import { Meta, Story } from '@storybook/react'
+import ObjectID from 'bson-objectid'
 import { boolean, option, taskEither } from 'fp-ts'
 import { pipe } from 'fp-ts/function'
 import { unsafeLocalizedString } from '../../a18n'
 import { Content } from '../../components/Content/Content'
 import { SessionForm as SessionFormComponent } from '../../components/Form/Forms/SessionForms'
 import { SessionCreationInput } from '../../entities/Session'
+import { unsafeObjectId } from '../../globalDomain'
 import { CoolerStory } from '../CoolerStory'
-import { findTasks } from '../utils'
 
 interface Args {
   shouldFail: boolean
   onSubmit: (data: SessionCreationInput) => void
+  onCancel: () => void
 }
 
 const SessionFormTemplate: Story<Args> = props => {
@@ -28,8 +30,9 @@ const SessionFormTemplate: Story<Args> = props => {
       <Content>
         <SessionFormComponent
           session={option.none}
-          findTasks={option.some(findTasks)}
+          taskId={unsafeObjectId(ObjectID())}
           onSubmit={onSubmit}
+          onCancel={props.onCancel}
         />
       </Content>
     </CoolerStory>
@@ -48,7 +51,8 @@ SessionForm.argTypes = {
     control: 'boolean',
     description: 'Set this to true to make the form submission fail'
   },
-  onSubmit: { action: 'submit' }
+  onSubmit: { action: 'submit' },
+  onCancel: { action: 'cancel' }
 }
 
 const meta: Meta = {

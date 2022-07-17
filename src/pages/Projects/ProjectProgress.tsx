@@ -1,6 +1,11 @@
 import { option } from 'fp-ts'
 import { pipe } from 'fp-ts/function'
-import { a18n, formatDuration, formatMoneyAmount } from '../../a18n'
+import {
+  a18n,
+  formatDuration,
+  formatMoneyAmount,
+  unsafeLocalizedString
+} from '../../a18n'
 import { ErrorPanel } from '../../components/ErrorPanel/ErrorPanel'
 import { List } from '../../components/List/List'
 import { LoadingBlock } from '../../components/Loading/LoadingBlock'
@@ -32,6 +37,7 @@ export function ProjectProgress(props: Props) {
         <Panel title={a18n`Progress`} framed action={option.none}>
           <List
             heading={option.some(a18n`Time`)}
+            emptyListMessage={unsafeLocalizedString('')}
             items={[
               {
                 key: 'expectedWorkingHours',
@@ -81,6 +87,7 @@ export function ProjectProgress(props: Props) {
           />
           <List
             heading={option.some(a18n`Money`)}
+            emptyListMessage={unsafeLocalizedString('')}
             items={[
               {
                 key: 'grossBudget',

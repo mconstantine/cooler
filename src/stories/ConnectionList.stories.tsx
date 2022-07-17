@@ -167,6 +167,7 @@ const ConnectionListTemplate: Story<Args> = props => {
           onSearchQueryChange={option.some(onQuerySearchChange)}
           onLoadMore={option.some(onLoadMore)}
           renderListItem={renderListItem}
+          emptyListMessage={unsafeLocalizedString('No entities found')}
         />
       </Content>
     </CoolerStory>

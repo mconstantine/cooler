@@ -26,6 +26,7 @@ const ModalTemplate: Story<Args> = props => {
         >
           <List
             heading={option.none}
+            emptyListMessage={unsafeLocalizedString('')}
             items={new Array(30).fill(null).map((_, index) => ({
               key: index,
               type: 'routed',

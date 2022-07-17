@@ -1,7 +1,12 @@
 import { option } from 'fp-ts'
 import { pipe } from 'fp-ts/function'
 import { useState } from 'react'
-import { a18n, formatDuration, formatMoneyAmount } from '../../a18n'
+import {
+  a18n,
+  formatDuration,
+  formatMoneyAmount,
+  unsafeLocalizedString
+} from '../../a18n'
 import { Body } from '../../components/Body/Body'
 import { ErrorPanel } from '../../components/ErrorPanel/ErrorPanel'
 import { DateTimePicker } from '../../components/Form/Input/DateTimePicker/DateTimePicker'
@@ -66,6 +71,7 @@ export function ProfileStats() {
                   <>
                     <List
                       heading={option.some(a18n`Time`)}
+                      emptyListMessage={unsafeLocalizedString('')}
                       items={[
                         {
                           key: 'expectedWorkingHours',
@@ -115,6 +121,7 @@ export function ProfileStats() {
                     />
                     <List
                       heading={option.some(a18n`Money`)}
+                      emptyListMessage={unsafeLocalizedString('')}
                       items={[
                         {
                           key: 'grossBudget',

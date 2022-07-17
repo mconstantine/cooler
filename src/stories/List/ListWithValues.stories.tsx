@@ -2,7 +2,7 @@ import { Meta, Story } from '@storybook/react'
 import { boolean, either, option } from 'fp-ts'
 import { pipe } from 'fp-ts/function'
 import { NonEmptyString } from 'io-ts-types'
-import { formatNumber } from '../../a18n'
+import { formatNumber, unsafeLocalizedString } from '../../a18n'
 import { Content } from '../../components/Content/Content'
 import { List } from '../../components/List/List'
 import { Color, unsafePercentage } from '../../globalDomain'
@@ -69,6 +69,7 @@ const ListWithValuesTemplate: Story<Args> = props => {
               valueColor: props.color
             }
           })}
+          emptyListMessage={unsafeLocalizedString('No items found')}
         />
       </Content>
     </CoolerStory>

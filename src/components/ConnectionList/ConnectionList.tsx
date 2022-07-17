@@ -28,6 +28,7 @@ interface Props<T> {
   renderListItem: Reader<T, Item>
   onSearchQueryChange: Option<Reader<string, unknown>>
   onLoadMore: Option<IO<unknown>>
+  emptyListMessage: LocalizedString
 }
 
 export function ConnectionList<T>(props: Props<T>) {
@@ -85,6 +86,7 @@ export function ConnectionList<T>(props: Props<T>) {
               <List
                 heading={option.none}
                 items={getConnectionNodes(connection).map(props.renderListItem)}
+                emptyListMessage={props.emptyListMessage}
               />
               {pipe(
                 connection.pageInfo.hasNextPage,

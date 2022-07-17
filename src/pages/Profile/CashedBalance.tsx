@@ -2,7 +2,7 @@ import { option } from 'fp-ts'
 import { pipe } from 'fp-ts/function'
 import { sequenceS } from 'fp-ts/Apply'
 import { useState } from 'react'
-import { a18n, formatMoneyAmount } from '../../a18n'
+import { a18n, formatMoneyAmount, unsafeLocalizedString } from '../../a18n'
 import { ErrorPanel } from '../../components/ErrorPanel/ErrorPanel'
 import { DateTimePicker } from '../../components/Form/Input/DateTimePicker/DateTimePicker'
 import { List } from '../../components/List/List'
@@ -78,6 +78,7 @@ export function CashedBalance() {
                 progress: option.none
               }
             ]}
+            emptyListMessage={unsafeLocalizedString('')}
           />
         </Panel>
       )

@@ -1,4 +1,4 @@
-import { boolean, option } from 'fp-ts'
+import { boolean, nonEmptyArray, option } from 'fp-ts'
 import {
   constFalse,
   constNull,
@@ -113,6 +113,7 @@ type Props = {
   heading: Option<LocalizedString>
   unwrapDescriptions?: boolean
   items: Item[]
+  emptyListMessage: LocalizedString
 }
 
 export function List(props: Props) {
@@ -136,250 +137,260 @@ export function List(props: Props) {
         option.toNullable
       )}
       <ul>
-        {props.items.map(item => {
-          const disabledClassName = item.disabled ? 'disabled' : ''
+        {pipe(
+          props.items,
+          nonEmptyArray.fromArray,
+          option.fold(
+            () => [<Body>{props.emptyListMessage}</Body>],
+            nonEmptyArray.map(item => {
+              const disabledClassName = item.disabled ? 'disabled' : ''
 
-          const iconsAtTheEndClassName = pipe(
-            item,
-            foldItem({
-              readonly: constFalse,
-              readonlyWithIcon: ({ iconPosition }) => iconPosition === 'end',
-              routed: constFalse,
-              routedWithIcon: constFalse,
-              valued: constTrue,
-              withButtons: constFalse
-            }),
-            boolean.fold(
-              () => '',
-              () => 'sideContentAtTheEnd'
-            )
-          )
-
-          const routedClassName = pipe(
-            item,
-            foldItem({
-              readonly: constFalse,
-              readonlyWithIcon: constFalse,
-              routed: constTrue,
-              routedWithIcon: constTrue,
-              valued: constFalse,
-              withButtons: constFalse
-            }),
-            boolean.fold(
-              () => '',
-              () => 'routed'
-            )
-          )
-
-          const hasDetails = pipe(
-            item,
-            foldItem({
-              readonly: constFalse,
-              readonlyWithIcon: constFalse,
-              routed: ({ details }) => !!details,
-              routedWithIcon: ({ details }) => !!details,
-              valued: constFalse,
-              withButtons: constFalse
-            })
-          )
-
-          const detailsClassName = pipe(
-            hasDetails,
-            boolean.fold(
-              () => '',
-              () => 'details'
-            )
-          )
-
-          const progressClassName = pipe(
-            item,
-            foldItem({
-              readonly: () => '',
-              readonlyWithIcon: () => '',
-              routed: () => '',
-              routedWithIcon: () => '',
-              valued: item =>
-                pipe(
-                  item.progress,
-                  option.fold(
-                    () => '',
-                    () => `withProgress ${item.valueColor}`
-                  )
-                ),
-              withButtons: () => ''
-            })
-          )
-
-          const sizeClassName = item.size || 'default'
-
-          const getAction = (item: RoutedItem | RoutedItemWithIcon) => {
-            return (e: MouseEvent) => {
-              e.preventDefault()
-
-              if (item.disabled) {
-                return
-              }
-
-              return item.action()
-            }
-          }
-
-          const renderIcon = (
-            item: ReadonlyItemWithIcon | RoutedItemWithIcon
-          ) => (
-            <div className="itemSideContent">
-              <Icon
-                color={item.iconColor}
-                src={item.icon}
-                size={pipe(
-                  item.size,
-                  option.fromNullable,
-                  option.fold(
-                    () => 'large',
-                    foldSize(
-                      () => 'large',
-                      () => 'small'
-                    )
-                  )
-                )}
-              />
-            </div>
-          )
-
-          const renderValue = (item: ValuedItem) => (
-            <div className="itemSideContent">
-              <Banner
-                content={item.value}
-                color={pipe(
-                  item.progress,
-                  option.fold(
-                    () => item.valueColor,
-                    () => 'default'
-                  )
-                )}
-              />
-            </div>
-          )
-
-          return (
-            <li
-              key={item.key}
-              onClick={pipe(
+              const iconsAtTheEndClassName = pipe(
                 item,
                 foldItem({
-                  readonly: constUndefined,
-                  readonlyWithIcon: constUndefined,
-                  routed: getAction,
-                  routedWithIcon: getAction,
-                  valued: constUndefined,
-                  withButtons: constUndefined
+                  readonly: constFalse,
+                  readonlyWithIcon: ({ iconPosition }) =>
+                    iconPosition === 'end',
+                  routed: constFalse,
+                  routedWithIcon: constFalse,
+                  valued: constTrue,
+                  withButtons: constFalse
+                }),
+                boolean.fold(
+                  () => '',
+                  () => 'sideContentAtTheEnd'
+                )
+              )
+
+              const routedClassName = pipe(
+                item,
+                foldItem({
+                  readonly: constFalse,
+                  readonlyWithIcon: constFalse,
+                  routed: constTrue,
+                  routedWithIcon: constTrue,
+                  valued: constFalse,
+                  withButtons: constFalse
+                }),
+                boolean.fold(
+                  () => '',
+                  () => 'routed'
+                )
+              )
+
+              const hasDetails = pipe(
+                item,
+                foldItem({
+                  readonly: constFalse,
+                  readonlyWithIcon: constFalse,
+                  routed: ({ details }) => !!details,
+                  routedWithIcon: ({ details }) => !!details,
+                  valued: constFalse,
+                  withButtons: constFalse
                 })
-              )}
-              className={composeClassName(
-                item.className || '',
-                disabledClassName,
-                iconsAtTheEndClassName,
-                routedClassName,
-                detailsClassName,
-                sizeClassName,
-                progressClassName
-              )}
-              aria-label={item.content}
-            >
-              {pipe(
+              )
+
+              const detailsClassName = pipe(
+                hasDetails,
+                boolean.fold(
+                  () => '',
+                  () => 'details'
+                )
+              )
+
+              const progressClassName = pipe(
                 item,
                 foldItem({
-                  readonly: constNull,
-                  readonlyWithIcon: constNull,
-                  routed: constNull,
-                  routedWithIcon: constNull,
+                  readonly: () => '',
+                  readonlyWithIcon: () => '',
+                  routed: () => '',
+                  routedWithIcon: () => '',
                   valued: item =>
                     pipe(
                       item.progress,
-                      option.fold(constNull, progress => (
-                        <div
-                          className={composeClassName(
-                            'itemProgressBar',
-                            item.valueColor || ''
-                          )}
-                          style={{
-                            width: `${PercentageFromString.encode(progress)}%`
-                          }}
-                        />
-                      ))
+                      option.fold(
+                        () => '',
+                        () => `withProgress ${item.valueColor}`
+                      )
                     ),
-                  withButtons: constNull
+                  withButtons: () => ''
                 })
-              )}
-              <div className="itemContentOuterWrapper">
-                <div className="itemContentWrapper">
+              )
+
+              const sizeClassName = item.size || 'default'
+
+              const getAction = (item: RoutedItem | RoutedItemWithIcon) => {
+                return (e: MouseEvent) => {
+                  e.preventDefault()
+
+                  if (item.disabled) {
+                    return
+                  }
+
+                  return item.action()
+                }
+              }
+
+              const renderIcon = (
+                item: ReadonlyItemWithIcon | RoutedItemWithIcon
+              ) => (
+                <div className="itemSideContent">
+                  <Icon
+                    color={item.iconColor}
+                    src={item.icon}
+                    size={pipe(
+                      item.size,
+                      option.fromNullable,
+                      option.fold(
+                        () => 'large',
+                        foldSize(
+                          () => 'large',
+                          () => 'small'
+                        )
+                      )
+                    )}
+                  />
+                </div>
+              )
+
+              const renderValue = (item: ValuedItem) => (
+                <div className="itemSideContent">
+                  <Banner
+                    content={item.value}
+                    color={pipe(
+                      item.progress,
+                      option.fold(
+                        () => item.valueColor,
+                        () => 'default'
+                      )
+                    )}
+                  />
+                </div>
+              )
+
+              return (
+                <li
+                  key={item.key}
+                  onClick={pipe(
+                    item,
+                    foldItem({
+                      readonly: constUndefined,
+                      readonlyWithIcon: constUndefined,
+                      routed: getAction,
+                      routedWithIcon: getAction,
+                      valued: constUndefined,
+                      withButtons: constUndefined
+                    })
+                  )}
+                  className={composeClassName(
+                    item.className || '',
+                    disabledClassName,
+                    iconsAtTheEndClassName,
+                    routedClassName,
+                    detailsClassName,
+                    sizeClassName,
+                    progressClassName
+                  )}
+                  aria-label={item.content}
+                >
                   {pipe(
                     item,
                     foldItem({
                       readonly: constNull,
-                      readonlyWithIcon: renderIcon,
+                      readonlyWithIcon: constNull,
                       routed: constNull,
-                      routedWithIcon: renderIcon,
-                      valued: renderValue,
+                      routedWithIcon: constNull,
+                      valued: item =>
+                        pipe(
+                          item.progress,
+                          option.fold(constNull, progress => (
+                            <div
+                              className={composeClassName(
+                                'itemProgressBar',
+                                item.valueColor || ''
+                              )}
+                              style={{
+                                width: `${PercentageFromString.encode(
+                                  progress
+                                )}%`
+                              }}
+                            />
+                          ))
+                        ),
                       withButtons: constNull
                     })
                   )}
-                  <div className="itemContent">
-                    {pipe(
-                      item.label,
-                      option.map(label => <Banner content={label} />),
-                      option.toNullable
-                    )}
-                    {pipe(
-                      item.size || 'default',
-                      foldSize(
-                        () => <Body>{item.content}</Body>,
-                        () => <Banner content={item.content} />
-                      )
-                    )}
-                    {pipe(
-                      item.description,
-                      option.map(description => (
-                        <p className="description">{description}</p>
-                      )),
-                      option.toNullable
-                    )}
-                  </div>
-                </div>
+                  <div className="itemContentOuterWrapper">
+                    <div className="itemContentWrapper">
+                      {pipe(
+                        item,
+                        foldItem({
+                          readonly: constNull,
+                          readonlyWithIcon: renderIcon,
+                          routed: constNull,
+                          routedWithIcon: renderIcon,
+                          valued: renderValue,
+                          withButtons: constNull
+                        })
+                      )}
+                      <div className="itemContent">
+                        {pipe(
+                          item.label,
+                          option.map(label => <Banner content={label} />),
+                          option.toNullable
+                        )}
+                        {pipe(
+                          item.size || 'default',
+                          foldSize(
+                            () => <Body>{item.content}</Body>,
+                            () => <Banner content={item.content} />
+                          )
+                        )}
+                        {pipe(
+                          item.description,
+                          option.map(description => (
+                            <p className="description">{description}</p>
+                          )),
+                          option.toNullable
+                        )}
+                      </div>
+                    </div>
 
-                {hasDetails ? (
-                  <div className="routeArrow">
-                    <Icon src={chevronForward} size="medium" />
+                    {hasDetails ? (
+                      <div className="routeArrow">
+                        <Icon src={chevronForward} size="medium" />
+                      </div>
+                    ) : null}
                   </div>
-                ) : null}
-              </div>
-              {pipe(
-                item,
-                foldItem({
-                  readonly: constNull,
-                  readonlyWithIcon: constNull,
-                  routed: constNull,
-                  routedWithIcon: constNull,
-                  valued: constNull,
-                  withButtons: ({ buttons }) => (
-                    <Buttons>
-                      {buttons.map(props => {
-                        switch (props.type) {
-                          case 'button':
-                          case 'iconButton':
-                            return <Button {...props} />
-                          case 'loadingButton':
-                          case 'loadingInput':
-                            return <LoadingButton {...props} />
-                        }
-                      })}
-                    </Buttons>
-                  )
-                })
-              )}
-            </li>
+                  {pipe(
+                    item,
+                    foldItem({
+                      readonly: constNull,
+                      readonlyWithIcon: constNull,
+                      routed: constNull,
+                      routedWithIcon: constNull,
+                      valued: constNull,
+                      withButtons: ({ buttons }) => (
+                        <Buttons>
+                          {buttons.map(props => {
+                            switch (props.type) {
+                              case 'button':
+                              case 'iconButton':
+                                return <Button {...props} />
+                              case 'loadingButton':
+                              case 'loadingInput':
+                                return <LoadingButton {...props} />
+                            }
+                          })}
+                        </Buttons>
+                      )
+                    })
+                  )}
+                </li>
+              )
+            })
           )
-        })}
+        )}
       </ul>
     </div>
   )

@@ -140,6 +140,7 @@ export function ProjectData(props: Props) {
                     taxes => (
                       <List
                         heading={option.some(a18n`Cashed`)}
+                        emptyListMessage={unsafeLocalizedString('')}
                         items={[
                           {
                             key: 'cashedAt',

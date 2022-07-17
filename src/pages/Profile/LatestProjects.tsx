@@ -56,6 +56,7 @@ export function LatestProjects() {
                       details: true
                     }))
                   )}
+                  emptyListMessage={a18n`No projects found`}
                 />
               )
             )

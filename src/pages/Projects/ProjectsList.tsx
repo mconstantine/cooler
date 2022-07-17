@@ -40,6 +40,7 @@ export default function ProjectsList() {
       })}
       onSearchQueryChange={option.some(onSearchQueryChange)}
       renderListItem={renderProjectItem}
+      emptyListMessage={a18n`No projects found`}
     />
   )
 }

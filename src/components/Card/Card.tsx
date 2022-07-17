@@ -13,6 +13,7 @@ import './Card.scss'
 import { constNull, constVoid, flow, pipe } from 'fp-ts/function'
 import { Banner } from '../Banner/Banner'
 import { skull } from 'ionicons/icons'
+import { unsafeLocalizedString } from '../../a18n'
 
 interface SyncAction {
   type: 'sync'
@@ -70,6 +71,7 @@ export function Card(props: Props) {
             description: props.description
           }
         ]}
+        emptyListMessage={unsafeLocalizedString('')}
       />
       {pipe(
         error,

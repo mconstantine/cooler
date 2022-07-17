@@ -284,6 +284,7 @@ function NamingTips() {
         <List
           heading={option.none}
           unwrapDescriptions
+          emptyListMessage={unsafeLocalizedString('')}
           items={[
             {
               key: 'DDDD',

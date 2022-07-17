@@ -41,6 +41,7 @@ export default function ClientsList() {
       })}
       onLoadMore={option.some(onLoadMore)}
       renderListItem={renderClientItem}
+      emptyListMessage={a18n`No clients found`}
     />
   )
 }

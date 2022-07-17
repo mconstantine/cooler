@@ -4,7 +4,7 @@ import { Reader } from 'fp-ts/Reader'
 import { useState } from 'react'
 import { a18n, formatDate, formatDuration, formatTime } from '../../a18n'
 import { ConnectionList } from '../../components/ConnectionList/ConnectionList'
-import { ReadonlyItem } from '../../components/List/List'
+import { RoutedItem } from '../../components/List/List'
 import { useGet } from '../../effects/api/useApi'
 import { Session } from '../../entities/Session'
 import { TaskWithStats } from '../../entities/Task'
@@ -14,6 +14,7 @@ import { makeGetSessionsRequest } from './domain'
 
 interface Props {
   task: TaskWithStats
+  onSessionListItemClick: Reader<Session, unknown>
 }
 
 export function SessionsList(props: Props) {
@@ -25,8 +26,7 @@ export function SessionsList(props: Props) {
 
   const [sessions] = useGet(makeGetSessionsRequest(props.task._id), input)
 
-  // TODO: create a list item with buttons
-  const renderSessionItem: Reader<Session, ReadonlyItem> = session => {
+  const renderSessionItem: Reader<Session, RoutedItem> = session => {
     const startDateString = formatDate(session.startTime)
     const startTimeString = formatTime(session.startTime)
 
@@ -42,7 +42,7 @@ export function SessionsList(props: Props) {
 
     return {
       key: session._id,
-      type: 'readonly',
+      type: 'routed',
       label: option.none,
       content: pipe(
         session.endTime,
@@ -64,7 +64,9 @@ export function SessionsList(props: Props) {
           }
         )
       ),
-      description: option.none
+      description: option.none,
+      action: () => props.onSessionListItemClick(session),
+      details: true
     }
   }
 
@@ -76,6 +78,7 @@ export function SessionsList(props: Props) {
       onLoadMore={option.none}
       onSearchQueryChange={option.none}
       renderListItem={renderSessionItem}
+      emptyListMessage={a18n`No sessions found`}
     />
   )
 }

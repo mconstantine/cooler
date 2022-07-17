@@ -3,6 +3,7 @@ import { boolean, either, option } from 'fp-ts'
 import { pipe } from 'fp-ts/function'
 import { NonEmptyString } from 'io-ts-types'
 import { heart } from 'ionicons/icons'
+import { unsafeLocalizedString } from '../../a18n'
 import { Content } from '../../components/Content/Content'
 import { List } from '../../components/List/List'
 import { Color } from '../../globalDomain'
@@ -61,6 +62,7 @@ const RoutedListWithIconsTemplate: Story<Args> = props => {
             details: props.details,
             action: () => props.action(index)
           }))}
+          emptyListMessage={unsafeLocalizedString('No items found')}
         />
       </Content>
     </CoolerStory>

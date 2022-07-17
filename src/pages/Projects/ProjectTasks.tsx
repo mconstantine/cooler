@@ -101,6 +101,7 @@ export function ProjectTasks(props: Props) {
       onLoadMore={option.some(onLoadMore)}
       onSearchQueryChange={option.none}
       renderListItem={renderTaskItem}
+      emptyListMessage={a18n`No tasks found`}
     />
   )
 }

@@ -68,6 +68,7 @@ const ListWithButtonsTemplate: Story<DefaultArgs> = props => {
               }
             ]
           }))}
+          emptyListMessage={unsafeLocalizedString('No items found')}
         />
       </Content>
     </CoolerStory>

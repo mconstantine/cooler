@@ -50,6 +50,7 @@ export function TasksDueToday() {
                     action: () => setRoute(tasksRoute(task._id)),
                     details: true
                   }))}
+                  emptyListMessage={a18n`No tasks due today`}
                 />
               )
             )
