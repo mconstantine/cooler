@@ -28,12 +28,12 @@ export type CommonProps = Pick<
 }
 
 export interface ButtonProps extends CommonProps {
-  type: 'button'
+  type: 'loadingButton'
   action: TaskEither<any, any>
 }
 
 export interface InputProps extends CommonProps {
-  type: 'input'
+  type: 'loadingInput'
 }
 
 type Props = ButtonProps | InputProps
@@ -44,9 +44,9 @@ function foldProps<T>(
 ): (prop: Props) => T {
   return props => {
     switch (props.type) {
-      case 'button':
+      case 'loadingButton':
         return whenButton(props)
-      case 'input':
+      case 'loadingInput':
         return whenInput(props)
     }
   }

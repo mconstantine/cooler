@@ -122,7 +122,7 @@ export function ProfileData() {
                     flat
                   />
                   <LoadingButton
-                    type="button"
+                    type="loadingButton"
                     label={a18n`Delete profile`}
                     color="danger"
                     flat

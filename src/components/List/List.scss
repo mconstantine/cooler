@@ -139,12 +139,16 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      max-width: calc(90vw - #{$list-icons-space});
+      max-width: calc(90vw - 10em);
 
       @include media($list-max-width / 90 * 100) {
-        max-width: $list-max-width - $list-icons-space;
+        max-width: calc(#{$list-max-width} - 10em);
       }
     }
+  }
+
+  li.withProgress + li.withProgress {
+    margin-top: 8px;
   }
 
   li.details {
@@ -243,4 +247,8 @@
   &:not(.disabled):active {
     background-color: rgba(#000, $opacity-active);
   }
+}
+
+.List li .Buttons {
+  margin-top: 0;
 }

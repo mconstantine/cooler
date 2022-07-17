@@ -42,7 +42,7 @@ const LoadingButtonTemplate: Story<Args> = props => {
     <CoolerStory>
       <Content>
         <LoadingButtonComponent
-          type="button"
+          type="loadingButton"
           label={props.label}
           action={pipe(
             props.result,

@@ -136,7 +136,7 @@ export default function TaskData(props: Props) {
               icon={option.none}
             />
             <LoadingButton
-              type="button"
+              type="loadingButton"
               label={a18n`Delete task`}
               color="danger"
               flat

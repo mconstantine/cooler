@@ -96,7 +96,7 @@ export function Form(props: Props) {
             {[
               <ControlledLoadingButton
                 key={0}
-                type="input"
+                type="loadingInput"
                 color="primary"
                 label={submitLabel}
                 icon={submitIcon}

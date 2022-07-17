@@ -136,7 +136,7 @@ export function Heading(props: Props) {
         ),
         action => (
           <LoadingButton
-            type="button"
+            type="loadingButton"
             label={action.label}
             icon={action.icon}
             color={action.color}

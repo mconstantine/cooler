@@ -27,7 +27,7 @@ export function LoadingButton(props: Props) {
     return () => window.clearTimeout(timeout)
   }, [loadingState])
 
-  if (props.type === 'button') {
+  if (props.type === 'loadingButton') {
     const action = pipe(
       taskEither.fromIO(() => setLoadingState('loading')),
       taskEither.chain(() => props.action),

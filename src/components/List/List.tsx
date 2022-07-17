@@ -7,7 +7,7 @@ import {
   pipe
 } from 'fp-ts/function'
 import { Option } from 'fp-ts/Option'
-import { MouseEvent } from 'react'
+import { ComponentProps, MouseEvent } from 'react'
 import {
   Color,
   LocalizedString,
@@ -22,6 +22,10 @@ import { Heading } from '../Heading/Heading'
 import { Body } from '../Body/Body'
 import { IO } from 'fp-ts/IO'
 import { Banner } from '../Banner/Banner'
+import { Button } from '../Button/Button/Button'
+import { Reader } from 'fp-ts/Reader'
+import { LoadingButton } from '../Button/LoadingButton/LoadingButton'
+import { Buttons } from '../Button/Buttons/Buttons'
 
 type Position = 'start' | 'end'
 type Size = 'default' | 'small'
@@ -82,34 +86,27 @@ export interface ValuedItem extends CommonItemProps {
   progress: Option<Percentage>
 }
 
+type ButtonProps =
+  | ComponentProps<typeof Button>
+  | ComponentProps<typeof LoadingButton>
+
+export interface ItemWithButtons extends CommonItemProps {
+  type: 'withButtons'
+  buttons: ButtonProps[]
+}
+
 export type Item =
   | ReadonlyItem
   | ReadonlyItemWithIcon
   | RoutedItem
   | RoutedItemWithIcon
   | ValuedItem
+  | ItemWithButtons
 
-function foldItem<T>(
-  whenReadonly: (item: ReadonlyItem) => T,
-  whenWithIcon: (item: ReadonlyItemWithIcon) => T,
-  whenRouted: (item: RoutedItem) => T,
-  whenRoutedWithIcon: (item: RoutedItemWithIcon) => T,
-  whenValued: (item: ValuedItem) => T
-): (item: Item) => T {
-  return item => {
-    switch (item.type) {
-      case 'readonly':
-        return whenReadonly(item)
-      case 'readonlyWithIcon':
-        return whenWithIcon(item)
-      case 'routed':
-        return whenRouted(item)
-      case 'routedWithIcon':
-        return whenRoutedWithIcon(item)
-      case 'valued':
-        return whenValued(item)
-    }
-  }
+function foldItem<T>(cases: {
+  [k in Item['type']]: Reader<Extract<Item, { type: k }>, T>
+}): Reader<Item, T> {
+  return item => cases[item.type](item as any)
 }
 
 type Props = {
@@ -144,13 +141,14 @@ export function List(props: Props) {
 
           const iconsAtTheEndClassName = pipe(
             item,
-            foldItem(
-              constFalse,
-              ({ iconPosition }) => iconPosition === 'end',
-              constFalse,
-              constFalse,
-              constTrue
-            ),
+            foldItem({
+              readonly: constFalse,
+              readonlyWithIcon: ({ iconPosition }) => iconPosition === 'end',
+              routed: constFalse,
+              routedWithIcon: constFalse,
+              valued: constTrue,
+              withButtons: constFalse
+            }),
             boolean.fold(
               () => '',
               () => 'sideContentAtTheEnd'
@@ -159,7 +157,14 @@ export function List(props: Props) {
 
           const routedClassName = pipe(
             item,
-            foldItem(constFalse, constFalse, constTrue, constTrue, constFalse),
+            foldItem({
+              readonly: constFalse,
+              readonlyWithIcon: constFalse,
+              routed: constTrue,
+              routedWithIcon: constTrue,
+              valued: constFalse,
+              withButtons: constFalse
+            }),
             boolean.fold(
               () => '',
               () => 'routed'
@@ -168,13 +173,14 @@ export function List(props: Props) {
 
           const hasDetails = pipe(
             item,
-            foldItem(
-              constFalse,
-              constFalse,
-              ({ details }) => !!details,
-              ({ details }) => !!details,
-              constFalse
-            )
+            foldItem({
+              readonly: constFalse,
+              readonlyWithIcon: constFalse,
+              routed: ({ details }) => !!details,
+              routedWithIcon: ({ details }) => !!details,
+              valued: constFalse,
+              withButtons: constFalse
+            })
           )
 
           const detailsClassName = pipe(
@@ -187,20 +193,21 @@ export function List(props: Props) {
 
           const progressClassName = pipe(
             item,
-            foldItem(
-              () => '',
-              () => '',
-              () => '',
-              () => '',
-              item =>
+            foldItem({
+              readonly: () => '',
+              readonlyWithIcon: () => '',
+              routed: () => '',
+              routedWithIcon: () => '',
+              valued: item =>
                 pipe(
                   item.progress,
                   option.fold(
                     () => '',
                     () => `withProgress ${item.valueColor}`
                   )
-                )
-            )
+                ),
+              withButtons: () => ''
+            })
           )
 
           const sizeClassName = item.size || 'default'
@@ -259,13 +266,14 @@ export function List(props: Props) {
               key={item.key}
               onClick={pipe(
                 item,
-                foldItem(
-                  constUndefined,
-                  constUndefined,
-                  getAction,
-                  getAction,
-                  constUndefined
-                )
+                foldItem({
+                  readonly: constUndefined,
+                  readonlyWithIcon: constUndefined,
+                  routed: getAction,
+                  routedWithIcon: getAction,
+                  valued: constUndefined,
+                  withButtons: constUndefined
+                })
               )}
               className={composeClassName(
                 item.className || '',
@@ -280,34 +288,41 @@ export function List(props: Props) {
             >
               {pipe(
                 item,
-                foldItem(constNull, constNull, constNull, constNull, item =>
-                  pipe(
-                    item.progress,
-                    option.fold(constNull, progress => (
-                      <div
-                        className={composeClassName(
-                          'itemProgressBar',
-                          item.valueColor || ''
-                        )}
-                        style={{
-                          width: `${PercentageFromString.encode(progress)}%`
-                        }}
-                      />
-                    ))
-                  )
-                )
+                foldItem({
+                  readonly: constNull,
+                  readonlyWithIcon: constNull,
+                  routed: constNull,
+                  routedWithIcon: constNull,
+                  valued: item =>
+                    pipe(
+                      item.progress,
+                      option.fold(constNull, progress => (
+                        <div
+                          className={composeClassName(
+                            'itemProgressBar',
+                            item.valueColor || ''
+                          )}
+                          style={{
+                            width: `${PercentageFromString.encode(progress)}%`
+                          }}
+                        />
+                      ))
+                    ),
+                  withButtons: constNull
+                })
               )}
               <div className="itemContentOuterWrapper">
                 <div className="itemContentWrapper">
                   {pipe(
                     item,
-                    foldItem(
-                      constNull,
-                      renderIcon,
-                      constNull,
-                      renderIcon,
-                      renderValue
-                    )
+                    foldItem({
+                      readonly: constNull,
+                      readonlyWithIcon: renderIcon,
+                      routed: constNull,
+                      routedWithIcon: renderIcon,
+                      valued: renderValue,
+                      withButtons: constNull
+                    })
                   )}
                   <div className="itemContent">
                     {pipe(
@@ -338,6 +353,30 @@ export function List(props: Props) {
                   </div>
                 ) : null}
               </div>
+              {pipe(
+                item,
+                foldItem({
+                  readonly: constNull,
+                  readonlyWithIcon: constNull,
+                  routed: constNull,
+                  routedWithIcon: constNull,
+                  valued: constNull,
+                  withButtons: ({ buttons }) => (
+                    <Buttons>
+                      {buttons.map(props => {
+                        switch (props.type) {
+                          case 'button':
+                          case 'iconButton':
+                            return <Button {...props} />
+                          case 'loadingButton':
+                          case 'loadingInput':
+                            return <LoadingButton {...props} />
+                        }
+                      })}
+                    </Buttons>
+                  )
+                })
+              )}
             </li>
           )
         })}

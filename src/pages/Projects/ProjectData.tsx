@@ -193,7 +193,7 @@ export function ProjectData(props: Props) {
               icon={option.none}
             />
             <LoadingButton
-              type="button"
+              type="loadingButton"
               label={a18n`Delete project`}
               color="danger"
               flat

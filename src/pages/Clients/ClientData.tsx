@@ -183,7 +183,7 @@ export function ClientData(props: Props) {
               icon={option.none}
             />
             <LoadingButton
-              type="button"
+              type="loadingButton"
               label={a18n`Delete client`}
               color="danger"
               flat

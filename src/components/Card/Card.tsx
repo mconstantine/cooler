@@ -94,7 +94,7 @@ export function Card(props: Props) {
             action => (
               <LoadingButton
                 key={action.label}
-                type="button"
+                type="loadingButton"
                 label={action.label}
                 action={pipe(
                   taskEither.rightIO(() => setError(option.none)),
