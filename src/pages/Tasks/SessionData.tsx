@@ -2,10 +2,14 @@ import { boolean, option, taskEither } from 'fp-ts'
 import { IO } from 'fp-ts/IO'
 import { constNull, pipe } from 'fp-ts/function'
 import { arrowUp, skull } from 'ionicons/icons'
-import { a18n, formatDate, formatDateTime, formatDuration } from '../../a18n'
+import { a18n, formatDate, formatDateTime } from '../../a18n'
 import { ReadOnlyInput } from '../../components/Form/Input/ReadOnlyInput/ReadOnlyInput'
 import { Panel } from '../../components/Panel/Panel'
-import { Session, SessionCreationInput } from '../../entities/Session'
+import {
+  formatSessionDuration,
+  Session,
+  SessionCreationInput
+} from '../../entities/Session'
 import { LocalizedString, ObjectId } from '../../globalDomain'
 import { useDelete, usePut } from '../../effects/api/useApi'
 import { makeDeleteSessionRequest, makeUpdateSessionRequest } from './domain'
@@ -28,17 +32,7 @@ interface Props {
 }
 
 export function SessionPage(props: Props) {
-  const endTime: number = pipe(
-    props.session.endTime,
-    option.map(_ => _.getTime()),
-    option.getOrElse(() => Date.now())
-  )
-
-  const duration: LocalizedString = formatDuration(
-    endTime - props.session.startTime.getTime(),
-    true
-  )
-
+  const duration = formatSessionDuration(props.session)
   const [isEditing, setIsEditing] = useState(false)
   const [error, setError] = useState<Option<LocalizedString>>(option.none)
 

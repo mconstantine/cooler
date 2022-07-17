@@ -1,6 +1,10 @@
+import { LocalizedString } from './../globalDomain'
 import * as t from 'io-ts'
 import { DateFromISOString, optionFromNullable } from 'io-ts-types'
 import { ObjectId, PositiveInteger } from '../globalDomain'
+import { pipe } from 'fp-ts/function'
+import { option } from 'fp-ts'
+import { formatDuration } from '../a18n'
 
 const SessionData = t.type(
   {
@@ -36,3 +40,13 @@ export const TimesheetCreationInput = t.type(
   'TimesheetCreationInput'
 )
 export type TimesheetCreationInput = t.TypeOf<typeof TimesheetCreationInput>
+
+export function formatSessionDuration(session: Session): LocalizedString {
+  const endTime: number = pipe(
+    session.endTime,
+    option.map(_ => _.getTime()),
+    option.getOrElse(() => Date.now())
+  )
+
+  return formatDuration(endTime - session.startTime.getTime(), true)
+}
