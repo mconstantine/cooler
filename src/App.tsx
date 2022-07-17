@@ -4,7 +4,6 @@ import { Cooler } from './components/Cooler/Cooler'
 import { foldLocation, Router } from './components/Router'
 import { LoadingBlock } from './components/Loading/LoadingBlock'
 import { AccountProvider } from './contexts/AccountContext'
-import { ConfigProvider } from './contexts/ConfigContext'
 import { pipe } from 'fp-ts/function'
 import { Menu } from './components/Menu/Menu'
 import { Content } from './components/Content/Content'
@@ -17,40 +16,38 @@ const Tasks = lazy(() => import('./pages/Tasks/Tasks'))
 
 export function App() {
   return (
-    <ConfigProvider>
-      <ThemeProvider>
-        <Cooler>
-          <AccountProvider>
-            <Suspense fallback={<LoadingBlock />}>
-              <Router
-                render={location => (
-                  <>
-                    <Menu />
-                    <Content>
-                      {pipe(
-                        location,
-                        foldLocation({
-                          Home: () => <Profile />,
-                          Clients: ({ subject }) => (
-                            <Clients routeSubject={subject} />
-                          ),
-                          Projects: ({ subject }) => (
-                            <Projects routeSubject={subject} />
-                          ),
-                          Tasks: ({ subject }) => (
-                            <Tasks routeSubject={subject} />
-                          ),
-                          Settings: () => <Settings />
-                        })
-                      )}
-                    </Content>
-                  </>
-                )}
-              />
-            </Suspense>
-          </AccountProvider>
-        </Cooler>
-      </ThemeProvider>
-    </ConfigProvider>
+    <ThemeProvider>
+      <Cooler>
+        <AccountProvider>
+          <Suspense fallback={<LoadingBlock />}>
+            <Router
+              render={location => (
+                <>
+                  <Menu />
+                  <Content>
+                    {pipe(
+                      location,
+                      foldLocation({
+                        Home: () => <Profile />,
+                        Clients: ({ subject }) => (
+                          <Clients routeSubject={subject} />
+                        ),
+                        Projects: ({ subject }) => (
+                          <Projects routeSubject={subject} />
+                        ),
+                        Tasks: ({ subject }) => (
+                          <Tasks routeSubject={subject} />
+                        ),
+                        Settings: () => <Settings />
+                      })
+                    )}
+                  </Content>
+                </>
+              )}
+            />
+          </Suspense>
+        </AccountProvider>
+      </Cooler>
+    </ThemeProvider>
   )
 }
