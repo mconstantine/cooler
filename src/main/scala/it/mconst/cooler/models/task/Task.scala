@@ -2,6 +2,7 @@ package it.mconst.cooler.models.task
 
 import cats.data.EitherT
 import cats.effect.IO
+import cats.syntax.all.none
 import cats.syntax.apply.*
 import com.mongodb.client.model.Aggregates
 import com.mongodb.client.model.Field
@@ -27,15 +28,40 @@ import it.mconst.cooler.utils.Collection
 import it.mconst.cooler.utils.DbDocument
 import it.mconst.cooler.utils.Error
 import it.mconst.cooler.utils.given
+import it.mconst.cooler.utils.Translations
+import java.time.LocalDate
 import mongo4cats.bson.Document
 import mongo4cats.bson.ObjectId
 import mongo4cats.circe.*
 import mongo4cats.collection.operations.Filter
 import org.bson.BsonDateTime
+import org.bson.BsonValue
 import org.http4s.circe.*
 import org.http4s.EntityDecoder
 import org.http4s.EntityEncoder
 import org.http4s.Status
+import scala.collection.JavaConverters.*
+
+opaque type WeekdayBitMask = Int
+
+object WeekdayBitMask extends Validator[Int, WeekdayBitMask] {
+  override def name = "WeekdayBitMask"
+
+  override def decode(n: Int): Option[WeekdayBitMask] =
+    Option.when(n >= 0 && n <= 0x1111111)(n)
+
+  override def validate(fieldName: String, value: Int)(using
+      Lang
+  ): Validation[WeekdayBitMask] =
+    validate(
+      value,
+      ValidationError(fieldName, __.ErrorDecodeInvalidWeekdayBitMask)
+    )
+}
+
+extension (weekdayBitMask: WeekdayBitMask) {
+  def toInt: Int = weekdayBitMask
+}
 
 sealed abstract trait Task(
     _id: ObjectId,
@@ -142,6 +168,20 @@ object Task {
   given EntityDecoder[IO, InputData] = jsonOf[IO, InputData]
   given EntityEncoder[IO, InputData] = jsonEncoderOf[IO, InputData]
 
+  final case class BatchInputData(
+      project: String,
+      name: String,
+      startTime: String,
+      expectedWorkingHours: Float,
+      hourlyCost: Float,
+      from: String,
+      to: String,
+      repeat: Int
+  )
+
+  given EntityDecoder[IO, BatchInputData] = jsonOf[IO, BatchInputData]
+  given EntityEncoder[IO, BatchInputData] = jsonEncoderOf[IO, BatchInputData]
+
   final case class ValidInputData(
       project: ObjectId,
       name: NonEmptyString,
@@ -149,6 +189,17 @@ object Task {
       startTime: BsonDateTime,
       expectedWorkingHours: PositiveFloat,
       hourlyCost: PositiveFloat
+  )
+
+  final case class ValidBatchInputData(
+      project: ObjectId,
+      name: NonEmptyString,
+      startTime: BsonDateTime,
+      expectedWorkingHours: PositiveFloat,
+      hourlyCost: PositiveFloat,
+      from: BsonDateTime,
+      to: BsonDateTime,
+      repeat: WeekdayBitMask
   )
 
   def validateInputData(
@@ -172,6 +223,40 @@ object Task {
       )
   )
 
+  def validateBatchInputData(
+      data: BatchInputData
+  )(using Lang): Validation[ValidBatchInputData] = (
+    data.project.validateObjectId("project"),
+    NonEmptyString.validate("name", data.name),
+    data.startTime.validateBsonDateTime("startTime"),
+    PositiveFloat.validate("expectedWorkingHours", data.expectedWorkingHours),
+    PositiveFloat.validate("hourlyCost", data.hourlyCost),
+    data.from.validateBsonDateTime("from"),
+    data.to.validateBsonDateTime("to"),
+    WeekdayBitMask.validate("repeat", data.repeat)
+  ).mapN(
+    (
+        project,
+        name,
+        startTime,
+        expectedWorkingHours,
+        hourlyCost,
+        from,
+        to,
+        repeat
+    ) =>
+      ValidBatchInputData(
+        project,
+        name,
+        startTime,
+        expectedWorkingHours,
+        hourlyCost,
+        from,
+        to,
+        repeat
+      )
+  )
+
   def fromInputData(data: InputData)(using Lang): Either[Error, DbTask] =
     validateInputData(data).toResult.map(data =>
       DbTask(
@@ -186,6 +271,80 @@ object Task {
         BsonDateTime(System.currentTimeMillis)
       )
     )
+
+  private def expandDatePlaceholders(
+      dateTime: BsonDateTime,
+      name: NonEmptyString
+  )(using Lang): NonEmptyString = {
+    val date =
+      LocalDate.ofEpochDay(Math.floor(dateTime.getValue / 86400000).toLong)
+
+    lazy val monthsNamesLong = Translations.getMonthsLongNames
+    lazy val monthsNamesShort = Translations.getMonthsShortNames
+    lazy val weekdaysNamesLong = Translations.getWeekdaysLongNames
+    lazy val weekdaysNamesShort = Translations.getWeekdaysShortNames
+
+    // We can use unsafe here as validData.name is not empty and we don't replace anything with an
+    // empty string
+    NonEmptyString
+      .unsafe(
+        name.toString
+          .replaceAll("YYYY", date.getYear.toString)
+          .replaceAll("YY", date.getYear.toString.slice(2, 4))
+          .replaceAll("MMMM", monthsNamesLong(date.getMonth).toString)
+          .replaceAll("MMM", monthsNamesShort(date.getMonth).toString)
+          .replaceAll(
+            "MM",
+            if date.getMonthValue < 10 then "0" + date.getMonthValue
+            else date.getMonthValue.toString
+          )
+          .replaceAll("M", date.getMonthValue.toString)
+          .replaceAll("DDDD", weekdaysNamesLong(date.getDayOfWeek).toString)
+          .replaceAll("DDD", weekdaysNamesShort(date.getDayOfWeek).toString)
+          .replaceAll(
+            "DD",
+            if date.getDayOfMonth < 10 then "0" + date.getDayOfMonth
+            else date.getDayOfMonth.toString
+          )
+          .replaceAll("D", date.getDayOfMonth.toString)
+      )
+  }
+
+  def fromBatchInputData(data: BatchInputData)(using
+      Lang
+  ): Either[Error, List[DbTask]] =
+    Task
+      .validateBatchInputData(data)
+      .toResult
+      .map { validData =>
+        List(0x0000001, 0x0000010, 0x0000100, 0x0001000, 0x0010000, 0x0100000,
+          0x1000000)
+          .map(mask => (data.repeat.toInt & mask) > 0)
+          .zipWithIndex
+          .map { case (b, index) =>
+            if b then {
+              val startTime =
+                BsonDateTime(validData.startTime.getValue + index * 86400000L)
+              val name = expandDatePlaceholders(startTime, validData.name)
+
+              Some(
+                DbTask(
+                  ObjectId(),
+                  validData.project,
+                  name,
+                  none[NonEmptyString],
+                  startTime,
+                  validData.expectedWorkingHours,
+                  validData.hourlyCost,
+                  BsonDateTime(System.currentTimeMillis),
+                  BsonDateTime(System.currentTimeMillis)
+                )
+              )
+            } else none[DbTask]
+          }
+          .filter(_.isDefined)
+          .map(_.get)
+      }
 }
 
 object Tasks {
@@ -240,6 +399,74 @@ object Tasks {
         )
       yield task
     }
+
+  def create(
+      data: Task.BatchInputData
+  )(using
+      customer: User
+  )(using Lang): EitherT[IO, Error, Iterable[TaskWithProjectLabel]] = {
+    collection.use(c =>
+      for {
+        inputData <- EitherT.fromEither[IO](Task.fromBatchInputData(data))
+        ids <- EitherT(
+          c
+            .raw(_.insertMany(inputData))
+            .map(res => res.getInsertedIds)
+            .map(ids =>
+              if ids.size != inputData.length then
+                Left(Error(Status.InternalServerError, __.ErrorUnknown))
+              else Right(ids.values.asScala.map(_.asObjectId.getValue))
+            )
+        )
+        tasks <- EitherT.right[Error](
+          c.raw(
+            _.aggregateWithCodec[TaskWithProjectLabel](
+              Seq(
+                Aggregates.`match`(Filters.in("_id", ids.asJava)),
+                Document(
+                  "$lookup" -> Document(
+                    "from" -> Projects.collection.name,
+                    "localField" -> "project",
+                    "foreignField" -> "_id",
+                    "as" -> "p",
+                    "pipeline" -> Seq(
+                      Aggregates.lookup(
+                        Clients.collection.name,
+                        "client",
+                        "_id",
+                        "client"
+                      ),
+                      Aggregates.unwind("$client"),
+                      Aggregates.`match`(
+                        Filters.eq("client.user", customer._id)
+                      ),
+                      Aggregates
+                        .addFields(Field("client", "$client._id"))
+                    )
+                  )
+                ),
+                Document(
+                  "$match" -> Document(
+                    "p" -> Document("$not" -> Document("$size", 0))
+                  )
+                ),
+                Aggregates.unwind("$p"),
+                Aggregates.addFields(
+                  Field(
+                    "project",
+                    Document(
+                      "_id" -> "$p._id",
+                      "name" -> "$p.name"
+                    )
+                  )
+                )
+              )
+            ).all
+          )
+        )
+      } yield tasks
+    )
+  }
 
   def findByIdNoStats(_id: ObjectId)(using customer: User)(using
       Lang

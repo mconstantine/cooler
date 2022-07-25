@@ -31,6 +31,16 @@ object TaskRoutes {
       yield response
     }
 
+    case ctxReq @ POST -> Root / "batch" as context => {
+      given Lang = context.lang
+      given User = context.user
+
+      for
+        data <- ctxReq.req.as[Task.BatchInputData]
+        response <- Tasks.create(data).toResponse
+      yield response
+    }
+
     case GET -> Root :?
         ProjectIdMatcher(project) +&
         FirstMatcher(first) +&
