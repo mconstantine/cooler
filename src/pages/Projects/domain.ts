@@ -20,7 +20,7 @@ export const getProjectsRequest = makeGetRequest({
   outputCodec: Connection(Project)
 })
 
-export const makeProjectQuery = (_id: ObjectId) =>
+export const makeGetProjectQuery = (_id: ObjectId) =>
   makeGetRequest({
     url: `/projects/${_id}`,
     inputCodec: t.void,

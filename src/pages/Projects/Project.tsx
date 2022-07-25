@@ -12,7 +12,7 @@ import {
   ProjectWithStats
 } from '../../entities/Project'
 import { ObjectId } from '../../globalDomain'
-import { makeProjectQuery } from './domain'
+import { makeGetProjectQuery } from './domain'
 import { ProjectData } from './ProjectData'
 import { ProjectProgress } from './ProjectProgress'
 import { ProjectTasks } from './ProjectTasks'
@@ -25,7 +25,7 @@ export default function Project(props: Props) {
   const { setRoute } = useRouter()
 
   const [project, setProject, getProjectCommand] = useReactiveCommand(
-    makeProjectQuery(props._id)
+    makeGetProjectQuery(props._id)
   )
 
   const onUpdate: Reader<ProjectWithStats, void> = setProject

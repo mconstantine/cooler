@@ -7,7 +7,7 @@ import {
   makePutRequest
 } from '../../effects/api/useApi'
 import { Session } from '../../entities/Session'
-import { TaskCreationInput, TaskWithStats } from '../../entities/Task'
+import { Task, TaskCreationInput, TaskWithStats } from '../../entities/Task'
 import { ObjectId } from '../../globalDomain'
 import { Connection, ConnectionQueryInput } from '../../misc/Connection'
 
@@ -17,6 +17,12 @@ export const makeTaskQuery = (_id: ObjectId) =>
     inputCodec: t.void,
     outputCodec: TaskWithStats
   })
+
+export const makeCreateTaskRequest = makePostRequest({
+  url: '/tasks',
+  inputCodec: TaskCreationInput,
+  outputCodec: Task
+})
 
 export const makeUpdateTaskRequest = (_id: ObjectId) =>
   makePutRequest({

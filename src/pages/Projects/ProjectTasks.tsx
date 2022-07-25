@@ -2,6 +2,7 @@ import { boolean, option } from 'fp-ts'
 import { constVoid, pipe } from 'fp-ts/function'
 import { IO } from 'fp-ts/IO'
 import { Reader } from 'fp-ts/Reader'
+import { add } from 'ionicons/icons'
 import { useEffect, useState } from 'react'
 import { a18n } from '../../a18n'
 import { ConnectionList } from '../../components/ConnectionList/ConnectionList'
@@ -96,7 +97,12 @@ export function ProjectTasks(props: Props) {
   return (
     <ConnectionList
       title={a18n`Tasks`}
-      action={option.none}
+      action={option.some({
+        type: 'sync',
+        label: a18n`Create new Task`,
+        action: () => setRoute(taskRoute(props.project._id, 'new')),
+        icon: option.some(add)
+      })}
       query={tasks}
       onLoadMore={option.some(onLoadMore)}
       onSearchQueryChange={option.none}

@@ -25,12 +25,13 @@ import { ReadOnlyInput } from '../../components/Form/Input/ReadOnlyInput/ReadOnl
 import { Panel } from '../../components/Panel/Panel'
 import { useDelete, usePut } from '../../effects/api/useApi'
 import { useDialog } from '../../effects/useDialog'
-import { TaskWithStats } from '../../entities/Task'
+import { ProjectLabel, TaskWithStats } from '../../entities/Task'
 import { LocalizedString } from '../../globalDomain'
 import { makeDeleteTaskRequest, makeUpdateTaskRequest } from './domain'
 
 interface Props {
   task: TaskWithStats
+  project: ProjectLabel
   onUpdate: Reader<TaskWithStats, void>
   onDelete: Reader<TaskWithStats, void>
 }
@@ -150,8 +151,8 @@ export default function TaskData(props: Props) {
       () => (
         <TaskForm
           mode="edit"
-          task={option.some(props.task)}
-          findProjects={option.none}
+          task={props.task}
+          project={props.project}
           onCancel={onCancel}
           onSubmit={onSubmit}
         />

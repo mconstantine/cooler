@@ -44,7 +44,12 @@ export function TaskPage(props: Props) {
       error => <ErrorPanel error={error} />,
       task => (
         <TaxesProvider>
-          <TaskData task={task} onUpdate={onUpdate} onDelete={onDelete} />
+          <TaskData
+            task={task}
+            project={task.project}
+            onUpdate={onUpdate}
+            onDelete={onDelete}
+          />
           <TaskProgress task={task} />
           <SessionsList
             task={task}

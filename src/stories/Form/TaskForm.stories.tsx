@@ -1,5 +1,5 @@
 import { Meta, Story } from '@storybook/react'
-import { boolean, option, taskEither } from 'fp-ts'
+import { boolean, taskEither } from 'fp-ts'
 import { constVoid, pipe } from 'fp-ts/function'
 import { unsafeLocalizedString } from '../../a18n'
 import { Content } from '../../components/Content/Content'
@@ -10,7 +10,7 @@ import {
   TasksBatchCreationInput
 } from '../../entities/Task'
 import { CoolerStory } from '../CoolerStory'
-import { findProjects } from '../utils'
+import { fakeProject } from '../utils'
 
 interface Args {
   shouldFail: boolean
@@ -38,8 +38,7 @@ const TaskFormTemplate: Story<Args> = props => {
       <Content>
         <TaskFormComponent
           mode="add"
-          task={option.none}
-          findProjects={option.some(findProjects)}
+          project={fakeProject}
           onSubmit={onSubmit}
           onCancel={constVoid}
         />

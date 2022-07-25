@@ -7,17 +7,18 @@ import {
   ObjectId
 } from '../globalDomain'
 
-const Project = t.type({
+export const ProjectLabel = t.type({
   _id: ObjectId,
   name: LocalizedString
 })
+export type ProjectLabel = t.TypeOf<typeof ProjectLabel>
 
 export const Task = t.type(
   {
     _id: ObjectId,
     name: LocalizedString,
     description: optionFromNullable(LocalizedString),
-    project: Project,
+    project: ProjectLabel,
     expectedWorkingHours: NonNegativeNumber,
     hourlyCost: NonNegativeNumber,
     startTime: DateFromISOString,

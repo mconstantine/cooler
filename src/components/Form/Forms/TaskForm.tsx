@@ -1,16 +1,12 @@
 import { boolean, option } from 'fp-ts'
 import { constNull, constUndefined, pipe } from 'fp-ts/function'
-import { Option } from 'fp-ts/Option'
 import { useState } from 'react'
 import { a18n, leadZero, unsafeLocalizedString } from '../../../a18n'
 import {
   LocalizedString,
   NonNegativeInteger,
   NonNegativeNumber,
-  NonNegativeNumberFromString,
-  ObjectId,
-  ObjectIdFromString,
-  PositiveInteger
+  NonNegativeNumberFromString
 } from '../../../globalDomain'
 import { commonErrors } from '../../../misc/commonErrors'
 import { Form } from '../Form'
@@ -21,9 +17,8 @@ import { Toggle } from '../Input/Toggle/Toggle'
 import { WeekdayRepetition } from '../Input/WeekdayRepetition/WeekdayRepetition'
 import { useForm } from '../useForm'
 import * as validators from '../validators'
-import { toSelectState } from '../Input/Select/Select'
-import { AsyncSelect } from '../Input/AsyncSelect'
 import {
+  ProjectLabel,
   TaskCreationInput,
   TasksBatchCreationInput,
   TaskWithStats
@@ -47,14 +42,7 @@ export interface TasksBatchFormData extends TasksBatchCreationInput {
 export type FormData = SingleTaskFormData | TasksBatchFormData
 
 interface CommonProps {
-  task: Option<TaskWithStats>
-  findProjects: Option<
-    ReaderTaskEither<
-      string,
-      LocalizedString,
-      Record<PositiveInteger, LocalizedString>
-    >
-  >
+  project: ProjectLabel
   onCancel: IO<void>
 }
 
@@ -65,6 +53,7 @@ interface AddModeProps extends CommonProps {
 
 interface EditModeProps extends CommonProps {
   mode: 'edit'
+  task: TaskWithStats
   onSubmit: ReaderTaskEither<SingleTaskFormData, LocalizedString, unknown>
 }
 
@@ -101,43 +90,37 @@ export function TaskForm(props: Props) {
   const { fieldProps, submit, formError, values } = useForm(
     {
       initialValues: pipe(
-        props.task,
-        option.map(task => ({
-          ...task,
-          description: pipe(
-            task.description,
-            option.getOrElse(() => '')
-          ),
-          expectedWorkingHours: task.expectedWorkingHours.toString(10),
-          hourlyCost: task.hourlyCost.toString(10),
-          shouldRepeat: false,
-          project: toSelectState(
-            {
-              [task.project._id]: task.project.name
-            },
-            option.some(task.project._id)
-          ),
-          from: task.startTime,
-          to: task.startTime,
-          repeat: 0 as NonNegativeInteger
-        })),
-        option.getOrElse(() => ({
-          shouldRepeat: false,
-          project: toSelectState<ObjectId>({}, option.none),
-          name: '',
-          description: '',
-          expectedWorkingHours: '',
-          hourlyCost: '',
-          startTime: new Date(),
-          from: new Date(),
-          to: new Date(),
-          repeat: 0 as NonNegativeInteger
-        }))
+        props,
+        foldFormMode(
+          () => ({
+            shouldRepeat: false,
+            project: props.project._id,
+            name: '',
+            description: '',
+            expectedWorkingHours: '',
+            hourlyCost: '',
+            startTime: new Date(),
+            from: new Date(),
+            to: new Date(),
+            repeat: 0 as NonNegativeInteger
+          }),
+          ({ task }) => ({
+            ...task,
+            description: pipe(
+              task.description,
+              option.getOrElse(() => '')
+            ),
+            expectedWorkingHours: task.expectedWorkingHours.toString(10),
+            hourlyCost: task.hourlyCost.toString(10),
+            shouldRepeat: false,
+            project: props.project._id,
+            from: task.startTime,
+            to: task.startTime,
+            repeat: 0 as NonNegativeInteger
+          })
+        )
       ),
       validators: ({ shouldRepeat }) => ({
-        project: validators.fromSelectState<ObjectId>(
-          a18n`Please choose a project`
-        ),
         name: validators.nonBlankString(commonErrors.nonBlank),
         description: pipe(
           shouldRepeat,
@@ -168,7 +151,7 @@ export function TaskForm(props: Props) {
 
   return (
     <Form
-      title={a18n`New Task`}
+      title={a18n`New Task for "${props.project.name}"`}
       headingAction={option.none}
       formError={formError}
       submit={submit}
@@ -181,18 +164,6 @@ export function TaskForm(props: Props) {
         }
       ]}
     >
-      {pipe(
-        props.findProjects,
-        option.fold(constNull, findProjects => (
-          <AsyncSelect
-            label={a18n`Project`}
-            {...fieldProps('project')}
-            onQueryChange={findProjects}
-            emptyPlaceholder={a18n`No projects found`}
-            codec={ObjectIdFromString}
-          />
-        ))
-      )}
       <Input label={a18n`Name`} {...fieldProps('name')} />
       {pipe(
         props,
