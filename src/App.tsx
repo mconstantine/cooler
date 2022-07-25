@@ -35,8 +35,8 @@ export function App() {
                         Projects: ({ subject }) => (
                           <Projects routeSubject={subject} />
                         ),
-                        Tasks: ({ subject }) => (
-                          <Tasks routeSubject={subject} />
+                        Task: ({ project, subject }) => (
+                          <Tasks project={project} routeSubject={subject} />
                         ),
                         Settings: () => <Settings />
                       })

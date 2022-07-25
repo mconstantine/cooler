@@ -1,16 +1,16 @@
 import { lazy } from 'react'
-import { RouteSubject } from '../../components/Router'
+import { DependentEntitySubject } from '../../components/Router'
+import { ObjectId } from '../../globalDomain'
 
 const Task = lazy(() => import('./Task'))
 
 interface Props {
-  routeSubject: RouteSubject
+  project: ObjectId
+  routeSubject: DependentEntitySubject
 }
 
 export default function Tasks(props: Props) {
-  if (props.routeSubject === 'all') {
-    return null
-  } else if (props.routeSubject === 'new') {
+  if (props.routeSubject === 'new') {
     return null
   } else {
     return <Task _id={props.routeSubject} />

@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react'
 import { a18n } from '../../a18n'
 import { ConnectionList } from '../../components/ConnectionList/ConnectionList'
 import { RoutedItem } from '../../components/List/List'
-import { tasksRoute, useRouter } from '../../components/Router'
+import { taskRoute, useRouter } from '../../components/Router'
 import { query } from '../../effects/api/api'
 import { Query } from '../../effects/api/Query'
 import { useGet } from '../../effects/api/useApi'
@@ -68,7 +68,7 @@ export function ProjectTasks(props: Props) {
     label: option.some(task.project.name),
     content: task.name,
     description: task.description,
-    action: () => setRoute(tasksRoute(task._id)),
+    action: () => setRoute(taskRoute(props.project._id, task._id)),
     details: true
   })
 

@@ -20,6 +20,12 @@ export const RouteSubject = t.union(
 )
 export type RouteSubject = t.TypeOf<typeof RouteSubject>
 
+export const DependentEntitySubject = t.union(
+  [t.literal('new'), ObjectIdFromString],
+  'DependentEntitySubject'
+)
+export type DependentEntitySubject = t.TypeOf<typeof DependentEntitySubject>
+
 export function foldRouteSubject<T>(
   whenAll: IO<T>,
   whenNew: IO<T>,
@@ -51,16 +57,17 @@ interface Projects {
   readonly subject: RouteSubject
 }
 
-interface Tasks {
-  readonly _tag: 'Tasks'
-  readonly subject: RouteSubject
+interface Task {
+  readonly _tag: 'Task'
+  readonly project: ObjectIdFromString
+  readonly subject: DependentEntitySubject
 }
 
 interface Settings {
   readonly _tag: 'Settings'
 }
 
-export type Location = Home | Clients | Projects | Tasks | Settings
+export type Location = Home | Clients | Projects | Task | Settings
 
 export function homeRoute(): Home {
   return {
@@ -82,9 +89,13 @@ export function projectsRoute(subject: RouteSubject): Projects {
   }
 }
 
-export function tasksRoute(subject: RouteSubject): Tasks {
+export function taskRoute(
+  project: ObjectIdFromString,
+  subject: DependentEntitySubject
+): Task {
   return {
-    _tag: 'Tasks',
+    _tag: 'Task',
+    project,
     subject
   }
 }
@@ -108,7 +119,7 @@ export function isProjectsRoute(location: Location): boolean {
 }
 
 export function isTasksRoute(location: Location): boolean {
-  return location._tag === 'Tasks'
+  return location._tag === 'Task'
 }
 
 export function isSettingsRoute(location: Location): boolean {
@@ -133,14 +144,21 @@ const projectsMatch = lit('projects')
   .then(type('subject', RouteSubject))
   .then(end)
 
-const tasksMatch = lit('tasks').then(type('subject', RouteSubject)).then(end)
+const taskMatch = lit('projects')
+  .then(type('project', ObjectIdFromString))
+  .then(lit('tasks'))
+  .then(type('subject', DependentEntitySubject))
+  .then(end)
+
 const settingsMatch = lit('settings').then(end)
 
 const router = zero<Location>()
   .alt(homeMatch.parser.map(homeRoute))
   .alt(clientsMatch.parser.map(({ subject }) => clientsRoute(subject)))
   .alt(projectsMatch.parser.map(({ subject }) => projectsRoute(subject)))
-  .alt(tasksMatch.parser.map(({ subject }) => tasksRoute(subject)))
+  .alt(
+    taskMatch.parser.map(({ project, subject }) => taskRoute(project, subject))
+  )
   .alt(settingsMatch.parser.map(() => settingsRoute()))
 
 interface Props {
@@ -158,7 +176,7 @@ function formatLocation(location: Location): string {
       Home: location => format(homeMatch.formatter, location),
       Clients: location => format(clientsMatch.formatter, location),
       Projects: location => format(projectsMatch.formatter, location),
-      Tasks: location => format(tasksMatch.formatter, location),
+      Task: location => format(taskMatch.formatter, location),
       Settings: location => format(settingsMatch.formatter, location)
     })
   )
