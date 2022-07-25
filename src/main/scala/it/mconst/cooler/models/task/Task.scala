@@ -69,10 +69,6 @@ final case class DbTask(
       updatedAt: BsonDateTime
     )
 
-object DbTask {
-  given EntityEncoder[IO, DbTask] = jsonEncoderOf[IO, DbTask]
-}
-
 final case class ProjectLabel(_id: ObjectId, name: NonEmptyString)
 
 final case class TaskWithProjectLabel(
@@ -97,6 +93,9 @@ final case class TaskWithProjectLabel(
     )
 
 object TaskWithProjectLabel {
+  given EntityEncoder[IO, TaskWithProjectLabel] =
+    jsonEncoderOf[IO, TaskWithProjectLabel]
+
   given EntityEncoder[IO, Iterable[TaskWithProjectLabel]] =
     jsonEncoderOf[IO, Iterable[TaskWithProjectLabel]]
 
@@ -220,17 +219,20 @@ object Tasks {
 
   def create(
       data: Task.InputData
-  )(using customer: User)(using Lang): EitherT[IO, Error, DbTask] =
+  )(using
+      customer: User
+  )(using Lang): EitherT[IO, Error, TaskWithProjectLabel] =
     collection.use { c =>
       for
         data <- EitherT.fromEither[IO](Task.fromInputData(data))
         _ <- findClient(data.project).leftMap(_ =>
           Error(Status.NotFound, __.ErrorProjectNotFound)
         )
-        task <- c.createAndReturn(data)
+        result <- c.create(data)
+        task <- findByIdNoStats(result)
         _ <- Projects.collection.use(
           _.update(
-            task.project,
+            task.project._id,
             Projects.collection.Update
               .`with`("updatedAt" -> BsonDateTime(System.currentTimeMillis))
               .build
@@ -238,6 +240,59 @@ object Tasks {
         )
       yield task
     }
+
+  def findByIdNoStats(_id: ObjectId)(using customer: User)(using
+      Lang
+  ): EitherT[IO, Error, TaskWithProjectLabel] =
+    EitherT.fromOptionF(
+      collection
+        .use(
+          _.raw(
+            _.aggregateWithCodec[TaskWithProjectLabel](
+              Seq(
+                Aggregates.`match`(Filters.eq("_id", _id)),
+                Document(
+                  "$lookup" -> Document(
+                    "from" -> Projects.collection.name,
+                    "localField" -> "project",
+                    "foreignField" -> "_id",
+                    "as" -> "p",
+                    "pipeline" -> Seq(
+                      Aggregates.lookup(
+                        Clients.collection.name,
+                        "client",
+                        "_id",
+                        "client"
+                      ),
+                      Aggregates.unwind("$client"),
+                      Aggregates.`match`(
+                        Filters.eq("client.user", customer._id)
+                      ),
+                      Aggregates.addFields(Field("client", "$client._id"))
+                    )
+                  )
+                ),
+                Document(
+                  "$match" -> Document(
+                    "p" -> Document("$not" -> Document("$size", 0))
+                  )
+                ),
+                Aggregates.unwind("$p"),
+                Aggregates.addFields(
+                  Field(
+                    "project",
+                    Document(
+                      "_id" -> "$p._id",
+                      "name" -> "$p.name"
+                    )
+                  )
+                )
+              )
+            ).first
+          )
+        ),
+      Error(Status.NotFound, __.ErrorTaskNotFound)
+    )
 
   def findById(
       _id: ObjectId

@@ -15,7 +15,6 @@ import it.mconst.cooler.models.client.Client
 import it.mconst.cooler.models.client.Clients
 import it.mconst.cooler.models.project.Project
 import it.mconst.cooler.models.project.Projects
-import it.mconst.cooler.models.task.DbTask
 import it.mconst.cooler.models.task.Tasks
 import it.mconst.cooler.models.task.TaskWithStats
 import it.mconst.cooler.models.task.TaskWithProjectLabel
@@ -50,7 +49,9 @@ class TaskRoutesTest extends CatsEffectSuite {
   given EntityDecoder[IO, Cursor[TaskWithProjectLabel]] =
     jsonOf[IO, Cursor[TaskWithProjectLabel]]
 
-  given EntityDecoder[IO, DbTask] = jsonOf[IO, DbTask]
+  given EntityDecoder[IO, TaskWithProjectLabel] =
+    jsonOf[IO, TaskWithProjectLabel]
+
   given EntityDecoder[IO, TaskWithStats] = jsonOf[IO, TaskWithStats]
 
   final case class TestData(user: User, client: Client, project: Project)
@@ -115,7 +116,7 @@ class TaskRoutesTest extends CatsEffectSuite {
     POST(data, uri"/")
       .sign(testDataFixture().user)
       .shouldRespondLike(
-        (t: DbTask) => t.name,
+        (t: TaskWithProjectLabel) => t.name,
         data.name
       )
   }

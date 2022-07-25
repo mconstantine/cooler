@@ -25,6 +25,7 @@ import it.mconst.cooler.models.user.UserStats
 import mongo4cats.collection.operations.Filter
 import munit.Assertions
 import org.bson.BsonDateTime
+import it.mconst.cooler.models.task.TaskWithProjectLabel
 
 class StatsTest extends CatsEffectSuite {
   val now = System.currentTimeMillis
@@ -50,7 +51,7 @@ class StatsTest extends CatsEffectSuite {
   final case class TestData(
       client: Client,
       projects: List[ProjectWithClientLabel],
-      tasks: List[DbTask],
+      tasks: List[TaskWithProjectLabel],
       sessions: List[Session]
   )
 
