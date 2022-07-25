@@ -353,7 +353,7 @@ object Task {
             validData.expectedWorkingHours,
             validData.hourlyCost,
             BsonDateTime(System.currentTimeMillis),
-            BsonDateTime(System.currentTimeMillis)
+            startDateTime
           )
         }.toList
       }
