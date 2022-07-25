@@ -29,6 +29,7 @@ import it.mconst.cooler.utils.DbDocument
 import it.mconst.cooler.utils.Error
 import it.mconst.cooler.utils.given
 import it.mconst.cooler.utils.Translations
+import java.time.DayOfWeek
 import java.time.LocalDate
 import mongo4cats.bson.Document
 import mongo4cats.bson.ObjectId
@@ -317,33 +318,44 @@ object Task {
       .validateBatchInputData(data)
       .toResult
       .map { validData =>
-        List(0x0000001, 0x0000010, 0x0000100, 0x0001000, 0x0010000, 0x0100000,
-          0x1000000)
-          .map(mask => (data.repeat.toInt & mask) > 0)
-          .zipWithIndex
-          .map { case (b, index) =>
-            if b then {
-              val startTime =
-                BsonDateTime(validData.startTime.getValue + index * 86400000L)
-              val name = expandDatePlaceholders(startTime, validData.name)
+        val weekMask: Map[DayOfWeek, Boolean] = Map(
+          DayOfWeek.MONDAY -> ((0x0000001 & data.repeat.toInt) > 0),
+          DayOfWeek.TUESDAY -> ((0x0000010 & data.repeat.toInt) > 0),
+          DayOfWeek.WEDNESDAY -> ((0x0000100 & data.repeat.toInt) > 0),
+          DayOfWeek.THURSDAY -> ((0x0001000 & data.repeat.toInt) > 0),
+          DayOfWeek.FRIDAY -> ((0x0010000 & data.repeat.toInt) > 0),
+          DayOfWeek.SATURDAY -> ((0x0100000 & data.repeat.toInt) > 0),
+          DayOfWeek.SUNDAY -> ((0x1000000 & data.repeat.toInt) > 0)
+        )
 
-              Some(
-                DbTask(
-                  ObjectId(),
-                  validData.project,
-                  name,
-                  none[NonEmptyString],
-                  startTime,
-                  validData.expectedWorkingHours,
-                  validData.hourlyCost,
-                  BsonDateTime(System.currentTimeMillis),
-                  BsonDateTime(System.currentTimeMillis)
-                )
-              )
-            } else none[DbTask]
-          }
-          .filter(_.isDefined)
-          .map(_.get)
+        val startEpochDay =
+          Math.floor(validData.from.getValue / 86400000).toLong
+
+        val startTime = validData.from.getValue - startEpochDay * 86400000
+        val endEpochDay = Math.floor(validData.to.getValue / 86400000).toLong
+
+        val validDays = startEpochDay
+          .to(endEpochDay, 1)
+          .filter(epochDay =>
+            weekMask(LocalDate.ofEpochDay(epochDay).getDayOfWeek)
+          )
+
+        validDays.map { epochDay =>
+          val startDateTime = BsonDateTime(epochDay * 86400000L + startTime)
+          val name = expandDatePlaceholders(startDateTime, validData.name)
+
+          DbTask(
+            ObjectId(),
+            validData.project,
+            name,
+            none[NonEmptyString],
+            startDateTime,
+            validData.expectedWorkingHours,
+            validData.hourlyCost,
+            BsonDateTime(System.currentTimeMillis),
+            BsonDateTime(System.currentTimeMillis)
+          )
+        }.toList
       }
 }
 

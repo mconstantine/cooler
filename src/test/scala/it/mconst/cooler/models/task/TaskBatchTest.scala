@@ -68,10 +68,32 @@ class TaskBatchTest extends CatsEffectSuite {
   given Lang = Lang.Default
   given Assertions = this
 
-  test("should handle weekday repetition") {
+  test("should work") {
     val data = BatchInputData(
       testDataFixture().project._id.toHexString(),
       "Repeated task",
+      LocalDate.of(2018, 1, 1).toString() + "T09:00:00.000Z",
+      8,
+      25,
+      LocalDate.of(2018, 1, 1).toString() + "T09:00:00.000Z",
+      LocalDate.of(2018, 1, 31).toString() + "T09:00:00.000Z",
+      0x1111111
+    )
+
+    given User = testDataFixture().user
+
+    Tasks
+      .create(data)
+      .orFail
+      .map(List.from(_))
+      .map(_.size)
+      .assertEquals(31)
+  }
+
+  test("should handle weekday repetition") {
+    val data = BatchInputData(
+      testDataFixture().project._id.toHexString(),
+      "Weekday repetition test",
       LocalDate.of(2018, 1, 1).toString() + "T09:00:00.000Z",
       8,
       25,
