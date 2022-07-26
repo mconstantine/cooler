@@ -8,7 +8,7 @@ import {
 } from '../../a18n'
 import { ErrorPanel } from '../../components/ErrorPanel/ErrorPanel'
 import { List } from '../../components/List/List'
-import { Loading } from '../../components/Loading/Loading'
+import { LoadingBlock } from '../../components/Loading/LoadingBlock'
 import { Panel } from '../../components/Panel/Panel'
 import { useTaxes } from '../../contexts/TaxesContext'
 import { query } from '../../effects/api/api'
@@ -34,7 +34,7 @@ export function TaskProgress(props: Props) {
   return pipe(
     taxes,
     query.fold(
-      () => <Loading />,
+      () => <LoadingBlock />,
       error => <ErrorPanel error={error} />,
       taxes => (
         <Panel title={a18n`Progress`} framed action={option.none}>

@@ -8,7 +8,7 @@ import {
   FormData,
   TaskForm
 } from '../../components/Form/Forms/TaskForm'
-import { Loading } from '../../components/Loading/Loading'
+import { LoadingBlock } from '../../components/Loading/LoadingBlock'
 import { projectsRoute, taskRoute, useRouter } from '../../components/Router'
 import { query } from '../../effects/api/api'
 import { useGet, usePost } from '../../effects/api/useApi'
@@ -53,7 +53,7 @@ export function TaskCreation(props: Props) {
   return pipe(
     project,
     query.fold(
-      () => <Loading />,
+      () => <LoadingBlock />,
       error => <ErrorPanel error={error} />,
       project => (
         <TaskForm

@@ -2,7 +2,6 @@ import { pipe } from 'fp-ts/function'
 import { Reader } from 'fp-ts/Reader'
 import { useEffect } from 'react'
 import { ErrorPanel } from '../../components/ErrorPanel/ErrorPanel'
-import { Loading } from '../../components/Loading/Loading'
 import { projectsRoute, useRouter } from '../../components/Router'
 import { TaxesProvider } from '../../contexts/TaxesContext'
 import { query } from '../../effects/api/api'
@@ -15,6 +14,7 @@ import { TaskProgress } from './TaskProgress'
 import { LocalizedString, ObjectId } from '../../globalDomain'
 import { Session } from '../../entities/Session'
 import { TaskEither } from 'fp-ts/TaskEither'
+import { LoadingBlock } from '../../components/Loading/LoadingBlock'
 
 interface Props {
   _id: ObjectId
@@ -24,9 +24,11 @@ interface Props {
 
 export function TaskPage(props: Props) {
   const { setRoute } = useRouter()
+
   const [task, setTask, getTaskCommand] = useReactiveCommand(
     makeTaskQuery(props._id)
   )
+
   const onUpdate: Reader<TaskWithStats, void> = setTask
 
   const onDelete: Reader<TaskWithStats, void> = task =>
@@ -40,7 +42,7 @@ export function TaskPage(props: Props) {
   return pipe(
     task,
     query.fold(
-      () => <Loading />,
+      () => <LoadingBlock />,
       error => <ErrorPanel error={error} />,
       task => (
         <TaxesProvider>
