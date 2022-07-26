@@ -32,6 +32,26 @@ import org.http4s.EntityDecoder
 import org.http4s.EntityEncoder
 import org.http4s.Status
 
+final case class TaskLabel(
+    _id: ObjectId,
+    name: NonEmptyString,
+    project: ObjectId
+)
+
+final case class SessionWithTaskLabel(
+    _id: ObjectId,
+    task: TaskLabel,
+    startTime: BsonDateTime,
+    endTime: Option[BsonDateTime],
+    createdAt: BsonDateTime,
+    updatedAt: BsonDateTime
+) extends DbDocument
+
+object SessionWithTaskLabel {
+  given EntityEncoder[IO, Iterable[SessionWithTaskLabel]] =
+    jsonEncoderOf[IO, Iterable[SessionWithTaskLabel]]
+}
+
 final case class Session(
     _id: ObjectId,
     val task: ObjectId,
@@ -44,9 +64,6 @@ final case class Session(
 object Session {
   given EntityEncoder[IO, Session] = jsonEncoderOf[IO, Session]
   given EntityEncoder[IO, Cursor[Session]] = jsonEncoderOf[IO, Cursor[Session]]
-
-  given EntityEncoder[IO, Iterable[Session]] =
-    jsonEncoderOf[IO, Iterable[Session]]
 
   final case class InputData(
       task: String,
@@ -292,9 +309,9 @@ object Sessions {
 
   def getOpenSessions(using customer: User)(using
       Lang
-  ): IO[Iterable[Session]] = collection.use(
+  ): IO[Iterable[SessionWithTaskLabel]] = collection.use(
     _.raw(
-      _.aggregateWithCodec[Session](
+      _.aggregateWithCodec[SessionWithTaskLabel](
         Seq(
           Aggregates.`match`(Filters.eq("endTime", null)),
           Document(
@@ -302,7 +319,7 @@ object Sessions {
               "from" -> "tasks",
               "localField" -> "task",
               "foreignField" -> "_id",
-              "as" -> "task",
+              "as" -> "t",
               "pipeline" -> Seq(
                 Document(
                   "$lookup" -> Document(
@@ -311,24 +328,29 @@ object Sessions {
                     "foreignField" -> "_id",
                     "as" -> "project",
                     "pipeline" -> Seq(
-                      Document(
-                        "$lookup" -> Document(
-                          "from" -> "clients",
-                          "localField" -> "client",
-                          "foreignField" -> "_id",
-                          "as" -> "client"
-                        )
-                      )
+                      Aggregates.lookup("clients", "client", "_id", "client"),
+                      Aggregates.unwind("$client")
                     )
                   )
-                )
+                ),
+                Aggregates.unwind("$project")
               )
             )
           ),
           Aggregates.`match`(
-            Filters.eq("task.project.client.user", customer._id)
+            Filters.eq("t.project.client.user", customer._id)
           ),
-          Aggregates.addFields(Field("task", Document("$first" -> "$task._id")))
+          Aggregates.unwind("$t"),
+          Aggregates.addFields(
+            Field(
+              "task",
+              Document(
+                "_id" -> "$t._id",
+                "name" -> "$t.name",
+                "project" -> "$t.project._id"
+              )
+            )
+          )
         )
       ).all
     )
