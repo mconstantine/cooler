@@ -1,6 +1,6 @@
 import { Reader } from 'fp-ts/Reader'
 import { NonEmptyArray } from 'fp-ts/NonEmptyArray'
-import { Session, SessionWithTaskLabel } from '../entities/Session'
+import { SessionWithTaskLabel } from '../entities/Session'
 import { nonEmptyArray, option } from 'fp-ts'
 import { pipe } from 'fp-ts/function'
 
@@ -71,11 +71,11 @@ export function notifyStartedSessionAction(
 
 interface NotifyStoppedSessionAction {
   type: 'notifyStoppedSession'
-  session: Session
+  session: SessionWithTaskLabel
 }
 
 export function notifyStoppedSessionAction(
-  session: Session
+  session: SessionWithTaskLabel
 ): NotifyStoppedSessionAction {
   if (option.isNone(session.endTime)) {
     throw new Error("Trying to notify a stopped session that isn't stopped")

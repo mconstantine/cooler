@@ -1,6 +1,6 @@
-import { boolean, option, taskEither } from 'fp-ts'
+import { array, boolean, option, taskEither } from 'fp-ts'
 import { IO } from 'fp-ts/IO'
-import { constNull, pipe } from 'fp-ts/function'
+import { constNull, flow, pipe } from 'fp-ts/function'
 import { arrowUp, skull, stop } from 'ionicons/icons'
 import { a18n, formatDate, formatDateTime } from '../../a18n'
 import { ReadOnlyInput } from '../../components/Form/Input/ReadOnlyInput/ReadOnlyInput'
@@ -14,7 +14,7 @@ import { useDelete, usePut } from '../../effects/api/useApi'
 import { makeDeleteSessionRequest, makeUpdateSessionRequest } from './domain'
 import { useDialog } from '../../effects/useDialog'
 import { Reader } from 'fp-ts/Reader'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Option } from 'fp-ts/Option'
 import { Buttons } from '../../components/Button/Buttons/Buttons'
 import { Button } from '../../components/Button/Button/Button'
@@ -34,9 +34,13 @@ interface Props {
   onCancel: IO<unknown>
 }
 
-export function SessionPage(props: Props) {
-  const { notifyStoppedSession } = useCurrentSessions()
-  const duration = useSessionDurationClock(props.session)
+export function SessionData(props: Props) {
+  const { currentSessions, notifyStoppedSession } = useCurrentSessions()
+  const {
+    duration,
+    start: startClock,
+    stop: stopClock
+  } = useSessionDurationClock(props.session, false)
   const [isEditing, setIsEditing] = useState(false)
   const [error, setError] = useState<Option<LocalizedString>>(option.none)
 
@@ -95,6 +99,21 @@ export function SessionPage(props: Props) {
       message: () => a18n`All your precious working time will be lost!`
     }
   )
+
+  useEffect(() => {
+    pipe(
+      currentSessions,
+      option.fold(
+        stopClock,
+        flow(
+          array.findFirst(
+            currentSession => currentSession._id === props.session._id
+          ),
+          option.fold(stopClock, startClock)
+        )
+      )
+    )
+  }, [currentSessions, props.session._id, startClock, stopClock])
 
   return pipe(
     isEditing,

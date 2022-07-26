@@ -112,7 +112,7 @@ interface SingleSessionMessagePanelProps {
 
 function SingleSessionMessagePanel(props: SingleSessionMessagePanelProps) {
   const { setRoute } = useRouter()
-  const duration = useSessionDurationClock(props.session)
+  const { duration } = useSessionDurationClock(props.session)
 
   return (
     <Panel

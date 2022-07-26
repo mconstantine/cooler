@@ -1,5 +1,5 @@
 import { array, boolean, option } from 'fp-ts'
-import { constVoid, pipe } from 'fp-ts/function'
+import { constVoid, flow, pipe } from 'fp-ts/function'
 import { TaskEither } from 'fp-ts/TaskEither'
 import { Reader } from 'fp-ts/Reader'
 import { useEffect, useState } from 'react'
@@ -14,7 +14,12 @@ import {
   unsafeNonNegativeInteger,
   unsafePositiveInteger
 } from '../../globalDomain'
-import { ConnectionQueryInput, Edge, unsafeCursor } from '../../misc/Connection'
+import {
+  ConnectionQueryInput,
+  Edge,
+  getConnectionNodes,
+  unsafeCursor
+} from '../../misc/Connection'
 import { makeGetSessionsRequest } from './domain'
 import { add } from 'ionicons/icons'
 import { query } from '../../effects/api/api'
@@ -39,6 +44,7 @@ export function SessionsList(props: Props) {
     makeGetSessionsRequest(props.task._id)
   )
 
+  const [time, setTime] = useState<number>(Date.now())
   const { onSessionListItemClick } = props
 
   const renderSessionItem: Reader<
@@ -51,10 +57,10 @@ export function SessionsList(props: Props) {
     const endTime = pipe(
       session.endTime,
       option.map(endTime => endTime.getTime()),
-      option.getOrElse(() => Date.now())
+      option.getOrElse(() => time)
     )
 
-    const duration = formatDuration(endTime - session.startTime.getTime())
+    const duration = formatDuration(endTime - session.startTime.getTime(), true)
     const durationString = a18n`${duration} hours`
 
     return {
@@ -91,6 +97,32 @@ export function SessionsList(props: Props) {
     const fetchSessions = fetchSessionsCommand(input)
     fetchSessions()
   }, [input, fetchSessionsCommand])
+
+  useEffect(() => {
+    const interval = pipe(
+      sessions,
+      query.fold(
+        () => option.none,
+        () => option.none,
+        flow(
+          getConnectionNodes,
+          sessions => sessions.some(_ => option.isNone(_.endTime)),
+          boolean.fold(
+            () => option.none,
+            () =>
+              option.some(window.setInterval(() => setTime(Date.now()), 1000))
+          )
+        )
+      )
+    )
+
+    return () => {
+      pipe(
+        interval,
+        option.fold(constVoid, interval => window.clearInterval(interval))
+      )
+    }
+  }, [sessions])
 
   useEffect(() => {
     pipe(

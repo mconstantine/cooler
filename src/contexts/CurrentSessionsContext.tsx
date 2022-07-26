@@ -7,6 +7,7 @@ import {
   initialState,
   notifySessionsFromServerAction,
   notifyStartedSessionAction,
+  notifyStoppedSessionAction,
   reducer
 } from './CurrentSessionsContextState'
 import {
@@ -55,7 +56,7 @@ export function CurrentSessionsProvider(props: PropsWithChildren<{}>) {
     dispatch(notifyStartedSessionAction(session))
 
   const notifyStoppedSession: Reader<SessionWithTaskLabel, void> = session =>
-    dispatch(notifyStartedSessionAction(session))
+    dispatch(notifyStoppedSessionAction(session))
 
   const currentSessions: Option<NonEmptyArray<SessionWithTaskLabel>> = pipe(
     state,

@@ -20,6 +20,7 @@ interface Props {
   task: TaskWithStats
 }
 
+// TODO: all of this should react to current sessions
 export function TaskProgress(props: Props) {
   const { taxes } = useTaxes()
 
