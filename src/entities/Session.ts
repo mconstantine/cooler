@@ -6,6 +6,15 @@ import { pipe } from 'fp-ts/function'
 import { option } from 'fp-ts'
 import { formatDuration } from '../a18n'
 
+const TaskLabel = t.type(
+  {
+    _id: ObjectId,
+    name: LocalizedString,
+    project: ObjectId
+  },
+  'TaskLabel'
+)
+
 const SessionData = t.type(
   {
     _id: ObjectId,
@@ -20,6 +29,12 @@ export const Session = t.intersection(
   'Session'
 )
 export type Session = t.TypeOf<typeof Session>
+
+export const SessionWithTaskLabel = t.intersection(
+  [SessionData, t.type({ task: TaskLabel })],
+  'SessionWithTaskLabel'
+)
+export type SessionWithTaskLabel = t.TypeOf<typeof SessionWithTaskLabel>
 
 export const SessionCreationInput = t.type(
   {

@@ -7,6 +7,8 @@ import { AccountProvider } from './contexts/AccountContext'
 import { pipe } from 'fp-ts/function'
 import { Menu } from './components/Menu/Menu'
 import { Content } from './components/Content/Content'
+import { CurrentSessionsProvider } from './contexts/CurrentSessionsContext'
+import { CurrentSessionsPanel } from './CurrentSessionsPanel'
 
 const Clients = lazy(() => import('./pages/Clients/Clients'))
 const Projects = lazy(() => import('./pages/Projects/Projects'))
@@ -25,22 +27,25 @@ export function App() {
                 <>
                   <Menu />
                   <Content>
-                    {pipe(
-                      location,
-                      foldLocation({
-                        Home: () => <Profile />,
-                        Clients: ({ subject }) => (
-                          <Clients routeSubject={subject} />
-                        ),
-                        Projects: ({ subject }) => (
-                          <Projects routeSubject={subject} />
-                        ),
-                        Task: ({ project, subject }) => (
-                          <Tasks project={project} routeSubject={subject} />
-                        ),
-                        Settings: () => <Settings />
-                      })
-                    )}
+                    <CurrentSessionsProvider>
+                      <CurrentSessionsPanel />
+                      {pipe(
+                        location,
+                        foldLocation({
+                          Home: () => <Profile />,
+                          Clients: ({ subject }) => (
+                            <Clients routeSubject={subject} />
+                          ),
+                          Projects: ({ subject }) => (
+                            <Projects routeSubject={subject} />
+                          ),
+                          Task: ({ project, subject }) => (
+                            <Tasks project={project} routeSubject={subject} />
+                          ),
+                          Settings: () => <Settings />
+                        })
+                      )}
+                    </CurrentSessionsProvider>
                   </Content>
                 </>
               )}

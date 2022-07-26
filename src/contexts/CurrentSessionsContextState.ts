@@ -1,15 +1,8 @@
 import { Reader } from 'fp-ts/Reader'
 import { NonEmptyArray } from 'fp-ts/NonEmptyArray'
-import { ObjectId } from '../globalDomain'
-import { Session } from '../entities/Session'
+import { Session, SessionWithTaskLabel } from '../entities/Session'
 import { nonEmptyArray, option } from 'fp-ts'
 import { pipe } from 'fp-ts/function'
-
-export interface RunningSession {
-  _id: ObjectId
-  task: ObjectId
-  startTime: Date
-}
 
 interface EmptyState {
   type: 'empty'
@@ -17,7 +10,7 @@ interface EmptyState {
 
 interface RunningState {
   type: 'running'
-  currentSessions: NonEmptyArray<RunningSession>
+  currentSessions: NonEmptyArray<SessionWithTaskLabel>
 }
 
 type State = EmptyState | RunningState
@@ -42,13 +35,27 @@ export function foldState<T>(
   }
 }
 
+interface NotifySessionsFromServerAction {
+  type: 'notifySessionsFromServer'
+  sessions: NonEmptyArray<SessionWithTaskLabel>
+}
+
+export function notifySessionsFromServerAction(
+  sessions: NonEmptyArray<SessionWithTaskLabel>
+): NotifySessionsFromServerAction {
+  return {
+    type: 'notifySessionsFromServer',
+    sessions
+  }
+}
+
 interface NotifyStartedSessionAction {
   type: 'notifyStartedSession'
-  session: RunningSession
+  session: SessionWithTaskLabel
 }
 
 export function notifyStartedSessionAction(
-  session: Session
+  session: SessionWithTaskLabel
 ): NotifyStartedSessionAction {
   if (option.isSome(session.endTime)) {
     throw new Error(
@@ -80,12 +87,20 @@ export function notifyStoppedSessionAction(
   }
 }
 
-type Action = NotifyStartedSessionAction | NotifyStoppedSessionAction
+type Action =
+  | NotifySessionsFromServerAction
+  | NotifyStartedSessionAction
+  | NotifyStoppedSessionAction
 
 export function reducer(state: State, action: Action): State {
   switch (state.type) {
     case 'empty':
       switch (action.type) {
+        case 'notifySessionsFromServer':
+          return {
+            type: 'running',
+            currentSessions: action.sessions
+          }
         case 'notifyStartedSession':
           return {
             type: 'running',
@@ -96,6 +111,8 @@ export function reducer(state: State, action: Action): State {
       }
     case 'running':
       switch (action.type) {
+        case 'notifySessionsFromServer':
+          return state
         case 'notifyStartedSession':
           return {
             ...state,
@@ -117,7 +134,7 @@ export function reducer(state: State, action: Action): State {
               session => session._id !== action.session._id
             ),
             nonEmptyArray.fromArray,
-            option.fold<NonEmptyArray<RunningSession>, State>(
+            option.fold<NonEmptyArray<SessionWithTaskLabel>, State>(
               () => ({ type: 'empty' }),
               currentSessions => ({
                 type: 'running',

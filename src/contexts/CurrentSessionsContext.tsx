@@ -1,29 +1,43 @@
+import * as t from 'io-ts'
 import { Reader } from 'fp-ts/Reader'
 import { NonEmptyArray } from 'fp-ts/NonEmptyArray'
-import { Session } from '../entities/Session'
-import { IO } from 'fp-ts/IO'
+import { SessionWithTaskLabel } from '../entities/Session'
 import {
   foldState,
   initialState,
+  notifySessionsFromServerAction,
   notifyStartedSessionAction,
-  reducer,
-  RunningSession
+  reducer
 } from './CurrentSessionsContextState'
-import { createContext, PropsWithChildren, useContext, useReducer } from 'react'
+import {
+  createContext,
+  PropsWithChildren,
+  useContext,
+  useEffect,
+  useReducer
+} from 'react'
 import { Option } from 'fp-ts/Option'
-import { constVoid, pipe } from 'fp-ts/function'
-import { option } from 'fp-ts'
+import { constVoid, flow, pipe } from 'fp-ts/function'
+import { nonEmptyArray, option } from 'fp-ts'
+import { makeGetRequest, useReactiveCommand } from '../effects/api/useApi'
+import { query } from '../effects/api/api'
+
+const getOpenSessionsRequest = makeGetRequest({
+  url: '/sessions/open',
+  inputCodec: t.void,
+  outputCodec: t.array(SessionWithTaskLabel)
+})
 
 interface CurrentSessionsContext {
-  notifyStartedSession: Reader<Session, void>
-  notifyStoppedSession: Reader<Session, void>
-  getCurrentSessions: IO<Option<NonEmptyArray<RunningSession>>>
+  notifyStartedSession: Reader<SessionWithTaskLabel, void>
+  notifyStoppedSession: Reader<SessionWithTaskLabel, void>
+  currentSessions: Option<NonEmptyArray<SessionWithTaskLabel>>
 }
 
 const CurrentSessionsContext = createContext<CurrentSessionsContext>({
   notifyStartedSession: constVoid,
   notifyStoppedSession: constVoid,
-  getCurrentSessions: () => option.none
+  currentSessions: option.none
 })
 
 export function useCurrentSessions() {
@@ -33,24 +47,46 @@ export function useCurrentSessions() {
 export function CurrentSessionsProvider(props: PropsWithChildren<{}>) {
   const [state, dispatch] = useReducer(reducer, initialState())
 
-  const notifyStartedSession: Reader<Session, void> = session =>
+  const [openSessions, , fetchOpenSessionsCommand] = useReactiveCommand(
+    getOpenSessionsRequest
+  )
+
+  const notifyStartedSession: Reader<SessionWithTaskLabel, void> = session =>
     dispatch(notifyStartedSessionAction(session))
 
-  const notifyStoppedSession: Reader<Session, void> = session =>
+  const notifyStoppedSession: Reader<SessionWithTaskLabel, void> = session =>
     dispatch(notifyStartedSessionAction(session))
 
-  const getCurrentSessions: IO<Option<NonEmptyArray<RunningSession>>> = () =>
+  const currentSessions: Option<NonEmptyArray<SessionWithTaskLabel>> = pipe(
+    state,
+    foldState(
+      () => option.none,
+      ({ currentSessions }) => option.some(currentSessions)
+    )
+  )
+
+  useEffect(() => {
+    const fetchOpenSessions = fetchOpenSessionsCommand()
+    fetchOpenSessions()
+  }, [fetchOpenSessionsCommand])
+
+  useEffect(() => {
     pipe(
-      state,
-      foldState(
-        () => option.none,
-        ({ currentSessions }) => option.some(currentSessions)
+      openSessions,
+      query.fold(
+        constVoid,
+        constVoid,
+        flow(
+          nonEmptyArray.fromArray,
+          option.fold(constVoid, flow(notifySessionsFromServerAction, dispatch))
+        )
       )
     )
+  }, [openSessions])
 
   return (
     <CurrentSessionsContext.Provider
-      value={{ notifyStartedSession, notifyStoppedSession, getCurrentSessions }}
+      value={{ notifyStartedSession, notifyStoppedSession, currentSessions }}
     >
       {props.children}
     </CurrentSessionsContext.Provider>
