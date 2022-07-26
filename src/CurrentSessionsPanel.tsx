@@ -48,7 +48,7 @@ export function CurrentSessionsPanel() {
                       foldRouteSubject(
                         constFalse,
                         constFalse,
-                        _id => sessions[0].task._id === _id
+                        _id => sessions[0].task._id !== _id
                       )
                     )
                   )
