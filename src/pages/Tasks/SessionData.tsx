@@ -1,15 +1,11 @@
 import { boolean, option, taskEither } from 'fp-ts'
 import { IO } from 'fp-ts/IO'
-import { constNull, pipe } from 'fp-ts/function'
-import { arrowUp, skull } from 'ionicons/icons'
+import { constNull, constVoid, pipe } from 'fp-ts/function'
+import { arrowUp, skull, stop } from 'ionicons/icons'
 import { a18n, formatDate, formatDateTime } from '../../a18n'
 import { ReadOnlyInput } from '../../components/Form/Input/ReadOnlyInput/ReadOnlyInput'
 import { Panel } from '../../components/Panel/Panel'
-import {
-  formatSessionDuration,
-  Session,
-  SessionCreationInput
-} from '../../entities/Session'
+import { Session, SessionCreationInput } from '../../entities/Session'
 import { LocalizedString, ObjectId } from '../../globalDomain'
 import { useDelete, usePut } from '../../effects/api/useApi'
 import { makeDeleteSessionRequest, makeUpdateSessionRequest } from './domain'
@@ -22,6 +18,9 @@ import { Button } from '../../components/Button/Button/Button'
 import { ErrorPanel } from '../../components/ErrorPanel/ErrorPanel'
 import { ReaderTaskEither } from 'fp-ts/ReaderTaskEither'
 import { SessionForm } from '../../components/Form/Forms/SessionForms'
+import { useSessionDurationClock } from '../../effects/useSessionDurationClock'
+import { TaskEither } from 'fp-ts/TaskEither'
+import { LoadingButton } from '../../components/Button/LoadingButton/LoadingButton'
 
 interface Props {
   session: Session
@@ -32,7 +31,7 @@ interface Props {
 }
 
 export function SessionPage(props: Props) {
-  const duration = formatSessionDuration(props.session)
+  const duration = useSessionDurationClock(props.session)
   const [isEditing, setIsEditing] = useState(false)
   const [error, setError] = useState<Option<LocalizedString>>(option.none)
 
@@ -58,6 +57,14 @@ export function SessionPage(props: Props) {
         })
       )
     )
+
+  const onStop: TaskEither<LocalizedString, void> = pipe(
+    updateSessionCommand({
+      ...props.session,
+      endTime: option.some(new Date())
+    }),
+    taskEither.chain(() => taskEither.fromIO(constVoid))
+  )
 
   const onCancel: IO<void> = () => setIsEditing(false)
 
@@ -116,16 +123,32 @@ export function SessionPage(props: Props) {
           )}
           <Dialog />
           <Buttons>
-            <Button
-              type="button"
-              icon={option.none}
-              color="primary"
-              label={a18n`Edit`}
-              action={() => setIsEditing(true)}
-            />
-            <Button
-              type="button"
-              icon={option.some(skull)}
+            {pipe(
+              props.session.endTime,
+              option.fold(
+                () => (
+                  <LoadingButton
+                    type="loadingButton"
+                    icon={stop}
+                    color="primary"
+                    label={a18n`Stop`}
+                    action={onStop}
+                  />
+                ),
+                () => (
+                  <Button
+                    type="button"
+                    icon={option.none}
+                    color="primary"
+                    label={a18n`Edit`}
+                    action={() => setIsEditing(true)}
+                  />
+                )
+              )
+            )}
+            <LoadingButton
+              type="loadingButton"
+              icon={skull}
               color="danger"
               label={a18n`Delete session`}
               action={deleteSession(props.session)}
