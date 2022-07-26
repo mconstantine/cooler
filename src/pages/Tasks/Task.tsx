@@ -17,7 +17,6 @@ interface Props {
 
 interface TaskSubjectMode {
   type: 'task'
-  taskId: ObjectId
 }
 
 interface SessionSubjectMode {
@@ -43,8 +42,7 @@ function foldSubjectMode<T>(
 
 export default function Task(props: Props) {
   const [subjectMode, setSubjectMode] = useState<SubjectMode>({
-    type: 'task',
-    taskId: props._id
+    type: 'task'
   })
 
   const startSessionCommand = usePost(startSessionRequest)
@@ -71,16 +69,15 @@ export default function Task(props: Props) {
 
   const backToTask: IO<void> = () =>
     setSubjectMode({
-      type: 'task',
-      taskId: props._id
+      type: 'task'
     })
 
   return pipe(
     subjectMode,
     foldSubjectMode(
-      ({ taskId }) => (
+      () => (
         <TaskPage
-          _id={taskId}
+          _id={props._id}
           onCreateSessionButtonClick={onCreateSessionButtonClick}
           onSessionListItemClick={onSessionListItemClick}
         />
