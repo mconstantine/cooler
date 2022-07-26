@@ -45,6 +45,9 @@ object Session {
   given EntityEncoder[IO, Session] = jsonEncoderOf[IO, Session]
   given EntityEncoder[IO, Cursor[Session]] = jsonEncoderOf[IO, Cursor[Session]]
 
+  given EntityEncoder[IO, Iterable[Session]] =
+    jsonEncoderOf[IO, Iterable[Session]]
+
   final case class InputData(
       task: String,
       startTime: Option[String],
@@ -286,6 +289,50 @@ object Sessions {
         )
       )(CursorQuery.fromCursorNoQuery(query))
     )
+
+  def getOpenSessions(using customer: User)(using
+      Lang
+  ): IO[Iterable[Session]] = collection.use(
+    _.raw(
+      _.aggregateWithCodec[Session](
+        Seq(
+          Aggregates.`match`(Filters.eq("endTime", null)),
+          Document(
+            "$lookup" -> Document(
+              "from" -> "tasks",
+              "localField" -> "task",
+              "foreignField" -> "_id",
+              "as" -> "task",
+              "pipeline" -> Seq(
+                Document(
+                  "$lookup" -> Document(
+                    "from" -> "projects",
+                    "localField" -> "project",
+                    "foreignField" -> "_id",
+                    "as" -> "project",
+                    "pipeline" -> Seq(
+                      Document(
+                        "$lookup" -> Document(
+                          "from" -> "clients",
+                          "localField" -> "client",
+                          "foreignField" -> "_id",
+                          "as" -> "client"
+                        )
+                      )
+                    )
+                  )
+                )
+              )
+            )
+          ),
+          Aggregates.`match`(
+            Filters.eq("task.project.client.user", customer._id)
+          ),
+          Aggregates.addFields(Field("task", Document("$first" -> "$task._id")))
+        )
+      ).all
+    )
+  )
 
   def update(_id: ObjectId, data: Session.InputData)(using customer: User)(using
       Lang

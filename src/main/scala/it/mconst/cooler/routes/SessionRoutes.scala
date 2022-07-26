@@ -26,6 +26,13 @@ object SessionRoutes {
       yield response
     }
 
+    case GET -> Root / "open" as context => {
+      given Lang = context.lang
+      given User = context.user
+
+      Ok(Sessions.getOpenSessions)
+    }
+
     case GET -> Root / ObjectIdParam(id) :?
         FirstMatcher(first) +&
         AfterMatcher(after) +&
