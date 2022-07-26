@@ -1,6 +1,6 @@
 import { boolean, option, taskEither } from 'fp-ts'
 import { IO } from 'fp-ts/IO'
-import { constNull, constVoid, pipe } from 'fp-ts/function'
+import { constNull, pipe } from 'fp-ts/function'
 import { arrowUp, skull, stop } from 'ionicons/icons'
 import { a18n, formatDate, formatDateTime } from '../../a18n'
 import { ReadOnlyInput } from '../../components/Form/Input/ReadOnlyInput/ReadOnlyInput'
@@ -63,7 +63,9 @@ export function SessionPage(props: Props) {
       ...props.session,
       endTime: option.some(new Date())
     }),
-    taskEither.chain(() => taskEither.fromIO(constVoid))
+    taskEither.chain(() =>
+      taskEither.fromIO(() => console.log('TODO: a session has stopped'))
+    )
   )
 
   const onCancel: IO<void> = () => setIsEditing(false)

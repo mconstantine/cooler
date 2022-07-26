@@ -4,7 +4,7 @@ import { IO } from 'fp-ts/IO'
 import { ReaderTaskEither } from 'fp-ts/ReaderTaskEither'
 import { Option } from 'fp-ts/Option'
 import { Reader } from 'fp-ts/Reader'
-import { skull } from 'ionicons/icons'
+import { arrowUp, skull } from 'ionicons/icons'
 import { useState } from 'react'
 import {
   a18n,
@@ -25,18 +25,19 @@ import { ReadOnlyInput } from '../../components/Form/Input/ReadOnlyInput/ReadOnl
 import { Panel } from '../../components/Panel/Panel'
 import { useDelete, usePut } from '../../effects/api/useApi'
 import { useDialog } from '../../effects/useDialog'
-import { ProjectLabel, TaskWithStats } from '../../entities/Task'
+import { TaskWithStats } from '../../entities/Task'
 import { LocalizedString } from '../../globalDomain'
 import { makeDeleteTaskRequest, makeUpdateTaskRequest } from './domain'
+import { projectsRoute, useRouter } from '../../components/Router'
 
 interface Props {
   task: TaskWithStats
-  project: ProjectLabel
   onUpdate: Reader<TaskWithStats, void>
   onDelete: Reader<TaskWithStats, void>
 }
 
 export default function TaskData(props: Props) {
+  const { setRoute } = useRouter()
   const updateTaskCommand = usePut(makeUpdateTaskRequest(props.task._id))
   const deleteTaskCommand = useDelete(makeDeleteTaskRequest(props.task._id))
   const [isEditing, setIsEditing] = useState(false)
@@ -76,11 +77,23 @@ export default function TaskData(props: Props) {
       )
     )
 
+  const backToProject: IO<void> = () =>
+    setRoute(projectsRoute(props.task.project._id))
+
   return pipe(
     isEditing,
     boolean.fold(
       () => (
-        <Panel title={props.task.name} framed action={option.none}>
+        <Panel
+          title={props.task.name}
+          framed
+          action={option.some({
+            type: 'sync',
+            label: a18n`Back to project`,
+            icon: option.some(arrowUp),
+            action: backToProject
+          })}
+        >
           <ReadOnlyInput
             name="name"
             label={a18n`Name`}
@@ -152,7 +165,7 @@ export default function TaskData(props: Props) {
         <TaskForm
           mode="edit"
           task={props.task}
-          project={props.project}
+          project={props.task.project}
           onCancel={onCancel}
           onSubmit={onSubmit}
         />
