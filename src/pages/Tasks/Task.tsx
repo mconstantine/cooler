@@ -4,12 +4,13 @@ import { IO } from 'fp-ts/IO'
 import { TaskEither } from 'fp-ts/TaskEither'
 import { Reader } from 'fp-ts/Reader'
 import { useState } from 'react'
-import { Session } from '../../entities/Session'
+import { SessionWithTaskLabel } from '../../entities/Session'
 import { LocalizedString, ObjectId } from '../../globalDomain'
 import { SessionPage } from './SessionData'
 import { TaskPage } from './TaskPage'
 import { usePost } from '../../effects/api/useApi'
 import { startSessionRequest } from './domain'
+import { useCurrentSessions } from '../../contexts/CurrentSessionsContext'
 
 interface Props {
   _id: ObjectId
@@ -21,7 +22,7 @@ interface TaskSubjectMode {
 
 interface SessionSubjectMode {
   type: 'session'
-  session: Session
+  session: SessionWithTaskLabel
 }
 
 type SubjectMode = TaskSubjectMode | SessionSubjectMode
@@ -41,6 +42,8 @@ function foldSubjectMode<T>(
 }
 
 export default function Task(props: Props) {
+  const { notifyStartedSession } = useCurrentSessions()
+
   const [subjectMode, setSubjectMode] = useState<SubjectMode>({
     type: 'task'
   })
@@ -54,14 +57,11 @@ export default function Task(props: Props) {
       endTime: option.none
     }),
     taskEither.chain(session =>
-      taskEither.fromIO(() => {
-        console.log('TODO: started session')
-        console.log(session)
-      })
+      taskEither.fromIO(() => notifyStartedSession(session))
     )
   )
 
-  const onSessionListItemClick: Reader<Session, void> = session =>
+  const onSessionListItemClick: Reader<SessionWithTaskLabel, void> = session =>
     setSubjectMode({
       type: 'session',
       session

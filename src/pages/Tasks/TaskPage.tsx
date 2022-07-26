@@ -12,14 +12,14 @@ import { SessionsList } from './SessionsList'
 import TaskData from './TaskData'
 import { TaskProgress } from './TaskProgress'
 import { LocalizedString, ObjectId } from '../../globalDomain'
-import { Session } from '../../entities/Session'
+import { SessionWithTaskLabel } from '../../entities/Session'
 import { TaskEither } from 'fp-ts/TaskEither'
 import { LoadingBlock } from '../../components/Loading/LoadingBlock'
 
 interface Props {
   _id: ObjectId
   onCreateSessionButtonClick: TaskEither<LocalizedString, void>
-  onSessionListItemClick: Reader<Session, unknown>
+  onSessionListItemClick: Reader<SessionWithTaskLabel, unknown>
 }
 
 export function TaskPage(props: Props) {

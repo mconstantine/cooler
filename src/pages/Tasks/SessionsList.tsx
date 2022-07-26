@@ -7,7 +7,10 @@ import { a18n, formatDate, formatTime } from '../../a18n'
 import { ConnectionList } from '../../components/ConnectionList/ConnectionList'
 import { RoutedItem } from '../../components/List/List'
 import { useGet } from '../../effects/api/useApi'
-import { formatSessionDuration, Session } from '../../entities/Session'
+import {
+  formatSessionDuration,
+  SessionWithTaskLabel
+} from '../../entities/Session'
 import { TaskWithStats } from '../../entities/Task'
 import { LocalizedString, unsafePositiveInteger } from '../../globalDomain'
 import { ConnectionQueryInput } from '../../misc/Connection'
@@ -17,7 +20,7 @@ import { add } from 'ionicons/icons'
 interface Props {
   task: TaskWithStats
   onCreateSessionButtonClick: TaskEither<LocalizedString, unknown>
-  onSessionListItemClick: Reader<Session, unknown>
+  onSessionListItemClick: Reader<SessionWithTaskLabel, unknown>
 }
 
 export function SessionsList(props: Props) {
@@ -29,7 +32,10 @@ export function SessionsList(props: Props) {
 
   const [sessions] = useGet(makeGetSessionsRequest(props.task._id), input)
 
-  const renderSessionItem: Reader<Session, RoutedItem> = session => {
+  const renderSessionItem: Reader<
+    SessionWithTaskLabel,
+    RoutedItem
+  > = session => {
     const startDateString = formatDate(session.startTime)
     const startTimeString = formatTime(session.startTime)
     const duration = formatSessionDuration(session)

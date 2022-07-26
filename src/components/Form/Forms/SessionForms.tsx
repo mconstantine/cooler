@@ -1,7 +1,10 @@
 import { Option } from 'fp-ts/Option'
 import { useState } from 'react'
 import { LocalizedString, ObjectId } from '../../../globalDomain'
-import { Session, SessionCreationInput } from '../../../entities/Session'
+import {
+  SessionCreationInput,
+  SessionWithTaskLabel
+} from '../../../entities/Session'
 import { useForm } from '../useForm'
 import { constFalse, constNull, constTrue, pipe } from 'fp-ts/function'
 import { boolean, option } from 'fp-ts'
@@ -15,7 +18,7 @@ import { ReaderTaskEither } from 'fp-ts/ReaderTaskEither'
 import { IO } from 'fp-ts/IO'
 
 interface Props {
-  session: Option<Session>
+  session: Option<SessionWithTaskLabel>
   taskId: ObjectId
   onSubmit: ReaderTaskEither<SessionCreationInput, LocalizedString, unknown>
   onCancel: IO<unknown>

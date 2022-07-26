@@ -5,7 +5,10 @@ import { arrowUp, skull, stop } from 'ionicons/icons'
 import { a18n, formatDate, formatDateTime } from '../../a18n'
 import { ReadOnlyInput } from '../../components/Form/Input/ReadOnlyInput/ReadOnlyInput'
 import { Panel } from '../../components/Panel/Panel'
-import { Session, SessionCreationInput } from '../../entities/Session'
+import {
+  SessionCreationInput,
+  SessionWithTaskLabel
+} from '../../entities/Session'
 import { LocalizedString, ObjectId } from '../../globalDomain'
 import { useDelete, usePut } from '../../effects/api/useApi'
 import { makeDeleteSessionRequest, makeUpdateSessionRequest } from './domain'
@@ -21,16 +24,18 @@ import { SessionForm } from '../../components/Form/Forms/SessionForms'
 import { useSessionDurationClock } from '../../effects/useSessionDurationClock'
 import { TaskEither } from 'fp-ts/TaskEither'
 import { LoadingButton } from '../../components/Button/LoadingButton/LoadingButton'
+import { useCurrentSessions } from '../../contexts/CurrentSessionsContext'
 
 interface Props {
-  session: Session
+  session: SessionWithTaskLabel
   taskId: ObjectId
-  onUpdate: Reader<Session, unknown>
-  onDelete: Reader<Session, unknown>
+  onUpdate: Reader<SessionWithTaskLabel, unknown>
+  onDelete: Reader<SessionWithTaskLabel, unknown>
   onCancel: IO<unknown>
 }
 
 export function SessionPage(props: Props) {
+  const { notifyStoppedSession } = useCurrentSessions()
   const duration = useSessionDurationClock(props.session)
   const [isEditing, setIsEditing] = useState(false)
   const [error, setError] = useState<Option<LocalizedString>>(option.none)
@@ -61,16 +66,21 @@ export function SessionPage(props: Props) {
   const onStop: TaskEither<LocalizedString, void> = pipe(
     updateSessionCommand({
       ...props.session,
+      task: props.session.task._id,
       endTime: option.some(new Date())
     }),
-    taskEither.chain(() =>
-      taskEither.fromIO(() => console.log('TODO: a session has stopped'))
+    taskEither.chain(session =>
+      taskEither.fromIO(() => notifyStoppedSession(session))
     )
   )
 
   const onCancel: IO<void> = () => setIsEditing(false)
 
-  const [Dialog, deleteSession] = useDialog<Session, void, unknown>(
+  const [Dialog, deleteSession] = useDialog<
+    SessionWithTaskLabel,
+    void,
+    unknown
+  >(
     () =>
       pipe(
         taskEither.rightIO(() => setError(option.none)),
