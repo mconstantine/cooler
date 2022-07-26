@@ -43,6 +43,7 @@ class SessionRoutesTest extends CatsEffectSuite {
   given HttpClient[IO] = client
 
   given EntityDecoder[IO, Session] = jsonOf[IO, Session]
+  given EntityDecoder[IO, Cursor[Session]] = jsonOf[IO, Cursor[Session]]
 
   final case class TestData(
       user: User,
@@ -168,8 +169,13 @@ class SessionRoutesTest extends CatsEffectSuite {
           .getOrElse(fail(""))
       )
         .sign(testDataFixture().user)
-        .shouldRespond(
-          Cursor[Session](
+        .shouldRespondLike(
+          (cursor: Cursor[Session]) =>
+            Cursor(
+              cursor.pageInfo,
+              cursor.edges.map(edge => Edge(edge.node._id, edge.cursor))
+            ),
+          Cursor(
             PageInfo(
               6,
               Some(sessions(2).startTime.toISOString),
@@ -178,8 +184,8 @@ class SessionRoutesTest extends CatsEffectSuite {
               true
             ),
             List(
-              Edge(sessions(2), sessions(2).startTime.toISOString),
-              Edge(sessions(3), sessions(3).startTime.toISOString)
+              Edge(sessions(2)._id, sessions(2).startTime.toISOString),
+              Edge(sessions(3)._id, sessions(3).startTime.toISOString)
             )
           )
         )
@@ -201,7 +207,12 @@ class SessionRoutesTest extends CatsEffectSuite {
       )
         .sign(testDataFixture().user)
         .shouldRespond(
-          Cursor[Session](
+          (cursor: Cursor[Session]) =>
+            Cursor(
+              cursor.pageInfo,
+              cursor.edges.map(edge => Edge(edge.node._id, edge.cursor))
+            ),
+          Cursor(
             PageInfo(
               6,
               Some(sessions(3).startTime.toISOString),
@@ -210,8 +221,8 @@ class SessionRoutesTest extends CatsEffectSuite {
               true
             ),
             List(
-              Edge(sessions(3), sessions(3).startTime.toISOString),
-              Edge(sessions(2), sessions(2).startTime.toISOString)
+              Edge(sessions(3)._id, sessions(3).startTime.toISOString),
+              Edge(sessions(2)._id, sessions(2).startTime.toISOString)
             )
           )
         )

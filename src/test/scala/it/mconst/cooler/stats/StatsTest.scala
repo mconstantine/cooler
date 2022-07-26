@@ -15,17 +15,17 @@ import it.mconst.cooler.models.project.ProjectCashData
 import it.mconst.cooler.models.project.ProjectCashedBalance
 import it.mconst.cooler.models.project.Projects
 import it.mconst.cooler.models.project.ProjectWithClientLabel
-import it.mconst.cooler.models.session.Session
 import it.mconst.cooler.models.session.Sessions
+import it.mconst.cooler.models.session.SessionWithTaskLabel
 import it.mconst.cooler.models.task.DbTask
 import it.mconst.cooler.models.task.Tasks
+import it.mconst.cooler.models.task.TaskWithProjectLabel
 import it.mconst.cooler.models.user.User
 import it.mconst.cooler.models.user.Users
 import it.mconst.cooler.models.user.UserStats
 import mongo4cats.collection.operations.Filter
 import munit.Assertions
 import org.bson.BsonDateTime
-import it.mconst.cooler.models.task.TaskWithProjectLabel
 
 class StatsTest extends CatsEffectSuite {
   val now = System.currentTimeMillis
@@ -52,7 +52,7 @@ class StatsTest extends CatsEffectSuite {
       client: Client,
       projects: List[ProjectWithClientLabel],
       tasks: List[TaskWithProjectLabel],
-      sessions: List[Session]
+      sessions: List[SessionWithTaskLabel]
   )
 
   def testData = Resource.make(

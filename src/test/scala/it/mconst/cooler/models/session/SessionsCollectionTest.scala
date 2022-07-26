@@ -103,7 +103,7 @@ class SessionsCollectionTest extends CatsEffectSuite {
 
     for
       session <- Sessions.start(data).orFail
-      _ = assertEquals(session.task.toHexString, data.task)
+      _ = assertEquals(session.task._id.toHexString, data.task)
       _ = assert(session.startTime.getValue >= testStartTime)
       _ = assertEquals(session.endTime, none[BsonDateTime])
     yield ()
@@ -264,7 +264,7 @@ class SessionsCollectionTest extends CatsEffectSuite {
       )
       _ <- IO.delay(Thread.sleep(500))
       updated <- Sessions.update(session._id, update).orFail
-      _ = assertEquals(updated.task.toHexString, update.task)
+      _ = assertEquals(updated.task._id.toHexString, update.task)
       _ = assertEquals(updated.startTime, session.startTime)
       _ = assert(updated.endTime.isDefined)
     yield ()
