@@ -67,7 +67,17 @@ interface Settings {
   readonly _tag: 'Settings'
 }
 
-export type Location = Home | Clients | Projects | Task | Settings
+interface CurrentSessions {
+  readonly _tag: 'CurrentSessions'
+}
+
+export type Location =
+  | Home
+  | Clients
+  | Projects
+  | Task
+  | Settings
+  | CurrentSessions
 
 export function homeRoute(): Home {
   return {
@@ -100,6 +110,10 @@ export function taskRoute(
   }
 }
 
+export function currentSessionsRoute(): CurrentSessions {
+  return { _tag: 'CurrentSessions' }
+}
+
 export function settingsRoute(): Settings {
   return {
     _tag: 'Settings'
@@ -124,6 +138,10 @@ export function isTasksRoute(location: Location): boolean {
 
 export function isSettingsRoute(location: Location): boolean {
   return location._tag === 'Settings'
+}
+
+export function isCurrentSessionsRoute(location: Location): boolean {
+  return location._tag === 'CurrentSessions'
 }
 
 export function foldLocation<T>(matches: {
@@ -151,6 +169,7 @@ const taskMatch = lit('projects')
   .then(end)
 
 const settingsMatch = lit('settings').then(end)
+const currentSessionsMatch = lit('current-sessions').then(end)
 
 const router = zero<Location>()
   .alt(homeMatch.parser.map(homeRoute))
@@ -160,6 +179,7 @@ const router = zero<Location>()
     taskMatch.parser.map(({ project, subject }) => taskRoute(project, subject))
   )
   .alt(settingsMatch.parser.map(() => settingsRoute()))
+  .alt(currentSessionsMatch.parser.map(() => currentSessionsRoute()))
 
 interface Props {
   render: (location: Location) => JSX.Element
@@ -177,7 +197,9 @@ function formatLocation(location: Location): string {
       Clients: location => format(clientsMatch.formatter, location),
       Projects: location => format(projectsMatch.formatter, location),
       Task: location => format(taskMatch.formatter, location),
-      Settings: location => format(settingsMatch.formatter, location)
+      Settings: location => format(settingsMatch.formatter, location),
+      CurrentSessions: location =>
+        format(currentSessionsMatch.formatter, location)
     })
   )
 }

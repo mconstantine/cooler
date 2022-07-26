@@ -3,6 +3,7 @@ import {
   constant,
   constFalse,
   constNull,
+  constTrue,
   constVoid,
   pipe
 } from 'fp-ts/function'
@@ -12,6 +13,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { a18n, formatDuration } from './a18n'
 import { Panel } from './components/Panel/Panel'
 import {
+  currentSessionsRoute,
   foldLocation,
   foldRouteSubject,
   taskRoute,
@@ -25,22 +27,22 @@ export function CurrentSessionsPanel() {
   const { currentSessions } = useCurrentSessions()
   const { route, setRoute } = useRouter()
 
-  const isOnlyCurrentSessionTaskRoute = useMemo(
+  const shouldShowPanelInThisRoute = useMemo(
     () =>
       pipe(
         currentSessions,
         option.fold(constFalse, sessions =>
           pipe(
-            sessions.length === 1,
-            boolean.fold(constFalse, () =>
-              pipe(
-                route,
-                foldLocation({
-                  Home: constFalse,
-                  Clients: constFalse,
-                  Projects: constFalse,
-                  Settings: constFalse,
-                  Task: ({ subject }) =>
+            route,
+            foldLocation({
+              Home: constTrue,
+              Clients: constTrue,
+              Projects: constTrue,
+              Settings: constTrue,
+              Task: ({ subject }) =>
+                pipe(
+                  sessions.length === 1,
+                  boolean.fold(constTrue, () =>
                     pipe(
                       subject,
                       foldRouteSubject(
@@ -49,9 +51,10 @@ export function CurrentSessionsPanel() {
                         _id => sessions[0].task._id === _id
                       )
                     )
-                })
-              )
-            )
+                  )
+                ),
+              CurrentSessions: constFalse
+            })
           )
         )
       ),
@@ -60,18 +63,19 @@ export function CurrentSessionsPanel() {
 
   const [message, setMessage] = useState(
     pipe(
-      isOnlyCurrentSessionTaskRoute,
+      shouldShowPanelInThisRoute,
       boolean.fold(
-        () => pipe(currentSessions, option.map(getMessage)),
-        () => option.none
+        () => option.none,
+        () => pipe(currentSessions, option.map(getMessage))
       )
     )
   )
 
   useEffect(() => {
     const interval = pipe(
-      isOnlyCurrentSessionTaskRoute,
+      shouldShowPanelInThisRoute,
       boolean.fold(
+        () => option.none,
         () =>
           pipe(
             currentSessions,
@@ -90,8 +94,7 @@ export function CurrentSessionsPanel() {
                 )
               )
             )
-          ),
-        () => option.none
+          )
       )
     )
 
@@ -101,19 +104,19 @@ export function CurrentSessionsPanel() {
         option.fold(constVoid, interval => window.clearInterval(interval))
       )
     }
-  }, [currentSessions, isOnlyCurrentSessionTaskRoute])
+  }, [currentSessions, shouldShowPanelInThisRoute])
 
   useEffect(() => {
     setMessage(
       pipe(
-        isOnlyCurrentSessionTaskRoute,
+        shouldShowPanelInThisRoute,
         boolean.fold(
-          () => pipe(currentSessions, option.map(getMessage)),
-          () => option.none
+          () => option.none,
+          () => pipe(currentSessions, option.map(getMessage))
         )
       )
     )
-  }, [currentSessions, isOnlyCurrentSessionTaskRoute])
+  }, [currentSessions, shouldShowPanelInThisRoute])
 
   return pipe(
     message,
@@ -131,7 +134,7 @@ export function CurrentSessionsPanel() {
             action: pipe(
               sessions.length === 1,
               boolean.fold(
-                constant(() => console.log('TODO: go to a dedicated page')),
+                constant(() => setRoute(currentSessionsRoute())),
                 constant(() =>
                   setRoute(
                     taskRoute(sessions[0].task.project, sessions[0].task._id)

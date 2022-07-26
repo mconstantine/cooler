@@ -9,6 +9,7 @@ import { Menu } from './components/Menu/Menu'
 import { Content } from './components/Content/Content'
 import { CurrentSessionsProvider } from './contexts/CurrentSessionsContext'
 import { CurrentSessionsPanel } from './CurrentSessionsPanel'
+import { CurrentSessions } from './pages/CurrentSessions/CurrentSessions'
 
 const Clients = lazy(() => import('./pages/Clients/Clients'))
 const Projects = lazy(() => import('./pages/Projects/Projects'))
@@ -42,7 +43,8 @@ export function App() {
                           Task: ({ project, subject }) => (
                             <Tasks project={project} routeSubject={subject} />
                           ),
-                          Settings: () => <Settings />
+                          Settings: () => <Settings />,
+                          CurrentSessions: () => <CurrentSessions />
                         })
                       )}
                     </CurrentSessionsProvider>
