@@ -5,6 +5,7 @@ import { ObjectId, PositiveInteger } from '../globalDomain'
 import { pipe } from 'fp-ts/function'
 import { option } from 'fp-ts'
 import { formatDuration } from '../a18n'
+import { Option } from 'fp-ts/Option'
 
 const TaskLabel = t.type(
   {
@@ -56,7 +57,14 @@ export const TimesheetCreationInput = t.type(
 )
 export type TimesheetCreationInput = t.TypeOf<typeof TimesheetCreationInput>
 
-export function formatSessionDuration(session: Session): LocalizedString {
+interface SessionForDuration {
+  startTime: Date
+  endTime: Option<Date>
+}
+
+export function formatSessionDuration(
+  session: SessionForDuration
+): LocalizedString {
   const endTime: number = pipe(
     session.endTime,
     option.map(_ => _.getTime()),

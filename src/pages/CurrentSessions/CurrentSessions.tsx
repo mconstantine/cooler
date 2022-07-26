@@ -1,46 +1,37 @@
-import { array, option } from 'fp-ts'
-import { constVoid, pipe } from 'fp-ts/function'
-import { useEffect, useMemo, useState } from 'react'
-import { a18n, formatDuration } from '../../a18n'
+import { option } from 'fp-ts'
+import { pipe } from 'fp-ts/function'
+import { NonEmptyArray } from 'fp-ts/NonEmptyArray'
+import { a18n } from '../../a18n'
 import { List, RoutedItem } from '../../components/List/List'
 import { Panel } from '../../components/Panel/Panel'
 import { taskRoute, useRouter } from '../../components/Router'
 import { useCurrentSessions } from '../../contexts/CurrentSessionsContext'
+import { useSessionsListClock } from '../../effects/useSessionDurationClock'
 import { SessionWithTaskLabel } from '../../entities/Session'
-
-type SessionWithDuration = SessionWithTaskLabel & { duration: number }
 
 export function CurrentSessions() {
   const { currentSessions } = useCurrentSessions()
-  const { setRoute } = useRouter()
-  const [time, setTime] = useState(Date.now())
 
-  const sessionsWithDuration: SessionWithDuration[] = useMemo(
-    () =>
-      pipe(
-        currentSessions,
-        option.getOrElse<SessionWithTaskLabel[]>(() => []),
-        array.map(session => ({
-          ...session,
-          duration: time - session.startTime.getTime()
-        }))
-      ),
-    [currentSessions, time]
-  )
-
-  useEffect(() => {
-    const interval = pipe(
-      currentSessions,
-      option.map(() => window.setInterval(() => setTime(Date.now()), 1000))
+  return pipe(
+    currentSessions,
+    option.fold(
+      () => <EmptyCurrentSessions />,
+      sessions => <NonEmptyCurrentSessions sessions={sessions} />
     )
+  )
+}
 
-    return () => {
-      pipe(
-        interval,
-        option.fold(constVoid, interval => window.clearInterval(interval))
-      )
-    }
-  }, [currentSessions])
+function EmptyCurrentSessions() {
+  return null
+}
+
+interface NonEmptyCurrentSessionsProps {
+  sessions: NonEmptyArray<SessionWithTaskLabel>
+}
+
+function NonEmptyCurrentSessions(props: NonEmptyCurrentSessionsProps) {
+  const sessionsWithDuration = useSessionsListClock(props.sessions)
+  const { setRoute } = useRouter()
 
   return (
     <Panel title={a18n`Current sessions`} action={option.none} framed>
@@ -52,10 +43,7 @@ export function CurrentSessions() {
             type: 'routed',
             key: session._id,
             label: option.some(session.task.name),
-            content: formatDuration(
-              Date.now() - session.startTime.getTime(),
-              true
-            ),
+            content: session.duration,
             description: option.none,
             action: () =>
               setRoute(taskRoute(session.task.project, session.task._id)),
