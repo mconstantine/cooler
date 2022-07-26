@@ -292,7 +292,7 @@ export function useReactiveCommand<I, II, O, OO>(
         )
       ),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    []
+    [request.url]
   )
 
   return [state, setter, commandHandler]
