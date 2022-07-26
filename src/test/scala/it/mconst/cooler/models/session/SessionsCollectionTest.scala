@@ -127,30 +127,6 @@ class SessionsCollectionTest extends CatsEffectSuite {
     }
   }
 
-  test("should stop a session") {
-    val testStartTime = System.currentTimeMillis
-
-    for
-      session <- Sessions
-        .start(makeTestSession(testDataFixture().task._id))
-        .orFail
-      result <- Sessions.stop(session._id).orFail
-      _ = assert(result.endTime.get.getValue >= testStartTime)
-    yield ()
-  }
-
-  test("should not stop a session of a task of another user") {
-    otherUser.use(otherUser =>
-      Sessions
-        .start(makeTestSession(testDataFixture().task._id))
-        .flatMap { session =>
-          given User = otherUser
-          Sessions.stop(session._id)
-        }
-        .assertEquals(Left(Error(Status.NotFound, __.ErrorSessionNotFound)))
-    )
-  }
-
   def sessionsList = Resource.make {
     val now = System.currentTimeMillis
 

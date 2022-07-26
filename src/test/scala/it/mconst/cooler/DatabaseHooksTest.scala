@@ -102,49 +102,7 @@ class DatabaseHooksTest extends CatsEffectSuite {
   }
 
   test(
-    "should update the task and project when a session is updated (stop method)"
-  ) {
-    given User = adminFixture()
-
-    for
-      client <- Clients
-        .create(
-          makeTestPrivateClient(addressEmail =
-            "session-update-hook-test@example.com"
-          )
-        )
-        .orFail
-      project <- Projects
-        .create(
-          makeTestProject(client._id, name = "Session update hook test")
-        )
-        .orFail
-      task <- Tasks
-        .create(
-          makeTestTask(project._id, name = "Session update hook test")
-        )
-        .orFail
-      session <- Sessions.start(makeTestSession(task._id)).orFail
-      _ <- IO.delay(Thread.sleep(500))
-      _ <- Sessions.stop(session._id).orFail
-      updatedTask <- Tasks.findById(task._id).orFail
-      updatedProject <- Projects.findById(project._id).orFail
-      _ = assert(
-        updatedTask.updatedAt.getValue - task.updatedAt.getValue >= 500L
-      )
-      _ = assert(
-        updatedProject.updatedAt.getValue - project.updatedAt.getValue >= 500L
-      )
-      _ <- Clients.collection
-        .use(_.raw(_.deleteMany(Filter.empty)))
-        .both(Projects.collection.use(_.raw(_.deleteMany(Filter.empty))))
-        .both(Tasks.collection.use(_.raw(_.deleteMany(Filter.empty))))
-        .both(Sessions.collection.use(_.raw(_.deleteMany(Filter.empty))))
-    yield ()
-  }
-
-  test(
-    "should update the task and project when a session is updated (update method)"
+    "should update the task and project when a session is updated"
   ) {
     given User = adminFixture()
 

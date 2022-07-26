@@ -222,43 +222,6 @@ object Sessions {
       )
     yield session
 
-  def stop(_id: ObjectId)(using customer: User)(using
-      Lang
-  ): EitherT[IO, Error, Session] =
-    for
-      session <- collection.use(_.findOne[Session](Filter.eq("_id", _id)))
-      project <- findProject(session.task).leftMap(_ =>
-        Error(Status.NotFound, __.ErrorSessionNotFound)
-      )
-      _ <- collection.use(
-        _.update(
-          session._id,
-          collection.Update
-            .`with`(
-              "endTime" -> BsonDateTime(System.currentTimeMillis).toISOString
-            )
-            .build
-        )
-      )
-      _ <- Tasks.collection.use(
-        _.update(
-          session.task,
-          Tasks.collection.Update
-            .`with`("updatedAt" -> BsonDateTime(System.currentTimeMillis))
-            .build
-        )
-      )
-      _ <- Projects.collection.use(
-        _.update(
-          project._id,
-          Projects.collection.Update
-            .`with`("updatedAt" -> BsonDateTime(System.currentTimeMillis))
-            .build
-        )
-      )
-      result <- collection.use(_.findOne[Session](Filter.eq("_id", _id)))
-    yield result
-
   def getSessions(query: CursorNoQuery, task: ObjectId)(using customer: User)(
       using Lang
   ): EitherT[IO, Error, Cursor[Session]] =
