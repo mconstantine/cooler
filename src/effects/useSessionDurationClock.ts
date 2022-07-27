@@ -1,4 +1,4 @@
-import { nonEmptyArray, option } from 'fp-ts'
+import { array, nonEmptyArray, option } from 'fp-ts'
 import { constVoid, pipe } from 'fp-ts/function'
 import { IO } from 'fp-ts/IO'
 import { NonEmptyArray } from 'fp-ts/NonEmptyArray'
@@ -14,6 +14,10 @@ interface Session {
 }
 
 type SessionWithDuration<T> = T & {
+  duration: number
+}
+
+type SessionWithDurationString<T> = T & {
   duration: LocalizedString
 }
 
@@ -64,16 +68,22 @@ export function useSessionDurationClock(
   return { duration, start, stop }
 }
 
-export function useSessionsListClock<T extends Session>(
+export function useSessionsClock<T extends Session>(
   sessions: NonEmptyArray<T>
-): NonEmptyArray<SessionWithDuration<T>> {
+): NonEmptyArray<SessionWithDuration<T>>
+export function useSessionsClock<T extends Session>(
+  sessions: T[]
+): Array<SessionWithDuration<T>>
+export function useSessionsClock<T extends Session>(
+  sessions: T[] | NonEmptyArray<T>
+): Array<SessionWithDuration<T>> | NonEmptyArray<SessionWithDuration<T>> {
   const [time, setTime] = useState<number>(Date.now())
 
-  const sessionsWithDuration = useMemo<NonEmptyArray<SessionWithDuration<T>>>(
+  const sessionsWithDuration = useMemo<Array<SessionWithDuration<T>>>(
     () =>
       pipe(
         sessions,
-        nonEmptyArray.map(session => {
+        array.map(session => {
           const endTime = pipe(
             session.endTime,
             option.map(endTime => endTime.getTime()),
@@ -82,10 +92,7 @@ export function useSessionsListClock<T extends Session>(
 
           return {
             ...session,
-            duration: formatDuration(
-              endTime - session.startTime.getTime(),
-              true
-            )
+            duration: endTime - session.startTime.getTime()
           }
         })
       ),
@@ -101,4 +108,18 @@ export function useSessionsListClock<T extends Session>(
   }, [])
 
   return sessionsWithDuration
+}
+
+export function useSessionsListClock<T extends Session>(
+  sessions: NonEmptyArray<T>
+): NonEmptyArray<SessionWithDurationString<T>> {
+  const sessionsWithDuration = useSessionsClock(sessions)
+
+  return pipe(
+    sessionsWithDuration,
+    nonEmptyArray.map(session => ({
+      ...session,
+      duration: formatDuration(session.duration, true)
+    }))
+  )
 }
