@@ -6,11 +6,12 @@ import { useEffect, useState } from 'react'
 import { a18n, formatDate, formatDuration, formatTime } from '../../a18n'
 import { ConnectionList } from '../../components/ConnectionList/ConnectionList'
 import { RoutedItem } from '../../components/List/List'
-import { useReactiveCommand } from '../../effects/api/useApi'
+import { useGet } from '../../effects/api/useApi'
 import { SessionWithTaskLabel } from '../../entities/Session'
 import { TaskWithStats } from '../../entities/Task'
 import {
   LocalizedString,
+  NonNegativeInteger,
   unsafeNonNegativeInteger,
   unsafePositiveInteger
 } from '../../globalDomain'
@@ -40,12 +41,54 @@ export function SessionsList(props: Props) {
     before: option.none
   })
 
-  const [sessions, setSessions, fetchSessionsCommand] = useReactiveCommand(
-    makeGetSessionsRequest(props.task._id)
-  )
-
+  const [sessions] = useGet(makeGetSessionsRequest(props.task._id), input)
   const [time, setTime] = useState<number>(Date.now())
   const { onSessionListItemClick } = props
+
+  const allSessions = pipe(
+    sessions,
+    query.map(cursor =>
+      pipe(
+        currentSessions,
+        option.map(
+          flow(
+            array.reduce<
+              SessionWithTaskLabel,
+              [NonNegativeInteger, Array<Edge<SessionWithTaskLabel>>]
+            >(
+              [cursor.pageInfo.totalCount, []],
+              ([totalCount, extraSessions], currentSession) =>
+                pipe(
+                  cursor.edges,
+                  array.findFirst(edge => currentSession._id === edge.node._id),
+                  option.fold(
+                    () => [
+                      unsafeNonNegativeInteger(totalCount + 1),
+                      // Since this is an ascendent Cursor, and we prepend the current sessions, we
+                      // can fake the cursor here
+                      [
+                        {
+                          cursor: unsafeCursor(currentSession._id),
+                          node: currentSession
+                        },
+                        ...extraSessions
+                      ]
+                    ],
+                    () => [totalCount, extraSessions]
+                  )
+                )
+            ),
+            ([totalCount, extraSessions]) => ({
+              ...cursor,
+              pageInfo: { ...cursor.pageInfo, totalCount },
+              edges: [...extraSessions, ...cursor.edges]
+            })
+          )
+        ),
+        option.getOrElse(() => cursor)
+      )
+    )
+  )
 
   const renderSessionItem: Reader<
     SessionWithTaskLabel,
@@ -94,13 +137,8 @@ export function SessionsList(props: Props) {
   }
 
   useEffect(() => {
-    const fetchSessions = fetchSessionsCommand(input)
-    fetchSessions()
-  }, [input, fetchSessionsCommand])
-
-  useEffect(() => {
     const interval = pipe(
-      sessions,
+      allSessions,
       query.fold(
         () => option.none,
         () => option.none,
@@ -122,62 +160,7 @@ export function SessionsList(props: Props) {
         option.fold(constVoid, interval => window.clearInterval(interval))
       )
     }
-  }, [sessions])
-
-  useEffect(() => {
-    pipe(
-      sessions,
-      query.fold(constVoid, constVoid, cursor =>
-        pipe(
-          currentSessions,
-          option.fold(constVoid, currentSessions => {
-            const [allSessionsCount, extraSessions]: [
-              count: number,
-              sessions: Array<Edge<SessionWithTaskLabel>>
-            ] = currentSessions.reduce(
-              ([allSessionsCount, extraSessions], currentSession) =>
-                pipe(
-                  cursor.edges,
-                  array.findFirst(edge => currentSession._id === edge.node._id),
-                  option.fold(
-                    () => [
-                      allSessionsCount + 1,
-                      // Since this is an ascendent Cursor, and we prepend the current sessions, we can
-                      // fake the cursor here
-                      [
-                        {
-                          cursor: unsafeCursor(currentSession._id),
-                          node: currentSession
-                        },
-                        ...extraSessions
-                      ]
-                    ],
-                    () => [allSessionsCount, extraSessions]
-                  )
-                ),
-              [cursor.pageInfo.totalCount, []] as [
-                count: number,
-                sessions: Array<Edge<SessionWithTaskLabel>>
-              ]
-            )
-
-            setSessions({
-              ...cursor,
-              pageInfo: {
-                ...cursor.pageInfo,
-                // This comes from a non-negative count that either stays the same or is incremented by
-                // 1, so it's ok to be unsafe
-                totalCount: unsafeNonNegativeInteger(allSessionsCount)
-              },
-              edges: [...extraSessions, ...cursor.edges]
-            })
-          })
-        )
-      )
-    )
-    // We don't need to react to changes in sessions, we also call setSessions so we would go in a loop
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentSessions])
+  }, [allSessions])
 
   return (
     <ConnectionList
