@@ -601,7 +601,7 @@ object Tasks {
                                   "dateString" -> "$endTime"
                                 )
                               ),
-                              "unit" -> "hour"
+                              "unit" -> "second"
                             )
                           )
                         )
@@ -619,7 +619,26 @@ object Tasks {
                 ),
                 Aggregates.project(Document("sessions" -> 0))
               )
-            ).first
+            ).first.map(
+              _.flatMap(task =>
+                NonNegativeFloat
+                  .decode(task.actualWorkingHours.toFloat / 3600f)
+                  .map(actualWorkingHours =>
+                    TaskWithStats(
+                      task._id,
+                      task.name,
+                      task.description,
+                      task.startTime,
+                      task.expectedWorkingHours,
+                      task.hourlyCost,
+                      task.createdAt,
+                      task.updatedAt,
+                      task.project,
+                      actualWorkingHours
+                    )
+                  )
+              )
+            )
           )
         ),
       Error(Status.NotFound, __.ErrorTaskNotFound)
