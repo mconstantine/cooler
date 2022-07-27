@@ -43,7 +43,7 @@ function foldSubjectMode<T>(
 }
 
 export default function Task(props: Props) {
-  const { notifyStartedSession } = useCurrentSessions()
+  const { notifyStartedSession, notifyDeletedSession } = useCurrentSessions()
 
   const [subjectMode, setSubjectMode] = useState<SubjectMode>({
     type: 'task'
@@ -78,6 +78,11 @@ export default function Task(props: Props) {
       type: 'task'
     })
 
+  const onDelete: Reader<SessionWithTaskLabel, void> = session => {
+    notifyDeletedSession(session)
+    backToTask()
+  }
+
   return pipe(
     subjectMode,
     foldSubjectMode(
@@ -94,7 +99,7 @@ export default function Task(props: Props) {
           taskId={props._id}
           onCancel={backToTask}
           onUpdate={backToTask}
-          onDelete={backToTask}
+          onDelete={onDelete}
         />
       )
     )

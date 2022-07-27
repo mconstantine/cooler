@@ -87,10 +87,25 @@ export function notifyStoppedSessionAction(
   }
 }
 
+interface NotifyDeletedSessionAction {
+  type: 'notifyDeletedSession'
+  session: SessionWithTaskLabel
+}
+
+export function notifyDeletedSessionAction(
+  session: SessionWithTaskLabel
+): NotifyDeletedSessionAction {
+  return {
+    type: 'notifyDeletedSession',
+    session
+  }
+}
+
 type Action =
   | NotifySessionsFromServerAction
   | NotifyStartedSessionAction
   | NotifyStoppedSessionAction
+  | NotifyDeletedSessionAction
 
 export function reducer(state: State, action: Action): State {
   switch (state.type) {
@@ -107,6 +122,8 @@ export function reducer(state: State, action: Action): State {
             currentSessions: nonEmptyArray.of(action.session)
           }
         case 'notifyStoppedSession':
+          return state
+        case 'notifyDeletedSession':
           return state
       }
     case 'running':
@@ -129,6 +146,7 @@ export function reducer(state: State, action: Action): State {
             )
           }
         case 'notifyStoppedSession':
+        case 'notifyDeletedSession':
           return pipe(
             state.currentSessions.filter(
               session => session._id !== action.session._id

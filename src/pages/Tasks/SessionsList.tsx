@@ -165,7 +165,7 @@ export function SessionsList(props: Props) {
   return (
     <ConnectionList
       title={a18n`Sessions`}
-      query={sessions}
+      query={allSessions}
       action={option.some({
         type: 'async',
         label: a18n`Start new session`,

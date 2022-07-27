@@ -5,6 +5,7 @@ import { SessionWithTaskLabel } from '../entities/Session'
 import {
   foldState,
   initialState,
+  notifyDeletedSessionAction,
   notifySessionsFromServerAction,
   notifyStartedSessionAction,
   notifyStoppedSessionAction,
@@ -32,12 +33,14 @@ const getOpenSessionsRequest = makeGetRequest({
 interface CurrentSessionsContext {
   notifyStartedSession: Reader<SessionWithTaskLabel, void>
   notifyStoppedSession: Reader<SessionWithTaskLabel, void>
+  notifyDeletedSession: Reader<SessionWithTaskLabel, void>
   currentSessions: Option<NonEmptyArray<SessionWithTaskLabel>>
 }
 
 const CurrentSessionsContext = createContext<CurrentSessionsContext>({
   notifyStartedSession: constVoid,
   notifyStoppedSession: constVoid,
+  notifyDeletedSession: constVoid,
   currentSessions: option.none
 })
 
@@ -57,6 +60,9 @@ export function CurrentSessionsProvider(props: PropsWithChildren<{}>) {
 
   const notifyStoppedSession: Reader<SessionWithTaskLabel, void> = session =>
     dispatch(notifyStoppedSessionAction(session))
+
+  const notifyDeletedSession: Reader<SessionWithTaskLabel, void> = session =>
+    dispatch(notifyDeletedSessionAction(session))
 
   const currentSessions: Option<NonEmptyArray<SessionWithTaskLabel>> = pipe(
     state,
@@ -87,7 +93,12 @@ export function CurrentSessionsProvider(props: PropsWithChildren<{}>) {
 
   return (
     <CurrentSessionsContext.Provider
-      value={{ notifyStartedSession, notifyStoppedSession, currentSessions }}
+      value={{
+        notifyStartedSession,
+        notifyStoppedSession,
+        notifyDeletedSession,
+        currentSessions
+      }}
     >
       {props.children}
     </CurrentSessionsContext.Provider>
