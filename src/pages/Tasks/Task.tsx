@@ -1,5 +1,5 @@
-import { option, taskEither } from 'fp-ts'
-import { pipe } from 'fp-ts/function'
+import { either, option } from 'fp-ts'
+import { flow, pipe } from 'fp-ts/function'
 import { IO } from 'fp-ts/IO'
 import { TaskEither } from 'fp-ts/TaskEither'
 import { Reader } from 'fp-ts/Reader'
@@ -11,6 +11,7 @@ import { TaskPage } from './TaskPage'
 import { usePost } from '../../effects/api/useApi'
 import { startSessionRequest } from './domain'
 import { useCurrentSessions } from '../../contexts/CurrentSessionsContext'
+import { Either } from 'fp-ts/Either'
 
 interface Props {
   _id: ObjectId
@@ -50,16 +51,21 @@ export default function Task(props: Props) {
 
   const startSessionCommand = usePost(startSessionRequest)
 
-  const onCreateSessionButtonClick: TaskEither<LocalizedString, void> = pipe(
-    startSessionCommand({
-      task: props._id,
-      startTime: new Date(),
-      endTime: option.none
-    }),
-    taskEither.chain(session =>
-      taskEither.fromIO(() => notifyStartedSession(session))
+  // This is so ugly because we need to run `new Date()` when the function is called, not when it's
+  // declared
+  const onCreateSessionButtonClick: TaskEither<LocalizedString, void> = () =>
+    new Promise<Either<LocalizedString, void>>(resolve =>
+      startSessionCommand({
+        task: props._id,
+        startTime: new Date(),
+        endTime: option.none
+      })().then(
+        either.fold(flow(either.left, resolve), session => {
+          notifyStartedSession(session)
+          resolve(either.right(void 0))
+        })
+      )
     )
-  )
 
   const onSessionListItemClick: Reader<SessionWithTaskLabel, void> = session =>
     setSubjectMode({
