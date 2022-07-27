@@ -43,7 +43,6 @@ export function SessionsList(props: Props) {
 
   const [sessions] = useGet(makeGetSessionsRequest(props.task._id), input)
   const [time, setTime] = useState<number>(Date.now())
-  const { onSessionListItemClick } = props
 
   const allSessions = pipe(
     sessions,
@@ -131,7 +130,7 @@ export function SessionsList(props: Props) {
         )
       ),
       description: option.none,
-      action: () => onSessionListItemClick(session),
+      action: () => props.onSessionListItemClick(session),
       details: true
     }
   }
