@@ -74,7 +74,10 @@ export function SessionData(props: Props) {
       endTime: option.some(new Date())
     }),
     taskEither.chain(session =>
-      taskEither.fromIO(() => notifyStoppedSession(session))
+      taskEither.fromIO(() => {
+        props.onUpdate(session)
+        notifyStoppedSession(session)
+      })
     )
   )
 

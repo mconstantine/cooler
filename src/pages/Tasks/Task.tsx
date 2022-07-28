@@ -1,5 +1,5 @@
 import { either, option } from 'fp-ts'
-import { flow, pipe } from 'fp-ts/function'
+import { constVoid, flow, pipe } from 'fp-ts/function'
 import { IO } from 'fp-ts/IO'
 import { TaskEither } from 'fp-ts/TaskEither'
 import { Reader } from 'fp-ts/Reader'
@@ -78,6 +78,15 @@ export default function Task(props: Props) {
       type: 'task'
     })
 
+  const onUpdate: Reader<SessionWithTaskLabel, void> = session => {
+    pipe(
+      subjectMode,
+      foldSubjectMode(constVoid, () =>
+        setSubjectMode({ type: 'session', session })
+      )
+    )
+  }
+
   const onDelete: Reader<SessionWithTaskLabel, void> = session => {
     notifyDeletedSession(session)
     backToTask()
@@ -98,7 +107,7 @@ export default function Task(props: Props) {
           session={session}
           taskId={props._id}
           onCancel={backToTask}
-          onUpdate={backToTask}
+          onUpdate={onUpdate}
           onDelete={onDelete}
         />
       )
