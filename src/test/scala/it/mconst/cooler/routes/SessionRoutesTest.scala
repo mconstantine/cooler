@@ -14,8 +14,8 @@ import it.mconst.cooler.models.client.Client
 import it.mconst.cooler.models.client.Clients
 import it.mconst.cooler.models.project.Project
 import it.mconst.cooler.models.project.Projects
-import it.mconst.cooler.models.session.Session
 import it.mconst.cooler.models.session.Sessions
+import it.mconst.cooler.models.session.SessionWithTaskLabel
 import it.mconst.cooler.models.task.Task
 import it.mconst.cooler.models.task.Tasks
 import it.mconst.cooler.models.user.User
@@ -42,8 +42,11 @@ class SessionRoutesTest extends CatsEffectSuite {
   given Assertions = this
   given HttpClient[IO] = client
 
-  given EntityDecoder[IO, Session] = jsonOf[IO, Session]
-  given EntityDecoder[IO, Cursor[Session]] = jsonOf[IO, Cursor[Session]]
+  given EntityDecoder[IO, SessionWithTaskLabel] =
+    jsonOf[IO, SessionWithTaskLabel]
+
+  given EntityDecoder[IO, Cursor[SessionWithTaskLabel]] =
+    jsonOf[IO, Cursor[SessionWithTaskLabel]]
 
   final case class TestData(
       user: User,
@@ -114,7 +117,10 @@ class SessionRoutesTest extends CatsEffectSuite {
 
     POST(data, uri"/")
       .sign(testDataFixture().user)
-      .shouldRespondLike((s: Session) => s.startTime.toISOString, startTime)
+      .shouldRespondLike(
+        (s: SessionWithTaskLabel) => s.startTime.toISOString,
+        startTime
+      )
   }
 
   def sessionsList = Resource.make {
@@ -160,17 +166,14 @@ class SessionRoutesTest extends CatsEffectSuite {
       val taskId = testDataFixture().task._id.toHexString
       val after = sessions(1).startTime.toISOString
 
-      given EntityEncoder[IO, Cursor[Session]] =
-        jsonEncoderOf[IO, Cursor[Session]]
-
       GET(
         Uri
-          .fromString(s"/$taskId?first=2&after=$after")
+          .fromString(s"/task/$taskId?first=2&after=$after")
           .getOrElse(fail(""))
       )
         .sign(testDataFixture().user)
         .shouldRespondLike(
-          (cursor: Cursor[Session]) =>
+          (cursor: Cursor[SessionWithTaskLabel]) =>
             Cursor(
               cursor.pageInfo,
               cursor.edges.map(edge => Edge(edge.node._id, edge.cursor))
@@ -197,17 +200,14 @@ class SessionRoutesTest extends CatsEffectSuite {
       val taskId = testDataFixture().task._id.toHexString
       val before = sessions(4).startTime.toISOString
 
-      given EntityEncoder[IO, Cursor[Session]] =
-        jsonEncoderOf[IO, Cursor[Session]]
-
       GET(
         Uri
-          .fromString(s"/$taskId?last=2&before=$before")
+          .fromString(s"/task/$taskId?last=2&before=$before")
           .getOrElse(fail(""))
       )
         .sign(testDataFixture().user)
-        .shouldRespond(
-          (cursor: Cursor[Session]) =>
+        .shouldRespondLike(
+          (cursor: Cursor[SessionWithTaskLabel]) =>
             Cursor(
               cursor.pageInfo,
               cursor.edges.map(edge => Edge(edge.node._id, edge.cursor))
@@ -250,7 +250,7 @@ class SessionRoutesTest extends CatsEffectSuite {
     for
       session <- Sessions.start(originalData).orFail
       result <- client
-        .expect[Session](
+        .expect[SessionWithTaskLabel](
           PUT(
             updateData,
             Uri.fromString(s"/${session._id.toString}").getOrElse(fail(""))
