@@ -147,7 +147,7 @@ object Sessions {
       )
     )
 
-  private def findById(_id: ObjectId)(using customer: User)(using
+  def findById(_id: ObjectId)(using customer: User)(using
       Lang
   ): EitherT[IO, Error, SessionWithTaskLabel] = EitherT.fromOptionF(
     collection

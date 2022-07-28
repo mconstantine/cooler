@@ -33,7 +33,7 @@ object SessionRoutes {
       Ok(Sessions.getOpenSessions)
     }
 
-    case GET -> Root / ObjectIdParam(id) :?
+    case GET -> Root / "task" / ObjectIdParam(taskId) :?
         FirstMatcher(first) +&
         AfterMatcher(after) +&
         LastMatcher(last) +&
@@ -43,8 +43,15 @@ object SessionRoutes {
 
       EitherT
         .fromEither[IO](CursorNoQuery(first, after, last, before))
-        .flatMap(Sessions.getSessions(_, id))
+        .flatMap(Sessions.getSessions(_, taskId))
         .toResponse
+    }
+
+    case GET -> Root / ObjectIdParam(id) as context => {
+      given Lang = context.lang
+      given User = context.user
+
+      Sessions.findById(id).toResponse
     }
 
     case ctxReq @ PUT -> Root / ObjectIdParam(id) as context => {
