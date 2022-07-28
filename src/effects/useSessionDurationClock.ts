@@ -1,4 +1,4 @@
-import { array, nonEmptyArray, option } from 'fp-ts'
+import { array, option } from 'fp-ts'
 import { constVoid, pipe } from 'fp-ts/function'
 import { IO } from 'fp-ts/IO'
 import { NonEmptyArray } from 'fp-ts/NonEmptyArray'
@@ -15,10 +15,6 @@ interface Session {
 
 type SessionWithDuration<T> = T & {
   duration: number
-}
-
-type SessionWithDurationString<T> = T & {
-  duration: LocalizedString
 }
 
 interface SessionDurationClock {
@@ -108,18 +104,4 @@ export function useSessionsClock<T extends Session>(
   }, [])
 
   return sessionsWithDuration
-}
-
-export function useSessionsListClock<T extends Session>(
-  sessions: NonEmptyArray<T>
-): NonEmptyArray<SessionWithDurationString<T>> {
-  const sessionsWithDuration = useSessionsClock(sessions)
-
-  return pipe(
-    sessionsWithDuration,
-    nonEmptyArray.map(session => ({
-      ...session,
-      duration: formatDuration(session.duration, true)
-    }))
-  )
 }
