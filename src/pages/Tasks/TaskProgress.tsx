@@ -30,15 +30,19 @@ export function TaskProgress(props: Props) {
   const currentSessionsWithDuration = useSessionsClock(
     pipe(
       currentSessions,
+      option.map(sessions =>
+        sessions.filter(session => session.task._id === props.task._id)
+      ),
       option.getOrElse(() => [] as SessionWithTaskLabel[])
     )
   )
 
   const currentSessionsWorkingHours = pipe(
     currentSessionsWithDuration,
-    array.reduce(0, (workingHours, session) => {
-      return workingHours + session.duration / 3600000
-    })
+    array.reduce(
+      0,
+      (workingHours, session) => workingHours + session.duration / 3600000
+    )
   )
 
   const actualWorkingHours =

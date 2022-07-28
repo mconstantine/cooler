@@ -1,4 +1,4 @@
-import { option } from 'fp-ts'
+import { array, option } from 'fp-ts'
 import { pipe } from 'fp-ts/function'
 import {
   a18n,
@@ -10,9 +10,12 @@ import { ErrorPanel } from '../../components/ErrorPanel/ErrorPanel'
 import { List } from '../../components/List/List'
 import { LoadingBlock } from '../../components/Loading/LoadingBlock'
 import { Panel } from '../../components/Panel/Panel'
+import { useCurrentSessions } from '../../contexts/CurrentSessionsContext'
 import { useTaxes } from '../../contexts/TaxesContext'
 import { query } from '../../effects/api/api'
+import { useSessionsClock } from '../../effects/useSessionDurationClock'
 import { ProjectWithStats } from '../../entities/Project'
+import { SessionWithTaskLabel } from '../../entities/Session'
 import { computePercentage, formatPercentarge } from '../../globalDomain'
 import { calculateNetValue, renderTaxItem } from '../Profile/utils'
 
@@ -22,10 +25,32 @@ interface Props {
 
 export function ProjectProgress(props: Props) {
   const { taxes } = useTaxes()
+  const { currentSessions } = useCurrentSessions()
+
+  const currentSessionsWithDuration = useSessionsClock(
+    pipe(
+      currentSessions,
+      option.map(sessions =>
+        sessions.filter(session => session.task.project === props.project._id)
+      ),
+      option.getOrElse(() => [] as SessionWithTaskLabel[])
+    )
+  )
+
+  const currentSessionsWorkingHours = pipe(
+    currentSessionsWithDuration,
+    array.reduce(
+      0,
+      (workingHours, session) => workingHours + session.duration / 3600000
+    )
+  )
+
+  const actualWorkingHours =
+    props.project.actualWorkingHours + currentSessionsWorkingHours
 
   const progress = computePercentage(
     props.project.expectedWorkingHours,
-    props.project.actualWorkingHours
+    actualWorkingHours
   )
 
   return pipe(
@@ -56,9 +81,7 @@ export function ProjectProgress(props: Props) {
                 label: option.none,
                 content: a18n`Actual working hours`,
                 description: option.none,
-                value: formatDuration(
-                  props.project.actualWorkingHours * 3600000
-                ),
+                value: formatDuration(actualWorkingHours * 3600000),
                 progress: option.none
               },
               {
@@ -68,8 +91,7 @@ export function ProjectProgress(props: Props) {
                 content: a18n`Remaining time (hours)`,
                 description: option.none,
                 value: formatDuration(
-                  (props.project.expectedWorkingHours -
-                    props.project.actualWorkingHours) *
+                  (props.project.expectedWorkingHours - actualWorkingHours) *
                     3600000
                 ),
                 progress: option.none
