@@ -4,7 +4,7 @@ import { NonEmptyArray } from 'fp-ts/NonEmptyArray'
 import { a18n, formatDuration } from '../../a18n'
 import { List, RoutedItem } from '../../components/List/List'
 import { Panel } from '../../components/Panel/Panel'
-import { taskRoute, useRouter } from '../../components/Router'
+import { sessionRoute, useRouter } from '../../components/Router'
 import { useCurrentSessions } from '../../contexts/CurrentSessionsContext'
 import { useSessionsClock } from '../../effects/useSessionDurationClock'
 import { SessionWithTaskLabel } from '../../entities/Session'
@@ -43,10 +43,16 @@ function NonEmptyCurrentSessions(props: NonEmptyCurrentSessionsProps) {
             type: 'routed',
             key: session._id,
             label: option.some(session.task.name),
-            content: formatDuration(session.duration),
+            content: formatDuration(session.duration, true),
             description: option.none,
             action: () =>
-              setRoute(taskRoute(session.task.project, session.task._id)),
+              setRoute(
+                sessionRoute(
+                  session.task.project,
+                  session.task._id,
+                  session._id
+                )
+              ),
             details: true
           })
         )}

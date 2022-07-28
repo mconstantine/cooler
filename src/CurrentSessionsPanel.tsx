@@ -10,7 +10,7 @@ import {
   currentSessionsRoute,
   foldLocation,
   foldRouteSubject,
-  taskRoute,
+  sessionRoute,
   useRouter
 } from './components/Router'
 import { useCurrentSessions } from './contexts/CurrentSessionsContext'
@@ -130,7 +130,11 @@ function SingleSessionMessagePanel(props: SingleSessionMessagePanelProps) {
         label: a18n`Details`,
         action: () =>
           setRoute(
-            taskRoute(props.session.task.project, props.session.task._id)
+            sessionRoute(
+              props.session.task.project,
+              props.session.task._id,
+              props.session._id
+            )
           )
       })}
     />
