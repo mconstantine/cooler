@@ -1,4 +1,4 @@
-import { option } from 'fp-ts'
+import { array, option } from 'fp-ts'
 import { pipe } from 'fp-ts/function'
 import { useState } from 'react'
 import {
@@ -13,15 +13,20 @@ import { DateTimePicker } from '../../components/Form/Input/DateTimePicker/DateT
 import { List } from '../../components/List/List'
 import { LoadingBlock } from '../../components/Loading/LoadingBlock'
 import { Panel } from '../../components/Panel/Panel'
+import { useCurrentSessions } from '../../contexts/CurrentSessionsContext'
 import { useTaxes } from '../../contexts/TaxesContext'
 import { query } from '../../effects/api/api'
 import { useGet } from '../../effects/api/useApi'
+import { useSessionsClock } from '../../effects/useSessionDurationClock'
+import { SessionWithTaskLabel } from '../../entities/Session'
 import { computePercentage, formatPercentarge } from '../../globalDomain'
 import { getProfileStatsRequest, ProfileStatsQueryInput } from './domain'
 import { calculateNetValue, renderTaxItem } from './utils'
 
 export function ProfileStats() {
   const { taxes } = useTaxes()
+  const { currentSessions } = useCurrentSessions()
+
   const [input, setInput] = useState<ProfileStatsQueryInput>({
     since: new Date(
       new Date().getFullYear(),
@@ -33,6 +38,18 @@ export function ProfileStats() {
       0
     )
   })
+
+  const currentSessionsWithDuration = useSessionsClock(
+    pipe(
+      currentSessions,
+      option.map(sessions =>
+        sessions.filter(
+          session => session.task.startTime.getTime() >= input.since.getTime()
+        )
+      ),
+      option.getOrElse(() => [] as SessionWithTaskLabel[])
+    )
+  )
 
   const [profileStats] = useGet(getProfileStatsRequest, input)
 
@@ -62,9 +79,21 @@ export function ProfileStats() {
               () => <LoadingBlock />,
               error => <ErrorPanel error={error} />,
               stats => {
+                const currentSessionsWorkingHours = pipe(
+                  currentSessionsWithDuration,
+                  array.reduce(
+                    0,
+                    (workingHours, session) =>
+                      workingHours + session.duration / 3600000
+                  )
+                )
+
+                const actualWorkingHours =
+                  stats.actualWorkingHours + currentSessionsWorkingHours
+
                 const progress = computePercentage(
                   stats.expectedWorkingHours,
-                  stats.actualWorkingHours
+                  actualWorkingHours
                 )
 
                 return (
@@ -90,9 +119,7 @@ export function ProfileStats() {
                           label: option.none,
                           content: a18n`Actual working hours`,
                           description: option.none,
-                          value: formatDuration(
-                            stats.actualWorkingHours * 3600000
-                          ),
+                          value: formatDuration(actualWorkingHours * 3600000),
                           progress: option.none
                         },
                         {
@@ -102,8 +129,7 @@ export function ProfileStats() {
                           content: a18n`Remaining time (hours)`,
                           description: option.none,
                           value: formatDuration(
-                            (stats.expectedWorkingHours -
-                              stats.actualWorkingHours) *
+                            (stats.expectedWorkingHours - actualWorkingHours) *
                               3600000
                           ),
                           progress: option.none

@@ -11,7 +11,8 @@ const TaskLabel = t.type(
   {
     _id: ObjectId,
     name: LocalizedString,
-    project: ObjectId
+    project: ObjectId,
+    startTime: DateFromISOString
   },
   'TaskLabel'
 )
