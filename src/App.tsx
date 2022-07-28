@@ -16,6 +16,7 @@ const Projects = lazy(() => import('./pages/Projects/Projects'))
 const Profile = lazy(() => import('./pages/Profile/Profile'))
 const Settings = lazy(() => import('./pages/Settings/Settings'))
 const Tasks = lazy(() => import('./pages/Tasks/Tasks'))
+const Session = lazy(() => import('./pages/Session/Session'))
 
 export function App() {
   return (
@@ -42,6 +43,13 @@ export function App() {
                           ),
                           Task: ({ project, subject }) => (
                             <Tasks project={project} routeSubject={subject} />
+                          ),
+                          Session: ({ project, task, subject }) => (
+                            <Session
+                              projectId={project}
+                              taskId={task}
+                              _id={subject}
+                            />
                           ),
                           Settings: () => <Settings />,
                           CurrentSessions: () => <CurrentSessions />

@@ -47,6 +47,11 @@ export function CurrentSessionsPanel() {
                     )
                   )
                 ),
+              Session: ({ subject }) =>
+                pipe(
+                  sessions.length === 1,
+                  boolean.fold(constTrue, () => sessions[0]._id !== subject)
+                ),
               CurrentSessions: constFalse
             })
           )

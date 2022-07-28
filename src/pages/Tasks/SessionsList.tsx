@@ -25,14 +25,15 @@ import { makeGetSessionsRequest } from './domain'
 import { add } from 'ionicons/icons'
 import { query } from '../../effects/api/api'
 import { useCurrentSessions } from '../../contexts/CurrentSessionsContext'
+import { sessionRoute, useRouter } from '../../components/Router'
 
 interface Props {
   task: TaskWithStats
   onCreateSessionButtonClick: TaskEither<LocalizedString, unknown>
-  onSessionListItemClick: Reader<SessionWithTaskLabel, unknown>
 }
 
 export function SessionsList(props: Props) {
+  const { setRoute } = useRouter()
   const { currentSessions } = useCurrentSessions()
 
   const [input] = useState<ConnectionQueryInput>({
@@ -89,6 +90,9 @@ export function SessionsList(props: Props) {
     )
   )
 
+  const onSessionListItemClick: Reader<SessionWithTaskLabel, void> = session =>
+    setRoute(sessionRoute(props.task.project._id, props.task._id, session._id))
+
   const renderSessionItem: Reader<
     SessionWithTaskLabel,
     RoutedItem
@@ -130,7 +134,7 @@ export function SessionsList(props: Props) {
         )
       ),
       description: option.none,
-      action: () => props.onSessionListItemClick(session),
+      action: () => onSessionListItemClick(session),
       details: true
     }
   }

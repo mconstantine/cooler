@@ -11,7 +11,10 @@ import {
 } from '../../entities/Session'
 import { LocalizedString, ObjectId } from '../../globalDomain'
 import { useDelete, usePut } from '../../effects/api/useApi'
-import { makeDeleteSessionRequest, makeUpdateSessionRequest } from './domain'
+import {
+  makeDeleteSessionRequest,
+  makeUpdateSessionRequest
+} from '../Tasks/domain'
 import { useDialog } from '../../effects/useDialog'
 import { Reader } from 'fp-ts/Reader'
 import { useEffect, useState } from 'react'
@@ -35,12 +38,15 @@ interface Props {
 }
 
 export function SessionData(props: Props) {
-  const { currentSessions, notifyStoppedSession } = useCurrentSessions()
+  const { currentSessions, notifyStoppedSession, notifyDeletedSession } =
+    useCurrentSessions()
+
   const {
     duration,
     start: startClock,
     stop: stopClock
   } = useSessionDurationClock(props.session, false)
+
   const [isEditing, setIsEditing] = useState(false)
   const [error, setError] = useState<Option<LocalizedString>>(option.none)
 
@@ -94,7 +100,10 @@ export function SessionData(props: Props) {
         taskEither.chain(deleteSessionCommand),
         taskEither.bimap(
           error => pipe(error, option.some, setError),
-          props.onDelete
+          session => {
+            notifyDeletedSession(session)
+            props.onDelete(session)
+          }
         )
       ),
     {

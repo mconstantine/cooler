@@ -63,6 +63,13 @@ interface Task {
   readonly subject: DependentEntitySubject
 }
 
+interface Session {
+  readonly _tag: 'Session'
+  readonly project: ObjectIdFromString
+  readonly task: ObjectIdFromString
+  readonly subject: ObjectIdFromString
+}
+
 interface Settings {
   readonly _tag: 'Settings'
 }
@@ -76,6 +83,7 @@ export type Location =
   | Clients
   | Projects
   | Task
+  | Session
   | Settings
   | CurrentSessions
 
@@ -110,6 +118,19 @@ export function taskRoute(
   }
 }
 
+export function sessionRoute(
+  project: ObjectIdFromString,
+  task: ObjectIdFromString,
+  subject: ObjectIdFromString
+): Session {
+  return {
+    _tag: 'Session',
+    project,
+    task,
+    subject
+  }
+}
+
 export function currentSessionsRoute(): CurrentSessions {
   return { _tag: 'CurrentSessions' }
 }
@@ -132,8 +153,12 @@ export function isProjectsRoute(location: Location): boolean {
   return location._tag === 'Projects'
 }
 
-export function isTasksRoute(location: Location): boolean {
+export function isTaskRoute(location: Location): boolean {
   return location._tag === 'Task'
+}
+
+export function isSessionRoute(location: Location): boolean {
+  return location._tag === 'Session'
 }
 
 export function isSettingsRoute(location: Location): boolean {
@@ -168,6 +193,14 @@ const taskMatch = lit('projects')
   .then(type('subject', DependentEntitySubject))
   .then(end)
 
+const sessionMatch = lit('projects')
+  .then(type('project', ObjectIdFromString))
+  .then(lit('tasks'))
+  .then(type('task', ObjectIdFromString))
+  .then(lit('sessions'))
+  .then(type('subject', ObjectIdFromString))
+  .then(end)
+
 const settingsMatch = lit('settings').then(end)
 const currentSessionsMatch = lit('current-sessions').then(end)
 
@@ -177,6 +210,11 @@ const router = zero<Location>()
   .alt(projectsMatch.parser.map(({ subject }) => projectsRoute(subject)))
   .alt(
     taskMatch.parser.map(({ project, subject }) => taskRoute(project, subject))
+  )
+  .alt(
+    sessionMatch.parser.map(({ project, task, subject }) =>
+      sessionRoute(project, task, subject)
+    )
   )
   .alt(settingsMatch.parser.map(() => settingsRoute()))
   .alt(currentSessionsMatch.parser.map(() => currentSessionsRoute()))
@@ -197,6 +235,7 @@ function formatLocation(location: Location): string {
       Clients: location => format(clientsMatch.formatter, location),
       Projects: location => format(projectsMatch.formatter, location),
       Task: location => format(taskMatch.formatter, location),
+      Session: location => format(sessionMatch.formatter, location),
       Settings: location => format(settingsMatch.formatter, location),
       CurrentSessions: location =>
         format(currentSessionsMatch.formatter, location)

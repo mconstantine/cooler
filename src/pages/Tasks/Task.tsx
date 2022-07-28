@@ -1,115 +1,73 @@
-import { either, option } from 'fp-ts'
-import { constVoid, flow, pipe } from 'fp-ts/function'
-import { IO } from 'fp-ts/IO'
+import { option, taskEither } from 'fp-ts'
+import { pipe } from 'fp-ts/function'
 import { TaskEither } from 'fp-ts/TaskEither'
-import { Reader } from 'fp-ts/Reader'
-import { useState } from 'react'
-import { SessionWithTaskLabel } from '../../entities/Session'
 import { LocalizedString, ObjectId } from '../../globalDomain'
-import { SessionData as SessionPage } from './SessionPage'
-import { TaskPage } from './TaskPage'
-import { usePost } from '../../effects/api/useApi'
-import { startSessionRequest } from './domain'
+import { usePost, useReactiveCommand } from '../../effects/api/useApi'
+import { makeTaskQuery, startSessionRequest } from './domain'
 import { useCurrentSessions } from '../../contexts/CurrentSessionsContext'
-import { Either } from 'fp-ts/Either'
+import { projectsRoute, useRouter } from '../../components/Router'
+import { TaskWithStats } from '../../entities/Task'
+import { Reader } from 'fp-ts/Reader'
+import { useEffect } from 'react'
+import { query } from '../../effects/api/api'
+import { LoadingBlock } from '../../components/Loading/LoadingBlock'
+import { ErrorPanel } from '../../components/ErrorPanel/ErrorPanel'
+import { TaxesProvider } from '../../contexts/TaxesContext'
+import TaskData from './TaskData'
+import { TaskProgress } from './TaskProgress'
+import { SessionsList } from './SessionsList'
 
 interface Props {
   _id: ObjectId
 }
 
-interface TaskSubjectMode {
-  type: 'task'
-}
-
-interface SessionSubjectMode {
-  type: 'session'
-  session: SessionWithTaskLabel
-}
-
-type SubjectMode = TaskSubjectMode | SessionSubjectMode
-
-function foldSubjectMode<T>(
-  whenTask: Reader<TaskSubjectMode, T>,
-  whenSession: Reader<SessionSubjectMode, T>
-): Reader<SubjectMode, T> {
-  return subjectMode => {
-    switch (subjectMode.type) {
-      case 'task':
-        return whenTask(subjectMode)
-      case 'session':
-        return whenSession(subjectMode)
-    }
-  }
-}
-
 export default function Task(props: Props) {
-  const { notifyStartedSession, notifyDeletedSession } = useCurrentSessions()
-
-  const [subjectMode, setSubjectMode] = useState<SubjectMode>({
-    type: 'task'
-  })
-
+  const { setRoute } = useRouter()
+  const { notifyStartedSession } = useCurrentSessions()
   const startSessionCommand = usePost(startSessionRequest)
 
-  // This is so ugly because we need to run `new Date()` when the function is called, not when it's
-  // declared
-  const onCreateSessionButtonClick: TaskEither<LocalizedString, void> = () =>
-    new Promise<Either<LocalizedString, void>>(resolve =>
+  const [task, setTask, getTaskCommand] = useReactiveCommand(
+    makeTaskQuery(props._id)
+  )
+
+  const onCreateSessionButtonClick: TaskEither<LocalizedString, void> = pipe(
+    taskEither.rightIO(() => new Date()),
+    taskEither.chain(startTime =>
       startSessionCommand({
         task: props._id,
-        startTime: new Date(),
+        startTime,
         endTime: option.none
-      })().then(
-        either.fold(flow(either.left, resolve), session => {
-          notifyStartedSession(session)
-          resolve(either.right(void 0))
-        })
-      )
+      })
+    ),
+    taskEither.chain(session =>
+      taskEither.fromIO(() => notifyStartedSession(session))
     )
+  )
 
-  const onSessionListItemClick: Reader<SessionWithTaskLabel, void> = session =>
-    setSubjectMode({
-      type: 'session',
-      session
-    })
+  const onUpdate: Reader<TaskWithStats, void> = setTask
 
-  const backToTask: IO<void> = () =>
-    setSubjectMode({
-      type: 'task'
-    })
+  const onDelete: Reader<TaskWithStats, void> = task =>
+    setRoute(projectsRoute(task.project._id))
 
-  const onUpdate: Reader<SessionWithTaskLabel, void> = session => {
-    pipe(
-      subjectMode,
-      foldSubjectMode(constVoid, () =>
-        setSubjectMode({ type: 'session', session })
-      )
-    )
-  }
-
-  const onDelete: Reader<SessionWithTaskLabel, void> = session => {
-    notifyDeletedSession(session)
-    backToTask()
-  }
+  useEffect(() => {
+    const fetchTask = getTaskCommand()
+    fetchTask()
+  }, [getTaskCommand])
 
   return pipe(
-    subjectMode,
-    foldSubjectMode(
-      () => (
-        <TaskPage
-          _id={props._id}
-          onCreateSessionButtonClick={onCreateSessionButtonClick}
-          onSessionListItemClick={onSessionListItemClick}
-        />
-      ),
-      ({ session }) => (
-        <SessionPage
-          session={session}
-          taskId={props._id}
-          onCancel={backToTask}
-          onUpdate={onUpdate}
-          onDelete={onDelete}
-        />
+    task,
+    query.fold(
+      () => <LoadingBlock />,
+      error => <ErrorPanel error={error} />,
+      task => (
+        <TaxesProvider>
+          <TaskData task={task} onUpdate={onUpdate} onDelete={onDelete} />
+          <TaskProgress task={task} />
+          <SessionsList
+            task={task}
+            onCreateSessionButtonClick={onCreateSessionButtonClick}
+          />
+        </TaxesProvider>
       )
     )
   )

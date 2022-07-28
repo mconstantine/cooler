@@ -53,7 +53,7 @@ export const makeDeleteTaskRequest = (_id: ObjectId) =>
 
 export const makeGetSessionsRequest = (taskId: ObjectId) =>
   makeGetRequest({
-    url: `/sessions/${taskId}`,
+    url: `/sessions/task/${taskId}`,
     inputCodec: ConnectionQueryInput,
     outputCodec: Connection(SessionWithTaskLabel)
   })
