@@ -248,6 +248,8 @@ object Projects {
     Error(Status.NotFound, __.ErrorProjectNotFound)
   )
 
+  // TODO: this should get actualWorkingHours in seconds from DB and map it in hours.
+  // See Task for reference.
   def findById(
       _id: ObjectId
   )(using customer: User)(using Lang): EitherT[IO, Error, ProjectWithStats] =
@@ -337,7 +339,7 @@ object Projects {
                                       "dateString" -> "$endTime"
                                     )
                                   ),
-                                  "unit" -> "hour"
+                                  "unit" -> "second"
                                 )
                               )
                             )
@@ -381,7 +383,27 @@ object Projects {
               ),
               Aggregates.project(Document("tasks" -> 0))
             )
-          ).first
+          ).first.map(
+            _.flatMap(project =>
+              NonNegativeFloat
+                .decode(project.actualWorkingHours.toFloat / 3600f)
+                .map(actualWorkingHours =>
+                  ProjectWithStats(
+                    project._id,
+                    project.name,
+                    project.description,
+                    project.cashData,
+                    project.createdAt,
+                    project.updatedAt,
+                    project.client,
+                    project.expectedWorkingHours,
+                    actualWorkingHours,
+                    project.budget,
+                    project.balance
+                  )
+                )
+            )
+          )
         )
       ),
       Error(Status.NotFound, __.ErrorProjectNotFound)
