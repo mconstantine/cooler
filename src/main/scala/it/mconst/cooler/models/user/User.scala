@@ -300,7 +300,7 @@ object Users {
                                     "dateString" -> "$endTime"
                                   )
                                 ),
-                                "unit" -> "hour"
+                                "unit" -> "second"
                               )
                             )
                           )
@@ -349,7 +349,22 @@ object Users {
             ),
             Aggregates.project(Document("_id" -> 0))
           )
-        ).first.map(_.getOrElse(UserStats.empty))
+        ).first
+          .map(
+            _.flatMap(stats =>
+              NonNegativeFloat
+                .decode(stats.actualWorkingHours.toFloat / 3600f)
+                .map(actualWorkingHours =>
+                  UserStats(
+                    stats.expectedWorkingHours,
+                    actualWorkingHours,
+                    stats.budget,
+                    stats.balance
+                  )
+                )
+            )
+          )
+          .map(_.getOrElse(UserStats.empty))
       )
     )
 

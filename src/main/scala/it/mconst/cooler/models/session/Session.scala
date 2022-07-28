@@ -35,7 +35,8 @@ import org.http4s.Status
 final case class TaskLabel(
     _id: ObjectId,
     name: NonEmptyString,
-    project: ObjectId
+    project: ObjectId,
+    startTime: BsonDateTime
 )
 
 final case class SessionWithTaskLabel(
@@ -193,7 +194,8 @@ object Sessions {
                   Document(
                     "_id" -> "$t._id",
                     "name" -> "$t.name",
-                    "project" -> "$t.project._id"
+                    "project" -> "$t.project._id",
+                    "startTime" -> "$t.startTime"
                   )
                 )
               )
@@ -273,7 +275,8 @@ object Sessions {
               Document(
                 "_id" -> "$t._id",
                 "name" -> "$t.name",
-                "project" -> "$t.project._id"
+                "project" -> "$t.project._id",
+                "startTime" -> "$t.startTime"
               )
             )
           )
@@ -321,7 +324,8 @@ object Sessions {
               Document(
                 "_id" -> "$t._id",
                 "name" -> "$t.name",
-                "project" -> "$t.project._id"
+                "project" -> "$t.project._id",
+                "startTime" -> "$t.startTime"
               )
             )
           )
