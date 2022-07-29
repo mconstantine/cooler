@@ -77,6 +77,8 @@ sealed abstract trait Task(
 
 final case class DbTask(
     _id: ObjectId,
+    val user: ObjectId,
+    val client: ObjectId,
     val project: ObjectId,
     name: NonEmptyString,
     description: Option[NonEmptyString],
@@ -97,8 +99,9 @@ final case class DbTask(
     )
 
 final case class ProjectLabel(_id: ObjectId, name: NonEmptyString)
+final case class ClientLabel(_id: ObjectId, name: NonEmptyString)
 
-final case class TaskWithProjectLabel(
+final case class TaskWithLabels(
     _id: ObjectId,
     name: NonEmptyString,
     description: Option[NonEmptyString],
@@ -107,6 +110,7 @@ final case class TaskWithProjectLabel(
     hourlyCost: PositiveFloat,
     createdAt: BsonDateTime,
     updatedAt: BsonDateTime,
+    client: ClientLabel,
     project: ProjectLabel
 ) extends Task(
       _id: ObjectId,
@@ -119,15 +123,15 @@ final case class TaskWithProjectLabel(
       updatedAt: BsonDateTime
     )
 
-object TaskWithProjectLabel {
-  given EntityEncoder[IO, TaskWithProjectLabel] =
-    jsonEncoderOf[IO, TaskWithProjectLabel]
+object TaskWithLabels {
+  given EntityEncoder[IO, TaskWithLabels] =
+    jsonEncoderOf[IO, TaskWithLabels]
 
-  given EntityEncoder[IO, Iterable[TaskWithProjectLabel]] =
-    jsonEncoderOf[IO, Iterable[TaskWithProjectLabel]]
+  given EntityEncoder[IO, Iterable[TaskWithLabels]] =
+    jsonEncoderOf[IO, Iterable[TaskWithLabels]]
 
-  given EntityEncoder[IO, Cursor[TaskWithProjectLabel]] =
-    jsonEncoderOf[IO, Cursor[TaskWithProjectLabel]]
+  given EntityEncoder[IO, Cursor[TaskWithLabels]] =
+    jsonEncoderOf[IO, Cursor[TaskWithLabels]]
 }
 
 final case class TaskWithStats(
@@ -139,6 +143,7 @@ final case class TaskWithStats(
     hourlyCost: PositiveFloat,
     createdAt: BsonDateTime,
     updatedAt: BsonDateTime,
+    client: ClientLabel,
     project: ProjectLabel,
     actualWorkingHours: NonNegativeFloat
 ) extends Task(
@@ -258,10 +263,14 @@ object Task {
       )
   )
 
-  def fromInputData(data: InputData)(using Lang): Either[Error, DbTask] =
+  def fromInputData(data: InputData, client: ObjectId)(using
+      customer: User
+  )(using Lang): Either[Error, DbTask] =
     validateInputData(data).toResult.map(data =>
       DbTask(
         ObjectId(),
+        customer._id,
+        client,
         data.project,
         data.name,
         data.description,
@@ -311,7 +320,9 @@ object Task {
       )
   }
 
-  def fromBatchInputData(data: BatchInputData)(using
+  def fromBatchInputData(data: BatchInputData, client: ObjectId)(using
+      customer: User
+  )(using
       Lang
   ): Either[Error, List[DbTask]] =
     Task
@@ -346,6 +357,8 @@ object Task {
 
           DbTask(
             ObjectId(),
+            customer._id,
+            client,
             validData.project,
             name,
             none[NonEmptyString],
@@ -362,48 +375,63 @@ object Task {
 object Tasks {
   val collection = Collection[IO, Task.InputData, DbTask]("tasks")
 
-  private def findClient(projectId: ObjectId)(using
-      customer: User
-  )(using Lang): EitherT[IO, Error, Client] =
-    Projects.collection.use(c =>
-      EitherT.fromOptionF(
-        c.raw(
-          _.aggregateWithCodec[Client](
-            Seq(
-              Aggregates.`match`(Filters.eq("_id", projectId)),
-              Aggregates.project(Document("_id" -> false, "client" -> 1)),
-              Aggregates.lookup(
-                Clients.collection.name,
-                "client",
-                "_id",
-                "client"
+  def labelsStages = Seq(
+    Aggregates.lookup(Clients.collection.name, "client", "_id", "c"),
+    Aggregates.unwind("$c"),
+    Aggregates.lookup(Projects.collection.name, "project", "_id", "p"),
+    Aggregates.unwind("$p"),
+    Aggregates.addFields(
+      Field(
+        "client",
+        Document(
+          "_id" -> "$p._id",
+          "name" -> Document(
+            "$cond" -> Document(
+              "if" -> Document(
+                "$gt" -> List("$c.firstName", null)
               ),
-              Aggregates.unwind("$client"),
-              Aggregates.`match`(Filters.eq("client.user", customer._id)),
-              Aggregates.replaceRoot("$client")
+              "then" -> Document(
+                "$concat" -> List(
+                  "$c.firstName",
+                  " ",
+                  "$c.lastName"
+                )
+              ),
+              "else" -> "$c.businessName"
             )
-          ).first
-        ),
-        Error(Status.NotFound, __.ErrorClientNotFound)
+          )
+        )
+      ),
+      Field(
+        "project",
+        Document(
+          "_id" -> "$p._id",
+          "name" -> "$p.name"
+        )
       )
     )
+    // TODO: $project?
+  )
 
   def create(
       data: Task.InputData
   )(using
       customer: User
-  )(using Lang): EitherT[IO, Error, TaskWithProjectLabel] =
+  )(using Lang): EitherT[IO, Error, TaskWithLabels] =
     collection.use { c =>
       for
-        data <- EitherT.fromEither[IO](Task.fromInputData(data))
-        _ <- findClient(data.project).leftMap(_ =>
-          Error(Status.NotFound, __.ErrorProjectNotFound)
+        projectId <- EitherT
+          .fromEither[IO](data.project.toObjectId)
+          .leftMap(_ => Error(Status.NotFound, __.ErrorProjectNotFound))
+        project <- Projects.findByIdNoStats(projectId)
+        data <- EitherT.fromEither[IO](
+          Task.fromInputData(data, project.client._id)
         )
         result <- c.create(data)
         task <- findByIdNoStats(result)
         _ <- Projects.collection.use(
           _.update(
-            task.project._id,
+            project._id,
             Projects.collection.Update
               .`with`("updatedAt" -> BsonDateTime(System.currentTimeMillis))
               .build
@@ -416,10 +444,16 @@ object Tasks {
       data: Task.BatchInputData
   )(using
       customer: User
-  )(using Lang): EitherT[IO, Error, Iterable[TaskWithProjectLabel]] = {
+  )(using Lang): EitherT[IO, Error, Iterable[TaskWithLabels]] = {
     collection.use(c =>
       for {
-        inputData <- EitherT.fromEither[IO](Task.fromBatchInputData(data))
+        projectId <- EitherT
+          .fromEither[IO](data.project.toObjectId)
+          .leftMap(_ => Error(Status.NotFound, __.ErrorProjectNotFound))
+        project <- Projects.findByIdNoStats(projectId)
+        inputData <- EitherT.fromEither[IO](
+          Task.fromBatchInputData(data, project.client._id)
+        )
         ids <- EitherT(
           c
             .raw(_.insertMany(inputData))
@@ -432,47 +466,10 @@ object Tasks {
         )
         tasks <- EitherT.right[Error](
           c.raw(
-            _.aggregateWithCodec[TaskWithProjectLabel](
+            _.aggregateWithCodec[TaskWithLabels](
               Seq(
-                Aggregates.`match`(Filters.in("_id", ids.asJava)),
-                Document(
-                  "$lookup" -> Document(
-                    "from" -> Projects.collection.name,
-                    "localField" -> "project",
-                    "foreignField" -> "_id",
-                    "as" -> "p",
-                    "pipeline" -> Seq(
-                      Aggregates.lookup(
-                        Clients.collection.name,
-                        "client",
-                        "_id",
-                        "client"
-                      ),
-                      Aggregates.unwind("$client"),
-                      Aggregates.`match`(
-                        Filters.eq("client.user", customer._id)
-                      ),
-                      Aggregates
-                        .addFields(Field("client", "$client._id"))
-                    )
-                  )
-                ),
-                Document(
-                  "$match" -> Document(
-                    "p" -> Document("$not" -> Document("$size", 0))
-                  )
-                ),
-                Aggregates.unwind("$p"),
-                Aggregates.addFields(
-                  Field(
-                    "project",
-                    Document(
-                      "_id" -> "$p._id",
-                      "name" -> "$p.name"
-                    )
-                  )
-                )
-              )
+                Aggregates.`match`(Filters.in("_id", ids.asJava))
+              ) ++ labelsStages
             ).all
           )
         )
@@ -482,48 +479,17 @@ object Tasks {
 
   def findByIdNoStats(_id: ObjectId)(using customer: User)(using
       Lang
-  ): EitherT[IO, Error, TaskWithProjectLabel] =
+  ): EitherT[IO, Error, TaskWithLabels] =
     EitherT.fromOptionF(
       collection
         .use(
           _.raw(
-            _.aggregateWithCodec[TaskWithProjectLabel](
+            _.aggregateWithCodec[TaskWithLabels](
               Seq(
-                Aggregates.`match`(Filters.eq("_id", _id)),
-                Document(
-                  "$lookup" -> Document(
-                    "from" -> Projects.collection.name,
-                    "localField" -> "project",
-                    "foreignField" -> "_id",
-                    "as" -> "p",
-                    "pipeline" -> Seq(
-                      Aggregates.lookup(
-                        Clients.collection.name,
-                        "client",
-                        "_id",
-                        "client"
-                      ),
-                      Aggregates.unwind("$client"),
-                      Aggregates.`match`(
-                        Filters.eq("client.user", customer._id)
-                      ),
-                      Aggregates.addFields(Field("client", "$client._id"))
-                    )
-                  )
-                ),
-                Document(
-                  "$match" -> Document(
-                    "p" -> Document("$not" -> Document("$size", 0))
-                  )
-                ),
-                Aggregates.unwind("$p"),
-                Aggregates.addFields(
-                  Field(
-                    "project",
-                    Document(
-                      "_id" -> "$p._id",
-                      "name" -> "$p.name"
-                    )
+                Aggregates.`match`(
+                  Filters.and(
+                    Filters.eq("user", customer._id),
+                    Filters.eq("_id", _id)
                   )
                 )
               )
@@ -542,43 +508,13 @@ object Tasks {
           _.raw(
             _.aggregateWithCodec[TaskWithStats](
               Seq(
-                Aggregates.`match`(Filters.eq("_id", _id)),
-                Document(
-                  "$lookup" -> Document(
-                    "from" -> Projects.collection.name,
-                    "localField" -> "project",
-                    "foreignField" -> "_id",
-                    "as" -> "p",
-                    "pipeline" -> Seq(
-                      Aggregates.lookup(
-                        Clients.collection.name,
-                        "client",
-                        "_id",
-                        "client"
-                      ),
-                      Aggregates.unwind("$client"),
-                      Aggregates.`match`(
-                        Filters.eq("client.user", customer._id)
-                      ),
-                      Aggregates.addFields(Field("client", "$client._id"))
-                    )
+                Aggregates.`match`(
+                  Filters.and(
+                    Filters.eq("user", customer._id),
+                    Filters.eq("_id", _id)
                   )
-                ),
-                Document(
-                  "$match" -> Document(
-                    "p" -> Document("$not" -> Document("$size", 0))
-                  )
-                ),
-                Aggregates.unwind("$p"),
-                Aggregates.addFields(
-                  Field(
-                    "project",
-                    Document(
-                      "_id" -> "$p._id",
-                      "name" -> "$p.name"
-                    )
-                  )
-                ),
+                )
+              ) ++ labelsStages ++ Seq(
                 Document(
                   "$lookup" -> Document(
                     "from" -> Sessions.collection.name,
@@ -633,6 +569,7 @@ object Tasks {
                       task.hourlyCost,
                       task.createdAt,
                       task.updatedAt,
+                      task.client,
                       task.project,
                       actualWorkingHours
                     )
@@ -648,65 +585,29 @@ object Tasks {
       customer: User
   )(using
       Lang
-  ): EitherT[IO, Error, Cursor[TaskWithProjectLabel]] = {
-    val projectMatch = project.fold(Seq.empty)(_id =>
-      Seq(Aggregates.`match`(Filters.eq("_id", _id)))
-    )
-
-    val projectsLookupPipeline = projectMatch ++ Seq(
-      Document(
-        "$lookup" -> Document(
-          "from" -> Clients.collection.name,
-          "localField" -> "client",
-          "foreignField" -> "_id",
-          "as" -> "client"
-        )
-      ),
-      Aggregates.`match`(Filters.eq("client.user", customer._id))
+  ): EitherT[IO, Error, Cursor[TaskWithLabels]] = {
+    val matchStage = project.fold(Filters.eq("user", customer._id))(_id =>
+      Filters.and(Filters.eq("user", customer._id), Filters.eq("project", _id))
     )
 
     collection.use(
-      _.find[TaskWithProjectLabel](
+      _.find[TaskWithLabels](
         "updatedAt",
-        Seq(
-          Document(
-            "$lookup" -> Document(
-              "from" -> Projects.collection.name,
-              "localField" -> "project",
-              "foreignField" -> "_id",
-              "as" -> "p",
-              "pipeline" -> projectsLookupPipeline
-            )
-          ),
-          Document(
-            "$match" -> Document(
-              "p" -> Document("$not" -> Document("$size", 0))
-            )
-          ),
-          Aggregates.unwind("$p"),
-          Aggregates.addFields(
-            Field(
-              "project",
-              Document(
-                "_id" -> "$p._id",
-                "name" -> "$p.name"
-              )
-            )
-          )
-        )
+        Seq(matchStage) ++ labelsStages
       )(CursorQuery.fromCursorNoQuery(query))
     )
   }
 
   def getDue(since: BsonDateTime, to: Option[BsonDateTime])(using
       customer: User
-  ): IO[Iterable[TaskWithProjectLabel]] =
+  ): IO[Iterable[TaskWithLabels]] =
     collection.use(
       _.raw(
-        _.aggregateWithCodec[TaskWithProjectLabel](
+        _.aggregateWithCodec[TaskWithLabels](
           Seq(
             Aggregates.`match`(
               Filters.and(
+                Filters.eq("user", customer._id),
                 Filters.gte("startTime", since.toISOString),
                 Filters.lt(
                   "startTime",
@@ -714,58 +615,36 @@ object Tasks {
                     .toISOString
                 )
               )
-            ),
-            Document(
-              "$lookup" -> Document(
-                "from" -> Projects.collection.name,
-                "localField" -> "project",
-                "foreignField" -> "_id",
-                "as" -> "p",
-                "pipeline" -> Seq(
-                  Aggregates.lookup(
-                    Clients.collection.name,
-                    "client",
-                    "_id",
-                    "client"
-                  ),
-                  Aggregates.`match`(Filters.eq("client.user", customer._id))
-                )
-              )
-            ),
-            Document(
-              "$match" -> Document(
-                "p" -> Document("$not" -> Document("$size", 0))
-              )
-            ),
-            Aggregates.unwind("$p"),
-            Aggregates.addFields(
-              Field(
-                "project",
-                Document(
-                  "_id" -> "$p._id",
-                  "name" -> "$p.name"
-                )
-              )
-            ),
-            Aggregates.project(Document("p" -> 0))
-          )
+            )
+          ) ++ labelsStages
         ).all
       )
     )
 
   def update(_id: ObjectId, data: Task.InputData)(using customer: User)(using
       Lang
-  ): EitherT[IO, Error, TaskWithStats] =
+  ): EitherT[IO, Error, TaskWithStats] = {
+    final case class ProjectData(_id: ObjectId, client: ObjectId)
+
     for
-      task <- findById(_id)
+      task <- findByIdNoStats(_id)
       data <- EitherT.fromEither[IO](Task.validateInputData(data).toResult)
-      projectId <- Projects.findById(data.project).map(_._id)
+      projectData <-
+        if task.project._id == data.project then
+          EitherT.rightT[IO, Error](
+            ProjectData(task.project._id, task.client._id)
+          )
+        else
+          Projects
+            .findByIdNoStats(data.project)
+            .map(project => ProjectData(project._id, project.client._id))
       _ <- collection
         .use(
           _.update(
             task._id,
             collection.Update
-              .`with`("project" -> projectId)
+              .`with`("project" -> projectData._id)
+              .`with`("client" -> projectData.client)
               .`with`("name" -> data.name)
               .`with`(
                 "description" -> data.description,
@@ -777,16 +656,17 @@ object Tasks {
               .build
           )
         )
+      result <- findById(_id)
       _ <- Projects.collection.use(
         _.update(
-          projectId,
+          result.project._id,
           Projects.collection.Update
             .`with`("updatedAt" -> BsonDateTime(System.currentTimeMillis))
             .build
         )
       )
-      result <- findById(_id)
     yield result
+  }
 
   def delete(_id: ObjectId)(using customer: User)(using
       Lang

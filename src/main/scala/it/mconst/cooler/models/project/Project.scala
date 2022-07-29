@@ -71,6 +71,7 @@ final case class ClientLabel(
 final case class DbProject(
     _id: ObjectId,
     val client: ObjectId,
+    val user: ObjectId,
     name: NonEmptyString,
     description: Option[NonEmptyString],
     cashData: Option[ProjectCashData],
@@ -87,6 +88,7 @@ final case class DbProject(
 
 object DbProject {
   given EntityEncoder[IO, DbProject] = jsonEncoderOf[IO, DbProject]
+
   given EntityEncoder[IO, Cursor[DbProject]] =
     jsonEncoderOf[IO, Cursor[DbProject]]
 }
@@ -170,12 +172,13 @@ object Project {
     ValidInputData(client, name, description, data.cashData)
   )
 
-  def fromInputData(data: InputData)(using
+  def fromInputData(data: InputData)(using customer: User)(using
       Lang
   ): Either[Error, DbProject] = validateInputData(data).toResult.map(data =>
     DbProject(
       ObjectId(),
       data.client,
+      customer._id,
       data.name,
       data.description,
       data.cashData,
@@ -187,6 +190,32 @@ object Project {
 
 object Projects {
   val collection = Collection[IO, Project.InputData, DbProject]("projects")
+
+  private def labelsStages = Seq(
+    Aggregates.lookup(Clients.collection.name, "client", "_id", "c"),
+    Aggregates.unwind("$c"),
+    Aggregates.addFields(
+      Field(
+        "client",
+        Document(
+          "_id" -> "$c._id",
+          "type" -> "$c.type",
+          "name" -> Document(
+            "$cond" -> Document(
+              "if" -> Document(
+                "$gt" -> List("$c.firstName", null)
+              ),
+              "then" -> Document(
+                "$concat" -> List("$c.firstName", " ", "$c.lastName")
+              ),
+              "else" -> "$c.businessName"
+            )
+          )
+        )
+      )
+    )
+    // TODO: $project?
+  )
 
   def create(
       data: Project.InputData
@@ -202,46 +231,20 @@ object Projects {
       yield project
     }
 
-  private def findByIdNoStats(_id: ObjectId)(using
+  def findByIdNoStats(_id: ObjectId)(using customer: User)(using
       Lang
   ): EitherT[IO, Error, ProjectWithClientLabel] = EitherT.fromOptionF(
     collection.use(
       _.raw(
         _.aggregateWithCodec[ProjectWithClientLabel](
           Seq(
-            Aggregates.`match`(Filters.eq("_id", _id)),
-            Aggregates.lookup(
-              Clients.collection.name,
-              "client",
-              "_id",
-              "c"
-            ),
-            Aggregates.unwind("$c"),
-            Aggregates.addFields(
-              Field(
-                "client",
-                Document(
-                  "_id" -> "$c._id",
-                  "type" -> "$c.type",
-                  "name" -> Document(
-                    "$cond" -> Document(
-                      "if" -> Document(
-                        "$gt" -> List("$c.firstName", null)
-                      ),
-                      "then" -> Document(
-                        "$concat" -> List(
-                          "$c.firstName",
-                          " ",
-                          "$c.lastName"
-                        )
-                      ),
-                      "else" -> "$c.businessName"
-                    )
-                  )
-                )
+            Aggregates.`match`(
+              Filters.and(
+                Filters.eq("user", customer._id),
+                Filters.eq("_id", _id)
               )
             )
-          )
+          ) ++ labelsStages
         ).first
       )
     ),
@@ -256,40 +259,13 @@ object Projects {
         _.raw(
           _.aggregateWithCodec[ProjectWithStats](
             Seq(
-              Aggregates.`match`(Filters.eq("_id", _id)),
-              Aggregates.lookup(
-                Clients.collection.name,
-                "client",
-                "_id",
-                "c"
-              ),
-              Aggregates.unwind("$c"),
-              Aggregates.`match`(Filters.eq("c.user", customer._id)),
-              Aggregates.addFields(
-                Field(
-                  "client",
-                  Document(
-                    "_id" -> "$c._id",
-                    "type" -> "$c.type",
-                    "name" -> Document(
-                      "$cond" -> Document(
-                        "if" -> Document(
-                          "$gt" -> List("$c.firstName", null)
-                        ),
-                        "then" -> Document(
-                          "$concat" -> List(
-                            "$c.firstName",
-                            " ",
-                            "$c.lastName"
-                          )
-                        ),
-                        "else" -> "$c.businessName"
-                      )
-                    )
-                  )
+              Aggregates.`match`(
+                Filters.and(
+                  Filters.eq("user", customer._id),
+                  Filters.eq("_id", _id)
                 )
-              ),
-              Aggregates.project(Document("c" -> 0)),
+              )
+            ) ++ labelsStages ++ Seq(
               Document(
                 "$lookup" -> Document(
                   "from" -> Tasks.collection.name,
@@ -418,32 +394,8 @@ object Projects {
       _.find[ProjectWithClientLabel](
         "name",
         Seq(
-          Aggregates
-            .lookup(Clients.collection.name, "client", "_id", "c"),
-          Aggregates.unwind("$c"),
-          Aggregates.`match`(Filters.eq("c.user", customer._id)),
-          Aggregates.addFields(
-            Field(
-              "client",
-              Document(
-                "_id" -> "$c._id",
-                "type" -> "$c.type",
-                "name" -> Document(
-                  "$cond" -> Document(
-                    "if" -> Document(
-                      "$gt" -> List("$c.firstName", null)
-                    ),
-                    "then" -> Document(
-                      "$concat" -> List("$c.firstName", " ", "$c.lastName")
-                    ),
-                    "else" -> "$c.businessName"
-                  )
-                )
-              )
-            )
-          ),
-          Aggregates.project(Document("c" -> 0))
-        )
+          Aggregates.`match`(Filters.eq("user", customer._id))
+        ) ++ labelsStages
       )(query)
     )
 
@@ -454,32 +406,8 @@ object Projects {
       _.find[ProjectWithClientLabel](
         "updatedAt",
         Seq(
-          Aggregates
-            .lookup(Clients.collection.name, "client", "_id", "c"),
-          Aggregates.unwind("$c"),
-          Aggregates.`match`(Filters.eq("c.user", customer._id)),
-          Aggregates.addFields(
-            Field(
-              "client",
-              Document(
-                "_id" -> "$c._id",
-                "type" -> "$c.type",
-                "name" -> Document(
-                  "$cond" -> Document(
-                    "if" -> Document(
-                      "$gt" -> List("$c.firstName", null)
-                    ),
-                    "then" -> Document(
-                      "$concat" -> List("$c.firstName", " ", "$c.lastName")
-                    ),
-                    "else" -> "$c.businessName"
-                  )
-                )
-              )
-            )
-          ),
-          Aggregates.project(Document("c" -> 0))
-        )
+          Aggregates.`match`(Filters.eq("user", customer._id))
+        ) ++ labelsStages
       )(query)
     )
 
@@ -487,15 +415,18 @@ object Projects {
       Lang
   ): EitherT[IO, Error, ProjectWithStats] =
     for
-      project <- findById(_id)
+      project <- findByIdNoStats(_id)
       data <- EitherT.fromEither[IO](Project.validateInputData(data).toResult)
-      client <- Clients.findById(data.client)
+      client <-
+        if project.client._id == data.client then
+          EitherT.rightT[IO, Error](project.client._id)
+        else Clients.findById(data.client).map(_._id)
       _ <- collection
         .useWithCodec[ProjectCashData, Error, UpdateResult](
           _.update(
             project._id,
             collection.Update
-              .`with`("client" -> client._id)
+              .`with`("client" -> client)
               .`with`("name" -> data.name)
               .`with`(
                 "description" -> data.description,
@@ -517,27 +448,13 @@ object Projects {
     for
       project <- findById(_id)
       _ <- collection.use(_.delete(project._id))
-      sessions <- EitherT.right(
-        Sessions.collection.use(
-          _.raw(
-            _.aggregateWithCodec[Session](
-              Seq(
-                Aggregates.lookup(Tasks.collection.name, "task", "_id", "task"),
-                Aggregates.unwind("$task"),
-                Aggregates.`match`(Filters.eq("task.project", project._id)),
-                Aggregates.addFields(Field("task", "$task._id"))
-              )
-            ).all
-          )
-        )
-      )
-      _ <- EitherT.right(
-        Sessions.collection.use(
-          _.raw(_.deleteMany(Filter.in("_id", Seq.from(sessions.map(_._id)))))
-        )
-      )
       _ <- EitherT.right(
         Tasks.collection.use(
+          _.raw(_.deleteMany(Filter.eq("project", project._id)))
+        )
+      )
+      _ <- EitherT.right(
+        Sessions.collection.use(
           _.raw(_.deleteMany(Filter.eq("project", project._id)))
         )
       )
@@ -551,6 +468,7 @@ object Projects {
         _.raw(
           _.aggregateWithCodec[ProjectCashedBalance](
             Seq(
+              Aggregates.`match`(Filters.eq("user", customer._id)),
               Aggregates.lookup(
                 Clients.collection.name,
                 "client",
@@ -560,14 +478,11 @@ object Projects {
               Aggregates.unwind("$client"),
               Aggregates.`match`(
                 Filters.and(
-                  Filters.eq("client.user", customer._id),
-                  Filters.and(
-                    Filters.gte("cashData.at", since.toISOString),
-                    Filters.lt(
-                      "cashData.at",
-                      to.getOrElse(BsonDateTime(System.currentTimeMillis))
-                        .toISOString
-                    )
+                  Filters.gte("cashData.at", since.toISOString),
+                  Filters.lt(
+                    "cashData.at",
+                    to.getOrElse(BsonDateTime(System.currentTimeMillis))
+                      .toISOString
                   )
                 )
               ),

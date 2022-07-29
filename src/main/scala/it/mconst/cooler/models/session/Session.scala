@@ -35,12 +35,23 @@ import org.http4s.Status
 final case class TaskLabel(
     _id: ObjectId,
     name: NonEmptyString,
-    project: ObjectId,
     startTime: BsonDateTime
 )
 
-final case class SessionWithTaskLabel(
+final case class ProjectLabel(
     _id: ObjectId,
+    name: NonEmptyString
+)
+
+final case class ClientLabel(
+    _id: ObjectId,
+    name: NonEmptyString
+)
+
+final case class SessionWithLabels(
+    _id: ObjectId,
+    client: ClientLabel,
+    project: ProjectLabel,
     task: TaskLabel,
     startTime: BsonDateTime,
     endTime: Option[BsonDateTime],
@@ -48,19 +59,22 @@ final case class SessionWithTaskLabel(
     updatedAt: BsonDateTime
 ) extends DbDocument
 
-object SessionWithTaskLabel {
-  given EntityEncoder[IO, SessionWithTaskLabel] =
-    jsonEncoderOf[IO, SessionWithTaskLabel]
+object SessionWithLabels {
+  given EntityEncoder[IO, SessionWithLabels] =
+    jsonEncoderOf[IO, SessionWithLabels]
 
-  given EntityEncoder[IO, Cursor[SessionWithTaskLabel]] =
-    jsonEncoderOf[IO, Cursor[SessionWithTaskLabel]]
+  given EntityEncoder[IO, Cursor[SessionWithLabels]] =
+    jsonEncoderOf[IO, Cursor[SessionWithLabels]]
 
-  given EntityEncoder[IO, Iterable[SessionWithTaskLabel]] =
-    jsonEncoderOf[IO, Iterable[SessionWithTaskLabel]]
+  given EntityEncoder[IO, Iterable[SessionWithLabels]] =
+    jsonEncoderOf[IO, Iterable[SessionWithLabels]]
 }
 
 final case class Session(
     _id: ObjectId,
+    val user: ObjectId,
+    val client: ObjectId,
+    val project: ObjectId,
     val task: ObjectId,
     startTime: BsonDateTime,
     endTime: Option[BsonDateTime],
@@ -96,10 +110,18 @@ object Session {
       .getOrElse(Valid(none[BsonDateTime]))
   ).mapN((task, startTime, endTime) => ValidInputData(task, startTime, endTime))
 
-  def fromInputData(data: InputData)(using Lang): Either[Error, Session] =
+  def fromInputData(
+      data: InputData,
+      client: ObjectId,
+      project: ObjectId,
+      task: ObjectId
+  )(using customer: User)(using Lang): Either[Error, Session] =
     validateInputData(data).toResult.map(data =>
       Session(
         ObjectId(),
+        customer._id,
+        client,
+        project,
         data.task,
         data.startTime.getOrElse(BsonDateTime(System.currentTimeMillis)),
         data.endTime,
@@ -112,94 +134,66 @@ object Session {
 object Sessions {
   val collection = Collection[IO, Session.InputData, Session]("sessions")
 
-  private def findProject(taskId: ObjectId)(using
-      customer: User
-  )(using Lang): EitherT[IO, Error, DbProject] =
-    Tasks.collection.use(c =>
-      EitherT.fromOptionF(
-        c.raw(
-          _.aggregateWithCodec[DbProject](
-            Seq(
-              Aggregates.`match`(Filters.eq("_id", taskId)),
-              Aggregates.project(Document("_id" -> false, "project" -> 1)),
-              Document(
-                "$lookup" -> Document(
-                  "from" -> Projects.collection.name,
-                  "localField" -> "project",
-                  "foreignField" -> "_id",
-                  "as" -> "project",
-                  "pipeline" -> Seq(
-                    Aggregates.lookup("clients", "client", "_id", "client"),
-                    Aggregates.unwind("$client")
-                  )
-                )
+  private def labelsStages = Seq(
+    Aggregates.lookup("clients", "client", "_id", "c"),
+    Aggregates.unwind("$c"),
+    Aggregates.lookup("projects", "project", "_id", "p"),
+    Aggregates.unwind("$p"),
+    Aggregates.lookup("tasks", "task", "_id", "t"),
+    Aggregates.unwind("$t"),
+    Aggregates.addFields(
+      Field(
+        "client",
+        Document(
+          "_id" -> "$p._id",
+          "name" -> Document(
+            "$cond" -> Document(
+              "if" -> Document(
+                "$gt" -> List("$c.firstName", null)
               ),
-              Aggregates.unwind("$project"),
-              Aggregates.`match`(
-                Filters.eq("project.client.user", customer._id)
+              "then" -> Document(
+                "$concat" -> List("$c.firstName", " ", "$c.lastName")
               ),
-              Aggregates.replaceRoot("$project"),
-              Aggregates.addFields(Field("client", "$client._id"))
+              "else" -> "$c.businessName"
             )
-          ).first
-        ),
-        Error(Status.NotFound, __.ErrorClientNotFound)
+          )
+        )
+      ),
+      Field(
+        "project",
+        Document(
+          "_id" -> "$p._id",
+          "name" -> "$p.name"
+        )
+      ),
+      Field(
+        "task",
+        Document(
+          "_id" -> "$t._id",
+          "name" -> "$t.name",
+          "project" -> "$t.project",
+          "startTime" -> "$t.startTime"
+        )
       )
     )
+    // TODO: $project?
+  )
 
   def findById(_id: ObjectId)(using customer: User)(using
       Lang
-  ): EitherT[IO, Error, SessionWithTaskLabel] = EitherT.fromOptionF(
+  ): EitherT[IO, Error, SessionWithLabels] = EitherT.fromOptionF(
     collection
       .use(
         _.raw(
-          _.aggregateWithCodec[SessionWithTaskLabel](
+          _.aggregateWithCodec[SessionWithLabels](
             Seq(
-              Aggregates.`match`(Filters.eq("_id", _id)),
-              Document(
-                "$lookup" -> Document(
-                  "from" -> Tasks.collection.name,
-                  "localField" -> "task",
-                  "foreignField" -> "_id",
-                  "as" -> "t",
-                  "pipeline" -> Seq(
-                    Document(
-                      "$lookup" -> Document(
-                        "from" -> Projects.collection.name,
-                        "localField" -> "project",
-                        "foreignField" -> "_id",
-                        "as" -> "project",
-                        "pipeline" -> Seq(
-                          Aggregates.lookup(
-                            Clients.collection.name,
-                            "client",
-                            "_id",
-                            "client"
-                          ),
-                          Aggregates.unwind("$client")
-                        )
-                      )
-                    ),
-                    Aggregates.unwind("$project")
-                  )
-                )
-              ),
-              Aggregates.unwind("$t"),
               Aggregates.`match`(
-                Filters.eq("t.project.client.user", customer._id)
-              ),
-              Aggregates.addFields(
-                Field(
-                  "task",
-                  Document(
-                    "_id" -> "$t._id",
-                    "name" -> "$t.name",
-                    "project" -> "$t.project._id",
-                    "startTime" -> "$t.startTime"
-                  )
+                Filters.and(
+                  Filters.eq("user", customer._id),
+                  Filters.eq("_id", _id)
                 )
               )
-            )
+            ) ++ labelsStages
           ).first
         )
       ),
@@ -208,11 +202,19 @@ object Sessions {
 
   def start(data: Session.InputData)(using customer: User)(using
       Lang
-  ): EitherT[IO, Error, SessionWithTaskLabel] =
+  ): EitherT[IO, Error, SessionWithLabels] =
     for
-      data <- EitherT.fromEither(Session.fromInputData(data))
-      project <- findProject(data.task).leftMap(_ =>
-        Error(Status.NotFound, __.ErrorTaskNotFound)
+      taskId <- EitherT
+        .fromEither[IO](data.task.toObjectId)
+        .leftMap(_ => Error(Status.NotFound, __.ErrorTaskNotFound))
+      task <- Tasks.findByIdNoStats(taskId)
+      data <- EitherT.fromEither(
+        Session.fromInputData(
+          data,
+          task.client._id,
+          task.project._id,
+          customer._id
+        )
       )
       _id <- collection.use(_.create(data))
       session <- findById(_id)
@@ -226,7 +228,7 @@ object Sessions {
       )
       _ <- Projects.collection.use(
         _.update(
-          project._id,
+          session.project._id,
           Projects.collection.Update
             .`with`("updatedAt" -> BsonDateTime(System.currentTimeMillis))
             .build
@@ -236,120 +238,61 @@ object Sessions {
 
   def getSessions(query: CursorNoQuery, task: ObjectId)(using customer: User)(
       using Lang
-  ): EitherT[IO, Error, Cursor[SessionWithTaskLabel]] =
+  ): EitherT[IO, Error, Cursor[SessionWithLabels]] =
     collection.use(
-      _.find[SessionWithTaskLabel](
+      _.find[SessionWithLabels](
         "startTime",
         Seq(
-          Aggregates.`match`(Filters.eq("task", task)),
-          Document(
-            "$lookup" -> Document(
-              "from" -> "tasks",
-              "localField" -> "task",
-              "foreignField" -> "_id",
-              "as" -> "t",
-              "pipeline" -> Seq(
-                Document(
-                  "$lookup" -> Document(
-                    "from" -> "projects",
-                    "localField" -> "project",
-                    "foreignField" -> "_id",
-                    "as" -> "project",
-                    "pipeline" -> Seq(
-                      Aggregates.lookup("clients", "client", "_id", "client"),
-                      Aggregates.unwind("$client")
-                    )
-                  )
-                ),
-                Aggregates.unwind("$project")
-              )
-            )
-          ),
           Aggregates.`match`(
-            Filters.eq("t.project.client.user", customer._id)
-          ),
-          Aggregates.unwind("$t"),
-          Aggregates.addFields(
-            Field(
-              "task",
-              Document(
-                "_id" -> "$t._id",
-                "name" -> "$t.name",
-                "project" -> "$t.project._id",
-                "startTime" -> "$t.startTime"
-              )
-            )
+            Filters
+              .and(Filters.eq("user", customer._id), Filters.eq("task", task))
           )
-        )
+        ) ++ labelsStages
       )(CursorQuery.fromCursorNoQuery(query))
     )
 
   def getOpenSessions(using customer: User)(using
       Lang
-  ): IO[Iterable[SessionWithTaskLabel]] = collection.use(
+  ): IO[Iterable[SessionWithLabels]] = collection.use(
     _.raw(
-      _.aggregateWithCodec[SessionWithTaskLabel](
+      _.aggregateWithCodec[SessionWithLabels](
         Seq(
-          Aggregates.`match`(Filters.eq("endTime", null)),
-          Document(
-            "$lookup" -> Document(
-              "from" -> "tasks",
-              "localField" -> "task",
-              "foreignField" -> "_id",
-              "as" -> "t",
-              "pipeline" -> Seq(
-                Document(
-                  "$lookup" -> Document(
-                    "from" -> "projects",
-                    "localField" -> "project",
-                    "foreignField" -> "_id",
-                    "as" -> "project",
-                    "pipeline" -> Seq(
-                      Aggregates.lookup("clients", "client", "_id", "client"),
-                      Aggregates.unwind("$client")
-                    )
-                  )
-                ),
-                Aggregates.unwind("$project")
-              )
-            )
-          ),
           Aggregates.`match`(
-            Filters.eq("t.project.client.user", customer._id)
-          ),
-          Aggregates.unwind("$t"),
-          Aggregates.addFields(
-            Field(
-              "task",
-              Document(
-                "_id" -> "$t._id",
-                "name" -> "$t.name",
-                "project" -> "$t.project._id",
-                "startTime" -> "$t.startTime"
-              )
+            Filters.and(
+              Filters.eq("user", customer._id),
+              Filters.eq("endTime", null)
             )
           )
-        )
+        ) ++ labelsStages
       ).all
     )
   )
 
   def update(_id: ObjectId, data: Session.InputData)(using customer: User)(using
       Lang
-  ): EitherT[IO, Error, SessionWithTaskLabel] =
+  ): EitherT[IO, Error, SessionWithLabels] = {
+    case class TaskData(_id: ObjectId, client: ObjectId, project: ObjectId)
+
     for
       session <- findById(_id)
       data <- EitherT.fromEither[IO](Session.validateInputData(data).toResult)
-      task <-
+      taskData <-
         if session.task._id == data.task then
-          EitherT.rightT[IO, Error](session.task._id)
-        else Tasks.findByIdNoStats(data.task).map(_._id)
+          EitherT.rightT[IO, Error](
+            TaskData(session.task._id, session.client._id, session.project._id)
+          )
+        else
+          Tasks
+            .findByIdNoStats(data.task)
+            .map(task => TaskData(task._id, task.client._id, task.project._id))
       _ <- collection
         .use(
           _.update(
             session._id,
             collection.Update
-              .`with`("task" -> task)
+              .`with`("client" -> taskData.client)
+              .`with`("project" -> taskData.project)
+              .`with`("task" -> taskData._id)
               .`with`(
                 "startTime" -> data.startTime,
                 collection.UpdateStrategy.IgnoreIfEmpty
@@ -361,9 +304,10 @@ object Sessions {
               .build
           )
         )
+      result <- findById(_id)
       _ <- Tasks.collection.use(
         _.update(
-          session.task._id,
+          result.task._id,
           Tasks.collection.Update
             .`with`("updatedAt" -> BsonDateTime(System.currentTimeMillis))
             .build
@@ -371,18 +315,18 @@ object Sessions {
       )
       _ <- Projects.collection.use(
         _.update(
-          session.task.project,
+          result.project._id,
           Projects.collection.Update
             .`with`("updatedAt" -> BsonDateTime(System.currentTimeMillis))
             .build
         )
       )
-      result <- findById(_id)
     yield result
+  }
 
   def delete(_id: ObjectId)(using customer: User)(using
       Lang
-  ): EitherT[IO, Error, SessionWithTaskLabel] =
+  ): EitherT[IO, Error, SessionWithLabels] =
     for
       session <- findById(_id)
       _ <- collection.use(_.delete(session._id))
