@@ -340,12 +340,16 @@ object Sessions {
     for
       session <- findById(_id)
       data <- EitherT.fromEither[IO](Session.validateInputData(data).toResult)
+      task <-
+        if session.task._id == data.task then
+          EitherT.rightT[IO, Error](session.task._id)
+        else Tasks.findByIdNoStats(data.task).map(_._id)
       _ <- collection
         .use(
           _.update(
             session._id,
             collection.Update
-              .`with`("task" -> session.task._id)
+              .`with`("task" -> task)
               .`with`(
                 "startTime" -> data.startTime,
                 collection.UpdateStrategy.IgnoreIfEmpty

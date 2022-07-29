@@ -352,14 +352,18 @@ object Users {
         ).first
           .map(
             _.flatMap(stats =>
-              NonNegativeFloat
-                .decode(stats.actualWorkingHours.toFloat / 3600f)
-                .map(actualWorkingHours =>
+              (
+                NonNegativeFloat.decode(
+                  stats.actualWorkingHours.toFloat / 3600f
+                ),
+                NonNegativeFloat.decode(stats.balance.toFloat / 3600f)
+              )
+                .mapN((actualWorkingHours, balance) =>
                   UserStats(
                     stats.expectedWorkingHours,
                     actualWorkingHours,
                     stats.budget,
-                    stats.balance
+                    balance
                   )
                 )
             )
