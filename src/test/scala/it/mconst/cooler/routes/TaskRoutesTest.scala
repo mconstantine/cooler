@@ -16,8 +16,8 @@ import it.mconst.cooler.models.client.Clients
 import it.mconst.cooler.models.project.Project
 import it.mconst.cooler.models.project.Projects
 import it.mconst.cooler.models.task.Tasks
+import it.mconst.cooler.models.task.TaskWithLabels
 import it.mconst.cooler.models.task.TaskWithStats
-import it.mconst.cooler.models.task.TaskWithProjectLabel
 import it.mconst.cooler.models.user.User
 import it.mconst.cooler.models.user.Users
 import it.mconst.cooler.utils.__
@@ -46,11 +46,11 @@ class TaskRoutesTest extends CatsEffectSuite {
   given Assertions = this
   given HttpClient[IO] = client
 
-  given EntityDecoder[IO, Cursor[TaskWithProjectLabel]] =
-    jsonOf[IO, Cursor[TaskWithProjectLabel]]
+  given EntityDecoder[IO, Cursor[TaskWithLabels]] =
+    jsonOf[IO, Cursor[TaskWithLabels]]
 
-  given EntityDecoder[IO, TaskWithProjectLabel] =
-    jsonOf[IO, TaskWithProjectLabel]
+  given EntityDecoder[IO, TaskWithLabels] =
+    jsonOf[IO, TaskWithLabels]
 
   given EntityDecoder[IO, TaskWithStats] = jsonOf[IO, TaskWithStats]
 
@@ -116,7 +116,7 @@ class TaskRoutesTest extends CatsEffectSuite {
     POST(data, uri"/")
       .sign(testDataFixture().user)
       .shouldRespondLike(
-        (t: TaskWithProjectLabel) => t.name,
+        (t: TaskWithLabels) => t.name,
         data.name
       )
   }
@@ -151,7 +151,7 @@ class TaskRoutesTest extends CatsEffectSuite {
       )
         .sign(testDataFixture().user)
         .shouldRespondLike(
-          (result: Cursor[TaskWithProjectLabel]) =>
+          (result: Cursor[TaskWithLabels]) =>
             Cursor[ObjectId](
               result.pageInfo,
               result.edges.map(e => Edge(e.node._id, e.cursor))
@@ -182,7 +182,7 @@ class TaskRoutesTest extends CatsEffectSuite {
       )
         .sign(testDataFixture().user)
         .shouldRespondLike(
-          (result: Cursor[TaskWithProjectLabel]) =>
+          (result: Cursor[TaskWithLabels]) =>
             Cursor[ObjectId](
               result.pageInfo,
               result.edges.map(e => Edge(e.node._id, e.cursor))

@@ -16,10 +16,10 @@ import it.mconst.cooler.models.project.ProjectCashedBalance
 import it.mconst.cooler.models.project.Projects
 import it.mconst.cooler.models.project.ProjectWithClientLabel
 import it.mconst.cooler.models.session.Sessions
-import it.mconst.cooler.models.session.SessionWithTaskLabel
+import it.mconst.cooler.models.session.SessionWithLabels
 import it.mconst.cooler.models.task.DbTask
 import it.mconst.cooler.models.task.Tasks
-import it.mconst.cooler.models.task.TaskWithProjectLabel
+import it.mconst.cooler.models.task.TaskWithLabels
 import it.mconst.cooler.models.user.User
 import it.mconst.cooler.models.user.Users
 import it.mconst.cooler.models.user.UserStats
@@ -51,8 +51,8 @@ class StatsTest extends CatsEffectSuite {
   final case class TestData(
       client: Client,
       projects: List[ProjectWithClientLabel],
-      tasks: List[TaskWithProjectLabel],
-      sessions: List[SessionWithTaskLabel]
+      tasks: List[TaskWithLabels],
+      sessions: List[SessionWithLabels]
   )
 
   def testData = Resource.make(

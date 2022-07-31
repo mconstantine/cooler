@@ -15,7 +15,8 @@ import it.mconst.cooler.models.client.Clients
 import it.mconst.cooler.models.project.Project
 import it.mconst.cooler.models.project.Projects
 import it.mconst.cooler.models.session.Sessions
-import it.mconst.cooler.models.session.SessionWithTaskLabel
+import it.mconst.cooler.models.session.SessionWithLabels
+import it.mconst.cooler.models.session.SessionWithLabels
 import it.mconst.cooler.models.task.Task
 import it.mconst.cooler.models.task.Tasks
 import it.mconst.cooler.models.user.User
@@ -42,11 +43,11 @@ class SessionRoutesTest extends CatsEffectSuite {
   given Assertions = this
   given HttpClient[IO] = client
 
-  given EntityDecoder[IO, SessionWithTaskLabel] =
-    jsonOf[IO, SessionWithTaskLabel]
+  given EntityDecoder[IO, SessionWithLabels] =
+    jsonOf[IO, SessionWithLabels]
 
-  given EntityDecoder[IO, Cursor[SessionWithTaskLabel]] =
-    jsonOf[IO, Cursor[SessionWithTaskLabel]]
+  given EntityDecoder[IO, Cursor[SessionWithLabels]] =
+    jsonOf[IO, Cursor[SessionWithLabels]]
 
   final case class TestData(
       user: User,
@@ -118,7 +119,7 @@ class SessionRoutesTest extends CatsEffectSuite {
     POST(data, uri"/")
       .sign(testDataFixture().user)
       .shouldRespondLike(
-        (s: SessionWithTaskLabel) => s.startTime.toISOString,
+        (s: SessionWithLabels) => s.startTime.toISOString,
         startTime
       )
   }
@@ -173,7 +174,7 @@ class SessionRoutesTest extends CatsEffectSuite {
       )
         .sign(testDataFixture().user)
         .shouldRespondLike(
-          (cursor: Cursor[SessionWithTaskLabel]) =>
+          (cursor: Cursor[SessionWithLabels]) =>
             Cursor(
               cursor.pageInfo,
               cursor.edges.map(edge => Edge(edge.node._id, edge.cursor))
@@ -207,7 +208,7 @@ class SessionRoutesTest extends CatsEffectSuite {
       )
         .sign(testDataFixture().user)
         .shouldRespondLike(
-          (cursor: Cursor[SessionWithTaskLabel]) =>
+          (cursor: Cursor[SessionWithLabels]) =>
             Cursor(
               cursor.pageInfo,
               cursor.edges.map(edge => Edge(edge.node._id, edge.cursor))
@@ -250,7 +251,7 @@ class SessionRoutesTest extends CatsEffectSuite {
     for
       session <- Sessions.start(originalData).orFail
       result <- client
-        .expect[SessionWithTaskLabel](
+        .expect[SessionWithLabels](
           PUT(
             updateData,
             Uri.fromString(s"/${session._id.toString}").getOrElse(fail(""))

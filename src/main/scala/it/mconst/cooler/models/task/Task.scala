@@ -19,6 +19,7 @@ import io.circe.syntax.*
 import it.mconst.cooler.models.*
 import it.mconst.cooler.models.client.Client
 import it.mconst.cooler.models.client.Clients
+import it.mconst.cooler.models.project.ClientLabel
 import it.mconst.cooler.models.project.DbProject
 import it.mconst.cooler.models.project.Projects
 import it.mconst.cooler.models.session.Sessions
@@ -99,7 +100,6 @@ final case class DbTask(
     )
 
 final case class ProjectLabel(_id: ObjectId, name: NonEmptyString)
-final case class ClientLabel(_id: ObjectId, name: NonEmptyString)
 
 final case class TaskWithLabels(
     _id: ObjectId,
@@ -384,7 +384,8 @@ object Tasks {
       Field(
         "client",
         Document(
-          "_id" -> "$p._id",
+          "_id" -> "$c._id",
+          "type" -> "$c.type",
           "name" -> Document(
             "$cond" -> Document(
               "if" -> Document(

@@ -13,8 +13,10 @@ import io.circe.generic.auto.*
 import it.mconst.cooler.models.*
 import it.mconst.cooler.models.client.Client
 import it.mconst.cooler.models.client.Clients
+import it.mconst.cooler.models.project.ClientLabel
 import it.mconst.cooler.models.project.DbProject
 import it.mconst.cooler.models.project.Projects
+import it.mconst.cooler.models.task.ProjectLabel
 import it.mconst.cooler.models.task.Tasks
 import it.mconst.cooler.models.user.User
 import it.mconst.cooler.utils.__
@@ -36,16 +38,6 @@ final case class TaskLabel(
     _id: ObjectId,
     name: NonEmptyString,
     startTime: BsonDateTime
-)
-
-final case class ProjectLabel(
-    _id: ObjectId,
-    name: NonEmptyString
-)
-
-final case class ClientLabel(
-    _id: ObjectId,
-    name: NonEmptyString
 )
 
 final case class SessionWithLabels(
@@ -145,7 +137,8 @@ object Sessions {
       Field(
         "client",
         Document(
-          "_id" -> "$p._id",
+          "_id" -> "$c._id",
+          "type" -> "$c.type",
           "name" -> Document(
             "$cond" -> Document(
               "if" -> Document(
