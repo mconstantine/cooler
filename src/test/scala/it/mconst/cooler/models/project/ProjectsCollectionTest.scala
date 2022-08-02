@@ -1,8 +1,8 @@
 package it.mconst.cooler.models.project
 
+import it.mconst.cooler.utils.IOSuite
 import it.mconst.cooler.utils.TestUtils.*
 import munit.Assertions
-import munit.CatsEffectSuite
 
 import cats.effect.IO
 import cats.effect.kernel.Resource
@@ -22,10 +22,10 @@ import mongo4cats.collection.operations.Update
 import org.bson.BsonDateTime
 import org.http4s.Status
 
-class ProjectsCollectionTest extends CatsEffectSuite {
+class ProjectsCollectionTest extends IOSuite {
   final case class TestData(user: User, client: Client)
 
-  val testDataFixture = ResourceSuiteLocalFixture(
+  val testDataFixture = IOFixture(
     "testData",
     Resource.make {
       given Option[User] = none[User]

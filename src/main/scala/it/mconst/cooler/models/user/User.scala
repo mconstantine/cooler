@@ -450,74 +450,27 @@ object Users {
     collection.use { c =>
       for
         user <- c.findOne[User](Filter.eq("_id", customer._id))
-        _ <- c.delete(customer._id)
-        sessions <- EitherT.right(
+        _ <- c.delete(user._id)
+        _ <- EitherT.right(
           Sessions.collection.use(
-            _.raw(
-              _.aggregateWithCodec[Session](
-                Seq(
-                  Aggregates.lookup(
-                    Tasks.collection.name,
-                    "task",
-                    "_id",
-                    "task"
-                  ),
-                  Aggregates.unwind("$task"),
-                  Aggregates.lookup(
-                    Projects.collection.name,
-                    "task.project",
-                    "_id",
-                    "project"
-                  ),
-                  Aggregates.unwind("$project"),
-                  Aggregates.lookup(
-                    Clients.collection.name,
-                    "project.client",
-                    "_id",
-                    "client"
-                  ),
-                  Aggregates.unwind("$client"),
-                  Aggregates.`match`(Filters.eq("client.user", user._id)),
-                  Aggregates.addFields(Field("task", "$task._id")),
-                  Aggregates.project(Document("project" -> 0, "client" -> 0))
-                )
-              ).all
-            )
-          )
-        )
-        clients <- EitherT.right(
-          Clients.collection.use(
-            _.raw(_.find(Filter.eq("user", user._id)).all)
+            _.raw(_.deleteMany(Filter.eq("user", user._id)))
           )
         )
         _ <- EitherT.right(
-          Sessions.collection.use(
-            _.raw(_.deleteMany(Filter.in("_id", Seq.from(sessions.map(_._id)))))
-          )
-        )
-        _ <- EitherT.right(
-          Tasks.collection.use(
-            _.raw(
-              _.deleteMany(Filter.in("_id", Seq.from(sessions.map(_.task))))
-            )
-          )
+          Tasks.collection.use(_.raw(_.deleteMany(Filter.eq("user", user._id))))
         )
         _ <- EitherT.right(
           Projects.collection.use(
-            _.raw(
-              _.deleteMany(Filter.in("client", Seq.from(clients.map(_._id))))
-            )
+            _.raw(_.deleteMany(Filter.eq("user", user._id)))
           )
         )
         _ <- EitherT.right(
           Clients.collection.use(
-            _.raw(_.deleteMany(Filter.in("_id", Seq.from(clients.map(_._id)))))
+            _.raw(_.deleteMany(Filter.eq("user", user._id)))
           )
         )
         _ <- EitherT.right(
-          Taxes.collection.use(
-            _.raw(_.deleteMany(Filter.eq("user", user._id)))
-          )
+          Taxes.collection.use(_.raw(_.deleteMany(Filter.eq("user", user._id))))
         )
       yield user
     }

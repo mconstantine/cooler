@@ -1,8 +1,8 @@
 package it.mconst.cooler.models.tax
 
+import it.mconst.cooler.utils.IOSuite
 import it.mconst.cooler.utils.TestUtils.*
 import munit.Assertions
-import munit.CatsEffectSuite
 
 import cats.effect.IO
 import cats.effect.kernel.Resource
@@ -18,33 +18,32 @@ import it.mconst.cooler.utils.__
 import it.mconst.cooler.utils.Error
 import org.http4s.Status
 
-class TaxesCollectionTest extends CatsEffectSuite {
+class TaxesCollectionTest extends IOSuite {
   given Lang = Lang.Default
   given Assertions = this
 
-  val adminFixture =
-    ResourceSuiteLocalFixture(
-      "admin",
-      Resource.make {
-        given Option[User] = none[User]
+  val adminFixture = IOFixture(
+    "admin",
+    Resource.make {
+      given Option[User] = none[User]
 
-        Users
-          .create(
-            User.CreationData(
-              "Taxes collection test admin",
-              "taxes-collection-test-admin@example.com",
-              "S0m3P4ssw0rd!"
-            )
+      Users
+        .create(
+          User.CreationData(
+            "Taxes collection test admin",
+            "taxes-collection-test-admin@example.com",
+            "S0m3P4ssw0rd!"
           )
-          .orFail
-      }(_ =>
-        Users.collection.use(
-          _.raw(_.deleteMany(Filters.empty))
-            .both(Taxes.collection.use(_.raw(_.deleteMany(Filters.empty))))
-            .void
         )
+        .orFail
+    }(_ =>
+      Users.collection.use(
+        _.raw(_.deleteMany(Filters.empty))
+          .both(Taxes.collection.use(_.raw(_.deleteMany(Filters.empty))))
+          .void
       )
     )
+  )
 
   override def munitFixtures = Seq(adminFixture)
 

@@ -493,7 +493,7 @@ object Tasks {
                     Filters.eq("_id", _id)
                   )
                 )
-              )
+              ) ++ labelsStages
             ).first
           )
         ),
@@ -594,7 +594,7 @@ object Tasks {
     collection.use(
       _.find[TaskWithLabels](
         "updatedAt",
-        Seq(matchStage) ++ labelsStages
+        Seq(Aggregates.`match`(matchStage)) ++ labelsStages
       )(CursorQuery.fromCursorNoQuery(query))
     )
   }

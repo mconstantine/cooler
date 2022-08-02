@@ -1,7 +1,8 @@
 package it.mconst.cooler.routes
 
+import it.mconst.cooler.utils.IOSuite
 import it.mconst.cooler.utils.TestUtils.*
-import munit.CatsEffectSuite
+import munit.Assertions
 
 import cats.effect.IO
 import cats.effect.kernel.Resource
@@ -18,7 +19,6 @@ import it.mconst.cooler.models.user.Users
 import it.mconst.cooler.utils.__
 import it.mconst.cooler.utils.Error
 import mongo4cats.collection.operations.Filter
-import munit.Assertions
 import org.http4s.circe.*
 import org.http4s.client.{Client as HttpClient}
 import org.http4s.client.dsl.io.*
@@ -27,7 +27,7 @@ import org.http4s.EntityDecoder
 import org.http4s.implicits.*
 import org.http4s.Uri
 
-class ClientRoutesTest extends CatsEffectSuite {
+class ClientRoutesTest extends IOSuite {
   val app = ClientRoutes().orNotFound
   val client: HttpClient[IO] = HttpClient.fromHttpApp(app)
 
@@ -35,7 +35,7 @@ class ClientRoutesTest extends CatsEffectSuite {
   given Assertions = this
   given HttpClient[IO] = client
 
-  val adminFixture = ResourceSuiteLocalFixture(
+  val adminFixture = IOFixture(
     "admin",
     Resource.make {
       given Option[User] = none[User]

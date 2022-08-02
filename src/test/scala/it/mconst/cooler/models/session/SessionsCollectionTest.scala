@@ -1,8 +1,8 @@
 package it.mconst.cooler.models.session
 
+import it.mconst.cooler.utils.IOSuite
 import it.mconst.cooler.utils.TestUtils.*
 import munit.Assertions
-import munit.CatsEffectSuite
 
 import cats.effect.IO
 import cats.effect.kernel.Resource
@@ -12,10 +12,10 @@ import io.circe.generic.auto.*
 import it.mconst.cooler.models.*
 import it.mconst.cooler.models.client.Client
 import it.mconst.cooler.models.client.Clients
-import it.mconst.cooler.models.project.Project
 import it.mconst.cooler.models.project.Projects
-import it.mconst.cooler.models.task.Task
+import it.mconst.cooler.models.project.ProjectWithClientLabel
 import it.mconst.cooler.models.task.Tasks
+import it.mconst.cooler.models.task.TaskWithLabels
 import it.mconst.cooler.models.user.User
 import it.mconst.cooler.models.user.Users
 import it.mconst.cooler.utils.__
@@ -26,15 +26,15 @@ import mongo4cats.collection.operations.Filter
 import org.bson.BsonDateTime
 import org.http4s.Status
 
-class SessionsCollectionTest extends CatsEffectSuite {
+class SessionsCollectionTest extends IOSuite {
   final case class TestData(
       user: User,
       client: Client,
-      project: Project,
-      task: Task
+      project: ProjectWithClientLabel,
+      task: TaskWithLabels
   )
 
-  val testDataFixture = ResourceSuiteLocalFixture(
+  val testDataFixture = IOFixture(
     "testData",
     Resource.make(
       for

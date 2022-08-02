@@ -1,8 +1,8 @@
 package it.mconst.cooler.middlewares
 
+import it.mconst.cooler.utils.IOSuite
 import it.mconst.cooler.utils.TestUtils.*
 import munit.Assertions
-import munit.CatsEffectSuite
 
 import cats.data.EitherT
 import cats.effect.IO
@@ -26,7 +26,7 @@ import org.http4s.HttpApp
 import org.http4s.HttpRoutes
 import org.http4s.implicits.*
 
-class UserMiddlewareTest extends CatsEffectSuite {
+class UserMiddlewareTest extends IOSuite {
   given Lang = Lang.Default
   given Assertions = this
 
@@ -53,7 +53,7 @@ class UserMiddlewareTest extends CatsEffectSuite {
     password = "Abc123?!"
   )
 
-  val authTokensFixture = ResourceSuiteLocalFixture(
+  val authTokensFixture = IOFixture(
     "authTokens",
     Resource.make(
       for

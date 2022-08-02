@@ -1,7 +1,8 @@
 package it.mconst.cooler
 
-import munit.CatsEffectSuite
+import it.mconst.cooler.utils.IOSuite
 import it.mconst.cooler.utils.TestUtils.*
+import munit.Assertions
 
 import cats.effect.IO
 import cats.effect.kernel.Resource
@@ -27,12 +28,11 @@ import it.mconst.cooler.utils.Error
 import it.mconst.cooler.utils.given
 import mongo4cats.circe.*
 import mongo4cats.collection.operations.Filter
-import munit.Assertions
 import org.bson.BsonDateTime
 import org.http4s.Status
 
-class DatabaseHooksTest extends CatsEffectSuite {
-  val adminFixture = ResourceSuiteLocalFixture(
+class DatabaseHooksTest extends IOSuite {
+  val adminFixture = IOFixture(
     "admin",
     Resource.make {
       given Option[User] = none[User]

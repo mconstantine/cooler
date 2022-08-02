@@ -1,7 +1,8 @@
 package it.mconst.cooler.stats
 
+import it.mconst.cooler.utils.IOSuite
 import it.mconst.cooler.utils.TestUtils.*
-import munit.CatsEffectSuite
+import munit.Assertions
 
 import cats.effect.IO
 import cats.effect.kernel.Resource
@@ -24,13 +25,12 @@ import it.mconst.cooler.models.user.User
 import it.mconst.cooler.models.user.Users
 import it.mconst.cooler.models.user.UserStats
 import mongo4cats.collection.operations.Filter
-import munit.Assertions
 import org.bson.BsonDateTime
 
-class StatsTest extends CatsEffectSuite {
+class StatsTest extends IOSuite {
   val now = System.currentTimeMillis
 
-  val adminFixture = ResourceSuiteLocalFixture(
+  val adminFixture = IOFixture(
     "admin",
     Resource.make {
       given Option[User] = none[User]

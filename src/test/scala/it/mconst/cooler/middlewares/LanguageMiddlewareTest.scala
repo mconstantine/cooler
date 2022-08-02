@@ -1,6 +1,8 @@
 package it.mconst.cooler.middlewares
 
-import munit.CatsEffectSuite
+import it.mconst.cooler.utils.IOSuite
+import it.mconst.cooler.utils.TestUtils.*
+import munit.Assertions
 
 import cats.data.NonEmptyList
 import cats.effect.IO
@@ -18,9 +20,11 @@ import org.http4s.headers.`Accept-Language`
 import org.http4s.implicits.*
 import org.typelevel.ci.*
 
-class LanguageMiddlewareTest extends CatsEffectSuite {
+class LanguageMiddlewareTest extends IOSuite {
   case class TestData(message: String)
+
   given EntityDecoder[IO, TestData] = jsonOf[IO, TestData]
+  given Assertions = this
 
   val localizedRoutes: LanguageRoutes[IO] = {
     LanguageRoutes.of {

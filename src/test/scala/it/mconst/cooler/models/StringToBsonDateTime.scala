@@ -5,10 +5,9 @@ import cats.data.Validated.Invalid
 import cats.data.Validated.Valid
 import com.osinka.i18n.Lang
 import it.mconst.cooler.utils.__
-import munit.CatsEffectSuite
 import org.bson.BsonDateTime
 
-class Conversions extends CatsEffectSuite {
+class Conversions extends munit.FunSuite {
   given Lang = Lang.Default
 
   test("should convert an ISO string to BsonDateTime and back") {

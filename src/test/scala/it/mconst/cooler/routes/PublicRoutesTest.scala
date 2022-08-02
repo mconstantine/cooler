@@ -1,8 +1,8 @@
 package it.mconst.cooler.routes
 
+import it.mconst.cooler.utils.IOSuite
 import it.mconst.cooler.utils.TestUtils.*
 import munit.Assertions
-import munit.CatsEffectSuite
 
 import cats.effect.IO
 import cats.effect.kernel.Resource
@@ -20,7 +20,7 @@ import org.http4s.dsl.io.*
 import org.http4s.implicits.*
 import org.http4s.Request
 
-class PublicRoutesTest extends CatsEffectSuite {
+class PublicRoutesTest extends IOSuite {
   val routes = PublicRoutes()
   val app = routes.orNotFound
   val client: Client[IO] = Client.fromHttpApp(app)

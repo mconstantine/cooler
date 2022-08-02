@@ -1,8 +1,8 @@
 package it.mconst.cooler.routes
 
+import it.mconst.cooler.utils.IOSuite
 import it.mconst.cooler.utils.TestUtils.*
 import munit.Assertions
-import munit.CatsEffectSuite
 
 import cats.effect.IO
 import cats.effect.kernel.Resource
@@ -25,7 +25,7 @@ import org.http4s.EntityDecoder
 import org.http4s.implicits.*
 import org.http4s.Request
 
-class UserRoutesTest extends CatsEffectSuite {
+class UserRoutesTest extends IOSuite {
   given Lang = Lang.Default
   given Assertions = this
 
@@ -36,7 +36,7 @@ class UserRoutesTest extends CatsEffectSuite {
 
   given Client[IO] = client
 
-  val adminFixture = ResourceSuiteLocalFixture(
+  val adminFixture = IOFixture(
     "admin",
     Resource.make {
       val adminData: User.CreationData = User.CreationData(

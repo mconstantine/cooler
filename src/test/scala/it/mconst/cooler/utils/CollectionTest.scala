@@ -1,8 +1,8 @@
 package it.mconst.cooler.utils
 
+import it.mconst.cooler.utils.IOSuite
 import it.mconst.cooler.utils.TestUtils.*
 import munit.Assertions
-import munit.CatsEffectSuite
 
 import cats.data.EitherT
 import cats.effect.IO
@@ -20,7 +20,7 @@ import mongo4cats.collection.operations.Filter
 import org.bson.BsonDateTime
 import org.http4s.Status
 
-class CollectionTest extends CatsEffectSuite {
+class CollectionTest extends IOSuite {
   given Lang = Lang.Default
   given Assertions = this
 
@@ -36,11 +36,10 @@ class CollectionTest extends CatsEffectSuite {
 
   val people = Collection[IO, PersonInputData, Person]("people")
 
-  val dropFixture =
-    ResourceSuiteLocalFixture(
-      "drop",
-      Resource.make(IO.unit)(_ => people.use(_.drop))
-    )
+  val dropFixture = IOFixture(
+    "drop",
+    Resource.make(IO.unit)(_ => people.use(_.drop))
+  )
 
   val peopleList = Resource.make {
     val peopleData: List[Person] = List(

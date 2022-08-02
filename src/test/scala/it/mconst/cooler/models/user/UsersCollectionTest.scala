@@ -1,8 +1,8 @@
 package it.mconst.cooler.models.user
 
+import it.mconst.cooler.utils.IOSuite
 import it.mconst.cooler.utils.TestUtils.*
 import munit.Assertions
-import munit.CatsEffectSuite
 
 import cats.effect.IO
 import cats.effect.kernel.Resource
@@ -21,7 +21,7 @@ import mongo4cats.collection.operations.Filter
 import org.bson.BsonDateTime
 import org.http4s.Status
 
-class UsersCollectionTest extends CatsEffectSuite {
+class UsersCollectionTest extends IOSuite {
   given Lang = Lang.Default
   given Assertions = this
 

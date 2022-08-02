@@ -1,8 +1,8 @@
 package it.mconst.cooler.models.task
 
+import it.mconst.cooler.utils.IOSuite
 import it.mconst.cooler.utils.TestUtils.*
 import munit.Assertions
-import munit.CatsEffectSuite
 
 import cats.effect.IO
 import cats.effect.kernel.Resource
@@ -20,10 +20,10 @@ import java.time.LocalDate
 import org.bson.BsonDateTime
 import scala.collection.JavaConverters.*
 
-class TaskBatchTest extends CatsEffectSuite {
+class TaskBatchTest extends IOSuite {
   final case class TestData(user: User, client: Client, project: Project)
 
-  val testDataFixture = ResourceSuiteLocalFixture(
+  val testDataFixture = IOFixture(
     "testData",
     Resource.make {
       given Option[User] = none[User]

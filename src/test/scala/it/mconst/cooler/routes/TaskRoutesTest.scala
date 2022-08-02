@@ -1,8 +1,8 @@
 package it.mconst.cooler.routes
 
+import it.mconst.cooler.utils.IOSuite
 import it.mconst.cooler.utils.TestUtils.*
 import munit.Assertions
-import munit.CatsEffectSuite
 
 import cats.effect.IO
 import cats.effect.kernel.Resource
@@ -38,7 +38,7 @@ import org.http4s.implicits.*
 import org.http4s.Status
 import org.http4s.Uri
 
-class TaskRoutesTest extends CatsEffectSuite {
+class TaskRoutesTest extends IOSuite {
   val app = TaskRoutes().orNotFound
   val client: HttpClient[IO] = HttpClient.fromHttpApp(app)
 
@@ -56,7 +56,7 @@ class TaskRoutesTest extends CatsEffectSuite {
 
   final case class TestData(user: User, client: Client, project: Project)
 
-  val testDataFixture = ResourceSuiteLocalFixture(
+  val testDataFixture = IOFixture(
     "testData",
     Resource.make {
       for

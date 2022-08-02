@@ -1,8 +1,8 @@
 package it.mconst.cooler.routes
 
+import it.mconst.cooler.utils.IOSuite
 import it.mconst.cooler.utils.TestUtils.*
 import munit.Assertions
-import munit.CatsEffectSuite
 
 import cats.effect.IO
 import cats.effect.kernel.Resource
@@ -28,7 +28,7 @@ import org.http4s.implicits.*
 import org.http4s.syntax.*
 import org.http4s.Uri
 
-class TaxRoutesTest extends CatsEffectSuite {
+class TaxRoutesTest extends IOSuite {
   val app = TaxRoutes().orNotFound
   val client: HttpClient[IO] = HttpClient.fromHttpApp(app)
 
@@ -38,7 +38,7 @@ class TaxRoutesTest extends CatsEffectSuite {
 
   given EntityDecoder[IO, Tax] = jsonOf[IO, Tax]
 
-  val adminFixture = ResourceSuiteLocalFixture(
+  val adminFixture = IOFixture(
     "admin",
     Resource.make {
       given Option[User] = none[User]

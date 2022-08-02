@@ -1,8 +1,8 @@
 package it.mconst.cooler.models.client
 
+import it.mconst.cooler.utils.IOSuite
 import it.mconst.cooler.utils.TestUtils.*
 import munit.Assertions
-import munit.CatsEffectSuite
 
 import cats.effect.IO
 import cats.effect.kernel.Resource
@@ -16,8 +16,8 @@ import it.mconst.cooler.utils.Error
 import mongo4cats.collection.operations.Filter
 import org.http4s.Status
 
-class ClientsCollectionTest extends CatsEffectSuite {
-  val adminFixture = ResourceSuiteLocalFixture(
+class ClientsCollectionTest extends IOSuite {
+  val adminFixture = IOFixture(
     "admin",
     Resource.make {
       given Option[User] = none[User]
