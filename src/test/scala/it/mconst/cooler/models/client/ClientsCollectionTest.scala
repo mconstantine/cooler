@@ -4,15 +4,20 @@ import it.mconst.cooler.utils.IOSuite
 import it.mconst.cooler.utils.TestUtils.*
 import munit.Assertions
 
+import cats.data.EitherT
 import cats.effect.IO
 import cats.effect.kernel.Resource
 import cats.syntax.all.none
 import com.osinka.i18n.Lang
 import it.mconst.cooler.models.*
+import it.mconst.cooler.models.project.Project
+import it.mconst.cooler.models.project.Projects
+import it.mconst.cooler.models.project.ProjectWithClientLabel
 import it.mconst.cooler.models.user.User
 import it.mconst.cooler.models.user.Users
 import it.mconst.cooler.utils.__
 import it.mconst.cooler.utils.Error
+import mongo4cats.bson.ObjectId
 import mongo4cats.collection.operations.Filter
 import org.http4s.Status
 
@@ -289,6 +294,107 @@ class ClientsCollectionTest extends IOSuite {
         }
         _ = assert(!result.contains("Alice Alison Alinc"))
       yield ()
+    }
+  }
+
+  def otherUser = Resource.make {
+    given Option[User] = Some(adminFixture())
+
+    Users
+      .create(
+        User.CreationData(
+          "Client test other user",
+          "client-test-other-user@example.com",
+          "S0m3P4ssw0rd!"
+        )
+      )
+      .orFail
+  } { user =>
+    given User = user
+    Users.delete.orFail.void
+  }
+
+  final case class ClientWithProject(
+      user: User,
+      client: Client,
+      project: ProjectWithClientLabel
+  )
+
+  def clientsWithProjects =
+    otherUser.flatMap[List[ClientWithProject]](otherUser =>
+      Resource.make {
+        import cats.syntax.traverse.*
+
+        def makeClientWithProject(
+            user: User,
+            clientData: Client.InputData
+        ): (
+            ObjectId => Project.InputData
+        ) => IO[ClientWithProject] = makeProjectData => {
+          given User = user
+
+          for
+            client <- Clients.create(clientData).orFail
+            projectData = makeProjectData(client._id)
+            project <- Projects.create(projectData).orFail
+          yield ClientWithProject(user, client, project)
+        }
+
+        List(
+          makeClientWithProject(
+            adminFixture(),
+            makeTestPrivateClient(addressEmail = "client1@example.com")
+          )(clientId => makeTestProject(clientId, name = "project1")),
+          makeClientWithProject(
+            adminFixture(),
+            makeTestPrivateClient(addressEmail = "client2@example.com")
+          )(clientId => makeTestProject(clientId, name = "project2")),
+          makeClientWithProject(
+            otherUser,
+            makeTestPrivateClient(addressEmail = "client3@example.com")
+          )(clientId => makeTestProject(clientId, name = "project3"))
+        ).traverse(identity)
+      }(clientsWithProjects =>
+        Clients.collection
+          .use(
+            _.raw(
+              _.deleteMany(
+                Filter.in("_id", clientsWithProjects.map(_.client._id))
+              )
+            )
+          )
+          .both(
+            Projects.collection.use(
+              _.raw(
+                _.deleteMany(
+                  Filter.in("_id", clientsWithProjects.map(_.project._id))
+                )
+              )
+            )
+          )
+          .void
+      )
+    )
+
+  test("should get client projects") {
+    clientsWithProjects.use { clientsWithProjects =>
+      val target = clientsWithProjects(0)
+
+      Clients
+        .getProjects(target.client._id, CursorQuery.empty)
+        .orFail
+        .assertEquals(
+          Cursor(
+            PageInfo(
+              1,
+              Some("project1"),
+              Some("project1"),
+              false,
+              false
+            ),
+            List(Edge(target.project, "project1"))
+          )
+        )
     }
   }
 }

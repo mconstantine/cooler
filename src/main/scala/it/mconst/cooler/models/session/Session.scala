@@ -126,7 +126,7 @@ object Session {
 object Sessions {
   val collection = Collection[IO, Session.InputData, Session]("sessions")
 
-  private def labelsStages = Seq(
+  def labelsStages = Seq(
     Aggregates.lookup("clients", "client", "_id", "c"),
     Aggregates.unwind("$c"),
     Aggregates.lookup("projects", "project", "_id", "p"),

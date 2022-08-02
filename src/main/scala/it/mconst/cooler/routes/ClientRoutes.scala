@@ -49,6 +49,21 @@ object ClientRoutes {
       Clients.findById(id).toResponse
     }
 
+    case GET -> Root / ObjectIdParam(id) / "projects" :?
+        QueryMatcher(query) +&
+        FirstMatcher(first) +&
+        AfterMatcher(after) +&
+        LastMatcher(last) +&
+        BeforeMatcher(before) as context => {
+      given Lang = context.lang
+      given User = context.user
+
+      EitherT
+        .fromEither[IO](CursorQuery(query, first, after, last, before))
+        .flatMap(query => Clients.getProjects(id, query))
+        .toResponse
+    }
+
     case ctxReq @ PUT -> Root / ObjectIdParam(id) as context => {
       given Lang = context.lang
       given User = context.user

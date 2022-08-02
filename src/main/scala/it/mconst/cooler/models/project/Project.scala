@@ -191,7 +191,7 @@ object Project {
 object Projects {
   val collection = Collection[IO, Project.InputData, DbProject]("projects")
 
-  private def labelsStages = Seq(
+  def labelsStages = Seq(
     Aggregates.lookup(Clients.collection.name, "client", "_id", "c"),
     Aggregates.unwind("$c"),
     Aggregates.addFields(

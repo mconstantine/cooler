@@ -17,6 +17,7 @@ import io.circe.Json
 import io.circe.syntax.*
 import it.mconst.cooler.models.*
 import it.mconst.cooler.models.project.Projects
+import it.mconst.cooler.models.project.ProjectWithClientLabel
 import it.mconst.cooler.models.session.Session
 import it.mconst.cooler.models.session.Sessions
 import it.mconst.cooler.models.task.Tasks
@@ -627,6 +628,23 @@ object Clients {
             )
           )
         )
+      )(query)
+    )
+
+  def getProjects(id: ObjectId, query: CursorQuery)(using customer: User)(using
+      Lang
+  ): EitherT[IO, Error, Cursor[ProjectWithClientLabel]] =
+    Projects.collection.use(
+      _.find[ProjectWithClientLabel](
+        "name",
+        Seq(
+          Aggregates.`match`(
+            Filters.and(
+              Filters.eq("client", id),
+              Filters.eq("user", customer._id)
+            )
+          )
+        ) ++ Projects.labelsStages
       )(query)
     )
 }
