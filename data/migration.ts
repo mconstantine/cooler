@@ -1,10 +1,15 @@
 import sqlite3, { Database } from "sqlite3";
-import { MongoClient, ObjectId } from "mongodb";
+import {
+  MongoClient as MongoDBClient,
+  ObjectId,
+  WithId,
+  InsertManyResult,
+} from "mongodb";
 
 const MONGO_URL =
   "mongodb://localhost:27017/cooler?maxPoolSize=20&w=majority&readPreference=primary&directConnection=true&ssl=false";
 
-interface User {
+interface SQLiteUser {
   id: number;
   name: string;
   email: string;
@@ -12,15 +17,29 @@ interface User {
   created_at: string;
   updated_at: string;
 }
+interface MongoUser {
+  name: string;
+  email: string;
+  password: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
-interface Tax {
+interface SQLiteTax {
   id: number;
   label: string;
   value: number;
   user: number;
 }
+interface MongoTax {
+  label: string;
+  value: number;
+  user: ObjectId;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
-interface BaseClient {
+interface BaseSQLiteClient {
   id: number;
   address_country: string;
   address_province: string;
@@ -33,8 +52,20 @@ interface BaseClient {
   created_at: string;
   updated_at: string;
 }
+interface BaseMongoClient {
+  addressCountry: string;
+  addressProvince: string;
+  addressCity: string;
+  addressZIP: string;
+  addressStreet: string;
+  addressStreetNumber: string | null;
+  addressEmail: string;
+  user: ObjectId;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
-interface PrivateClient extends BaseClient {
+interface PrivateSQLiteClient extends BaseSQLiteClient {
   type: "PRIVATE";
   fiscal_code: string;
   first_name: string;
@@ -43,8 +74,17 @@ interface PrivateClient extends BaseClient {
   vat_number: null;
   business_name: null;
 }
+interface PrivateMongoClient extends BaseMongoClient {
+  type: "PRIVATE";
+  fiscalCode: string;
+  firstName: string;
+  lastName: string;
+  countryCode: null;
+  vatNumber: null;
+  businessName: null;
+}
 
-interface BusinessClient extends BaseClient {
+interface BusinessSQLiteClient extends BaseSQLiteClient {
   type: "BUSINESS";
   fiscal_code: null;
   first_name: null;
@@ -53,10 +93,20 @@ interface BusinessClient extends BaseClient {
   vat_number: string;
   business_name: string;
 }
+interface BusinessMongoClient extends BaseMongoClient {
+  type: "BUSINESS";
+  fiscalCode: null;
+  firstName: null;
+  lastName: null;
+  countryCode: string;
+  vatNumber: string;
+  businessName: string;
+}
 
-type Client = PrivateClient | BusinessClient;
+type SQLiteClient = PrivateSQLiteClient | BusinessSQLiteClient;
+type MongoClient = PrivateMongoClient | BusinessMongoClient;
 
-interface Project {
+interface SQLiteProject {
   id: number;
   name: string;
   description: string | null;
@@ -66,8 +116,20 @@ interface Project {
   created_at: string;
   updated_at: string;
 }
+interface MongoProject {
+  name: string;
+  description: string | null;
+  client: ObjectId;
+  user: ObjectId;
+  cashData: {
+    at: Date;
+    amount: number;
+  } | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
-interface Task {
+interface SQLiteTask {
   id: number;
   name: string;
   description: string | null;
@@ -78,18 +140,51 @@ interface Task {
   created_at: string;
   updated_at: string;
 }
+interface MongoTask {
+  name: string;
+  description: string | null;
+  startTime: Date;
+  expectedWorkingHours: number;
+  hourlyCost: number;
+  project: ObjectId;
+  client: ObjectId;
+  user: ObjectId;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
-interface Session {
+interface SQLiteSession {
   id: number;
   start_time: string;
   end_time: string;
   task: number;
 }
+interface MongoSession {
+  startTime: Date;
+  endTime: Date;
+  task: ObjectId;
+  project: ObjectId;
+  client: ObjectId;
+  user: ObjectId;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+type EntityList<T> = Array<{
+  id: number;
+  _id: ObjectId;
+  item: WithId<T>;
+}>;
 
 (async () => {
+  console.log("Starting");
+
   const sqlite = new sqlite3.Database("data.db");
-  const mongoClient = await MongoClient.connect(MONGO_URL);
+  console.log("Connected to SQLite database");
+
+  const mongoClient = await MongoDBClient.connect(MONGO_URL);
   const mongo = mongoClient.db("cooler");
+  console.log("Connected to Mongo database");
 
   const collections = await mongo
     .listCollections()
@@ -100,42 +195,63 @@ interface Session {
     await mongo.dropCollection(collection);
   }
 
-  const users = await getEntity<User>(sqlite, "user");
+  console.log("Cleaned Mongo database");
+  console.log("Migrating users");
 
-  const usersResult = await mongo.collection("users").insertMany(
-    users.map((user) => ({
+  const users = await getEntity<SQLiteUser>(sqlite, "user");
+
+  const usersList: EntityList<MongoUser> = await toEntityList<
+    SQLiteUser,
+    MongoUser
+  >("users", users, (user) =>
+    Promise.resolve({
       name: user.name,
       email: user.email,
       password: user.password,
-      createdAt: sqlToISODate(user.created_at),
-      updatedAt: sqlToISODate(user.updated_at),
-    }))
+      createdAt: sqlToJSDate(user.created_at),
+      updatedAt: sqlToJSDate(user.updated_at),
+    })
   );
 
-  const usersIdsMap = Object.entries(usersResult.insertedIds).reduce(
-    (res, [index, objectId]) => {
-      const id = users[parseInt(index)]!.id;
-      return { ...res, [id]: objectId };
-    },
-    {} as Record<number, ObjectId>
-  );
+  console.log("Migrating taxes");
 
-  const taxes = await getEntity<Tax>(sqlite, "tax");
+  const taxes = await getEntity<SQLiteTax>(sqlite, "tax");
 
   await mongo.collection("taxes").insertMany(
-    taxes.map((tax) => ({
-      label: tax.label,
-      value: tax.value,
-      user: usersIdsMap[tax.user],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    }))
+    taxes.map((tax): MongoTax => {
+      const user = usersList.find((user) => user.id === tax.user);
+
+      if (!user) {
+        throw new Error(`User not found while creating tax! id: ${tax.user}`);
+      }
+
+      return {
+        label: tax.label,
+        value: tax.value,
+        user: user._id,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+    })
   );
 
-  const clients = await getEntity<Client>(sqlite, "client");
+  console.log("Migrating clients");
 
-  const clientsResult = await mongo.collection("clients").insertMany(
-    clients.map((client) => ({
+  const clients = await getEntity<SQLiteClient>(sqlite, "client");
+
+  const clientsList: EntityList<MongoClient> = await toEntityList<
+    SQLiteClient,
+    MongoClient
+  >("clients", clients, async (client) => {
+    const user = usersList.find((user) => user.id === client.user);
+
+    if (!user) {
+      throw new Error(
+        `User not found while creating client! id: ${client.user}`
+      );
+    }
+
+    return {
       type: client.type,
       ...(() => {
         switch (client.type) {
@@ -161,82 +277,101 @@ interface Session {
         addressStreet: client.address_street,
         addressStreetNumber: client.address_street_number,
         addressEmail: client.address_email,
-        user: usersIdsMap[client.user],
-        createdAt: sqlToISODate(client.created_at),
-        updatedAt: sqlToISODate(client.updated_at),
+        user: user._id,
+        createdAt: sqlToJSDate(client.created_at),
+        updatedAt: sqlToJSDate(client.updated_at),
       },
-    }))
+    } as MongoClient;
+  });
+
+  console.log("Migrating projects");
+
+  const projects = await getEntity<SQLiteProject>(sqlite, "project");
+
+  const projectsList = await toEntityList<SQLiteProject, MongoProject>(
+    "projects",
+    projects,
+    async (project) => {
+      const client = clientsList.find((client) => client.id === project.client);
+
+      if (!client) {
+        throw new Error(
+          `Client not found while creating project! id: ${project.client}`
+        );
+      }
+
+      return {
+        name: project.name,
+        description: project.description,
+        client: client._id,
+        user: client.item.user,
+        cashData:
+          project.cashed_at && project.cashed_balance
+            ? {
+                at: sqlToJSDate(project.cashed_at),
+                amount: project.cashed_balance,
+              }
+            : null,
+        createdAt: sqlToJSDate(project.created_at),
+        updatedAt: sqlToJSDate(project.updated_at),
+      };
+    }
   );
 
-  const clientsIdsMap = Object.entries(clientsResult.insertedIds).reduce(
-    (res, [index, objectId]) => {
-      const id = clients[parseInt(index)]!.id;
-      return { ...res, [id]: objectId };
-    },
-    {} as Record<number, ObjectId>
-  );
+  console.log("Migrating tasks");
 
-  const projects = await getEntity<Project>(sqlite, "project");
+  const tasks = await getEntity<SQLiteTask>(sqlite, "task");
 
-  const projectsResult = await mongo.collection("projects").insertMany(
-    projects.map((project) => ({
-      name: project.name,
-      description: project.description,
-      client: clientsIdsMap[project.client],
-      cashData:
-        project.cashed_at && project.cashed_balance
-          ? {
-              at: sqlToISODate(project.cashed_at),
-              amount: project.cashed_balance,
-            }
-          : null,
-      createdAt: sqlToISODate(project.created_at),
-      updatedAt: sqlToISODate(project.updated_at),
-    }))
-  );
+  const tasksList: EntityList<MongoTask> = await toEntityList<
+    SQLiteTask,
+    MongoTask
+  >("tasks", tasks, async (task) => {
+    const project = projectsList.find((project) => project.id === task.project);
 
-  const projectsIdsMap = Object.entries(projectsResult.insertedIds).reduce(
-    (res, [index, objectId]) => {
-      const id = projects[parseInt(index)]!.id;
-      return { ...res, [id]: objectId };
-    },
-    {} as Record<number, ObjectId>
-  );
+    if (!project) {
+      throw new Error(
+        `Project not found while creating task! id: ${task.project}`
+      );
+    }
 
-  const tasks = await getEntity<Task>(sqlite, "task");
-
-  const tasksResult = await mongo.collection("tasks").insertMany(
-    tasks.map((task) => ({
+    return {
       name: task.name,
       description: task.description,
-      startTime: sqlToISODate(task.start_time),
+      startTime: sqlToJSDate(task.start_time),
       expectedWorkingHours: task.expectedWorkingHours,
       hourlyCost: task.hourlyCost,
-      project: projectsIdsMap[task.project],
-      createdAt: sqlToISODate(task.created_at),
-      updatedAt: sqlToISODate(task.updated_at),
-    }))
-  );
+      project: project._id,
+      client: project.item.client,
+      user: project.item.user,
+      createdAt: sqlToJSDate(task.created_at),
+      updatedAt: sqlToJSDate(task.updated_at),
+    };
+  });
 
-  const tasksIdsMap = Object.entries(tasksResult.insertedIds).reduce(
-    (res, [index, objectId]) => {
-      const id = tasks[parseInt(index)]!.id;
-      return { ...res, [id]: objectId };
-    },
-    {} as Record<number, ObjectId>
-  );
+  console.log("Migrating sessions");
 
-  const sessions = await getEntity<Session>(sqlite, "session");
+  const sessions = await getEntity<SQLiteSession>(sqlite, "session");
 
   await mongo.collection("sessions").insertMany(
-    sessions.map((session) => {
-      const startTime = sqlToISODate(session.start_time);
-      const endTime = sqlToISODate(session.end_time);
+    sessions.map((session): MongoSession => {
+      const task = tasksList.find((task) => task.id === session.task);
+
+      if (!task) {
+        throw new Error(
+          `Task not found while creating session! id: ${session.task}`
+        );
+      }
+
+      const startTime = sqlToJSDate(session.start_time);
+      const endTime = sqlToJSDate(session.end_time);
 
       return {
         startTime,
         endTime,
-      task: tasksIdsMap[session.task],
+        task: task._id,
+        project: task.item.project,
+        client: task.item.client,
+        user: task.item.user,
         createdAt: startTime,
         updatedAt: endTime,
       };
@@ -245,6 +380,31 @@ interface Session {
 
   sqlite.close();
   await mongoClient.close();
+
+  async function toEntityList<I extends { id: number }, O>(
+    collectionName: string,
+    list: I[],
+    f: (item: I) => Promise<O>
+  ): Promise<EntityList<O>> {
+    const items: O[] = [];
+
+    for (const item of list) {
+      items.push(await f(item));
+    }
+
+    const result = await mongo.collection(collectionName).insertMany(items);
+    const _ids = arrayFromInsertedResult(result);
+
+    return items.map((item, index) => {
+      const _id = _ids[index]!;
+
+      return {
+        id: list[index]!.id,
+        _id,
+        item: { _id, ...item } as WithId<O>,
+      };
+    });
+  }
 })().then(
   () => process.exit(0),
   (error) => {
@@ -271,9 +431,15 @@ function getEntity<T>(db: Database, tableName: string): Promise<T[]> {
 
 const sqlDatePattern = /^(\d{4})-(\d{2})-(\d{2})\s(\d{2}):(\d{2}):(\d{2})$/;
 
-function sqlToISODate(sqlDate: string): string {
+function sqlToJSDate(sqlDate: string): Date {
   const [, year, month, day, hours, minutes, seconds] =
     sqlDate.match(sqlDatePattern)!;
 
-  return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}.000Z`;
+  return new Date(
+    `${year}-${month}-${day}T${hours}:${minutes}:${seconds}.000Z`
+  );
+}
+
+function arrayFromInsertedResult<T>(result: InsertManyResult<T>): ObjectId[] {
+  return Object.values(result.insertedIds);
 }
