@@ -9,6 +9,7 @@ import { useReactiveCommand } from '../../effects/api/useApi'
 import { Client as ClientType } from '../../entities/Client'
 import { ObjectId } from '../../globalDomain'
 import { ClientData } from './ClientData'
+import { ClientProjects } from './ClientProjects'
 import { makeClientQuery } from './domain'
 
 interface Props {
@@ -34,7 +35,10 @@ export default function Client(props: Props) {
       () => <LoadingBlock />,
       error => <ErrorPanel error={error} />,
       client => (
-        <ClientData client={client} onUpdate={onUpdate} onDelete={onDelete} />
+        <>
+          <ClientData client={client} onUpdate={onUpdate} onDelete={onDelete} />
+          <ClientProjects clientId={client._id} />
+        </>
       )
     )
   )

@@ -7,6 +7,7 @@ import {
   makePutRequest
 } from '../../effects/api/useApi'
 import { Client, ClientCreationInput } from '../../entities/Client'
+import { Project } from '../../entities/Project'
 import { LocalizedString, ObjectId } from '../../globalDomain'
 import { Connection, ConnectionQueryInput } from '../../misc/Connection'
 
@@ -76,4 +77,11 @@ export const makeDeleteClientRequest = (_id: ObjectId) =>
     url: `/clients/${_id}`,
     inputCodec: t.void,
     outputCodec: Client
+  })
+
+export const makeClientProjectsQuery = (_id: ObjectId) =>
+  makeGetRequest({
+    url: `/clients/${_id}/projects`,
+    inputCodec: ConnectionQueryInput,
+    outputCodec: Connection(Project)
   })
