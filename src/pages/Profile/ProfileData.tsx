@@ -86,21 +86,25 @@ export function ProfileData() {
                   name="name"
                   label={a18n`Name`}
                   value={profile.name}
+                  action={option.none}
                 />
                 <ReadOnlyInput
                   name="email"
                   label={a18n`E-mail address`}
                   value={profile.email as unknown as LocalizedString}
+                  action={option.none}
                 />
                 <ReadOnlyInput
                   name="created_at"
                   label={a18n`Created at`}
                   value={formatDateTime(profile.createdAt)}
+                  action={option.none}
                 />
                 <ReadOnlyInput
                   name="updated_at"
                   label={a18n`Last updated at`}
                   value={formatDateTime(profile.updatedAt)}
+                  action={option.none}
                 />
                 {pipe(
                   error,

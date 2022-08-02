@@ -40,6 +40,7 @@ export function ClientProjects(props: Props) {
       onLoadMore={option.some(onLoadMore)}
       renderListItem={renderItem}
       emptyListMessage={a18n`No projects found`}
+      autoFocus={false}
     />
   )
 }

@@ -71,7 +71,7 @@ interface AsyncAction {
 
 export type HeadingAction = SyncAction | IconAction | AsyncAction
 
-function foldHeadingAction<T>(
+export function foldHeadingAction<T>(
   whenSync: (action: SyncAction) => T,
   whenIcon: (action: IconAction) => T,
   whenAsync: (action: AsyncAction) => T

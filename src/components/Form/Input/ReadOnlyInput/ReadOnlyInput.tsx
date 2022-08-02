@@ -1,6 +1,10 @@
 import { option } from 'fp-ts'
-import { constVoid } from 'fp-ts/function'
+import { constNull, constVoid, pipe } from 'fp-ts/function'
+import { Option } from 'fp-ts/Option'
 import { LocalizedString } from '../../../../globalDomain'
+import { Button } from '../../../Button/Button/Button'
+import { LoadingButton } from '../../../Button/LoadingButton/LoadingButton'
+import { foldHeadingAction, HeadingAction } from '../../../Heading/Heading'
 import { Input } from '../Input/Input'
 import './ReadOnlyInput.scss'
 
@@ -8,6 +12,7 @@ interface Props {
   name: string
   label: LocalizedString
   value: LocalizedString
+  action: Option<HeadingAction>
 }
 
 export function ReadOnlyInput(props: Props) {
@@ -22,6 +27,42 @@ export function ReadOnlyInput(props: Props) {
         warning={option.none}
         readOnly
       />
+      {pipe(
+        props.action,
+        option.fold(
+          constNull,
+          foldHeadingAction(
+            action => (
+              <Button
+                type="button"
+                label={action.label}
+                icon={action.icon}
+                color={action.color}
+                action={action.action}
+                flat
+              />
+            ),
+            action => (
+              <Button
+                type="iconButton"
+                icon={action.icon}
+                color={action.color}
+                action={action.action}
+              />
+            ),
+            action => (
+              <LoadingButton
+                type="loadingButton"
+                label={action.label}
+                icon={action.icon}
+                color={action.color}
+                action={action.action}
+                flat
+              />
+            )
+          )
+        )
+      )}
     </div>
   )
 }

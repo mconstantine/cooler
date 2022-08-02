@@ -88,16 +88,19 @@ export function ClientData(props: Props) {
                     label={a18n`Fiscal code`}
                     name="fiscalCode"
                     value={client.fiscalCode}
+                    action={option.none}
                   />
                   <ReadOnlyInput
                     label={a18n`First name`}
                     name="firstName"
                     value={client.firstName}
+                    action={option.none}
                   />
                   <ReadOnlyInput
                     label={a18n`Last name`}
                     name="lastName"
                     value={client.lastName}
+                    action={option.none}
                   />
                 </>
               ),
@@ -107,16 +110,19 @@ export function ClientData(props: Props) {
                     label={a18n`Country`}
                     name="country"
                     value={CountryValues[client.countryCode]}
+                    action={option.none}
                   />
                   <ReadOnlyInput
                     label={a18n`VAT number`}
                     name="vatNumber"
                     value={client.vatNumber}
+                    action={option.none}
                   />
                   <ReadOnlyInput
                     label={a18n`Business name`}
                     name="businessName"
                     value={client.businessName}
+                    action={option.none}
                   />
                 </>
               )
@@ -126,26 +132,31 @@ export function ClientData(props: Props) {
             label={a18n`Country (address)`}
             name="addressCountry"
             value={CountryValues[props.client.addressCountry]}
+            action={option.none}
           />
           <ReadOnlyInput
             label={a18n`Province (address)`}
             name="addressProvince"
             value={ProvinceValues[props.client.addressProvince]}
+            action={option.none}
           />
           <ReadOnlyInput
             label={a18n`City (address)`}
             name="addressCity"
             value={props.client.addressCity}
+            action={option.none}
           />
           <ReadOnlyInput
             label={a18n`ZIP code (address)`}
             name="addressZIP"
             value={props.client.addressZIP}
+            action={option.none}
           />
           <ReadOnlyInput
             label={a18n`Street (address)`}
             name="addressStreet"
             value={props.client.addressStreet}
+            action={option.none}
           />
           <ReadOnlyInput
             label={a18n`Street number (address)`}
@@ -154,21 +165,25 @@ export function ClientData(props: Props) {
               props.client.addressStreetNumber,
               option.getOrElse(() => unsafeLocalizedString('–'))
             )}
+            action={option.none}
           />
           <ReadOnlyInput
             label={a18n`E-mail address`}
             name="addressEmail"
             value={unsafeLocalizedString(props.client.addressEmail)}
+            action={option.none}
           />
           <ReadOnlyInput
             label={a18n`Created at`}
             name="createdAt"
             value={formatDateTime(props.client.createdAt)}
+            action={option.none}
           />
           <ReadOnlyInput
             label={a18n`Last updated at`}
             name="updatedAt"
             value={formatDateTime(props.client.updatedAt)}
+            action={option.none}
           />
           {pipe(
             error,

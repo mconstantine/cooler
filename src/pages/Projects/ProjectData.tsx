@@ -25,7 +25,7 @@ import {
 import { LocalizedString } from '../../globalDomain'
 import { makeDeleteProjectRequest, makeUpdateProjectRequest } from './domain'
 import { LoadingButton } from '../../components/Button/LoadingButton/LoadingButton'
-import { arrowUp, skull } from 'ionicons/icons'
+import { arrowUp, eye, skull } from 'ionicons/icons'
 import { useDialog } from '../../effects/useDialog'
 import { Option } from 'fp-ts/Option'
 import { Reader } from 'fp-ts/Reader'
@@ -108,6 +108,7 @@ export function ProjectData(props: Props) {
             name="name"
             label={a18n`Name`}
             value={props.project.name}
+            action={option.none}
           />
           <ReadOnlyInput
             name="description"
@@ -116,21 +117,30 @@ export function ProjectData(props: Props) {
               props.project.description,
               option.getOrElse(() => unsafeLocalizedString(''))
             )}
+            action={option.none}
           />
           <ReadOnlyInput
             name="client"
             label={a18n`Client`}
             value={props.project.client.name}
+            action={option.some({
+              type: 'sync',
+              label: a18n`Details`,
+              action: () => setRoute(clientsRoute(props.project.client._id)),
+              icon: option.some(eye)
+            })}
           />
           <ReadOnlyInput
             name="createdAt"
             label={a18n`Created at`}
             value={formatDateTime(props.project.createdAt)}
+            action={option.none}
           />
           <ReadOnlyInput
             name="updatedAt"
             label={a18n`Last updated at`}
             value={formatDateTime(props.project.updatedAt)}
+            action={option.none}
           />
           {pipe(
             props.project.cashData,
@@ -140,6 +150,7 @@ export function ProjectData(props: Props) {
                   name="cashedStatus"
                   label={a18n`Cashed status`}
                   value={a18n`Not cashed`}
+                  action={option.none}
                 />
               ),
               ({ at, amount }) =>

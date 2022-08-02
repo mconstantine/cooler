@@ -1,7 +1,7 @@
 import { array, boolean, option, taskEither } from 'fp-ts'
 import { IO } from 'fp-ts/IO'
 import { constNull, flow, pipe } from 'fp-ts/function'
-import { arrowUp, skull, stop } from 'ionicons/icons'
+import { arrowUp, eye, skull, stop } from 'ionicons/icons'
 import { a18n, formatDate, formatDateTime } from '../../a18n'
 import { ReadOnlyInput } from '../../components/Form/Input/ReadOnlyInput/ReadOnlyInput'
 import { Panel } from '../../components/Panel/Panel'
@@ -25,6 +25,12 @@ import { useSessionDurationClock } from '../../effects/useSessionDurationClock'
 import { TaskEither } from 'fp-ts/TaskEither'
 import { LoadingButton } from '../../components/Button/LoadingButton/LoadingButton'
 import { useCurrentSessions } from '../../contexts/CurrentSessionsContext'
+import {
+  clientsRoute,
+  projectsRoute,
+  taskRoute,
+  useRouter
+} from '../../components/Router'
 
 interface Props {
   session: Session
@@ -35,6 +41,7 @@ interface Props {
 }
 
 export function SessionData(props: Props) {
+  const { setRoute } = useRouter()
   const { currentSessions, notifyStoppedSession, notifyDeletedSession } =
     useCurrentSessions()
 
@@ -138,6 +145,7 @@ export function SessionData(props: Props) {
             name="startTime"
             label={a18n`Started at`}
             value={formatDateTime(props.session.startTime)}
+            action={option.none}
           />
           <ReadOnlyInput
             name="endTime"
@@ -147,11 +155,49 @@ export function SessionData(props: Props) {
               option.map(formatDateTime),
               option.getOrElse(() => a18n`Currently running`)
             )}
+            action={option.none}
           />
           <ReadOnlyInput
             name="duration"
             label={a18n`Duration`}
             value={duration}
+            action={option.none}
+          />
+          <ReadOnlyInput
+            name="task"
+            label={a18n`Task`}
+            value={props.session.task.name}
+            action={option.some({
+              type: 'sync',
+              label: a18n`Details`,
+              action: () =>
+                setRoute(
+                  taskRoute(props.session.project._id, props.session.task._id)
+                ),
+              icon: option.some(eye)
+            })}
+          />
+          <ReadOnlyInput
+            name="project"
+            label={a18n`Project`}
+            value={props.session.project.name}
+            action={option.some({
+              type: 'sync',
+              label: a18n`Details`,
+              action: () => setRoute(projectsRoute(props.session.project._id)),
+              icon: option.some(eye)
+            })}
+          />
+          <ReadOnlyInput
+            name="client"
+            label={a18n`Client`}
+            value={props.session.client.name}
+            action={option.some({
+              type: 'sync',
+              label: a18n`Details`,
+              action: () => setRoute(clientsRoute(props.session.client._id)),
+              icon: option.some(eye)
+            })}
           />
           {pipe(
             error,

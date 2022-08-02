@@ -29,9 +29,11 @@ interface Props<T> {
   onSearchQueryChange: Option<Reader<string, unknown>>
   onLoadMore: Option<IO<unknown>>
   emptyListMessage: LocalizedString
+  autoFocus?: boolean
 }
 
 export function ConnectionList<T>(props: Props<T>) {
+  const autoFocus = props.autoFocus ?? true
   const [queryString, setQueryString] = useState('')
 
   const debouncedSearch = useDebounce(
@@ -48,8 +50,8 @@ export function ConnectionList<T>(props: Props<T>) {
   }, [queryString, debouncedSearch])
 
   useEffect(() => {
-    searchInputRef.current?.focus()
-  }, [])
+    autoFocus && searchInputRef.current?.focus()
+  }, [autoFocus])
 
   return (
     <Panel title={props.title} framed action={props.action}>

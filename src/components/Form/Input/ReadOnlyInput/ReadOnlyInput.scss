@@ -1,6 +1,14 @@
 @import '../../../../variables';
 
 .ReadOnlyInput {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  .Input {
+    flex-basis: 100%;
+  }
+
   .Input label {
     background-color: transparent;
     border-bottom: 0px none;

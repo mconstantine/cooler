@@ -4,7 +4,7 @@ import { IO } from 'fp-ts/IO'
 import { ReaderTaskEither } from 'fp-ts/ReaderTaskEither'
 import { Option } from 'fp-ts/Option'
 import { Reader } from 'fp-ts/Reader'
-import { arrowUp, skull } from 'ionicons/icons'
+import { arrowUp, eye, skull } from 'ionicons/icons'
 import { useState } from 'react'
 import {
   a18n,
@@ -28,7 +28,7 @@ import { useDialog } from '../../effects/useDialog'
 import { TaskWithStats } from '../../entities/Task'
 import { LocalizedString } from '../../globalDomain'
 import { makeDeleteTaskRequest, makeUpdateTaskRequest } from './domain'
-import { projectsRoute, useRouter } from '../../components/Router'
+import { clientsRoute, projectsRoute, useRouter } from '../../components/Router'
 
 interface Props {
   task: TaskWithStats
@@ -98,6 +98,7 @@ export default function TaskData(props: Props) {
             name="name"
             label={a18n`Name`}
             value={props.task.name}
+            action={option.none}
           />
           <ReadOnlyInput
             name="description"
@@ -106,36 +107,59 @@ export default function TaskData(props: Props) {
               props.task.description,
               option.getOrElse(() => unsafeLocalizedString(''))
             )}
+            action={option.none}
           />
           <ReadOnlyInput
             name="project"
             label={a18n`Project`}
             value={props.task.project.name}
+            action={option.some({
+              type: 'sync',
+              label: a18n`Details`,
+              action: () => setRoute(projectsRoute(props.task.project._id)),
+              icon: option.some(eye)
+            })}
+          />
+          <ReadOnlyInput
+            name="client"
+            label={a18n`Client`}
+            value={props.task.client.name}
+            action={option.some({
+              type: 'sync',
+              label: a18n`Details`,
+              action: () => setRoute(clientsRoute(props.task.client._id)),
+              icon: option.some(eye)
+            })}
           />
           <ReadOnlyInput
             name="startTime"
             label={a18n`Start time`}
             value={formatDateTime(props.task.startTime)}
+            action={option.none}
           />
           <ReadOnlyInput
             name="expectedWorkingHours"
             label={a18n`Expected working hours`}
             value={formatNumber(props.task.expectedWorkingHours)}
+            action={option.none}
           />
           <ReadOnlyInput
             name="hourlyCost"
             label={a18n`Hourly cost`}
             value={formatMoneyAmount(props.task.hourlyCost)}
+            action={option.none}
           />
           <ReadOnlyInput
             name="createdAt"
             label={a18n`Created at`}
             value={formatDateTime(props.task.createdAt)}
+            action={option.none}
           />
           <ReadOnlyInput
             name="updatedAt"
             label={a18n`Last updated at`}
             value={formatDateTime(props.task.updatedAt)}
+            action={option.none}
           />
           {pipe(
             error,
