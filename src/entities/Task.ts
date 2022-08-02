@@ -6,6 +6,7 @@ import {
   NonNegativeNumber,
   ObjectId
 } from '../globalDomain'
+import { ClientLabel } from './Project'
 
 export const ProjectLabel = t.type({
   _id: ObjectId,
@@ -19,6 +20,7 @@ export const Task = t.type(
     name: LocalizedString,
     description: optionFromNullable(LocalizedString),
     project: ProjectLabel,
+    client: ClientLabel,
     expectedWorkingHours: NonNegativeNumber,
     hourlyCost: NonNegativeNumber,
     startTime: DateFromISOString,

@@ -2,9 +2,19 @@ import * as t from 'io-ts'
 import { DateFromISOString, optionFromNullable } from 'io-ts-types'
 import { LocalizedString, NonNegativeNumber, ObjectId } from '../globalDomain'
 
-const Client = t.type(
+const PrivateClientType = t.literal('PRIVATE', 'PrivateClientType')
+const BusinessClientType = t.literal('BUSINESS', 'BusinessClientType')
+
+export const ClientType = t.union(
+  [PrivateClientType, BusinessClientType],
+  'ClientType'
+)
+export type ClientType = t.TypeOf<typeof ClientType>
+
+export const ClientLabel = t.type(
   {
     _id: ObjectId,
+    type: ClientType,
     name: LocalizedString
   },
   'Client'
@@ -24,7 +34,7 @@ export const Project = t.type(
     _id: ObjectId,
     name: LocalizedString,
     description: optionFromNullable(LocalizedString),
-    client: Client,
+    client: ClientLabel,
     cashData: optionFromNullable(ProjectCashData),
     createdAt: DateFromISOString,
     updatedAt: DateFromISOString

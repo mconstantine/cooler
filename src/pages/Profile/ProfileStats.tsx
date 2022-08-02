@@ -18,7 +18,7 @@ import { useTaxes } from '../../contexts/TaxesContext'
 import { query } from '../../effects/api/api'
 import { useGet } from '../../effects/api/useApi'
 import { useSessionsClock } from '../../effects/useSessionDurationClock'
-import { SessionWithTaskLabel } from '../../entities/Session'
+import { Session } from '../../entities/Session'
 import { computePercentage, formatPercentarge } from '../../globalDomain'
 import { getProfileStatsRequest, ProfileStatsQueryInput } from './domain'
 import { calculateNetValue, renderTaxItem } from './utils'
@@ -47,7 +47,7 @@ export function ProfileStats() {
           session => session.task.startTime.getTime() >= input.since.getTime()
         )
       ),
-      option.getOrElse(() => [] as SessionWithTaskLabel[])
+      option.getOrElse(() => [] as Session[])
     )
   )
 

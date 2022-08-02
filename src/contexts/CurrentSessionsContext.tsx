@@ -1,7 +1,7 @@
 import * as t from 'io-ts'
 import { Reader } from 'fp-ts/Reader'
 import { NonEmptyArray } from 'fp-ts/NonEmptyArray'
-import { SessionWithTaskLabel } from '../entities/Session'
+import { Session } from '../entities/Session'
 import {
   foldState,
   initialState,
@@ -27,14 +27,14 @@ import { query } from '../effects/api/api'
 const getOpenSessionsRequest = makeGetRequest({
   url: '/sessions/open',
   inputCodec: t.void,
-  outputCodec: t.array(SessionWithTaskLabel)
+  outputCodec: t.array(Session)
 })
 
 interface CurrentSessionsContext {
-  notifyStartedSession: Reader<SessionWithTaskLabel, void>
-  notifyStoppedSession: Reader<SessionWithTaskLabel, void>
-  notifyDeletedSession: Reader<SessionWithTaskLabel, void>
-  currentSessions: Option<NonEmptyArray<SessionWithTaskLabel>>
+  notifyStartedSession: Reader<Session, void>
+  notifyStoppedSession: Reader<Session, void>
+  notifyDeletedSession: Reader<Session, void>
+  currentSessions: Option<NonEmptyArray<Session>>
 }
 
 const CurrentSessionsContext = createContext<CurrentSessionsContext>({
@@ -55,16 +55,16 @@ export function CurrentSessionsProvider(props: PropsWithChildren<{}>) {
     getOpenSessionsRequest
   )
 
-  const notifyStartedSession: Reader<SessionWithTaskLabel, void> = session =>
+  const notifyStartedSession: Reader<Session, void> = session =>
     dispatch(notifyStartedSessionAction(session))
 
-  const notifyStoppedSession: Reader<SessionWithTaskLabel, void> = session =>
+  const notifyStoppedSession: Reader<Session, void> = session =>
     dispatch(notifyStoppedSessionAction(session))
 
-  const notifyDeletedSession: Reader<SessionWithTaskLabel, void> = session =>
+  const notifyDeletedSession: Reader<Session, void> = session =>
     dispatch(notifyDeletedSessionAction(session))
 
-  const currentSessions: Option<NonEmptyArray<SessionWithTaskLabel>> = pipe(
+  const currentSessions: Option<NonEmptyArray<Session>> = pipe(
     state,
     foldState(
       () => option.none,

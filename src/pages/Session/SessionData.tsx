@@ -5,10 +5,7 @@ import { arrowUp, skull, stop } from 'ionicons/icons'
 import { a18n, formatDate, formatDateTime } from '../../a18n'
 import { ReadOnlyInput } from '../../components/Form/Input/ReadOnlyInput/ReadOnlyInput'
 import { Panel } from '../../components/Panel/Panel'
-import {
-  SessionCreationInput,
-  SessionWithTaskLabel
-} from '../../entities/Session'
+import { SessionCreationInput, Session } from '../../entities/Session'
 import { LocalizedString, ObjectId } from '../../globalDomain'
 import { useDelete, usePut } from '../../effects/api/useApi'
 import {
@@ -30,10 +27,10 @@ import { LoadingButton } from '../../components/Button/LoadingButton/LoadingButt
 import { useCurrentSessions } from '../../contexts/CurrentSessionsContext'
 
 interface Props {
-  session: SessionWithTaskLabel
+  session: Session
   taskId: ObjectId
-  onUpdate: Reader<SessionWithTaskLabel, unknown>
-  onDelete: Reader<SessionWithTaskLabel, unknown>
+  onUpdate: Reader<Session, unknown>
+  onDelete: Reader<Session, unknown>
   onCancel: IO<unknown>
 }
 
@@ -89,11 +86,7 @@ export function SessionData(props: Props) {
 
   const onCancel: IO<void> = () => setIsEditing(false)
 
-  const [Dialog, deleteSession] = useDialog<
-    SessionWithTaskLabel,
-    void,
-    unknown
-  >(
+  const [Dialog, deleteSession] = useDialog<Session, void, unknown>(
     () =>
       pipe(
         taskEither.rightIO(() => setError(option.none)),

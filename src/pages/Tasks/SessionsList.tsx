@@ -7,7 +7,7 @@ import { a18n, formatDate, formatDuration, formatTime } from '../../a18n'
 import { ConnectionList } from '../../components/ConnectionList/ConnectionList'
 import { RoutedItem } from '../../components/List/List'
 import { useGet } from '../../effects/api/useApi'
-import { SessionWithTaskLabel } from '../../entities/Session'
+import { Session } from '../../entities/Session'
 import { TaskWithStats } from '../../entities/Task'
 import {
   LocalizedString,
@@ -52,10 +52,7 @@ export function SessionsList(props: Props) {
         currentSessions,
         option.map(
           flow(
-            array.reduce<
-              SessionWithTaskLabel,
-              [NonNegativeInteger, Array<Edge<SessionWithTaskLabel>>]
-            >(
+            array.reduce<Session, [NonNegativeInteger, Array<Edge<Session>>]>(
               [cursor.pageInfo.totalCount, []],
               ([totalCount, extraSessions], currentSession) =>
                 pipe(
@@ -90,13 +87,10 @@ export function SessionsList(props: Props) {
     )
   )
 
-  const onSessionListItemClick: Reader<SessionWithTaskLabel, void> = session =>
+  const onSessionListItemClick: Reader<Session, void> = session =>
     setRoute(sessionRoute(props.task.project._id, props.task._id, session._id))
 
-  const renderSessionItem: Reader<
-    SessionWithTaskLabel,
-    RoutedItem
-  > = session => {
+  const renderSessionItem: Reader<Session, RoutedItem> = session => {
     const startDateString = formatDate(session.startTime)
     const startTimeString = formatTime(session.startTime)
 

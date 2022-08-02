@@ -7,7 +7,7 @@ import { Panel } from '../../components/Panel/Panel'
 import { sessionRoute, useRouter } from '../../components/Router'
 import { useCurrentSessions } from '../../contexts/CurrentSessionsContext'
 import { useSessionsClock } from '../../effects/useSessionDurationClock'
-import { SessionWithTaskLabel } from '../../entities/Session'
+import { Session } from '../../entities/Session'
 
 export function CurrentSessions() {
   const { currentSessions } = useCurrentSessions()
@@ -26,7 +26,7 @@ function EmptyCurrentSessions() {
 }
 
 interface NonEmptyCurrentSessionsProps {
-  sessions: NonEmptyArray<SessionWithTaskLabel>
+  sessions: NonEmptyArray<Session>
 }
 
 function NonEmptyCurrentSessions(props: NonEmptyCurrentSessionsProps) {
@@ -47,11 +47,7 @@ function NonEmptyCurrentSessions(props: NonEmptyCurrentSessionsProps) {
             description: option.none,
             action: () =>
               setRoute(
-                sessionRoute(
-                  session.task.project,
-                  session.task._id,
-                  session._id
-                )
+                sessionRoute(session.project._id, session.task._id, session._id)
               ),
             details: true
           })

@@ -1,6 +1,6 @@
 import { Reader } from 'fp-ts/Reader'
 import { NonEmptyArray } from 'fp-ts/NonEmptyArray'
-import { SessionWithTaskLabel } from '../entities/Session'
+import { Session } from '../entities/Session'
 import { nonEmptyArray, option } from 'fp-ts'
 import { pipe } from 'fp-ts/function'
 
@@ -10,7 +10,7 @@ interface EmptyState {
 
 interface RunningState {
   type: 'running'
-  currentSessions: NonEmptyArray<SessionWithTaskLabel>
+  currentSessions: NonEmptyArray<Session>
 }
 
 type State = EmptyState | RunningState
@@ -37,11 +37,11 @@ export function foldState<T>(
 
 interface NotifySessionsFromServerAction {
   type: 'notifySessionsFromServer'
-  sessions: NonEmptyArray<SessionWithTaskLabel>
+  sessions: NonEmptyArray<Session>
 }
 
 export function notifySessionsFromServerAction(
-  sessions: NonEmptyArray<SessionWithTaskLabel>
+  sessions: NonEmptyArray<Session>
 ): NotifySessionsFromServerAction {
   return {
     type: 'notifySessionsFromServer',
@@ -51,11 +51,11 @@ export function notifySessionsFromServerAction(
 
 interface NotifyStartedSessionAction {
   type: 'notifyStartedSession'
-  session: SessionWithTaskLabel
+  session: Session
 }
 
 export function notifyStartedSessionAction(
-  session: SessionWithTaskLabel
+  session: Session
 ): NotifyStartedSessionAction {
   if (option.isSome(session.endTime)) {
     throw new Error(
@@ -71,11 +71,11 @@ export function notifyStartedSessionAction(
 
 interface NotifyStoppedSessionAction {
   type: 'notifyStoppedSession'
-  session: SessionWithTaskLabel
+  session: Session
 }
 
 export function notifyStoppedSessionAction(
-  session: SessionWithTaskLabel
+  session: Session
 ): NotifyStoppedSessionAction {
   if (option.isNone(session.endTime)) {
     throw new Error("Trying to notify a stopped session that isn't stopped")
@@ -89,11 +89,11 @@ export function notifyStoppedSessionAction(
 
 interface NotifyDeletedSessionAction {
   type: 'notifyDeletedSession'
-  session: SessionWithTaskLabel
+  session: Session
 }
 
 export function notifyDeletedSessionAction(
-  session: SessionWithTaskLabel
+  session: Session
 ): NotifyDeletedSessionAction {
   return {
     type: 'notifyDeletedSession',
@@ -152,7 +152,7 @@ export function reducer(state: State, action: Action): State {
               session => session._id !== action.session._id
             ),
             nonEmptyArray.fromArray,
-            option.fold<NonEmptyArray<SessionWithTaskLabel>, State>(
+            option.fold<NonEmptyArray<Session>, State>(
               () => ({ type: 'empty' }),
               currentSessions => ({
                 type: 'running',

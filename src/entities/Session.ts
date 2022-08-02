@@ -6,37 +6,30 @@ import { pipe } from 'fp-ts/function'
 import { option } from 'fp-ts'
 import { formatDuration } from '../a18n'
 import { Option } from 'fp-ts/Option'
+import { ProjectLabel } from './Task'
+import { ClientLabel } from './Project'
 
 const TaskLabel = t.type(
   {
     _id: ObjectId,
     name: LocalizedString,
-    project: ObjectId,
     startTime: DateFromISOString
   },
   'TaskLabel'
 )
 
-const SessionData = t.type(
+export const Session = t.type(
   {
     _id: ObjectId,
     startTime: DateFromISOString,
-    endTime: optionFromNullable(DateFromISOString)
+    endTime: optionFromNullable(DateFromISOString),
+    task: TaskLabel,
+    project: ProjectLabel,
+    client: ClientLabel
   },
-  'SessionData'
-)
-
-export const Session = t.intersection(
-  [SessionData, t.type({ task: ObjectId })],
   'Session'
 )
 export type Session = t.TypeOf<typeof Session>
-
-export const SessionWithTaskLabel = t.intersection(
-  [SessionData, t.type({ task: TaskLabel })],
-  'SessionWithTaskLabel'
-)
-export type SessionWithTaskLabel = t.TypeOf<typeof SessionWithTaskLabel>
 
 export const SessionCreationInput = t.type(
   {

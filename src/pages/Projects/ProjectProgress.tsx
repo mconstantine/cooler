@@ -15,7 +15,7 @@ import { useTaxes } from '../../contexts/TaxesContext'
 import { query } from '../../effects/api/api'
 import { useSessionsClock } from '../../effects/useSessionDurationClock'
 import { ProjectWithStats } from '../../entities/Project'
-import { SessionWithTaskLabel } from '../../entities/Session'
+import { Session } from '../../entities/Session'
 import { computePercentage, formatPercentarge } from '../../globalDomain'
 import { calculateNetValue, renderTaxItem } from '../Profile/utils'
 
@@ -31,9 +31,9 @@ export function ProjectProgress(props: Props) {
     pipe(
       currentSessions,
       option.map(sessions =>
-        sessions.filter(session => session.task.project === props.project._id)
+        sessions.filter(session => session.project._id === props.project._id)
       ),
-      option.getOrElse(() => [] as SessionWithTaskLabel[])
+      option.getOrElse(() => [] as Session[])
     )
   )
 

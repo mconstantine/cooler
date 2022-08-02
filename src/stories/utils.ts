@@ -2,7 +2,7 @@ import { option, task, taskEither } from 'fp-ts'
 import { pipe } from 'fp-ts/function'
 import { TaskEither } from 'fp-ts/TaskEither'
 import { unsafeLocalizedString } from '../a18n'
-import { ProjectWithStats } from '../entities/Project'
+import { ClientType, ProjectWithStats } from '../entities/Project'
 import { TaskWithStats } from '../entities/Task'
 import { Tax } from '../entities/Tax'
 import {
@@ -30,6 +30,7 @@ export const fakeTaxes: Tax[] = [
 
 interface FakeClient {
   _id: ObjectId
+  type: ClientType
   name: LocalizedString
   user: ObjectId
 }
@@ -37,11 +38,13 @@ interface FakeClient {
 export const fakeClients: FakeClient[] = [
   {
     _id: unsafeObjectId(ObjectID()),
+    type: 'PRIVATE',
     name: unsafeLocalizedString('John Doe'),
     user: unsafeObjectId(ObjectID())
   },
   {
     _id: unsafeObjectId(ObjectID()),
+    type: 'BUSINESS',
     name: unsafeLocalizedString('Some Company'),
     user: unsafeObjectId(ObjectID())
   }
@@ -167,6 +170,7 @@ export const fakeTask: TaskWithStats = {
   hourlyCost: unsafeNonNegativeNumber(15),
   startTime: new Date(2020, 8, 20, 9, 30),
   project: fakeProjects[0],
+  client: fakeClients[0],
   createdAt: new Date(2020, 8, 20, 9, 30),
   updatedAt: new Date(2021, 0, 1, 15, 45)
 }

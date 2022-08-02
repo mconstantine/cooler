@@ -14,7 +14,7 @@ import {
   useRouter
 } from './components/Router'
 import { useCurrentSessions } from './contexts/CurrentSessionsContext'
-import { SessionWithTaskLabel } from './entities/Session'
+import { Session } from './entities/Session'
 import { useSessionDurationClock } from './effects/useSessionDurationClock'
 
 export function CurrentSessionsPanel() {
@@ -67,7 +67,7 @@ export function CurrentSessionsPanel() {
 }
 
 interface MessageProps {
-  sessions: Option<NonEmptyArray<SessionWithTaskLabel>>
+  sessions: Option<NonEmptyArray<Session>>
 }
 
 function MessagePanel(props: MessageProps) {
@@ -112,7 +112,7 @@ function MultipleSessionsMessagePanel(
 }
 
 interface SingleSessionMessagePanelProps {
-  session: SessionWithTaskLabel
+  session: Session
 }
 
 function SingleSessionMessagePanel(props: SingleSessionMessagePanelProps) {
@@ -131,7 +131,7 @@ function SingleSessionMessagePanel(props: SingleSessionMessagePanelProps) {
         action: () =>
           setRoute(
             sessionRoute(
-              props.session.task.project,
+              props.session.project._id,
               props.session.task._id,
               props.session._id
             )

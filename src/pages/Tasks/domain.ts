@@ -1,7 +1,4 @@
-import {
-  SessionCreationInput,
-  SessionWithTaskLabel
-} from './../../entities/Session'
+import { SessionCreationInput, Session } from './../../entities/Session'
 import * as t from 'io-ts'
 import {
   makeDeleteRequest,
@@ -55,25 +52,25 @@ export const makeGetSessionsRequest = (taskId: ObjectId) =>
   makeGetRequest({
     url: `/sessions/task/${taskId}`,
     inputCodec: ConnectionQueryInput,
-    outputCodec: Connection(SessionWithTaskLabel)
+    outputCodec: Connection(Session)
   })
 
 export const makeUpdateSessionRequest = (sessionId: ObjectId) =>
   makePutRequest({
     url: `/sessions/${sessionId}`,
     inputCodec: SessionCreationInput,
-    outputCodec: SessionWithTaskLabel
+    outputCodec: Session
   })
 
 export const makeDeleteSessionRequest = (sessionId: ObjectId) =>
   makeDeleteRequest({
     url: `/sessions/${sessionId}`,
     inputCodec: t.void,
-    outputCodec: SessionWithTaskLabel
+    outputCodec: Session
   })
 
 export const startSessionRequest = makePostRequest({
   url: `/sessions`,
   inputCodec: SessionCreationInput,
-  outputCodec: SessionWithTaskLabel
+  outputCodec: Session
 })
