@@ -49,7 +49,7 @@ class PublicRoutesTest extends CatsEffectSuite {
         _ <- JWT
           .decodeToken(tokens.accessToken, JWT.UserAccess)
           .orFail
-          .map(_.name)
+          .map(_.name.toString)
           .assertEquals(data.name)
       yield ()
     }

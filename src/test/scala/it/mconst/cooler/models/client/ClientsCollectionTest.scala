@@ -51,7 +51,7 @@ class ClientsCollectionTest extends CatsEffectSuite {
     Clients
       .create(data)
       .orFail
-      .map(_.asPrivate.addressEmail)
+      .map(_.asPrivate.addressEmail.toString)
       .assertEquals(data.addressEmail)
   }
 

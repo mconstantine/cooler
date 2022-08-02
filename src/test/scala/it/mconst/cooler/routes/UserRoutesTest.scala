@@ -73,7 +73,7 @@ class UserRoutesTest extends CatsEffectSuite {
       _ <- JWT
         .decodeToken(tokens.accessToken, JWT.UserAccess)
         .orFail
-        .map(_.email)
+        .map(_.email.toString)
         .assertEquals(userData.email)
     yield ()
   }

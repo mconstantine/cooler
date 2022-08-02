@@ -21,6 +21,8 @@ libraryDependencies ++= Seq(
   "org.http4s" %% "http4s-dsl" % http4sVersion,
   "org.http4s" %% "http4s-ember-client" % http4sVersion,
   "org.http4s" %% "http4s-ember-server" % http4sVersion,
+  "org.scalameta" %% "munit" % "1.0.0-M6" % Test,
+  // TODO: remove this
   "org.typelevel" %% "munit-cats-effect-3" % "1.0.7" % "test"
 )
 

@@ -1,7 +1,6 @@
 package it.mconst.cooler.utils
 
 import munit.Assertions
-import munit.CatsEffectAssertions.MUnitCatsAssertionsForIOOps
 
 import cats.data.EitherT
 import cats.effect.IO
@@ -39,6 +38,7 @@ import org.http4s.headers.Authorization
 import org.http4s.HttpApp
 import org.http4s.Request
 import org.http4s.Status
+import munit.Location
 
 object TestUtils {
   extension [T](io: IO[T]) {
@@ -62,8 +62,21 @@ object TestUtils {
       )
   }
 
+  extension [A](io: IO[A]) {
+    def assertEquals[B](
+        expected: B,
+        clue: => Any = "values are not the same"
+    )(using assertions: Assertions)(using Location, B <:< A): IO[Unit] =
+      io.flatMap(obtained =>
+        IO(assertions.assertEquals(obtained, expected, clue))
+      )
+  }
+
   extension [E, R](result: EitherT[IO, E, R]) {
-    def assertEquals[B](expected: B) = result.value.assertEquals(expected)
+    def assertEquals(expected: Either[E, R])(using Assertions): IO[Unit] =
+      expected match
+        case Left(e)  => result.value.assertEquals(Left[E, R](e))
+        case Right(r) => result.value.assertEquals(Right[E, R](r))
   }
 
   extension (request: Request[IO])(using client: HttpClient[IO]) {
@@ -75,12 +88,15 @@ object TestUtils {
 
     def sign(user: User): Request[IO] = sign(JWT.generateAuthTokens(user))
 
-    def shouldRespond[A](expected: A)(using Encoder[A]): IO[Unit] = {
+    def shouldRespond[A](
+        expected: A
+    )(using Encoder[A], Assertions): IO[Unit] = {
       client.expect[Json](request).assertEquals(expected.asJson)
     }
 
     def shouldRespondLike[A, B](f: A => B, expected: B)(using
-        EntityDecoder[IO, A]
+        EntityDecoder[IO, A],
+        Assertions
     ): IO[Unit] =
       client.expect[A](request).map(f).assertEquals(expected)
   }
@@ -89,7 +105,8 @@ object TestUtils {
 
   extension (app: HttpApp[IO]) {
     def assertError(request: Request[IO], status: Status, message: __)(using
-        Lang
+        Lang,
+        Assertions
     ): IO[Unit] =
       for
         response <- app.run(request)

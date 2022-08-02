@@ -82,7 +82,7 @@ class TasksCollectionTest extends CatsEffectSuite {
         name = "Task creation test"
       )
 
-    Tasks.create(data).orFail.map(_.name).assertEquals(data.name)
+    Tasks.create(data).orFail.map(_.name.toString).assertEquals(data.name)
   }
 
   def otherUser = Resource.make {

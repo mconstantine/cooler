@@ -107,7 +107,7 @@ class UsersCollectionTest extends CatsEffectSuite {
           Users
             .create(secondUserData)
             .orFail
-            .map(_.email)
+            .map(_.email.toString)
             .assertEquals(secondUserData.email)
         }
       yield ()
@@ -269,7 +269,7 @@ class UsersCollectionTest extends CatsEffectSuite {
         _ <- JWT
           .decodeToken(authTokens.accessToken, JWT.UserAccess)
           .orFail
-          .map(_.email)
+          .map(_.email.toString)
           .assertEquals(userData.email)
       yield ()
     }
@@ -415,7 +415,7 @@ class UsersCollectionTest extends CatsEffectSuite {
         }
         _ <- {
           given User = user
-          Users.delete.orFail.map(_.email).assertEquals(userData.email)
+          Users.delete.orFail.map(_.email.toString).assertEquals(userData.email)
         }
         _ <- {
           given User = user

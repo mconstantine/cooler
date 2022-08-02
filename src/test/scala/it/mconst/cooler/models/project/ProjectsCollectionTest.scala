@@ -72,7 +72,7 @@ class ProjectsCollectionTest extends CatsEffectSuite {
           Some(ProjectCashData(BsonDateTime(System.currentTimeMillis), 1000.0))
       )
 
-    Projects.create(data).orFail.map(_.name).assertEquals(data.name)
+    Projects.create(data).orFail.map(_.name.toString).assertEquals(data.name)
   }
 
   def otherUser = Resource.make {
