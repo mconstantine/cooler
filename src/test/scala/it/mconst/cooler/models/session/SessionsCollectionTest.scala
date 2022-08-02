@@ -251,11 +251,19 @@ class SessionsCollectionTest extends IOSuite {
       endTime = Some(BsonDateTime(System.currentTimeMillis).toISOString)
     )
 
-    val newTaskData =
-      makeTestTask(project._id, name = "New session task")
+    val newClientData =
+      makeTestPrivateClient(addressEmail = "session-update-test@example.com")
 
     for
-      newTask <- Tasks.create(newTaskData).orFail
+      newClient <- Clients.create(newClientData).orFail
+      newProject <- Projects
+        .create(
+          makeTestProject(newClient._id, name = "Session update test")
+        )
+        .orFail
+      newTask <- Tasks
+        .create(makeTestTask(newProject._id, name = "New session task"))
+        .orFail
       session <- Sessions.start(data).orFail
       update = Session.InputData(
         newTask._id.toHexString,
@@ -264,6 +272,8 @@ class SessionsCollectionTest extends IOSuite {
       )
       _ <- IO.delay(Thread.sleep(500))
       updated <- Sessions.update(session._id, update).orFail
+      _ = assertEquals(updated.client._id, newClient._id)
+      _ = assertEquals(updated.project._id, newProject._id)
       _ = assertEquals(updated.task._id.toHexString, update.task)
       _ = assertEquals(updated.startTime, session.startTime)
       _ = assert(updated.endTime.isDefined)

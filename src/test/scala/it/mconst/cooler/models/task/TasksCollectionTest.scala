@@ -367,11 +367,18 @@ class TasksCollectionTest extends IOSuite {
       description = Some("Description")
     )
 
-    val newProjectData =
-      makeTestProject(client._id, name = "New task project")
+    val newClientData =
+      makeTestPrivateClient(addressEmail =
+        "task-update-test-client@example.com"
+      )
 
     for
-      newProject <- Projects.create(newProjectData).orFail
+      newClient <- Clients.create(newClientData).orFail
+      newProject <- {
+        Projects
+          .create(makeTestProject(newClient._id, name = "New task project"))
+          .orFail
+      }
       task <- Tasks.create(data).orFail
       update = Task.InputData(
         newProject._id.toString,
@@ -383,7 +390,8 @@ class TasksCollectionTest extends IOSuite {
       )
       _ <- IO.delay(Thread.sleep(500))
       updated <- Tasks.update(task._id, update).orFail
-      _ = assertEquals(updated.project._id.toString, update.project)
+      _ = assertEquals(updated.client._id, newClient._id)
+      _ = assertEquals(updated.project._id.toHexString, update.project)
       _ = assertEquals(updated.name.toString, update.name)
       _ = assertEquals(updated.description.map(_.toString), none[String])
       _ = assertEquals(
