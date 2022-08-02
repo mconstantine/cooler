@@ -6,6 +6,8 @@ import {
   InsertManyResult,
 } from "mongodb";
 
+// $2a$10$pQ4wRIKmoxxN.58vvSwN5uhPonOJ4/58DWzk11Wx0zqGjPUFT.Svi
+
 const MONGO_URL =
   "mongodb://localhost:27017/cooler?maxPoolSize=20&w=majority&readPreference=primary&directConnection=true&ssl=false";
 
@@ -21,8 +23,8 @@ interface MongoUser {
   name: string;
   email: string;
   password: string;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface SQLiteTax {
@@ -35,8 +37,8 @@ interface MongoTax {
   label: string;
   value: number;
   user: ObjectId;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface BaseSQLiteClient {
@@ -61,8 +63,8 @@ interface BaseMongoClient {
   addressStreetNumber: string | null;
   addressEmail: string;
   user: ObjectId;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface PrivateSQLiteClient extends BaseSQLiteClient {
@@ -122,11 +124,11 @@ interface MongoProject {
   client: ObjectId;
   user: ObjectId;
   cashData: {
-    at: Date;
+    at: string;
     amount: number;
   } | null;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface SQLiteTask {
@@ -143,14 +145,14 @@ interface SQLiteTask {
 interface MongoTask {
   name: string;
   description: string | null;
-  startTime: Date;
+  startTime: string;
   expectedWorkingHours: number;
   hourlyCost: number;
   project: ObjectId;
   client: ObjectId;
   user: ObjectId;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface SQLiteSession {
@@ -160,14 +162,14 @@ interface SQLiteSession {
   task: number;
 }
 interface MongoSession {
-  startTime: Date;
-  endTime: Date;
+  startTime: string;
+  endTime: string;
   task: ObjectId;
   project: ObjectId;
   client: ObjectId;
   user: ObjectId;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: string;
+  updatedAt: string;
 }
 
 type EntityList<T> = Array<{
@@ -208,8 +210,8 @@ type EntityList<T> = Array<{
       name: user.name,
       email: user.email,
       password: user.password,
-      createdAt: sqlToJSDate(user.created_at),
-      updatedAt: sqlToJSDate(user.updated_at),
+      createdAt: sqlToISODate(user.created_at),
+      updatedAt: sqlToISODate(user.updated_at),
     })
   );
 
@@ -229,8 +231,8 @@ type EntityList<T> = Array<{
         label: tax.label,
         value: tax.value,
         user: user._id,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       };
     })
   );
@@ -278,8 +280,8 @@ type EntityList<T> = Array<{
         addressStreetNumber: client.address_street_number,
         addressEmail: client.address_email,
         user: user._id,
-        createdAt: sqlToJSDate(client.created_at),
-        updatedAt: sqlToJSDate(client.updated_at),
+        createdAt: sqlToISODate(client.created_at),
+        updatedAt: sqlToISODate(client.updated_at),
       },
     } as MongoClient;
   });
@@ -308,12 +310,12 @@ type EntityList<T> = Array<{
         cashData:
           project.cashed_at && project.cashed_balance
             ? {
-                at: sqlToJSDate(project.cashed_at),
+                at: sqlToISODate(project.cashed_at),
                 amount: project.cashed_balance,
               }
             : null,
-        createdAt: sqlToJSDate(project.created_at),
-        updatedAt: sqlToJSDate(project.updated_at),
+        createdAt: sqlToISODate(project.created_at),
+        updatedAt: sqlToISODate(project.updated_at),
       };
     }
   );
@@ -337,14 +339,14 @@ type EntityList<T> = Array<{
     return {
       name: task.name,
       description: task.description,
-      startTime: sqlToJSDate(task.start_time),
+      startTime: sqlToISODate(task.start_time),
       expectedWorkingHours: task.expectedWorkingHours,
       hourlyCost: task.hourlyCost,
       project: project._id,
       client: project.item.client,
       user: project.item.user,
-      createdAt: sqlToJSDate(task.created_at),
-      updatedAt: sqlToJSDate(task.updated_at),
+      createdAt: sqlToISODate(task.created_at),
+      updatedAt: sqlToISODate(task.updated_at),
     };
   });
 
@@ -362,8 +364,8 @@ type EntityList<T> = Array<{
         );
       }
 
-      const startTime = sqlToJSDate(session.start_time);
-      const endTime = sqlToJSDate(session.end_time);
+      const startTime = sqlToISODate(session.start_time);
+      const endTime = sqlToISODate(session.end_time);
 
       return {
         startTime,
@@ -431,13 +433,11 @@ function getEntity<T>(db: Database, tableName: string): Promise<T[]> {
 
 const sqlDatePattern = /^(\d{4})-(\d{2})-(\d{2})\s(\d{2}):(\d{2}):(\d{2})$/;
 
-function sqlToJSDate(sqlDate: string): Date {
+function sqlToISODate(sqlDate: string): string {
   const [, year, month, day, hours, minutes, seconds] =
     sqlDate.match(sqlDatePattern)!;
 
-  return new Date(
-    `${year}-${month}-${day}T${hours}:${minutes}:${seconds}.000Z`
-  );
+  return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}.000Z`;
 }
 
 function arrayFromInsertedResult<T>(result: InsertManyResult<T>): ObjectId[] {
