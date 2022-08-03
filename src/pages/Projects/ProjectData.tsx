@@ -142,6 +142,16 @@ export function ProjectData(props: Props) {
             value={formatDateTime(props.project.updatedAt)}
             action={option.none}
           />
+          <ReadOnlyInput
+            name="expectedBudget"
+            label={a18n`Expected budget`}
+            value={pipe(
+              props.project.expectedBudget,
+              option.map(expectedBudget => formatMoneyAmount(expectedBudget)),
+              option.getOrElse(() => unsafeLocalizedString(''))
+            )}
+            action={option.none}
+          />
           {pipe(
             props.project.cashData,
             option.fold(

@@ -4,6 +4,7 @@ import { Option } from 'fp-ts/Option'
 import { a18n } from '../../../a18n'
 import {
   LocalizedString,
+  NonNegativeNumber,
   NonNegativeNumberFromString,
   ObjectId,
   ObjectIdFromString,
@@ -61,6 +62,11 @@ export function ProjectForm(props: Props) {
             option.map(({ at }) => at),
             option.getOrElse(() => new Date())
           ),
+          expectedBudget: pipe(
+            project.expectedBudget,
+            option.map(_ => _.toString(10)),
+            option.getOrElse(() => '')
+          ),
           cashedBalance: pipe(
             project.cashData,
             option.map(({ amount }) => amount.toString(10)),
@@ -71,6 +77,7 @@ export function ProjectForm(props: Props) {
           name: '',
           description: '',
           client: toSelectState<ObjectId>({}, option.none),
+          expectedBudget: '',
           cashed: false,
           cashedAt: new Date(),
           cashedBalance: ''
@@ -83,6 +90,12 @@ export function ProjectForm(props: Props) {
           commonErrors.nonBlank
         ),
         client: validators.fromSelectState(a18n`Please choose a client`),
+        expectedBudget: validators.optional(
+          validators.fromCodec<NonNegativeNumber>(
+            NonNegativeNumberFromString,
+            a18n`Expected budget should be a non negative number`
+          )
+        ),
         cashedBalance: pipe(
           cashed,
           boolean.fold(constUndefined, () =>
@@ -111,6 +124,7 @@ export function ProjectForm(props: Props) {
             name: input.name,
             description: input.description,
             client: input.client,
+            expectedBudget: input.expectedBudget,
             cashData
           }),
           taskEither.right
@@ -153,6 +167,7 @@ export function ProjectForm(props: Props) {
         codec={ObjectIdFromString}
       />
 
+      <Input label={a18n`Expected budget`} {...fieldProps('expectedBudget')} />
       <Toggle label={a18n`Cashed`} {...fieldProps('cashed')} />
 
       {pipe(

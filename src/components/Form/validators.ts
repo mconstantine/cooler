@@ -7,12 +7,12 @@ import * as t from 'io-ts'
 import { Option } from 'fp-ts/Option'
 import { getOptionValue, SelectState } from './Input/Select/Select'
 import { unsafeLocalizedString } from '../../a18n'
+import { commonErrors } from '../../misc/commonErrors'
 
 export type Validator<I, O = I> = (i: I) => TaskEither<LocalizedString, O>
 
-export type ValidatorOutput<
-  V extends Validator<any, any>
-> = V extends Validator<any, infer O> ? O : never
+export type ValidatorOutput<V extends Validator<any, any>> =
+  V extends Validator<any, infer O> ? O : never
 
 export function inSequence<I, O1, O2>(
   v1: Validator<I, O1>,
@@ -27,6 +27,15 @@ export function inSequence(
       (res, validator) => pipe(res, taskEither.chain(validator)),
       v1(input)
     )
+}
+
+export function optional<I, O>(
+  validator: Validator<I, O>
+): Validator<I | null, Option<O>> {
+  return input =>
+    input
+      ? pipe(validator(input), taskEither.map(option.some))
+      : taskEither.right(option.none)
 }
 
 export function fromPredicate<I>(
@@ -67,18 +76,11 @@ export function optionalString(): Validator<
   string,
   Option<NonEmptyString & LocalizedString>
 > {
-  return flow(
-    NonEmptyString.decode,
-    option.fromEither,
-    option.map(
-      s => unsafeLocalizedString(s) as NonEmptyString & LocalizedString
-    ),
-    taskEither.right
-  )
+  return optional(nonBlankString(commonErrors.nonBlank))
 }
 
 export function passThrough<I = string, O = I>(): Validator<I, O> {
-  return input => taskEither.rightIO(() => (input as unknown) as O)
+  return input => taskEither.rightIO(() => input as unknown as O)
 }
 
 export function fromRegex(

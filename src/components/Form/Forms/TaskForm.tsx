@@ -128,7 +128,7 @@ export function TaskForm(props: Props) {
         ),
         expectedWorkingHours: validators.fromCodec<NonNegativeNumber>(
           NonNegativeNumberFromString,
-          a18n`Expecting working hours should be a non negative number`
+          a18n`Expected working hours should be a non negative number`
         ),
         hourlyCost: validators.fromCodec<NonNegativeNumber>(
           NonNegativeNumberFromString,
@@ -182,7 +182,7 @@ export function TaskForm(props: Props) {
         )
       )}
       <Input
-        label={a18n`Expecting working hours`}
+        label={a18n`Expected working hours`}
         {...fieldProps('expectedWorkingHours')}
       />
       <Input label={a18n`Hourly cost`} {...fieldProps('hourlyCost')} />

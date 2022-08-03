@@ -35,6 +35,7 @@ export const Project = t.type(
     name: LocalizedString,
     description: optionFromNullable(LocalizedString),
     client: ClientLabel,
+    expectedBudget: optionFromNullable(NonNegativeNumber),
     cashData: optionFromNullable(ProjectCashData),
     createdAt: DateFromISOString,
     updatedAt: DateFromISOString
@@ -62,6 +63,7 @@ export const ProjectCreationInput = t.type(
     name: LocalizedString,
     description: optionFromNullable(LocalizedString),
     client: ObjectId,
+    expectedBudget: optionFromNullable(NonNegativeNumber),
     cashData: optionFromNullable(ProjectCashData)
   },
   'ProjectCreationInput'
