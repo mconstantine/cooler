@@ -214,7 +214,6 @@ object Projects {
         )
       )
     )
-    // TODO: $project?
   )
 
   def create(

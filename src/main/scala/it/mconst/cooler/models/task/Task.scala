@@ -411,7 +411,6 @@ object Tasks {
         )
       )
     )
-    // TODO: $project?
   )
 
   def create(

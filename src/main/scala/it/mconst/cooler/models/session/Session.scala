@@ -169,7 +169,6 @@ object Sessions {
         )
       )
     )
-    // TODO: $project?
   )
 
   def findById(_id: ObjectId)(using customer: User)(using
