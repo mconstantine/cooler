@@ -1,9 +1,11 @@
 .bloop/
 .bsp/
 .metals/
-/project/
+project/*
+!project/plugins.sbt
 target/
 .scalafmt.conf
 node_modules/
 data/*.db
 notes.md
+.DS_Store
