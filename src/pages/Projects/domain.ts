@@ -14,9 +14,15 @@ import { Task } from '../../entities/Task'
 import { ObjectId } from '../../globalDomain'
 import { Connection, ConnectionQueryInput } from '../../misc/Connection'
 
+const GetProjectsRequestInput = t.intersection(
+  [ConnectionQueryInput, t.type({ notCashedOnly: t.boolean })],
+  'GetProjectsRequestInput'
+)
+export type GetProjectsRequestInput = t.TypeOf<typeof GetProjectsRequestInput>
+
 export const getProjectsRequest = makeGetRequest({
   url: '/projects',
-  inputCodec: ConnectionQueryInput,
+  inputCodec: GetProjectsRequestInput,
   outputCodec: Connection(Project)
 })
 

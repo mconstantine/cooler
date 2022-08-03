@@ -3,7 +3,7 @@ import { constNull, constVoid, pipe } from 'fp-ts/function'
 import { IO } from 'fp-ts/IO'
 import { Reader } from 'fp-ts/Reader'
 import { refresh } from 'ionicons/icons'
-import { useRef, useState } from 'react'
+import { PropsWithChildren, useRef, useState } from 'react'
 import { a18n } from '../../a18n'
 import { useDebounce } from '../../effects/useDebounce'
 import { LocalizedString } from '../../globalDomain'
@@ -21,10 +21,10 @@ import { HeadingAction } from '../Heading/Heading'
 import { Query } from '../../effects/api/Query'
 import { query } from '../../effects/api/api'
 
-interface Props<T> {
+interface Props<T> extends PropsWithChildren {
   title: LocalizedString
   action: Option<HeadingAction>
-  query: Query<any, Connection<T>>
+  query: Query<LocalizedString, Connection<T>>
   renderListItem: Reader<T, Item>
   onSearchQueryChange: Option<Reader<string, unknown>>
   onLoadMore: Option<IO<unknown>>
@@ -78,11 +78,12 @@ export function ConnectionList<T>(props: Props<T>) {
           />
         ))
       )}
+      {props.children}
       {pipe(
         props.query,
         query.fold(
           () => <LoadingBlock size="large" />,
-          error => <Body color="danger">{error.message}</Body>,
+          error => <Body color="danger">{error}</Body>,
           connection => (
             <>
               <List

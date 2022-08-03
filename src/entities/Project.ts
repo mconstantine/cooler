@@ -23,7 +23,7 @@ export const ClientLabel = t.type(
 const ProjectCashData = t.type(
   {
     at: DateFromISOString,
-    amount: t.number
+    amount: NonNegativeNumber
   },
   'ProjectCashData'
 )
