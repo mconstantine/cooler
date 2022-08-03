@@ -57,6 +57,7 @@ sealed abstract trait Project(
     _id: ObjectId,
     name: NonEmptyString,
     description: Option[NonEmptyString],
+    expectedBudget: Option[NonNegativeFloat],
     cashData: Option[ProjectCashData],
     createdAt: BsonDateTime,
     updatedAt: BsonDateTime
@@ -74,6 +75,7 @@ final case class DbProject(
     val user: ObjectId,
     name: NonEmptyString,
     description: Option[NonEmptyString],
+    expectedBudget: Option[NonNegativeFloat],
     cashData: Option[ProjectCashData],
     createdAt: BsonDateTime,
     updatedAt: BsonDateTime
@@ -81,6 +83,7 @@ final case class DbProject(
       _id,
       name,
       description,
+      expectedBudget,
       cashData,
       createdAt,
       updatedAt
@@ -97,6 +100,7 @@ final case class ProjectWithClientLabel(
     _id: ObjectId,
     name: NonEmptyString,
     description: Option[NonEmptyString],
+    expectedBudget: Option[NonNegativeFloat],
     cashData: Option[ProjectCashData],
     createdAt: BsonDateTime,
     updatedAt: BsonDateTime,
@@ -105,6 +109,7 @@ final case class ProjectWithClientLabel(
       _id,
       name,
       description,
+      expectedBudget,
       cashData,
       createdAt,
       updatedAt
@@ -122,6 +127,7 @@ final case class ProjectWithStats(
     _id: ObjectId,
     name: NonEmptyString,
     description: Option[NonEmptyString],
+    expectedBudget: Option[NonNegativeFloat],
     cashData: Option[ProjectCashData],
     createdAt: BsonDateTime,
     updatedAt: BsonDateTime,
@@ -134,6 +140,7 @@ final case class ProjectWithStats(
       _id,
       name,
       description,
+      expectedBudget,
       cashData,
       createdAt,
       updatedAt
@@ -149,6 +156,7 @@ object Project {
       client: String,
       name: String,
       description: Option[String],
+      expectedBudget: Option[Float],
       cashData: Option[ProjectCashData]
   )
 
@@ -159,6 +167,7 @@ object Project {
       client: ObjectId,
       name: NonEmptyString,
       description: Option[NonEmptyString],
+      expectedBudget: Option[NonNegativeFloat],
       cashData: Option[ProjectCashData]
   )
 
@@ -167,9 +176,10 @@ object Project {
   ): Validation[ValidInputData] = (
     data.client.validateObjectId("client"),
     NonEmptyString.validate("name", data.name),
-    NonEmptyString.validateOptional("description", data.description)
-  ).mapN((client, name, description) =>
-    ValidInputData(client, name, description, data.cashData)
+    NonEmptyString.validateOptional("description", data.description),
+    NonNegativeFloat.validateOptional("expectedBudget", data.expectedBudget)
+  ).mapN((client, name, description, expectedBudget) =>
+    ValidInputData(client, name, description, expectedBudget, data.cashData)
   )
 
   def fromInputData(data: InputData)(using customer: User)(using
@@ -181,6 +191,7 @@ object Project {
       customer._id,
       data.name,
       data.description,
+      data.expectedBudget,
       data.cashData,
       BsonDateTime(System.currentTimeMillis),
       BsonDateTime(System.currentTimeMillis)
@@ -369,6 +380,7 @@ object Projects {
                     project._id,
                     project.name,
                     project.description,
+                    project.expectedBudget,
                     project.cashData,
                     project.createdAt,
                     project.updatedAt,
@@ -429,6 +441,10 @@ object Projects {
               .`with`("name" -> data.name)
               .`with`(
                 "description" -> data.description,
+                collection.UpdateStrategy.UnsetIfEmpty
+              )
+              .`with`(
+                "expectedBudget" -> data.expectedBudget,
                 collection.UpdateStrategy.UnsetIfEmpty
               )
               .`with`(

@@ -6,8 +6,6 @@ import {
   InsertManyResult,
 } from "mongodb";
 
-// $2a$10$pQ4wRIKmoxxN.58vvSwN5uhPonOJ4/58DWzk11Wx0zqGjPUFT.Svi
-
 const MONGO_URL =
   "mongodb://localhost:27017/cooler?maxPoolSize=20&w=majority&readPreference=primary&directConnection=true&ssl=false";
 
@@ -123,6 +121,7 @@ interface MongoProject {
   description: string | null;
   client: ObjectId;
   user: ObjectId;
+  expectedBudget: number | null;
   cashData: {
     at: string;
     amount: number;
@@ -307,6 +306,7 @@ type EntityList<T> = Array<{
         description: project.description,
         client: client._id,
         user: client.item.user,
+        expectedBudget: null,
         cashData:
           project.cashed_at && project.cashed_balance
             ? {

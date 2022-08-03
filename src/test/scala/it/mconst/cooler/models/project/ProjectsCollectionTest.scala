@@ -175,6 +175,7 @@ class ProjectsCollectionTest extends IOSuite {
             p._id,
             p.name,
             p.description,
+            p.expectedBudget,
             p.cashData,
             p.createdAt,
             p.updatedAt,
@@ -244,6 +245,7 @@ class ProjectsCollectionTest extends IOSuite {
         client._id.toString,
         "Updated name",
         Some("Updated description"),
+        Some(42f),
         Some(ProjectCashData(BsonDateTime(System.currentTimeMillis), 42.0))
       )
       _ <- IO.delay(Thread.sleep(500))
@@ -251,13 +253,25 @@ class ProjectsCollectionTest extends IOSuite {
       _ = assertEquals(updated.client._id.toString, update.client)
       _ = assertEquals(updated.name.toString, update.name)
       _ = assertEquals(updated.description.map(_.toString), update.description)
+      _ = assertEquals(
+        updated.expectedBudget.map(_.toFloat),
+        update.expectedBudget
+      )
       _ = assertEquals(updated.cashData, update.cashData)
     yield ()
   }
 
   test("should unset empty optional fields") {
     val client = testDataFixture().client
-    val data = makeTestProject(client._id, name = "Update unset if empty test")
+
+    val data = makeTestProject(
+      client._id,
+      name = "Update unset if empty test",
+      description = Some("Some description"),
+      expectedBudget = Some(42f),
+      cashData =
+        Some(ProjectCashData(BsonDateTime(System.currentTimeMillis), 42f))
+    )
 
     for
       project <- Projects.create(data).orFail
@@ -265,10 +279,12 @@ class ProjectsCollectionTest extends IOSuite {
         client._id.toHexString,
         "Updated name",
         none[String],
+        none[Float],
         none[ProjectCashData]
       )
       updated <- Projects.update(project._id, update).orFail
       _ = assertEquals(updated.description.map(_.toString), none[String])
+      _ = assertEquals(updated.expectedBudget.map(_.toFloat), none[Float])
       _ = assertEquals(updated.cashData, none[ProjectCashData])
     yield ()
   }
@@ -398,6 +414,7 @@ class ProjectsCollectionTest extends IOSuite {
                 p._id,
                 p.name,
                 p.description,
+                p.expectedBudget,
                 p.cashData,
                 p.createdAt,
                 p.updatedAt,
