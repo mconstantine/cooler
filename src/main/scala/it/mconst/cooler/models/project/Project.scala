@@ -398,17 +398,27 @@ object Projects {
       Error(Status.NotFound, __.ErrorProjectNotFound)
     )
 
-  def find(query: CursorQuery)(using customer: User)(using
-      Lang
-  ): EitherT[IO, Error, Cursor[ProjectWithClientLabel]] =
-    collection.use(
-      _.find[ProjectWithClientLabel](
-        "name",
+  def find(query: CursorQuery, notCashedOnly: Boolean)(using customer: User)(
+      using Lang
+  ): EitherT[IO, Error, Cursor[ProjectWithClientLabel]] = {
+    val initialMatch =
+      if notCashedOnly then
         Seq(
-          Aggregates.`match`(Filters.eq("user", customer._id))
-        ) ++ labelsStages
-      )(query)
+          Aggregates.`match`(
+            Filters.and(
+              Filters.eq("cashData", null),
+              Filters.eq("user", customer._id)
+            )
+          )
+        )
+      else Seq(Aggregates.`match`(Filters.eq("user", customer._id)))
+
+    collection.use(
+      _.find[ProjectWithClientLabel]("name", initialMatch ++ labelsStages)(
+        query
+      )
     )
+  }
 
   def getLatest(query: CursorQuery)(using
       customer: User

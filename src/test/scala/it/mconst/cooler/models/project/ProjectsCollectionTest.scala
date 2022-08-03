@@ -147,7 +147,12 @@ class ProjectsCollectionTest extends IOSuite {
     val projects: List[Project.InputData] = List(
       makeTestProject(client._id, name = "Alice"),
       makeTestProject(client._id, name = "Bob"),
-      makeTestProject(client._id, name = "Charlie"),
+      makeTestProject(
+        client._id,
+        name = "Charlie",
+        cashData =
+          Some(ProjectCashData(BsonDateTime(System.currentTimeMillis), 42f))
+      ),
       makeTestProject(client._id, name = "Daniel"),
       makeTestProject(client._id, name = "Eleanor"),
       makeTestProject(client._id, name = "Frederick")
@@ -169,24 +174,6 @@ class ProjectsCollectionTest extends IOSuite {
     projectsList.use { projects =>
       val client = testDataFixture().client.asPrivate
 
-      val projectsWithClientLabels: List[ProjectWithClientLabel] =
-        projects.map(p =>
-          ProjectWithClientLabel(
-            p._id,
-            p.name,
-            p.description,
-            p.expectedBudget,
-            p.cashData,
-            p.createdAt,
-            p.updatedAt,
-            ClientLabel(
-              client._id,
-              ClientType.fromPrivate(client.`type`),
-              client.name
-            )
-          )
-        )
-
       for
         result <- Projects
           .find(
@@ -194,7 +181,8 @@ class ProjectsCollectionTest extends IOSuite {
               query = Some("a"),
               first = Some(PositiveInteger.unsafe(2)),
               after = Some("Alice")
-            )
+            ),
+            false
           )
           .orFail
         _ = assertEquals(result.pageInfo.totalCount, 4)
@@ -204,8 +192,37 @@ class ProjectsCollectionTest extends IOSuite {
         _ = assertEquals(result.pageInfo.hasNextPage, true)
         _ = assertEquals(result.edges.length, 2)
         _ = assertEquals(
-          result.edges.map(_.node),
-          List(projectsWithClientLabels(2), projectsWithClientLabels(3))
+          result.edges.map(_.node._id),
+          List(projects(2)._id, projects(3)._id)
+        )
+      yield ()
+    }
+  }
+
+  test("should find only not cashed projects") {
+    projectsList.use { projects =>
+      val client = testDataFixture().client.asPrivate
+
+      for
+        result <- Projects
+          .find(
+            CursorQueryAsc(
+              query = Some("a"),
+              first = Some(PositiveInteger.unsafe(2)),
+              after = Some("Alice")
+            ),
+            true
+          )
+          .orFail
+        _ = assertEquals(result.pageInfo.totalCount, 3)
+        _ = assertEquals(result.pageInfo.startCursor, Some("Daniel"))
+        _ = assertEquals(result.pageInfo.endCursor, Some("Eleanor"))
+        _ = assertEquals(result.pageInfo.hasPreviousPage, true)
+        _ = assertEquals(result.pageInfo.hasNextPage, false)
+        _ = assertEquals(result.edges.length, 2)
+        _ = assertEquals(
+          result.edges.map(_.node._id),
+          List(projects(3)._id, projects(4)._id)
         )
       yield ()
     }
@@ -222,7 +239,7 @@ class ProjectsCollectionTest extends IOSuite {
             .create(makeTestProject(client._id, name = "Adam"))
             .orFail
           result <- Projects
-            .find(CursorQueryAsc(query = Some("a")))
+            .find(CursorQueryAsc(query = Some("a")), false)
             .orFail
             .map(_.edges.map(_.node.name.toString))
           _ = assertEquals(result, List("Adam"))

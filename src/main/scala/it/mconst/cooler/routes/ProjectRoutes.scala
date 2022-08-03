@@ -13,6 +13,9 @@ import it.mconst.cooler.utils.given
 import org.http4s.AuthedRoutes
 import org.http4s.dsl.io.*
 
+object NotCashedOnlyMatcher
+    extends OptionalQueryParamDecoderMatcher[Boolean]("notCashedOnly")
+
 object ProjectRoutes {
   val routes: AuthedRoutes[UserContext, IO] = AuthedRoutes.of {
     case ctxReq @ POST -> Root as context => {
@@ -30,13 +33,14 @@ object ProjectRoutes {
         FirstMatcher(first) +&
         AfterMatcher(after) +&
         LastMatcher(last) +&
-        BeforeMatcher(before) as context => {
+        BeforeMatcher(before) +&
+        NotCashedOnlyMatcher(notCashedOnly) as context => {
       given Lang = context.lang
       given User = context.user
 
       EitherT
         .fromEither[IO](CursorQuery(query, first, after, last, before))
-        .flatMap(Projects.find(_))
+        .flatMap(query => Projects.find(query, notCashedOnly.getOrElse(false)))
         .toResponse
     }
 
