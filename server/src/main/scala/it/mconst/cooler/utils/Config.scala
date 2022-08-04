@@ -26,7 +26,7 @@ object Config {
     def read() = Source.fromFile(file).getLines().mkString
   }
 
-  final case class ServerConfig(host: String, port: Int)
+  final case class ServerConfig(host: String, port: Int, frontendPath: String)
 
   final case class DatabaseConfig(
       uri: String,

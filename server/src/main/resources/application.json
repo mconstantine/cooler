@@ -2,7 +2,8 @@
   "environment": "development",
   "server": {
     "host": "localhost",
-    "port": 5000
+    "port": 5000,
+    "frontendPath": "../client/build"
   },
   "database": {
     "uri": "mongodb://localhost:27017/?maxPoolSize=20&w=majority&readPreference=primary&directConnection=true&ssl=false",
