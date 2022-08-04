@@ -7,13 +7,14 @@ import it.mconst.cooler.middlewares.LanguageMiddleware
 import it.mconst.cooler.middlewares.LanguageRoutes
 import it.mconst.cooler.models.user.User
 import it.mconst.cooler.models.user.Users
+import it.mconst.cooler.utils.DatabaseName
 import it.mconst.cooler.utils.given
 import org.http4s.dsl.io.*
 
 import org.http4s.Response
 
 object PublicRoutes {
-  val routes: LanguageRoutes[IO] = {
+  def routes(using DatabaseName): LanguageRoutes[IO] = {
     LanguageRoutes.of {
       case ctxReq @ POST -> Root / "register" as lang => {
         given Lang = lang
@@ -43,5 +44,5 @@ object PublicRoutes {
     }
   }
 
-  def apply() = LanguageMiddleware(routes)
+  def apply()(using DatabaseName) = LanguageMiddleware(routes)
 }

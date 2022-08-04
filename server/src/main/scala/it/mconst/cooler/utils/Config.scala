@@ -1,10 +1,23 @@
 package it.mconst.cooler.utils
 
+import io.circe.Decoder
+import io.circe.Encoder
 import io.circe.generic.auto.*
 import io.circe.parser.*
 import io.circe.syntax.*
 import java.io.File
 import scala.io.Source
+
+opaque type DatabaseName = String
+
+object DatabaseName {
+  given Encoder[DatabaseName] = Encoder.encodeString
+  given Decoder[DatabaseName] = Decoder.decodeString
+}
+
+extension (dbName: DatabaseName) {
+  def toString: String = dbName
+}
 
 object Config {
   private def open(path: String) = new File(path)
@@ -14,9 +27,11 @@ object Config {
   }
 
   final case class ServerConfig(host: String, port: Int)
+
   final case class DatabaseConfig(
       uri: String,
-      name: String,
+      name: DatabaseName,
+      testName: DatabaseName,
       encryptionKey: String
   )
 

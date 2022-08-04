@@ -13,12 +13,15 @@ import it.mconst.cooler.routes.TaskRoutes
 import it.mconst.cooler.routes.TaxRoutes
 import it.mconst.cooler.routes.UserRoutes
 import it.mconst.cooler.utils.Config
+import it.mconst.cooler.utils.DatabaseName
 import org.http4s.dsl.io.*
 import org.http4s.ember.server.EmberServerBuilder
 import org.http4s.server.middleware.CORS
 import org.http4s.server.Router
 
 object Server extends IOApp {
+  given DatabaseName = Config.database.name
+
   val router = Router(
     "/" -> PublicRoutes(),
     "/users" -> UserRoutes(),

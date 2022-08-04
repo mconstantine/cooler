@@ -8,6 +8,7 @@ import com.osinka.i18n.Lang
 import it.mconst.cooler.models.user.JWT
 import it.mconst.cooler.models.user.User
 import it.mconst.cooler.utils.__
+import it.mconst.cooler.utils.DatabaseName
 import it.mconst.cooler.utils.Error
 import it.mconst.cooler.utils.given
 import it.mconst.cooler.utils.Translations
@@ -23,7 +24,9 @@ import org.http4s.server.AuthMiddleware
 object UserMiddleware {
   final case class UserContext(user: User, lang: Lang)
 
-  private val authUser: Kleisli[IO, Request[IO], Either[Error, UserContext]] =
+  private def authUser(using
+      DatabaseName
+  ): Kleisli[IO, Request[IO], Either[Error, UserContext]] =
     Kleisli { request =>
       val lang = Translations.getLanguageFromHeader(
         request.headers.get[`Accept-Language`]
@@ -57,7 +60,9 @@ object UserMiddleware {
   private val onFailure: AuthedRoutes[Error, IO] =
     Kleisli(req => OptionT.liftF(Forbidden(req.context)))
 
-  private val middleware = AuthMiddleware(authUser, onFailure)
+  private def middleware(using DatabaseName) =
+    AuthMiddleware(authUser, onFailure)
 
-  def apply(routes: AuthedRoutes[UserContext, IO]) = middleware(routes)
+  def apply(routes: AuthedRoutes[UserContext, IO])(using DatabaseName) =
+    middleware(routes)
 }

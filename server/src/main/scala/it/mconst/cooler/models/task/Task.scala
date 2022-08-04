@@ -26,6 +26,7 @@ import it.mconst.cooler.models.session.Sessions
 import it.mconst.cooler.models.user.User
 import it.mconst.cooler.utils.__
 import it.mconst.cooler.utils.Collection
+import it.mconst.cooler.utils.DatabaseName
 import it.mconst.cooler.utils.DbDocument
 import it.mconst.cooler.utils.Error
 import it.mconst.cooler.utils.given
@@ -373,9 +374,10 @@ object Task {
 }
 
 object Tasks {
-  val collection = Collection[IO, Task.InputData, DbTask]("tasks")
+  def collection(using DatabaseName) =
+    Collection[IO, Task.InputData, DbTask]("tasks")
 
-  def labelsStages = Seq(
+  def labelsStages(using DatabaseName) = Seq(
     Aggregates.lookup(Clients.collection.name, "client", "_id", "c"),
     Aggregates.unwind("$c"),
     Aggregates.lookup(Projects.collection.name, "project", "_id", "p"),
@@ -417,7 +419,7 @@ object Tasks {
       data: Task.InputData
   )(using
       customer: User
-  )(using Lang): EitherT[IO, Error, TaskWithLabels] =
+  )(using Lang, DatabaseName): EitherT[IO, Error, TaskWithLabels] =
     collection.use { c =>
       for
         projectId <- EitherT
@@ -432,7 +434,7 @@ object Tasks {
         _ <- Projects.collection.use(
           _.update(
             project._id,
-            Projects.collection.Update
+            Collection.Update
               .`with`("updatedAt" -> BsonDateTime(System.currentTimeMillis))
               .build
           )
@@ -444,7 +446,7 @@ object Tasks {
       data: Task.BatchInputData
   )(using
       customer: User
-  )(using Lang): EitherT[IO, Error, Iterable[TaskWithLabels]] = {
+  )(using Lang, DatabaseName): EitherT[IO, Error, Iterable[TaskWithLabels]] = {
     collection.use(c =>
       for {
         projectId <- EitherT
@@ -478,7 +480,8 @@ object Tasks {
   }
 
   def findByIdNoStats(_id: ObjectId)(using customer: User)(using
-      Lang
+      Lang,
+      DatabaseName
   ): EitherT[IO, Error, TaskWithLabels] =
     EitherT.fromOptionF(
       collection
@@ -501,7 +504,9 @@ object Tasks {
 
   def findById(
       _id: ObjectId
-  )(using customer: User)(using Lang): EitherT[IO, Error, TaskWithStats] =
+  )(using
+      customer: User
+  )(using Lang, DatabaseName): EitherT[IO, Error, TaskWithStats] =
     EitherT.fromOptionF(
       collection
         .use(
@@ -584,7 +589,8 @@ object Tasks {
   def find(query: CursorNoQuery, project: Option[ObjectId])(using
       customer: User
   )(using
-      Lang
+      Lang,
+      DatabaseName
   ): EitherT[IO, Error, Cursor[TaskWithLabels]] = {
     val matchStage = project.fold(Filters.eq("user", customer._id))(_id =>
       Filters.and(Filters.eq("user", customer._id), Filters.eq("project", _id))
@@ -600,7 +606,7 @@ object Tasks {
 
   def getDue(since: BsonDateTime, to: Option[BsonDateTime])(using
       customer: User
-  ): IO[Iterable[TaskWithLabels]] =
+  )(using DatabaseName): IO[Iterable[TaskWithLabels]] =
     collection.use(
       _.raw(
         _.aggregateWithCodec[TaskWithLabels](
@@ -622,7 +628,8 @@ object Tasks {
     )
 
   def update(_id: ObjectId, data: Task.InputData)(using customer: User)(using
-      Lang
+      Lang,
+      DatabaseName
   ): EitherT[IO, Error, TaskWithStats] = {
     final case class ProjectData(_id: ObjectId, client: ObjectId)
 
@@ -642,13 +649,13 @@ object Tasks {
         .use(
           _.update(
             task._id,
-            collection.Update
+            Collection.Update
               .`with`("project" -> projectData._id)
               .`with`("client" -> projectData.client)
               .`with`("name" -> data.name)
               .`with`(
                 "description" -> data.description,
-                collection.UpdateStrategy.UnsetIfEmpty
+                Collection.UpdateStrategy.UnsetIfEmpty
               )
               .`with`("startTime" -> data.startTime)
               .`with`("expectedWorkingHours" -> data.expectedWorkingHours)
@@ -660,7 +667,7 @@ object Tasks {
       _ <- Projects.collection.use(
         _.update(
           result.project._id,
-          Projects.collection.Update
+          Collection.Update
             .`with`("updatedAt" -> BsonDateTime(System.currentTimeMillis))
             .build
         )
@@ -669,7 +676,8 @@ object Tasks {
   }
 
   def delete(_id: ObjectId)(using customer: User)(using
-      Lang
+      Lang,
+      DatabaseName
   ): EitherT[IO, Error, TaskWithStats] =
     for
       task <- findById(_id)

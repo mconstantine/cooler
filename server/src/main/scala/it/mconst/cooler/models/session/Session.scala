@@ -21,6 +21,7 @@ import it.mconst.cooler.models.task.Tasks
 import it.mconst.cooler.models.user.User
 import it.mconst.cooler.utils.__
 import it.mconst.cooler.utils.Collection
+import it.mconst.cooler.utils.DatabaseName
 import it.mconst.cooler.utils.DbDocument
 import it.mconst.cooler.utils.Error
 import it.mconst.cooler.utils.given
@@ -124,14 +125,15 @@ object Session {
 }
 
 object Sessions {
-  val collection = Collection[IO, Session.InputData, Session]("sessions")
+  def collection(using DatabaseName) =
+    Collection[IO, Session.InputData, Session]("sessions")
 
-  def labelsStages = Seq(
-    Aggregates.lookup("clients", "client", "_id", "c"),
+  def labelsStages(using DatabaseName) = Seq(
+    Aggregates.lookup(Clients.collection.name, "client", "_id", "c"),
     Aggregates.unwind("$c"),
-    Aggregates.lookup("projects", "project", "_id", "p"),
+    Aggregates.lookup(Projects.collection.name, "project", "_id", "p"),
     Aggregates.unwind("$p"),
-    Aggregates.lookup("tasks", "task", "_id", "t"),
+    Aggregates.lookup(Tasks.collection.name, "task", "_id", "t"),
     Aggregates.unwind("$t"),
     Aggregates.addFields(
       Field(
@@ -172,7 +174,8 @@ object Sessions {
   )
 
   def findById(_id: ObjectId)(using customer: User)(using
-      Lang
+      Lang,
+      DatabaseName
   ): EitherT[IO, Error, SessionWithLabels] = EitherT.fromOptionF(
     collection
       .use(
@@ -193,7 +196,8 @@ object Sessions {
   )
 
   def start(data: Session.InputData)(using customer: User)(using
-      Lang
+      Lang,
+      DatabaseName
   ): EitherT[IO, Error, SessionWithLabels] =
     for
       taskId <- EitherT
@@ -213,7 +217,7 @@ object Sessions {
       _ <- Tasks.collection.use(
         _.update(
           session.task._id,
-          Tasks.collection.Update
+          Collection.Update
             .`with`("updatedAt" -> BsonDateTime(System.currentTimeMillis))
             .build
         )
@@ -221,7 +225,7 @@ object Sessions {
       _ <- Projects.collection.use(
         _.update(
           session.project._id,
-          Projects.collection.Update
+          Collection.Update
             .`with`("updatedAt" -> BsonDateTime(System.currentTimeMillis))
             .build
         )
@@ -229,7 +233,9 @@ object Sessions {
     yield session
 
   def getSessions(query: CursorNoQuery, task: ObjectId)(using customer: User)(
-      using Lang
+      using
+      Lang,
+      DatabaseName
   ): EitherT[IO, Error, Cursor[SessionWithLabels]] =
     collection.use(
       _.find[SessionWithLabels](
@@ -244,7 +250,8 @@ object Sessions {
     )
 
   def getOpenSessions(using customer: User)(using
-      Lang
+      Lang,
+      DatabaseName
   ): IO[Iterable[SessionWithLabels]] = collection.use(
     _.raw(
       _.aggregateWithCodec[SessionWithLabels](
@@ -261,7 +268,8 @@ object Sessions {
   )
 
   def update(_id: ObjectId, data: Session.InputData)(using customer: User)(using
-      Lang
+      Lang,
+      DatabaseName
   ): EitherT[IO, Error, SessionWithLabels] = {
     case class TaskData(_id: ObjectId, client: ObjectId, project: ObjectId)
 
@@ -281,17 +289,17 @@ object Sessions {
         .use(
           _.update(
             session._id,
-            collection.Update
+            Collection.Update
               .`with`("client" -> taskData.client)
               .`with`("project" -> taskData.project)
               .`with`("task" -> taskData._id)
               .`with`(
                 "startTime" -> data.startTime,
-                collection.UpdateStrategy.IgnoreIfEmpty
+                Collection.UpdateStrategy.IgnoreIfEmpty
               )
               .`with`(
                 "endTime" -> data.endTime,
-                collection.UpdateStrategy.IgnoreIfEmpty
+                Collection.UpdateStrategy.IgnoreIfEmpty
               )
               .build
           )
@@ -300,7 +308,7 @@ object Sessions {
       _ <- Tasks.collection.use(
         _.update(
           result.task._id,
-          Tasks.collection.Update
+          Collection.Update
             .`with`("updatedAt" -> BsonDateTime(System.currentTimeMillis))
             .build
         )
@@ -308,7 +316,7 @@ object Sessions {
       _ <- Projects.collection.use(
         _.update(
           result.project._id,
-          Projects.collection.Update
+          Collection.Update
             .`with`("updatedAt" -> BsonDateTime(System.currentTimeMillis))
             .build
         )
@@ -317,7 +325,8 @@ object Sessions {
   }
 
   def delete(_id: ObjectId)(using customer: User)(using
-      Lang
+      Lang,
+      DatabaseName
   ): EitherT[IO, Error, SessionWithLabels] =
     for
       session <- findById(_id)

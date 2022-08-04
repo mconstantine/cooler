@@ -71,7 +71,7 @@ class CollectionTest extends IOSuite {
   test("should update a document") {
     val data = Person(new ObjectId(), "John", "Doe")
 
-    val updates = people.Update
+    val updates = Collection.Update
       .`with`("firstName" -> "Mario")
       .`with`("lastName" -> "Martino")
       .build
@@ -90,7 +90,7 @@ class CollectionTest extends IOSuite {
   test("should register the time of the update") {
     val data = Person(new ObjectId(), "John", "Doe")
 
-    val updates = people.Update
+    val updates = Collection.Update
       .`with`("firstName" -> "Mario")
       .`with`("lastName" -> "Martino")
       .build

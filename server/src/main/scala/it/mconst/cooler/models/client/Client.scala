@@ -25,6 +25,7 @@ import it.mconst.cooler.models.user.User
 import it.mconst.cooler.utils.__
 import it.mconst.cooler.utils.Collection
 import it.mconst.cooler.utils.Config
+import it.mconst.cooler.utils.DatabaseName
 import it.mconst.cooler.utils.DbDocument
 import it.mconst.cooler.utils.Error
 import it.mconst.cooler.utils.given
@@ -486,11 +487,14 @@ extension (client: Client) {
 }
 
 object Clients {
-  val collection = Collection[IO, Client.InputData, Client]("clients")
+  def collection(using DatabaseName) =
+    Collection[IO, Client.InputData, Client]("clients")
 
   def create(
       data: Client.InputData
-  )(using customer: User)(using Lang): EitherT[IO, Error, Client] =
+  )(using
+      customer: User
+  )(using Lang, DatabaseName): EitherT[IO, Error, Client] =
     collection.use(c =>
       for
         data <- EitherT.fromEither[IO](Client.fromInputData(data, customer))
@@ -500,7 +504,9 @@ object Clients {
 
   def findById(
       _id: ObjectId
-  )(using customer: User)(using Lang): EitherT[IO, Error, Client] =
+  )(using
+      customer: User
+  )(using Lang, DatabaseName): EitherT[IO, Error, Client] =
     collection.use(c =>
       c.findOne[Client](
         Filter.eq("_id", _id).and(Filter.eq("user", customer._id))
@@ -508,7 +514,8 @@ object Clients {
     )
 
   def update(_id: ObjectId, data: Client.InputData)(using customer: User)(using
-      Lang
+      Lang,
+      DatabaseName
   ): EitherT[IO, Error, Client] =
     for
       client <- findById(_id)
@@ -518,22 +525,22 @@ object Clients {
           client._id,
           data match
             case d: Client.ValidPrivateInputData =>
-              collection.Update
+              Collection.Update
                 .`with`("type" -> d.`type`)
                 .`with`("fiscalCode" -> d.fiscalCode)
                 .`with`("firstName" -> d.firstName)
                 .`with`("lastName" -> d.lastName)
                 .`with`(
                   "countryCode" -> none[CountryCode],
-                  collection.UpdateStrategy.UnsetIfEmpty
+                  Collection.UpdateStrategy.UnsetIfEmpty
                 )
                 .`with`(
                   "businessName" -> none[NonEmptyString],
-                  collection.UpdateStrategy.UnsetIfEmpty
+                  Collection.UpdateStrategy.UnsetIfEmpty
                 )
                 .`with`(
                   "vatNumber" -> none[NonEmptyString],
-                  collection.UpdateStrategy.UnsetIfEmpty
+                  Collection.UpdateStrategy.UnsetIfEmpty
                 )
                 .`with`("addressCountry" -> d.addressCountry)
                 .`with`("addressProvince" -> d.addressProvince)
@@ -542,27 +549,27 @@ object Clients {
                 .`with`("addressStreet" -> d.addressStreet)
                 .`with`(
                   "addressStreetNumber" -> d.addressStreetNumber,
-                  collection.UpdateStrategy.UnsetIfEmpty
+                  Collection.UpdateStrategy.UnsetIfEmpty
                 )
                 .`with`("addressEmail" -> d.addressEmail)
                 .build
             case d: Client.ValidBusinessInputData =>
-              collection.Update
+              Collection.Update
                 .`with`("type" -> d.`type`)
                 .`with`("countryCode" -> d.countryCode)
                 .`with`("businessName" -> d.businessName)
                 .`with`("vatNumber" -> d.vatNumber)
                 .`with`(
                   "fiscalCode" -> none[NonEmptyString],
-                  collection.UpdateStrategy.UnsetIfEmpty
+                  Collection.UpdateStrategy.UnsetIfEmpty
                 )
                 .`with`(
                   "firstName" -> none[NonEmptyString],
-                  collection.UpdateStrategy.UnsetIfEmpty
+                  Collection.UpdateStrategy.UnsetIfEmpty
                 )
                 .`with`(
                   "lastName" -> none[NonEmptyString],
-                  collection.UpdateStrategy.UnsetIfEmpty
+                  Collection.UpdateStrategy.UnsetIfEmpty
                 )
                 .`with`("addressCountry" -> d.addressCountry)
                 .`with`("addressProvince" -> d.addressProvince)
@@ -571,7 +578,7 @@ object Clients {
                 .`with`("addressStreet" -> d.addressStreet)
                 .`with`(
                   "addressStreetNumber" -> d.addressStreetNumber,
-                  collection.UpdateStrategy.UnsetIfEmpty
+                  Collection.UpdateStrategy.UnsetIfEmpty
                 )
                 .`with`("addressEmail" -> d.addressEmail)
                 .build
@@ -582,7 +589,9 @@ object Clients {
 
   def delete(
       _id: ObjectId
-  )(using customer: User)(using Lang): EitherT[IO, Error, Client] =
+  )(using
+      customer: User
+  )(using Lang, DatabaseName): EitherT[IO, Error, Client] =
     for
       client <- findById(_id)
       _ <- collection.use(_.delete(client._id))
@@ -605,7 +614,7 @@ object Clients {
 
   def find(query: CursorQuery)(using
       customer: User
-  )(using Lang): EitherT[IO, Error, Cursor[Client]] =
+  )(using Lang, DatabaseName): EitherT[IO, Error, Cursor[Client]] =
     collection.use(
       _.find[Client](
         "name",
@@ -632,7 +641,8 @@ object Clients {
     )
 
   def getProjects(id: ObjectId, query: CursorQuery)(using customer: User)(using
-      Lang
+      Lang,
+      DatabaseName
   ): EitherT[IO, Error, Cursor[ProjectWithClientLabel]] =
     Projects.collection.use(
       _.find[ProjectWithClientLabel](

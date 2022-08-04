@@ -29,7 +29,6 @@ import it.mconst.cooler.models.PositiveInteger
 import it.mconst.cooler.models.toBsonDateTime
 import it.mconst.cooler.models.toInt
 import it.mconst.cooler.models.toISOString
-import it.mconst.cooler.utils.Error
 import mongo4cats.bson.Document
 import mongo4cats.bson.ObjectId
 import mongo4cats.circe.circeCodecProvider
@@ -64,11 +63,7 @@ given Encoder[BsonDateTime] with Decoder[BsonDateTime] with {
       )
 }
 
-final case class Collection[F[
-    _
-]: Async, Input: ClassTag, Doc <: DbDocument: ClassTag](name: String)(using
-    F: Monad[F]
-)(using MongoCodecProvider[Input], MongoCodecProvider[Doc]) {
+object Collection {
   enum UpdateStrategy:
     case UnsetIfEmpty extends UpdateStrategy
     case IgnoreIfEmpty extends UpdateStrategy
@@ -137,7 +132,14 @@ final case class Collection[F[
         MongoCodecProvider[T]
     ): Update = EmptyUpdate().`with`[T](value, updateStrategy)
   }
+}
 
+final case class Collection[F[
+    _
+]: Async, Input: ClassTag, Doc <: DbDocument: ClassTag](name: String)(using
+    F: Monad[F],
+    dbName: DatabaseName
+)(using MongoCodecProvider[Input], MongoCodecProvider[Doc]) {
   protected final case class CollectionResource[F[
       _
   ]: Async, Input: ClassTag, Doc <: DbDocument: ClassTag](
@@ -185,13 +187,13 @@ final case class Collection[F[
           .leftMap(_ => Error(NotFound, __.ErrorDocumentNotFoundAfterInsert))
       yield inserted
 
-    def update(_id: ObjectId, update: BuiltUpdate)(using
+    def update(_id: ObjectId, update: Collection.BuiltUpdate)(using
         Lang
     ): EitherT[F, Error, UpdateResult] = {
       val providedUpdates = update.values
         .map(
           _ match
-            case update: ValueUpdateItem[_] =>
+            case update: Collection.ValueUpdateItem[_] =>
               Some(
                 Updates.set(
                   update.key,
@@ -200,7 +202,7 @@ final case class Collection[F[
                     case _                   => update.value
                 )
               )
-            case update: OptionUpdateItem[_] =>
+            case update: Collection.OptionUpdateItem[_] =>
               update.value match
                 case Some(value) =>
                   Some(
@@ -213,8 +215,8 @@ final case class Collection[F[
                   )
                 case None =>
                   update.updateStrategy match
-                    case UpdateStrategy.IgnoreIfEmpty => none[Bson]
-                    case UpdateStrategy.UnsetIfEmpty =>
+                    case Collection.UpdateStrategy.IgnoreIfEmpty => none[Bson]
+                    case Collection.UpdateStrategy.UnsetIfEmpty =>
                       Some(Updates.unset(update.key))
         )
         .map(_.toList)
@@ -390,7 +392,7 @@ final case class Collection[F[
     MongoClient
       .fromConnectionString[F](Config.database.uri)
       .flatMap(client =>
-        Resource.make(client.getDatabase(Config.database.name))(_ => F.unit)
+        Resource.make(client.getDatabase(dbName.toString))(_ => F.unit)
       )
 
   def use[R](op: CollectionResource[F, Input, Doc] => F[R]): F[R] =

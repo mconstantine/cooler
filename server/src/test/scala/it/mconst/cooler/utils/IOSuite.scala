@@ -13,6 +13,7 @@ import scala.concurrent.Future
 abstract class IOSuite extends FunSuite {
   given ioRuntime: IORuntime = IORuntime.global
   given executionContext: ExecutionContext = ioRuntime.compute
+  given DatabaseName = Config.database.testName
 
   private val ioTransform: ValueTransform =
     new ValueTransform(

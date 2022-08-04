@@ -12,6 +12,7 @@ import it.mconst.cooler.models.*
 import it.mconst.cooler.models.user.User
 import it.mconst.cooler.utils.__
 import it.mconst.cooler.utils.Collection
+import it.mconst.cooler.utils.DatabaseName
 import it.mconst.cooler.utils.DbDocument
 import it.mconst.cooler.utils.Error
 import it.mconst.cooler.utils.given
@@ -96,10 +97,12 @@ object Tax {
 }
 
 object Taxes {
-  val collection = Collection[IO, Tax.InputData, Tax]("taxes")
+  def collection(using DatabaseName) =
+    Collection[IO, Tax.InputData, Tax]("taxes")
 
   def create(data: Tax.InputData)(using customer: User)(using
-      Lang
+      Lang,
+      DatabaseName
   ): EitherT[IO, Error, Tax] = collection.use(c =>
     for
       data <- EitherT.fromEither[IO](Tax.fromInputData(data))
@@ -109,7 +112,7 @@ object Taxes {
 
   private def findById(
       _id: ObjectId
-  )(using customer: User)(using Lang): EitherT[IO, Error, Tax] =
+  )(using customer: User)(using Lang, DatabaseName): EitherT[IO, Error, Tax] =
     collection.use(
       _.findOne[Tax](
         Filter.eq("_id", _id).and(Filter.eq("user", customer._id))
@@ -118,7 +121,8 @@ object Taxes {
     )
 
   def find(query: CursorQuery)(using customer: User)(using
-      Lang
+      Lang,
+      DatabaseName
   ): EitherT[IO, Error, Cursor[Tax]] = collection.use(
     _.find[Tax](
       "label",
@@ -127,7 +131,8 @@ object Taxes {
   )
 
   def update(_id: ObjectId, data: Tax.InputData)(using customer: User)(using
-      Lang
+      Lang,
+      DatabaseName
   ): EitherT[IO, Error, Tax] =
     for
       tax <- findById(_id)
@@ -135,7 +140,7 @@ object Taxes {
       _ <- collection.useWithCodec[BigDecimal, Error, UpdateResult](
         _.update(
           tax._id,
-          collection.Update
+          Collection.Update
             .`with`("label" -> update.label)
             .`with`("value" -> update.value)
             .build
@@ -145,7 +150,8 @@ object Taxes {
     yield result
 
   def delete(_id: ObjectId)(using customer: User)(using
-      Lang
+      Lang,
+      DatabaseName
   ): EitherT[IO, Error, Tax] =
     for
       tax <- findById(_id)

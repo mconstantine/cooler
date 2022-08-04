@@ -30,6 +30,7 @@ import it.mconst.cooler.models.task.Tasks
 import it.mconst.cooler.models.user.User
 import it.mconst.cooler.utils.__
 import it.mconst.cooler.utils.Collection
+import it.mconst.cooler.utils.DatabaseName
 import it.mconst.cooler.utils.DbDocument
 import it.mconst.cooler.utils.Error
 import it.mconst.cooler.utils.given
@@ -200,9 +201,10 @@ object Project {
 }
 
 object Projects {
-  val collection = Collection[IO, Project.InputData, DbProject]("projects")
+  def collection(using DatabaseName) =
+    Collection[IO, Project.InputData, DbProject]("projects")
 
-  def labelsStages = Seq(
+  def labelsStages(using DatabaseName) = Seq(
     Aggregates.lookup(Clients.collection.name, "client", "_id", "c"),
     Aggregates.unwind("$c"),
     Aggregates.addFields(
@@ -231,7 +233,7 @@ object Projects {
       data: Project.InputData
   )(using
       customer: User
-  )(using Lang): EitherT[IO, Error, ProjectWithClientLabel] =
+  )(using Lang, DatabaseName): EitherT[IO, Error, ProjectWithClientLabel] =
     collection.use { c =>
       for
         data <- EitherT.fromEither[IO](Project.fromInputData(data))
@@ -242,7 +244,8 @@ object Projects {
     }
 
   def findByIdNoStats(_id: ObjectId)(using customer: User)(using
-      Lang
+      Lang,
+      DatabaseName
   ): EitherT[IO, Error, ProjectWithClientLabel] = EitherT.fromOptionF(
     collection.use(
       _.raw(
@@ -263,7 +266,9 @@ object Projects {
 
   def findById(
       _id: ObjectId
-  )(using customer: User)(using Lang): EitherT[IO, Error, ProjectWithStats] =
+  )(using
+      customer: User
+  )(using Lang, DatabaseName): EitherT[IO, Error, ProjectWithStats] =
     EitherT.fromOptionF(
       collection.use(
         _.raw(
@@ -399,7 +404,9 @@ object Projects {
     )
 
   def find(query: CursorQuery, notCashedOnly: Boolean)(using customer: User)(
-      using Lang
+      using
+      Lang,
+      DatabaseName
   ): EitherT[IO, Error, Cursor[ProjectWithClientLabel]] = {
     val initialMatch =
       if notCashedOnly then
@@ -422,7 +429,10 @@ object Projects {
 
   def getLatest(query: CursorQuery)(using
       customer: User
-  )(using Lang): EitherT[IO, Error, Cursor[ProjectWithClientLabel]] =
+  )(using
+      Lang,
+      DatabaseName
+  ): EitherT[IO, Error, Cursor[ProjectWithClientLabel]] =
     collection.use(
       _.find[ProjectWithClientLabel](
         "updatedAt",
@@ -433,7 +443,8 @@ object Projects {
     )
 
   def update(_id: ObjectId, data: Project.InputData)(using customer: User)(using
-      Lang
+      Lang,
+      DatabaseName
   ): EitherT[IO, Error, ProjectWithStats] =
     for
       project <- findByIdNoStats(_id)
@@ -446,20 +457,20 @@ object Projects {
         .useWithCodec[ProjectCashData, Error, UpdateResult](
           _.update(
             project._id,
-            collection.Update
+            Collection.Update
               .`with`("client" -> client)
               .`with`("name" -> data.name)
               .`with`(
                 "description" -> data.description,
-                collection.UpdateStrategy.UnsetIfEmpty
+                Collection.UpdateStrategy.UnsetIfEmpty
               )
               .`with`(
                 "expectedBudget" -> data.expectedBudget,
-                collection.UpdateStrategy.UnsetIfEmpty
+                Collection.UpdateStrategy.UnsetIfEmpty
               )
               .`with`(
                 "cashData" -> data.cashData,
-                collection.UpdateStrategy.UnsetIfEmpty
+                Collection.UpdateStrategy.UnsetIfEmpty
               )
               .build
           )
@@ -468,7 +479,8 @@ object Projects {
     yield result
 
   def delete(_id: ObjectId)(using customer: User)(using
-      Lang
+      Lang,
+      DatabaseName
   ): EitherT[IO, Error, ProjectWithStats] =
     for
       project <- findById(_id)
@@ -487,7 +499,7 @@ object Projects {
 
   def getCashedBalance(since: BsonDateTime, to: Option[BsonDateTime])(using
       customer: User
-  ): IO[ProjectCashedBalance] = {
+  )(using DatabaseName): IO[ProjectCashedBalance] = {
     collection
       .use(
         _.raw(

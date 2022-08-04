@@ -24,6 +24,7 @@ import it.mconst.cooler.models.task.Tasks
 import it.mconst.cooler.models.tax.Taxes
 import it.mconst.cooler.utils.__
 import it.mconst.cooler.utils.Collection
+import it.mconst.cooler.utils.DatabaseName
 import it.mconst.cooler.utils.DbDocument
 import it.mconst.cooler.utils.Error
 import it.mconst.cooler.utils.given
@@ -172,11 +173,14 @@ object User {
 }
 
 object Users {
-  val collection = Collection[IO, User.CreationData, User]("users")
+  def collection(using DatabaseName) =
+    Collection[IO, User.CreationData, User]("users")
 
   def create(
       user: User.CreationData
-  )(using customer: Option[User])(using Lang): EitherT[IO, Error, User] =
+  )(using
+      customer: Option[User]
+  )(using Lang, DatabaseName): EitherT[IO, Error, User] =
     collection.use(c =>
       customer
         .fold(
@@ -205,7 +209,7 @@ object Users {
   def getStats(
       since: BsonDateTime,
       to: Option[BsonDateTime]
-  )(using customer: User): IO[UserStats] =
+  )(using customer: User)(using DatabaseName): IO[UserStats] =
     collection.use(c =>
       c.raw(
         _.aggregateWithCodec[UserStats](
@@ -374,12 +378,16 @@ object Users {
 
   def register(
       user: User.CreationData
-  )(using Option[User], Lang): EitherT[IO, Error, JWT.AuthTokens] =
+  )(using
+      Option[User],
+      Lang,
+      DatabaseName
+  ): EitherT[IO, Error, JWT.AuthTokens] =
     create(user).map(JWT.generateAuthTokens(_))
 
   def update(
       data: User.UpdateData
-  )(using customer: User)(using Lang): EitherT[IO, Error, User] =
+  )(using customer: User)(using Lang, DatabaseName): EitherT[IO, Error, User] =
     collection.use(c =>
       for
         data <- EitherT
@@ -400,18 +408,18 @@ object Users {
           )
         _ <- c.update(
           customer._id,
-          collection.Update
+          Collection.Update
             .`with`(
               "name" -> data.name,
-              collection.UpdateStrategy.IgnoreIfEmpty
+              Collection.UpdateStrategy.IgnoreIfEmpty
             )
             .`with`(
               "email" -> data.email,
-              collection.UpdateStrategy.IgnoreIfEmpty
+              Collection.UpdateStrategy.IgnoreIfEmpty
             )
             .`with`(
               "password" -> data.password,
-              collection.UpdateStrategy.IgnoreIfEmpty
+              Collection.UpdateStrategy.IgnoreIfEmpty
             )
             .build
         )
@@ -421,7 +429,7 @@ object Users {
 
   def login(
       data: User.LoginData
-  )(using Lang): EitherT[IO, Error, JWT.AuthTokens] =
+  )(using Lang, DatabaseName): EitherT[IO, Error, JWT.AuthTokens] =
     collection.use { c =>
       val error = Error(Status.BadRequest, __.ErrorInvalidEmailOrPassword)
 
@@ -441,12 +449,14 @@ object Users {
 
   def refreshToken(
       data: User.RefreshTokenData
-  )(using Lang): EitherT[IO, Error, JWT.AuthTokens] =
+  )(using Lang, DatabaseName): EitherT[IO, Error, JWT.AuthTokens] =
     JWT
       .decodeToken(data.refreshToken, JWT.UserRefresh)
       .map(JWT.generateAuthTokens(_))
 
-  def delete(using customer: User)(using Lang): EitherT[IO, Error, User] =
+  def delete(using
+      customer: User
+  )(using Lang, DatabaseName): EitherT[IO, Error, User] =
     collection.use { c =>
       for
         user <- c.findOne[User](Filter.eq("_id", customer._id))

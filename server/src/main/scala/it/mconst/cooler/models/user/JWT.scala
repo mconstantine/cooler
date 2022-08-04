@@ -10,6 +10,7 @@ import io.circe.parser.decode
 import io.circe.syntax.EncoderOps
 import it.mconst.cooler.utils.__
 import it.mconst.cooler.utils.Config
+import it.mconst.cooler.utils.DatabaseName
 import it.mconst.cooler.utils.Error
 import it.mconst.cooler.utils.given
 import java.time.Instant
@@ -112,7 +113,8 @@ object JWT {
         .getOrElse(false)
 
   def decodeToken(token: String, tokenType: TokenType)(using
-      Lang
+      Lang,
+      DatabaseName
   ): EitherT[IO, Error, User] = {
     val error = Error(Forbidden, __.ErrorInvalidAccessToken)
 
