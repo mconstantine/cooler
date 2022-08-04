@@ -1,0 +1,254 @@
+@import '../../variables';
+
+.List {
+  margin-top: 16px;
+
+  .heading {
+    margin-top: 32px;
+    margin-bottom: 16px;
+    max-width: $list-max-width;
+    margin-left: auto;
+    margin-right: auto;
+    color: $color-primary-dark;
+  }
+
+  ul {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  li {
+    position: relative;
+    width: 100%;
+    max-width: $list-max-width;
+    box-sizing: border-box;
+    padding: 16px;
+    margin-left: auto;
+    margin-right: auto;
+    font-weight: $font-weight-medium;
+    line-height: $line-height-body;
+
+    &.small {
+      padding-top: 12px;
+      padding-bottom: 12px;
+    }
+
+    &.withProgress {
+      border: 1px solid #fff;
+      border-radius: $border-radius-medium;
+
+      &.primary {
+        border-color: $color-primary-dark;
+      }
+
+      &.success {
+        border-color: $color-success-dark;
+      }
+
+      &.warning {
+        border-color: $color-warning-dark;
+      }
+
+      &.danger {
+        border-color: $color-error-dark;
+      }
+    }
+
+    > * {
+      position: relative;
+    }
+
+    .itemProgressBar {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      background-color: rgba(#fff, 0.25);
+
+      &.primary {
+        background-color: $color-primary-light;
+      }
+
+      &.success {
+        background-color: $color-success-light;
+      }
+
+      &.warning {
+        background-color: $color-warning-light;
+      }
+
+      &.danger {
+        background-color: $color-error-light;
+      }
+    }
+
+    .itemProgressBar + .itemContentOuterWrapper .itemContent > * {
+      opacity: 1;
+    }
+
+    &.disabled {
+      opacity: $text-low-emphasis-amount;
+    }
+
+    .itemContentOuterWrapper {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .itemContentWrapper {
+      display: flex;
+      align-items: center;
+      flex-basis: 100%;
+    }
+
+    .itemSideContent {
+      margin-right: 16px;
+
+      .Label {
+        opacity: 1;
+        line-height: 1;
+      }
+
+      .Label.default {
+        font-size: 1rem;
+      }
+    }
+
+    .routeArrow .Icon {
+      margin-right: 0;
+    }
+
+    .Label {
+      margin-top: 0;
+    }
+
+    .Body {
+      margin-top: 0;
+      margin-bottom: 0;
+      font-size: 21px;
+      font-weight: $font-weight-regular;
+      @include ss('font-size', 18px, 21px);
+    }
+
+    .description {
+      margin-top: 4px;
+      margin-bottom: 0;
+      opacity: $text-medium-emphasis-amount;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: calc(90vw - 10em);
+
+      @include media($list-max-width / 90 * 100) {
+        max-width: calc(#{$list-max-width} - 10em);
+      }
+    }
+  }
+
+  li.withProgress + li.withProgress {
+    margin-top: 8px;
+  }
+
+  li.details {
+    max-width: $list-max-width-details;
+
+    .description {
+      max-width: calc(90vw - #{$list-icons-space-details});
+
+      @include media($list-max-width-details / 90 * 100) {
+        max-width: $list-max-width-details - $list-icons-space-details;
+      }
+    }
+  }
+
+  &.unwrap li .description {
+    white-space: initial;
+    overflow: visible;
+  }
+
+  li.sideContentAtTheEnd .itemContentWrapper {
+    justify-content: space-between;
+
+    .itemSideContent {
+      order: 1;
+      margin-right: 0;
+      margin-left: 16px;
+    }
+  }
+}
+
+.List li.routed {
+  transition: background-color $transition-fast;
+
+  &:not(.disabled) {
+    cursor: pointer;
+  }
+
+  &:not(.disabled):hover {
+    background-color: rgba(#fff, $opacity-hover);
+  }
+
+  &:not(.disabled):active {
+    background-color: rgba(#fff, $opacity-active);
+  }
+}
+
+.light .List .heading {
+  color: $color-primary-light;
+}
+
+.light .List li .itemProgressBar {
+  background-color: rgba(#000, 0.25);
+
+  &.primary {
+    background-color: $color-primary-dark;
+  }
+
+  &.success {
+    background-color: $color-success-dark;
+  }
+
+  &.warning {
+    background-color: $color-warning-dark;
+  }
+
+  &.danger {
+    background-color: $color-error-dark;
+  }
+}
+
+.light .List li.withProgress {
+  border-color: #000;
+
+  &.primary {
+    border-color: $color-primary-light;
+  }
+
+  &.success {
+    border-color: $color-success-light;
+  }
+
+  &.warning {
+    border-color: $color-warning-light;
+  }
+
+  &.danger {
+    border-color: $color-error-light;
+  }
+}
+
+.light .List li.routed {
+  &:not(.disabled):hover {
+    background-color: rgba(#000, $opacity-hover);
+  }
+
+  &:not(.disabled):active {
+    background-color: rgba(#000, $opacity-active);
+  }
+}
+
+.List li .Buttons {
+  margin-top: 0;
+}

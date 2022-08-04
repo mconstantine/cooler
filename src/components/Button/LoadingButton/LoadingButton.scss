@@ -1,0 +1,100 @@
+@import '../Button/Button';
+
+.LoadingButton {
+  position: relative;
+  padding: 0;
+
+  .iconsAnimationWrapper {
+    position: relative;
+    width: $icon-size-medium;
+    height: $icon-size-medium;
+    overflow: hidden;
+    position: absolute;
+    top: 8px;
+    left: 8px;
+
+    .Icon {
+      position: absolute;
+      top: 0;
+      left: 0;
+      margin-left: 0;
+      transform: translate3d(0, 0, 0);
+      opacity: 1;
+    }
+
+    .nextIcon {
+      transform: translate3d(0, 48px, 0);
+      opacity: 0;
+    }
+
+    &.animating {
+      .Icon {
+        animation: moveToAbove $transition-fast $easing-default forwards;
+      }
+
+      .nextIcon {
+        animation: moveFromBelow $transition-fast $easing-default forwards;
+      }
+    }
+  }
+
+  &.state-loading .iconsAnimationWrapper .Icon svg {
+    animation: rotate 1s linear infinite;
+  }
+
+  button,
+  input {
+    z-index: 1;
+    position: relative;
+    background-color: transparent;
+    color: inherit;
+    font-family: inherit;
+    font-size: inherit;
+    font-weight: inherit;
+    text-transform: inherit;
+    letter-spacing: inherit;
+    border: none;
+    outline: none;
+    margin: 0;
+    padding: 0;
+    cursor: inherit;
+    min-width: $icon-size-medium + 16px;
+    min-height: $icon-size-medium + 16px;
+    box-sizing: border-box;
+    padding-top: 8px;
+    padding-bottom: 8px;
+    padding-right: 8px;
+    padding-left: $icon-size-medium + 16px;
+  }
+}
+
+@keyframes moveFromBelow {
+  0% {
+    transform: translate3d(0, 48px, 0);
+    opacity: 0;
+  }
+  100% {
+    transform: translate3d(0, 0, 0);
+    opacity: 1;
+  }
+}
+
+@keyframes moveToAbove {
+  0% {
+    transform: translate3d(0, 0, 0);
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(0, -48px, 0);
+    opacity: 0;
+  }
+}
+
+@keyframes rotate {
+  0% {
+    transform: rotate(0);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}

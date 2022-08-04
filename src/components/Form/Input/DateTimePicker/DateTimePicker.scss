@@ -1,0 +1,38 @@
+@import '../../../../variables';
+
+.DateTimePickerInput:not(.disabled) * {
+  cursor: pointer;
+}
+
+.DateTimePickerYear {
+  label,
+  input {
+    text-align: center;
+  }
+}
+
+.DateTimePickerModal {
+  z-index: 1;
+
+  .Panel > * + * {
+    @include ss('margin-top', $spacing-medium-mobile, $spacing-medium-desktop);
+  }
+}
+
+.DateTimePickerTime {
+  display: flex;
+
+  .Input {
+    flex-grow: 1;
+  }
+
+  .Label {
+    text-align: center;
+    margin-left: 0.5em;
+    margin-right: 0.5em;
+  }
+}
+
+.DateTimePicker + .DateTimePicker {
+  margin-top: 24px;
+}

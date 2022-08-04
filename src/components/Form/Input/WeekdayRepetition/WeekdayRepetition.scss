@@ -1,0 +1,38 @@
+@import '../../../../variables';
+
+.WeekdayRepetition {
+  background-color: rgba(#000, $opacity-active);
+  box-sizing: border-box;
+  padding: 8px 12px;
+  border-radius: $border-radius-medium;
+
+  .Label:first-child {
+    margin-top: 0;
+    margin-bottom: 12px;
+  }
+
+  .Buttons + * {
+    margin-top: 12px;
+  }
+}
+
+.light .WeekdayRepetition {
+  background-color: transparent;
+  border: 1px solid #000;
+
+  &.primary {
+    border-color: $color-primary-light;
+  }
+
+  &.success {
+    border-color: $color-success-light;
+  }
+
+  &.warning {
+    border-color: $color-warning-light;
+  }
+
+  &.danger {
+    border-color: $color-error-light;
+  }
+}

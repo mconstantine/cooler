@@ -1,0 +1,54 @@
+@import '../../variables';
+
+.Banner {
+  @include label;
+  margin-top: 8px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+
+  .Icon {
+    margin-right: 8px;
+  }
+
+  &.primary {
+    color: $color-primary-dark;
+  }
+
+  &.success {
+    color: $color-success-dark;
+  }
+
+  &.warning {
+    opacity: 1;
+    color: $color-warning-dark;
+  }
+
+  &.danger {
+    opacity: 1;
+    color: $color-error-dark;
+  }
+}
+
+.Panel:not(.framed) .Banner {
+  @include ss('padding-left', $spacing-medium-mobile, $spacing-medium-desktop);
+  @include ss('padding-right', $spacing-medium-mobile, $spacing-medium-desktop);
+}
+
+.light .Banner {
+  &.primary {
+    color: $color-primary-light;
+  }
+
+  &.success {
+    color: $color-success-light;
+  }
+
+  &.warning {
+    color: $color-warning-light;
+  }
+
+  &.danger {
+    color: $color-error-light;
+  }
+}

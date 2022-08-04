@@ -1,0 +1,27 @@
+@import '../../../../variables';
+@import '../common';
+
+.Input {
+  label {
+    border-bottom: 1px solid #fff;
+    border-top-left-radius: $border-radius-medium;
+    border-top-right-radius: $border-radius-medium;
+  }
+
+  input {
+    width: 100%;
+    background-color: transparent;
+    border: none;
+    color: inherit;
+    font-size: inherit;
+    font-weight: inherit;
+    line-height: 1;
+    margin-top: 12px;
+    padding: 0;
+    outline: none;
+  }
+}
+
+.Input + .Input {
+  margin-top: 24px;
+}

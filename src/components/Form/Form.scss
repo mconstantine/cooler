@@ -1,0 +1,20 @@
+@import '../../variables';
+
+.Form {
+  > * + * {
+    margin-top: 24px !important;
+  }
+
+  > *:first-child {
+    margin-top: 32px !important;
+  }
+
+  > .Body {
+    margin-top: 12px !important;
+    opacity: $text-medium-emphasis-amount;
+  }
+
+  .actions {
+    margin-top: 32px;
+  }
+}

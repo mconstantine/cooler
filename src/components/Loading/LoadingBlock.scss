@@ -1,0 +1,12 @@
+@import '../../variables';
+
+.LoadingBlock {
+  text-align: center;
+  @include ss('padding-top', $spacing-medium-mobile, $spacing-medium-desktop);
+
+  @include ss(
+    'padding-bottom',
+    $spacing-medium-mobile,
+    $spacing-medium-desktop
+  );
+}

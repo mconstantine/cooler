@@ -1,0 +1,62 @@
+@import '../../variables';
+
+.Body {
+  margin-bottom: 32px;
+  font-weight: $font-weight-medium;
+  line-height: $line-height-body;
+  max-width: 90vw;
+
+  @include media($max-width-text) {
+    max-width: $max-width-text;
+  }
+
+  &.clickable {
+    cursor: pointer;
+  }
+
+  &.primary {
+    color: $color-primary-dark;
+  }
+
+  &.success {
+    color: $color-success-dark;
+  }
+
+  &.warning {
+    color: $color-warning-dark;
+  }
+
+  &.danger {
+    color: $color-error-dark;
+  }
+
+  &.high {
+    opacity: $text-high-emphasis-amount;
+  }
+
+  &.medium {
+    opacity: $text-medium-emphasis-amount;
+  }
+
+  &.low {
+    opacity: $text-low-emphasis-amount;
+  }
+}
+
+.light .Body {
+  &.primary {
+    color: $color-primary-light;
+  }
+
+  &.success {
+    color: $color-success-light;
+  }
+
+  &.warning {
+    color: $color-warning-light;
+  }
+
+  &.danger {
+    color: $color-error-light;
+  }
+}

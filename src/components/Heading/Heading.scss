@@ -1,0 +1,180 @@
+@import '../../variables';
+
+.Heading {
+  line-height: 1;
+  margin-top: 0;
+  margin-bottom: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  &.s40 {
+    margin-bottom: 20px;
+  }
+
+  &.s36 {
+    margin-bottom: 14px;
+  }
+
+  &.s32 {
+    margin-bottom: 13px;
+  }
+
+  &.s27 {
+    margin-bottom: 9px;
+  }
+
+  &.s24 {
+    margin-bottom: 8px;
+  }
+
+  &.s21 {
+    margin-bottom: 4px;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    margin-top: 0;
+    margin-bottom: 0;
+  }
+
+  &.primary {
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+      color: mix($color-primary-dark, #fff, 40);
+    }
+  }
+
+  &.success {
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+      color: mix($color-success-dark, #fff, 40);
+    }
+  }
+
+  &.warning {
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+      color: mix($color-warning-dark, #fff, 40);
+    }
+  }
+
+  &.danger {
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+      color: mix($color-error-dark, #fff, 40);
+    }
+  }
+}
+
+.Heading h1,
+.Heading h2,
+.Heading h3 {
+  font-weight: $font-weight-light;
+}
+
+.Heading h4,
+.Heading h5,
+.Heading h6 {
+  font-weight: $font-weight-regular;
+}
+
+.Heading h1 {
+  @include ss('font-size', 32px, 40px);
+  // margin-bottom: 20px;
+}
+
+.Heading h2 {
+  @include ss('font-size', 28px, 36px);
+  // margin-bottom: 14px;
+}
+
+.Heading h3 {
+  @include ss('font-size', 24px, 32px);
+  // margin-bottom: 13px;
+}
+
+.Heading h4 {
+  @include ss('font-size', 22px, 27px);
+  // margin-bottom: 9px;
+}
+
+.Heading h5 {
+  @include ss('font-size', 20px, 24px);
+  // margin-bottom: 8px;
+}
+
+.Heading h6 {
+  @include ss('font-size', 18px, 21px);
+  // margin-bottom: 4px;
+}
+
+.light {
+  color: #000;
+
+  .Heading {
+    &.primary {
+      h1,
+      h2,
+      h3,
+      h4,
+      h5,
+      h6 {
+        color: mix($color-primary-light, #000, 60);
+      }
+    }
+
+    &.success {
+      h1,
+      h2,
+      h3,
+      h4,
+      h5,
+      h6 {
+        color: mix($color-success-light, #000, 60);
+      }
+    }
+
+    &.warning {
+      h1,
+      h2,
+      h3,
+      h4,
+      h5,
+      h6 {
+        color: mix($color-warning-light, #000, 60);
+      }
+    }
+
+    &.danger {
+      h1,
+      h2,
+      h3,
+      h4,
+      h5,
+      h6 {
+        color: mix($color-error-light, #000, 60);
+      }
+    }
+  }
+}

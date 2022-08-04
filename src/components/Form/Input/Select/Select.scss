@@ -1,0 +1,93 @@
+@import '../../../../variables';
+
+.Select {
+  position: relative;
+
+  .Input label {
+    border-width: 1px;
+    border-style: solid;
+    border-color: inherit;
+    border-radius: $border-radius-medium;
+  }
+
+  .input {
+    .Input:not(.disabled) * {
+      cursor: pointer;
+    }
+
+    label {
+      position: relative;
+
+      .arrowIcon,
+      .Loading {
+        position: absolute;
+        right: 16px;
+        top: 50%;
+        transform: translate3d(0, -50%, 0);
+      }
+    }
+  }
+
+  .options {
+    position: absolute;
+    max-width: $max-width-text;
+    max-height: 50vh;
+    overflow: auto;
+    transition: opacity $transition-fast linear,
+      visibility $transition-fast linear,
+      transform $transition-fast $easing-default;
+    left: 0;
+    right: 0;
+    margin-top: 8px;
+    margin-left: auto;
+    margin-right: auto;
+    opacity: 0;
+    visibility: hidden;
+    transform: translate3d(0, 20px, 0);
+    background-color: $color-grey-soft-dark;
+    box-sizing: border-box;
+    border: 1px solid #fff;
+    border-radius: $border-radius-large;
+
+    .List {
+      margin-top: 0;
+    }
+
+    li.highlighted {
+      background-color: rgba(#fff, $opacity-active);
+    }
+
+    li.empty {
+      cursor: default;
+      opacity: $opacity-disabled;
+    }
+
+    li.empty:hover {
+      background-color: $color-grey-soft-dark;
+    }
+  }
+
+  &.open {
+    z-index: 10;
+
+    .options {
+      transition: opacity $transition-fast linear,
+        transform $transition-fast $easing-default;
+      opacity: 1;
+      visibility: visible;
+      transform: translate3d(0, 0, 0);
+    }
+  }
+}
+
+.light .Select .options {
+  background-color: $color-grey-soft-light;
+
+  li.highlighted {
+    background-color: rgba(#000, $opacity-active);
+  }
+}
+
+.Select + .Select {
+  margin-top: 24px;
+}

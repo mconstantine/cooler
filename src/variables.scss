@@ -1,0 +1,161 @@
+$spacing-medium-mobile: 12px;
+$spacing-medium-desktop: 24px;
+$spacing-large-mobile: 24px;
+$spacing-large-desktop: 80px;
+
+$max-width-text: 720px;
+$breakpoint-mobile: 320px;
+$breakpoint-desktop: 720px;
+
+$border-radius-large: 8px;
+$border-radius-medium: 4px;
+$border-radius-small: 2px;
+
+$icon-size-large: 32px;
+$icon-size-medium: 24px;
+$icon-size-small: 16px;
+
+$line-height-body: 1.5;
+
+$color-grey-soft-light: #cecece;
+$color-grey-soft-dark: #313131;
+$color-primary-dark: #90caf9;
+$color-primary-light: #2196f3;
+$color-primary-background-dark: #0d47a1;
+$color-primary-background-light: #e3f2fd;
+$color-success-dark: #81c784;
+$color-success-light: #4caf50;
+$color-success-background-dark: #1b5e20;
+$color-success-background-light: #e8f5e9;
+$color-warning-dark: #fff176;
+$color-warning-light: #fbc02d;
+$color-warning-background-dark: #f57f17;
+$color-warning-background-light: #fffde7;
+$color-error-dark: #e57373;
+$color-error-light: #f44336;
+$color-error-background-dark: #b71c1c;
+$color-error-background-light: #ffebee;
+
+$text-high-emphasis-amount: 0.87;
+$text-medium-emphasis-amount: 0.6;
+$text-low-emphasis-amount: 0.38;
+
+$opacity-hover: 0.1;
+$opacity-active: 0.15;
+$opacity-background: 0.08;
+$opacity-disabled: 0.38;
+
+$font-weight-light: 300;
+$font-weight-regular: 400;
+$font-weight-medium: 500;
+$font-weight-bold: 700;
+
+$transition-fast: 150ms;
+$transition-medium: 300ms;
+$transition-slow: 500ms;
+
+$list-icons-space: $icon-size-large + 48px;
+$list-icons-space-details: $icon-size-large + $icon-size-medium + 48px;
+$list-max-width: $max-width-text + $list-icons-space;
+$list-max-width-details: $max-width-text + $list-icons-space-details;
+
+$menu-height-mobile: 66px;
+$menu-height-desktop: 88px;
+
+@mixin label {
+  font-size: 14px;
+  letter-spacing: 1px;
+  line-height: 1;
+  font-weight: $font-weight-medium;
+  opacity: $text-medium-emphasis-amount;
+}
+
+@mixin ss($property, $min, $max) {
+  @include smoothstep(
+    $property,
+    $min,
+    $breakpoint-mobile,
+    $max,
+    $breakpoint-desktop
+  );
+}
+
+/*************************************************************************************************/
+
+// Easings!
+$linear: cubic-bezier(0.25, 0.25, 0.75, 0.75);
+$ease: cubic-bezier(0.25, 0.1, 0.25, 1);
+$easeIn: cubic-bezier(0.42, 0, 1, 1);
+$easeOut: cubic-bezier(0, 0, 0.58, 1);
+$easeInOut: cubic-bezier(0.42, 0, 0.58, 1);
+$easeInQuad: cubic-bezier(0.55, 0.085, 0.68, 0.53);
+$easeInCubic: cubic-bezier(0.55, 0.055, 0.675, 0.19);
+$easeInQuart: cubic-bezier(0.895, 0.03, 0.685, 0.22);
+$easeInQuint: cubic-bezier(0.755, 0.05, 0.855, 0.06);
+$easeInSine: cubic-bezier(0.47, 0, 0.745, 0.715);
+$easeInExpo: cubic-bezier(0.95, 0.05, 0.795, 0.035);
+$easeInCirc: cubic-bezier(0.6, 0.04, 0.98, 0.335);
+$easeInBack: cubic-bezier(0.6, -0.28, 0.735, 0.045);
+$easeOutQuad: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+$easeOutCubic: cubic-bezier(0.215, 0.61, 0.355, 1);
+$easeOutQuart: cubic-bezier(0.165, 0.84, 0.44, 1);
+$easeOutQuint: cubic-bezier(0.23, 1, 0.32, 1);
+$easeOutSine: cubic-bezier(0.39, 0.575, 0.565, 1);
+$easeOutExpo: cubic-bezier(0.19, 1, 0.22, 1);
+$easeOutCirc: cubic-bezier(0.075, 0.82, 0.165, 1);
+$easeOutBack: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+$easeInOutQuad: cubic-bezier(0.455, 0.03, 0.515, 0.955);
+$easeInOutCubic: cubic-bezier(0.645, 0.045, 0.355, 1);
+$easeInOutQuart: cubic-bezier(0.77, 0, 0.175, 1);
+$easeInOutQuint: cubic-bezier(0.86, 0, 0.07, 1);
+$easeInOutSine: cubic-bezier(0.445, 0.05, 0.55, 0.95);
+$easeInOutExpo: cubic-bezier(1, 0, 0, 1);
+$easeInOutCirc: cubic-bezier(0.785, 0.135, 0.15, 0.86);
+$easeInOutBack: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+$easing-default: $easeInOut;
+
+/**
+ * It creates a media query based on `min-width`.
+ * @param  {dimension} $min-width The `min-width` that should trigger the media query.
+ */
+@mixin media($min-width) {
+  @media only screen and (min-width: #{$min-width}) {
+    @content;
+  }
+}
+
+/**
+ * It creates a media query based on `min-resolution` and, optionally, `min-width`.
+ * @param  {number}    $resolution The screen resolution that should trigger the media query. Use an absolute
+ *                                 number, where 1 = 72dpi, 2 = 144dpi and so on.
+ * @param  {dimension} $min-width  (Optional) the min-width that should trigger the media query. If not provided,
+ *                                 only `$resolution` will be used.
+ */
+@mixin retina-media($resolution, $min-width: false) {
+  $media-query: '';
+
+  @if ($min-width) {
+    $media-query: ' and (min-width: #{$min-width})';
+  }
+
+  @media only screen#{$media-query} and (min-device-pixel-ratio: #{$resolution}),
+     only screen#{$media-query} and (min-resolution: #{72 * $resolution}dpi),
+     only screen#{$media-query} and (min-resolution: #{$resolution}dppx) {
+    @content;
+  }
+}
+
+@mixin smoothstep($property, $min, $bp-min, $max, $bp-max) {
+  #{ $property }: get-smoothstep($min, $bp-min, $max, $bp-max);
+  @include media($bp-max) {
+    #{ $property }: $max;
+  }
+}
+
+@function get-smoothstep($min, $bp-min, $max, $bp-max) {
+  $offset: ($max - $min) / 1px;
+  @return calc(
+    #{$min} + (100vw - #{$bp-min}) / #{($bp-max - $bp-min) / 1px} * #{$offset}
+  );
+}

@@ -1,0 +1,86 @@
+@import '../../../variables';
+
+.Input,
+.TextArea {
+  display: flex;
+  flex-direction: column;
+
+  label {
+    display: block;
+    background-color: rgba(#000, $opacity-active);
+    padding: 8px 12px;
+
+    span {
+      display: block;
+      @include label;
+    }
+  }
+
+  &.focus {
+    color: $color-primary-dark;
+
+    label {
+      border-color: $color-primary-dark;
+    }
+  }
+
+  &.error {
+    color: $color-error-dark;
+
+    label {
+      border-color: $color-error-dark;
+
+      span {
+        opacity: 1;
+      }
+    }
+  }
+
+  &.warning {
+    color: $color-warning-dark;
+
+    label {
+      border-color: $color-warning-dark;
+
+      span {
+        opacity: 1;
+      }
+    }
+  }
+
+  &.disabled {
+    opacity: $opacity-disabled;
+  }
+}
+
+.light .Input,
+.light .TextArea {
+  label {
+    background-color: transparent;
+    border-color: #000;
+  }
+
+  &.focus {
+    color: $color-primary-light;
+
+    label {
+      border-color: $color-primary-light;
+    }
+  }
+
+  &.error {
+    color: $color-error-light;
+
+    label {
+      border-color: $color-error-light;
+    }
+  }
+
+  &.warning {
+    color: $color-warning-light;
+
+    label {
+      border-color: $color-warning-light;
+    }
+  }
+}

@@ -1,0 +1,43 @@
+@import '../../variables';
+
+.Modal {
+  z-index: 10;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  opacity: 0;
+  visibility: hidden;
+  transform: translate3d(0, 10vh, 0);
+  transition: opacity $transition-fast linear,
+    visibility $transition-fast linear,
+    transform $transition-fast $easing-default;
+
+  &.open {
+    visibility: visible;
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+    transition: opacity $transition-fast linear,
+      transform $transition-fast $easing-default;
+  }
+
+  .dim {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    background-color: rgba(#000, $text-high-emphasis-amount);
+  }
+
+  .Panel {
+    position: relative;
+    width: 90vw;
+    max-height: 90vh;
+    overflow: auto;
+  }
+}

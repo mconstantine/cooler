@@ -1,0 +1,28 @@
+@import '../../../../variables';
+@import '../common';
+
+.TextArea {
+  label {
+    border: 1px solid #fff;
+    border-radius: $border-radius-medium;
+  }
+
+  textarea {
+    width: 100%;
+    background-color: transparent;
+    border: none;
+    resize: none;
+    color: inherit;
+    font-family: inherit;
+    font-size: inherit;
+    font-weight: inherit;
+    line-height: $line-height-body;
+    margin-top: 12px;
+    padding: 0;
+    outline: none;
+  }
+}
+
+.TextArea + .TextArea {
+  margin-top: 24px;
+}

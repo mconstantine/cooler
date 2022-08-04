@@ -1,0 +1,83 @@
+@import '../../variables';
+
+.Panel {
+  background-color: $color-grey-soft-dark;
+  box-sizing: border-box;
+  border-radius: $border-radius-large;
+  max-width: $max-width-text + 2 * $spacing-medium-desktop;
+  margin-left: auto;
+  margin-right: auto;
+
+  &.primary {
+    background-color: $color-primary-background-dark;
+  }
+
+  &.success {
+    background-color: $color-success-background-dark;
+  }
+
+  &.warning {
+    background-color: $color-warning-background-dark;
+  }
+
+  &.danger {
+    background-color: $color-error-background-dark;
+  }
+
+  > .Heading {
+    margin-bottom: 32px;
+
+    @include ss('padding-top', $spacing-medium-mobile, $spacing-medium-desktop);
+    @include ss(
+      'padding-left',
+      $spacing-medium-mobile,
+      $spacing-medium-desktop
+    );
+  }
+
+  &.framed {
+    @include ss('padding', $spacing-medium-mobile, $spacing-medium-desktop);
+
+    > .Heading {
+      padding-top: 0;
+      padding-left: 0;
+    }
+  }
+
+  > *:first-child {
+    margin-top: 0;
+  }
+
+  > *:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.light .Panel {
+  background-color: #fff;
+  border: 1px solid $color-grey-soft-light;
+
+  &.primary {
+    background-color: $color-primary-background-light;
+    border-color: $color-primary-light;
+  }
+
+  &.success {
+    background-color: $color-success-background-light;
+    border-color: $color-success-light;
+  }
+
+  &.warning {
+    background-color: $color-warning-background-light;
+    border-color: $color-warning-light;
+  }
+
+  &.danger {
+    background-color: $color-error-background-light;
+    border-color: $color-error-light;
+  }
+}
+
+.Panel + .Panel {
+  @include ss('margin-top', $spacing-medium-mobile, $spacing-medium-desktop);
+}
