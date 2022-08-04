@@ -1,4 +1,9 @@
 services:
+  app:
+    build: .
+    ports:
+      - "5000:5000"
+    command: java -jar cooler-server-assembly-0.1.0-SNAPSHOT.jar
   mongodb:
     image: mongo
     container_name: mongodb
