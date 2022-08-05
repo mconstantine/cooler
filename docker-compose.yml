@@ -1,10 +1,14 @@
 services:
   app:
-    build: .
+    build:
+      context: .
+      args:
+        APP_NAME: ${APP_NAME}
+        APP_VERSION: ${APP_VERSION}
     container_name: cooler_app
     ports:
       - "5000:5000"
-    command: java -jar cooler-server-assembly-0.1.0-SNAPSHOT.jar
+    command: java -jar ${APP_NAME}-assembly-${APP_VERSION}.jar
   mongodb:
     image: mongo
     container_name: cooler_db

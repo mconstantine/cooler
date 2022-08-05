@@ -1,5 +1,5 @@
-name := "cooler-server"
-version := "0.1.0-SNAPSHOT"
+name := "cooler"
+version := "1.0.0"
 scalaVersion := "3.1.2"
 
 val http4sVersion = "0.23.11"

@@ -1,0 +1,10 @@
+services:
+  mongodb:
+    image: mongo
+    container_name: cooler_db_dev
+    volumes:
+      - "/data/db"
+    ports:
+      - "27017:27017"
+    restart: unless-stopped
+    command: mongod
