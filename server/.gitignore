@@ -9,3 +9,4 @@ node_modules/
 data/*.db
 notes.md
 .DS_Store
+/src/main/resources/application.production.json
