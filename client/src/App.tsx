@@ -17,6 +17,7 @@ const Profile = lazy(() => import('./pages/Profile/Profile'))
 const Settings = lazy(() => import('./pages/Settings/Settings'))
 const Tasks = lazy(() => import('./pages/Tasks/Tasks'))
 const Session = lazy(() => import('./pages/Session/Session'))
+const NotFound = lazy(() => import('./pages/NotFound'))
 
 export function App() {
   return (
@@ -52,7 +53,8 @@ export function App() {
                             />
                           ),
                           Settings: () => <Settings />,
-                          CurrentSessions: () => <CurrentSessions />
+                          CurrentSessions: () => <CurrentSessions />,
+                          NotFound: () => <NotFound />
                         })
                       )}
                     </CurrentSessionsProvider>

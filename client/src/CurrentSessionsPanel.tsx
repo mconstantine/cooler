@@ -52,7 +52,8 @@ export function CurrentSessionsPanel() {
                   sessions.length === 1,
                   boolean.fold(constTrue, () => sessions[0]._id !== subject)
                 ),
-              CurrentSessions: constFalse
+              CurrentSessions: constFalse,
+              NotFound: constFalse
             })
           )
         )

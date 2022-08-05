@@ -78,6 +78,10 @@ interface CurrentSessions {
   readonly _tag: 'CurrentSessions'
 }
 
+interface NotFound {
+  readonly _tag: 'NotFound'
+}
+
 export type Location =
   | Home
   | Clients
@@ -86,11 +90,10 @@ export type Location =
   | Session
   | Settings
   | CurrentSessions
+  | NotFound
 
 export function homeRoute(): Home {
-  return {
-    _tag: 'Home'
-  }
+  return { _tag: 'Home' }
 }
 
 export function clientsRoute(subject: RouteSubject): Clients {
@@ -136,9 +139,11 @@ export function currentSessionsRoute(): CurrentSessions {
 }
 
 export function settingsRoute(): Settings {
-  return {
-    _tag: 'Settings'
-  }
+  return { _tag: 'Settings' }
+}
+
+function notFoundRoute(): NotFound {
+  return { _tag: 'NotFound' }
 }
 
 export function isHomeRoute(location: Location): boolean {
@@ -201,6 +206,8 @@ const sessionMatch = lit('projects')
   .then(type('subject', ObjectIdFromString))
   .then(end)
 
+const notFoundMatch = lit('not-found')
+
 const settingsMatch = lit('settings').then(end)
 const currentSessionsMatch = lit('current-sessions').then(end)
 
@@ -224,7 +231,7 @@ interface Props {
 }
 
 function parseCurrentPath() {
-  return parse(router, Route.parse(window.location.pathname), homeRoute())
+  return parse(router, Route.parse(window.location.pathname), notFoundRoute())
 }
 
 function formatLocation(location: Location): string {
@@ -238,7 +245,8 @@ function formatLocation(location: Location): string {
       Session: location => format(sessionMatch.formatter, location),
       Settings: location => format(settingsMatch.formatter, location),
       CurrentSessions: location =>
-        format(currentSessionsMatch.formatter, location)
+        format(currentSessionsMatch.formatter, location),
+      NotFound: location => format(notFoundMatch.formatter, location)
     })
   )
 }
