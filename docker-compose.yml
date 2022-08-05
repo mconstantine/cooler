@@ -8,7 +8,7 @@ services:
     container_name: cooler_app
     ports:
       - "5000:5000"
-    command: java -jar ${APP_NAME}-assembly-${APP_VERSION}.jar
+    command: java -jar /opt/app/${APP_NAME}-assembly-${APP_VERSION}.jar
   mongodb:
     image: mongo
     container_name: cooler_db

@@ -1,10 +1,10 @@
 # syntax=docker/dockerfile:1
-FROM ubuntu
+FROM eclipse-temurin:latest
 ARG APP_NAME
 ARG APP_VERSION
-RUN apt update
-RUN apt install -y default-jre
+ARG SCALA_VERSION
+RUN mkdir -p /opt/app
 RUN mkdir -p src/main/resources
-COPY ./server/target/scala-3.1.2/${APP_NAME}-assembly-${APP_VERSION}.jar .
-COPY ./server/src/main/resources/application.production.json ./src/main/resources/application.json
-COPY ./client/build ./client
+COPY ./${APP_NAME}-assembly-${APP_VERSION}.jar /opt/app
+COPY ./application.production.json src/main/resources/application.json
+COPY ./client ./client

@@ -36,7 +36,6 @@ Create a file at `.env`. Set the environment variables for production:
 ```
 MONGO_USERNAME=
 MONGO_PASSWORD=
-GIT_URL=
 APP_NAME=
 APP_VERSION=
 ```
