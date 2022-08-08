@@ -27,20 +27,26 @@ set -a
 source .env
 set +a
 
+echo "[$APP_NAME]: Testing server..."
+
+cd server
+sbt test
+cd ..
+
 echo "[$APP_NAME]: Building client..."
 
 cd client
 yarn
 yarn build
+cd ..
 
 echo "[$APP_NAME]: Building server..."
 
-cd ../server
+cd server
 sbt assembly
+cd ..
 
 echo "[$APP_NAME]: Copying files..."
-
-cd ..
 
 rm -rf build
 mkdir build
