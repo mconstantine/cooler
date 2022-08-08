@@ -98,13 +98,15 @@ class StatsTest extends IOSuite {
             client._id,
             name = "Stats test project 5",
             cashData =
-              Some(ProjectCashData(BsonDateTime(now - 3600000 * 100), 100))
+              Some(ProjectCashData(BsonDateTime(now - 3600000 * 100), 100)),
+            expectedBudget = Some(100)
           ),
           makeTestProject(
             client._id,
             name = "Stats test project 6",
             cashData =
-              Some(ProjectCashData(BsonDateTime(now + 3600000 * 5), 100))
+              Some(ProjectCashData(BsonDateTime(now + 3600000 * 5), 100)),
+            expectedBudget = Some(100)
           )
         )
           .map(Projects.create(_).orFail)
