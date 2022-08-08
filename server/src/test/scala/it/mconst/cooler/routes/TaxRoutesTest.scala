@@ -12,7 +12,7 @@ import io.circe.generic.auto.*
 import it.mconst.cooler.models.*
 import it.mconst.cooler.models.tax.Tax
 import it.mconst.cooler.models.tax.Taxes
-import it.mconst.cooler.models.tax.toBigDecimal
+import it.mconst.cooler.models.tax.toNumber
 import it.mconst.cooler.models.user.User
 import it.mconst.cooler.models.user.Users
 import it.mconst.cooler.utils.given
@@ -132,7 +132,7 @@ class TaxRoutesTest extends IOSuite {
           ).sign(user)
         )
       _ = assertEquals(result.label.toString, updateData.label)
-      _ = assertEquals(result.value.toBigDecimal, updateData.value)
+      _ = assertEquals(result.value.toNumber, updateData.value)
     yield ()
   }
 

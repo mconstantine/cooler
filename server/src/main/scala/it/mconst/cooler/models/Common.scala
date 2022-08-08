@@ -151,24 +151,24 @@ object PositiveFloat extends Validator[Float, PositiveFloat] {
   }
 }
 
-opaque type NonNegativeFloat = Float
+opaque type NonNegativeNumber = BigDecimal
 
-object NonNegativeFloat extends Validator[Float, NonNegativeFloat] {
-  override def name = "NonNegativeFloat"
+object NonNegativeNumber extends Validator[BigDecimal, NonNegativeNumber] {
+  override def name = "NonNegativeNumber"
 
-  override def decode(n: Float): Option[NonNegativeFloat] =
+  override def decode(n: BigDecimal): Option[NonNegativeNumber] =
     Option.when(n >= 0)(n)
 
-  override def validate(fieldName: String, value: Float)(using
+  override def validate(fieldName: String, value: BigDecimal)(using
       Lang
-  ): Validation[NonNegativeFloat] =
+  ): Validation[NonNegativeNumber] =
     validate(
       value,
       ValidationError(fieldName, __.ErrorDecodeInvalidNonNegative)
     )
 
-  extension (pf: NonNegativeFloat) {
-    def toFloat: Float = pf
+  extension (pf: NonNegativeNumber) {
+    def toNumber: BigDecimal = pf
   }
 }
 

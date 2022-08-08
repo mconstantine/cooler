@@ -146,7 +146,7 @@ final case class TaskWithStats(
     updatedAt: BsonDateTime,
     client: ClientLabel,
     project: ProjectLabel,
-    actualWorkingHours: NonNegativeFloat
+    actualWorkingHours: NonNegativeNumber
 ) extends Task(
       _id: ObjectId,
       name: NonEmptyString,
@@ -562,8 +562,8 @@ object Tasks {
               )
             ).first.map(
               _.flatMap(task =>
-                NonNegativeFloat
-                  .decode(task.actualWorkingHours.toFloat / 3600f)
+                NonNegativeNumber
+                  .decode(task.actualWorkingHours.toNumber / 3600f)
                   .map(actualWorkingHours =>
                     TaskWithStats(
                       task._id,

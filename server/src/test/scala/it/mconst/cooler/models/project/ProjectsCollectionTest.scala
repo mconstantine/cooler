@@ -271,7 +271,7 @@ class ProjectsCollectionTest extends IOSuite {
       _ = assertEquals(updated.name.toString, update.name)
       _ = assertEquals(updated.description.map(_.toString), update.description)
       _ = assertEquals(
-        updated.expectedBudget.map(_.toFloat),
+        updated.expectedBudget.map(_.toNumber),
         update.expectedBudget
       )
       _ = assertEquals(updated.cashData, update.cashData)
@@ -296,12 +296,12 @@ class ProjectsCollectionTest extends IOSuite {
         client._id.toHexString,
         "Updated name",
         none[String],
-        none[Float],
+        none[BigDecimal],
         none[ProjectCashData]
       )
       updated <- Projects.update(project._id, update).orFail
       _ = assertEquals(updated.description.map(_.toString), none[String])
-      _ = assertEquals(updated.expectedBudget.map(_.toFloat), none[Float])
+      _ = assertEquals(updated.expectedBudget.map(_.toNumber), none[BigDecimal])
       _ = assertEquals(updated.cashData, none[ProjectCashData])
     yield ()
   }

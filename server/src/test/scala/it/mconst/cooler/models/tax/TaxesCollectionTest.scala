@@ -55,7 +55,7 @@ class TaxesCollectionTest extends IOSuite {
     for
       tax <- Taxes.create(data).orFail
       _ = assertEquals(tax.label.toString, data.label)
-      _ = assertEquals(tax.value.toBigDecimal, data.value)
+      _ = assertEquals(tax.value.toNumber, data.value)
       _ = assertEquals(tax.user, adminFixture()._id)
     yield ()
   }
@@ -159,7 +159,7 @@ class TaxesCollectionTest extends IOSuite {
       tax <- Taxes.create(data).orFail
       updated <- Taxes.update(tax._id, updateData).orFail
       _ = assertEquals(updated.label.toString, updateData.label)
-      _ = assertEquals(updated.value.toBigDecimal, updateData.value)
+      _ = assertEquals(updated.value.toNumber, updateData.value)
     yield ()
   }
 

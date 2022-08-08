@@ -204,7 +204,7 @@ object TestUtils {
       client: ObjectId,
       name: String = "Test project",
       description: Option[String] = none[String],
-      expectedBudget: Option[Float] = none[Float],
+      expectedBudget: Option[BigDecimal] = none[BigDecimal],
       cashData: Option[ProjectCashData] = none[ProjectCashData]
   ) = Project.InputData(
     client.toHexString,

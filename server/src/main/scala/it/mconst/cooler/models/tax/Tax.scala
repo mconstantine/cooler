@@ -43,7 +43,7 @@ object Percentage extends Validator[BigDecimal, Percentage] {
 }
 
 extension (p: Percentage) {
-  def toBigDecimal: BigDecimal = p
+  def toNumber: BigDecimal = p
 }
 
 final case class Tax(

@@ -74,20 +74,20 @@ final case class User(
 ) extends DbDocument
 
 final case class UserStats(
-    expectedWorkingHours: NonNegativeFloat,
-    actualWorkingHours: NonNegativeFloat,
-    budget: NonNegativeFloat,
-    balance: NonNegativeFloat
+    expectedWorkingHours: NonNegativeNumber,
+    actualWorkingHours: NonNegativeNumber,
+    budget: NonNegativeNumber,
+    balance: NonNegativeNumber
 )
 
 object UserStats {
   given EntityEncoder[IO, UserStats] = jsonEncoderOf[IO, UserStats]
 
   def empty = UserStats(
-    NonNegativeFloat.unsafe(0f),
-    NonNegativeFloat.unsafe(0f),
-    NonNegativeFloat.unsafe(0f),
-    NonNegativeFloat.unsafe(0f)
+    NonNegativeNumber.unsafe(0f),
+    NonNegativeNumber.unsafe(0f),
+    NonNegativeNumber.unsafe(0f),
+    NonNegativeNumber.unsafe(0f)
   )
 }
 
@@ -357,10 +357,10 @@ object Users {
           .map(
             _.flatMap(stats =>
               (
-                NonNegativeFloat.decode(
-                  stats.actualWorkingHours.toFloat / 3600f
+                NonNegativeNumber.decode(
+                  stats.actualWorkingHours.toNumber / 3600f
                 ),
-                NonNegativeFloat.decode(stats.balance.toFloat / 3600f)
+                NonNegativeNumber.decode(stats.balance.toNumber / 3600f)
               )
                 .mapN((actualWorkingHours, balance) =>
                   UserStats(

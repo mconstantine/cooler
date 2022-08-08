@@ -208,10 +208,10 @@ class StatsTest extends IOSuite {
         .getStats(BsonDateTime(now - 3600000 * 50), none[BsonDateTime])
         .assertEquals(
           UserStats(
-            NonNegativeFloat.unsafe(30f),
-            NonNegativeFloat.unsafe(22f),
-            NonNegativeFloat.unsafe(300f),
-            NonNegativeFloat.unsafe(220f)
+            NonNegativeNumber.unsafe(30f),
+            NonNegativeNumber.unsafe(22f),
+            NonNegativeNumber.unsafe(300f),
+            NonNegativeNumber.unsafe(220f)
           )
         )
     }
@@ -221,7 +221,7 @@ class StatsTest extends IOSuite {
     given User = adminFixture()
     Projects
       .getCashedBalance(BsonDateTime(now - 3600000 * 100), none[BsonDateTime])
-      .assertEquals(ProjectCashedBalance(NonNegativeFloat.unsafe(0f)))
+      .assertEquals(ProjectCashedBalance(NonNegativeNumber.unsafe(0f)))
   }
 
   test("should get the balance of the projects of a user (with data)") {
@@ -230,7 +230,7 @@ class StatsTest extends IOSuite {
 
       Projects
         .getCashedBalance(BsonDateTime(now - 3600000 * 50), none[BsonDateTime])
-        .assertEquals(ProjectCashedBalance(NonNegativeFloat.unsafe(200f)))
+        .assertEquals(ProjectCashedBalance(NonNegativeNumber.unsafe(200f)))
     }
   }
 
@@ -248,10 +248,10 @@ class StatsTest extends IOSuite {
           )
           .orFail
         result <- Projects.findById(project._id).orFail
-        _ = assertEquals(result.expectedWorkingHours.toFloat, 0f)
-        _ = assertEquals(result.actualWorkingHours.toFloat, 0f)
-        _ = assertEquals(result.budget.toFloat, 0f)
-        _ = assertEquals(result.balance.toFloat, 0f)
+        _ = assertEquals(result.expectedWorkingHours.toNumber, BigDecimal(0f))
+        _ = assertEquals(result.actualWorkingHours.toNumber, BigDecimal(0f))
+        _ = assertEquals(result.budget.toNumber, BigDecimal(0f))
+        _ = assertEquals(result.balance.toNumber, BigDecimal(0f))
       yield ()
     }
   }
@@ -262,10 +262,10 @@ class StatsTest extends IOSuite {
 
       for
         result <- Projects.findById(data.projects(0)._id).orFail
-        _ = assertEquals(result.expectedWorkingHours.toFloat, 20f)
-        _ = assertEquals(result.actualWorkingHours.toFloat, 17f)
-        _ = assertEquals(result.budget.toFloat, 200f)
-        _ = assertEquals(result.balance.toFloat, 170f)
+        _ = assertEquals(result.expectedWorkingHours.toNumber, BigDecimal(20))
+        _ = assertEquals(result.actualWorkingHours.toNumber, BigDecimal(17))
+        _ = assertEquals(result.budget.toNumber, BigDecimal(200))
+        _ = assertEquals(result.balance.toNumber, BigDecimal(170))
       yield ()
     }
   }
@@ -279,8 +279,8 @@ class StatsTest extends IOSuite {
         _ <- Tasks
           .findById(task._id)
           .orFail
-          .map(_.actualWorkingHours.toFloat)
-          .assertEquals(0f)
+          .map(_.actualWorkingHours.toNumber)
+          .assertEquals(BigDecimal(0))
         _ <- Tasks.delete(task._id).orFail
       yield ()
     }
@@ -293,8 +293,8 @@ class StatsTest extends IOSuite {
       Tasks
         .findById(data.tasks(1)._id)
         .orFail
-        .map(_.actualWorkingHours.toFloat)
-        .assertEquals(7f)
+        .map(_.actualWorkingHours.toNumber)
+        .assertEquals(BigDecimal(7))
     }
   }
 }

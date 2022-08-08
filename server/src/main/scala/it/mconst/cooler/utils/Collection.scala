@@ -413,6 +413,18 @@ final case class Collection[F[
   )(using ClassTag[C], MongoCodecProvider[C]): F[R] =
     resource.use(db => op(CollectionResource(db, _.withAddedCodec[C])))
 
+  def useWithCodec[C1, C2, R](
+      op: CollectionResource[F, Input, Doc] => F[R]
+  )(using
+      ClassTag[C1],
+      ClassTag[C2],
+      MongoCodecProvider[C1],
+      MongoCodecProvider[C2]
+  ): F[R] =
+    resource.use(db =>
+      op(CollectionResource(db, _.withAddedCodec[C1].withAddedCodec[C2]))
+    )
+
   def useWithCodec[C, R](
       op: CollectionResource[F, Input, Doc] => OptionT[F, R]
   )(using ClassTag[C], MongoCodecProvider[C]): OptionT[F, R] =
@@ -420,10 +432,42 @@ final case class Collection[F[
       resource.use(db => op(CollectionResource(db, _.withAddedCodec[C])).value)
     )
 
+  def useWithCodec[C1, C2, R](
+      op: CollectionResource[F, Input, Doc] => OptionT[F, R]
+  )(using
+      ClassTag[C1],
+      ClassTag[C2],
+      MongoCodecProvider[C1],
+      MongoCodecProvider[C2]
+  ): OptionT[F, R] =
+    OptionT(
+      resource.use(db =>
+        op(
+          CollectionResource(db, _.withAddedCodec[C1].withAddedCodec[C2])
+        ).value
+      )
+    )
+
   def useWithCodec[C, E, R](
       op: CollectionResource[F, Input, Doc] => EitherT[F, E, R]
   )(using ClassTag[C], MongoCodecProvider[C]): EitherT[F, E, R] =
     EitherT(
       resource.use(db => op(CollectionResource(db, _.withAddedCodec[C])).value)
+    )
+
+  def useWithCodec[C1, C2, E, R](
+      op: CollectionResource[F, Input, Doc] => EitherT[F, E, R]
+  )(using
+      ClassTag[C1],
+      ClassTag[C2],
+      MongoCodecProvider[C1],
+      MongoCodecProvider[C2]
+  ): EitherT[F, E, R] =
+    EitherT(
+      resource.use(db =>
+        op(
+          CollectionResource(db, _.withAddedCodec[C1].withAddedCodec[C2])
+        ).value
+      )
     )
 }

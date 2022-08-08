@@ -45,20 +45,20 @@ import org.http4s.EntityEncoder
 import org.http4s.Status
 
 final case class ProjectCashData(at: BsonDateTime, amount: BigDecimal)
-final case class ProjectCashedBalance(balance: NonNegativeFloat)
+final case class ProjectCashedBalance(balance: NonNegativeNumber)
 
 object ProjectCashedBalance {
   given EntityEncoder[IO, ProjectCashedBalance] =
     jsonEncoderOf[IO, ProjectCashedBalance]
 
-  def empty = ProjectCashedBalance(NonNegativeFloat.unsafe(0f))
+  def empty = ProjectCashedBalance(NonNegativeNumber.unsafe(0f))
 }
 
 sealed abstract trait Project(
     _id: ObjectId,
     name: NonEmptyString,
     description: Option[NonEmptyString],
-    expectedBudget: Option[NonNegativeFloat],
+    expectedBudget: Option[NonNegativeNumber],
     cashData: Option[ProjectCashData],
     createdAt: BsonDateTime,
     updatedAt: BsonDateTime
@@ -76,7 +76,7 @@ final case class DbProject(
     val user: ObjectId,
     name: NonEmptyString,
     description: Option[NonEmptyString],
-    expectedBudget: Option[NonNegativeFloat],
+    expectedBudget: Option[NonNegativeNumber],
     cashData: Option[ProjectCashData],
     createdAt: BsonDateTime,
     updatedAt: BsonDateTime
@@ -101,7 +101,7 @@ final case class ProjectWithClientLabel(
     _id: ObjectId,
     name: NonEmptyString,
     description: Option[NonEmptyString],
-    expectedBudget: Option[NonNegativeFloat],
+    expectedBudget: Option[NonNegativeNumber],
     cashData: Option[ProjectCashData],
     createdAt: BsonDateTime,
     updatedAt: BsonDateTime,
@@ -128,15 +128,15 @@ final case class ProjectWithStats(
     _id: ObjectId,
     name: NonEmptyString,
     description: Option[NonEmptyString],
-    expectedBudget: Option[NonNegativeFloat],
+    expectedBudget: Option[NonNegativeNumber],
     cashData: Option[ProjectCashData],
     createdAt: BsonDateTime,
     updatedAt: BsonDateTime,
     client: ClientLabel,
-    expectedWorkingHours: NonNegativeFloat,
-    actualWorkingHours: NonNegativeFloat,
-    budget: NonNegativeFloat,
-    balance: NonNegativeFloat
+    expectedWorkingHours: NonNegativeNumber,
+    actualWorkingHours: NonNegativeNumber,
+    budget: NonNegativeNumber,
+    balance: NonNegativeNumber
 ) extends Project(
       _id,
       name,
@@ -157,7 +157,7 @@ object Project {
       client: String,
       name: String,
       description: Option[String],
-      expectedBudget: Option[Float],
+      expectedBudget: Option[BigDecimal],
       cashData: Option[ProjectCashData]
   )
 
@@ -168,7 +168,7 @@ object Project {
       client: ObjectId,
       name: NonEmptyString,
       description: Option[NonEmptyString],
-      expectedBudget: Option[NonNegativeFloat],
+      expectedBudget: Option[NonNegativeNumber],
       cashData: Option[ProjectCashData]
   )
 
@@ -178,7 +178,7 @@ object Project {
     data.client.validateObjectId("client"),
     NonEmptyString.validate("name", data.name),
     NonEmptyString.validateOptional("description", data.description),
-    NonNegativeFloat.validateOptional("expectedBudget", data.expectedBudget)
+    NonNegativeNumber.validateOptional("expectedBudget", data.expectedBudget)
   ).mapN((client, name, description, expectedBudget) =>
     ValidInputData(client, name, description, expectedBudget, data.cashData)
   )
@@ -375,10 +375,10 @@ object Projects {
           ).first.map(
             _.flatMap(project =>
               (
-                NonNegativeFloat.decode(
-                  project.actualWorkingHours.toFloat / 3600f
+                NonNegativeNumber.decode(
+                  project.actualWorkingHours.toNumber / 3600f
                 ),
-                NonNegativeFloat.decode(project.balance.toFloat / 3600f)
+                NonNegativeNumber.decode(project.balance.toNumber / 3600f)
               )
                 .mapN((actualWorkingHours, balance) =>
                   ProjectWithStats(
@@ -454,7 +454,7 @@ object Projects {
           EitherT.rightT[IO, Error](project.client._id)
         else Clients.findById(data.client).map(_._id)
       _ <- collection
-        .useWithCodec[ProjectCashData, Error, UpdateResult](
+        .useWithCodec[ProjectCashData, BigDecimal, Error, UpdateResult](
           _.update(
             project._id,
             Collection.Update
