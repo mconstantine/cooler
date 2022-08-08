@@ -70,8 +70,8 @@ class StatsTest extends IOSuite {
       projects <- {
         given User = adminFixture()
         List(
-          // Two cashed projects, one not cashed, two cashed out of the time range (one in the past, one
-          // in the future)
+          // Two cashed projects, two not cashed, two cashed out of the time range (one in the past, one
+          // in the future). Project 3 has no tasks but it has an expected budget.
           makeTestProject(
             client._id,
             name = "Stats test project 1",
@@ -87,17 +87,22 @@ class StatsTest extends IOSuite {
           makeTestProject(
             client._id,
             name = "Stats test project 3",
-            cashData = none[ProjectCashData]
+            expectedBudget = Some(50)
           ),
           makeTestProject(
             client._id,
             name = "Stats test project 4",
+            cashData = none[ProjectCashData]
+          ),
+          makeTestProject(
+            client._id,
+            name = "Stats test project 5",
             cashData =
               Some(ProjectCashData(BsonDateTime(now - 3600000 * 100), 100))
           ),
           makeTestProject(
             client._id,
-            name = "Stats test project 5",
+            name = "Stats test project 6",
             cashData =
               Some(ProjectCashData(BsonDateTime(now + 3600000 * 5), 100))
           )
@@ -210,7 +215,7 @@ class StatsTest extends IOSuite {
           UserStats(
             NonNegativeNumber.unsafe(30f),
             NonNegativeNumber.unsafe(22f),
-            NonNegativeNumber.unsafe(300f),
+            NonNegativeNumber.unsafe(350f),
             NonNegativeNumber.unsafe(220f)
           )
         )
@@ -266,6 +271,17 @@ class StatsTest extends IOSuite {
         _ = assertEquals(result.actualWorkingHours.toNumber, BigDecimal(17))
         _ = assertEquals(result.budget.toNumber, BigDecimal(200))
         _ = assertEquals(result.balance.toNumber, BigDecimal(170))
+      yield ()
+    }
+  }
+
+  test("should use project expected budget if no tasks are available") {
+    testData.use { data =>
+      given User = adminFixture()
+
+      for
+        result <- Projects.findById(data.projects(2)._id).orFail
+        _ = assertEquals(result.budget.toNumber, BigDecimal(50))
       yield ()
     }
   }

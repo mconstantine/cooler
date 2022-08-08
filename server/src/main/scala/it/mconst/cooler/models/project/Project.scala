@@ -367,7 +367,20 @@ object Projects {
                   "actualWorkingHours",
                   Document("$sum" -> "$tasks.actualWorkingHours")
                 ),
-                Field("budget", Document("$sum" -> "$tasks.budget")),
+                Field(
+                  "budget",
+                  Document(
+                    "$cond" -> Document(
+                      "if" -> Document(
+                        "$gt" -> Seq(Document("$size" -> "$tasks"), 0)
+                      ),
+                      "then" -> Document("$sum" -> "$tasks.budget"),
+                      "else" -> Document(
+                        "$ifNull" -> Seq("$expectedBudget", 0)
+                      )
+                    )
+                  )
+                ),
                 Field("balance", Document("$sum" -> "$tasks.balance"))
               ),
               Aggregates.project(Document("tasks" -> 0))

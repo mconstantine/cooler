@@ -244,7 +244,10 @@ object Users {
             Aggregates.project(
               Document(
                 "_id" -> 1,
-                "project" -> "$projects._id"
+                "project" -> "$projects._id",
+                "expectedBudget" -> Document(
+                  "$ifNull" -> Seq("$projects.expectedBudget", 0)
+                )
               )
             ),
             Document(
@@ -334,45 +337,52 @@ object Users {
                 )
               )
             ),
-            Aggregates.unwind(
-              "$tasks",
-              UnwindOptions().preserveNullAndEmptyArrays(false)
+            Aggregates.project(
+              Document(
+                "_id" -> 1,
+                "expectedWorkingHours" ->
+                  Document("$sum" -> "$tasks.expectedWorkingHours"),
+                "actualWorkingHours" ->
+                  Document("$sum" -> "$tasks.actualWorkingHours"),
+                "budget" ->
+                  Document(
+                    "$cond" -> Document(
+                      "if" -> Document(
+                        "$gt" -> Seq(Document("$size" -> "$tasks"), 0)
+                      ),
+                      "then" -> Document("$sum" -> "$tasks.budget"),
+                      "else" -> "$expectedBudget"
+                    )
+                  ),
+                "balance" -> Document("$sum" -> "$tasks.balance")
+              )
             ),
             Aggregates.group(
               "$_id",
               BsonField(
                 "expectedWorkingHours",
-                Document("$sum" -> "$tasks.expectedWorkingHours")
+                Document("$sum" -> "$expectedWorkingHours")
               ),
+              BsonField("budget", Document("$sum" -> "$budget")),
               BsonField(
                 "actualWorkingHours",
-                Document("$sum" -> "$tasks.actualWorkingHours")
+                Document("$sum" -> "$actualWorkingHours")
               ),
-              BsonField("budget", Document("$sum" -> "$tasks.budget")),
-              BsonField("balance", Document("$sum" -> "$tasks.balance"))
+              BsonField("balance", Document("$sum" -> "$balance"))
             ),
-            Aggregates.project(Document("_id" -> 0))
-          )
-        ).first
-          .map(
-            _.flatMap(stats =>
-              (
-                NonNegativeNumber.decode(
-                  stats.actualWorkingHours.toNumber / 3600f
+            Aggregates.project(
+              Document(
+                "_id" -> 0,
+                "expectedWorkingHours" -> 1,
+                "budget" -> 1,
+                "actualWorkingHours" -> Document(
+                  "$divide" -> Seq("$actualWorkingHours", 3600)
                 ),
-                NonNegativeNumber.decode(stats.balance.toNumber / 3600f)
+                "balance" -> Document("$divide" -> Seq("$balance", 3600))
               )
-                .mapN((actualWorkingHours, balance) =>
-                  UserStats(
-                    stats.expectedWorkingHours,
-                    actualWorkingHours,
-                    stats.budget,
-                    balance
-                  )
-                )
             )
           )
-          .map(_.getOrElse(UserStats.empty))
+        ).first.map(_.getOrElse(UserStats.empty))
       )
     )
 
