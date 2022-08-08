@@ -116,6 +116,8 @@ export const fakeProject: ProjectWithStats = {
     at: new Date(2021, 0, 1, 15, 30),
     amount: unsafeNonNegativeNumber(1500)
   }),
+  startTime: new Date(2020, 8, 20, 9, 30),
+  endTime: new Date(2021, 0, 1, 15, 45),
   createdAt: new Date(2020, 8, 20, 9, 30),
   updatedAt: new Date(2021, 0, 1, 15, 45),
   expectedWorkingHours: unsafeNonNegativeNumber(100),

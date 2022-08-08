@@ -131,15 +131,15 @@ export function ProjectData(props: Props) {
             })}
           />
           <ReadOnlyInput
-            name="createdAt"
-            label={a18n`Created at`}
-            value={formatDateTime(props.project.createdAt)}
+            name="startTime"
+            label={a18n`Starting date`}
+            value={formatDate(props.project.startTime)}
             action={option.none}
           />
           <ReadOnlyInput
-            name="updatedAt"
-            label={a18n`Last updated at`}
-            value={formatDateTime(props.project.updatedAt)}
+            name="endTime"
+            label={a18n`Ending date`}
+            value={formatDate(props.project.endTime)}
             action={option.none}
           />
           <ReadOnlyInput
@@ -150,6 +150,18 @@ export function ProjectData(props: Props) {
               option.map(expectedBudget => formatMoneyAmount(expectedBudget)),
               option.getOrElse(() => unsafeLocalizedString(''))
             )}
+            action={option.none}
+          />
+          <ReadOnlyInput
+            name="createdAt"
+            label={a18n`Created at`}
+            value={formatDateTime(props.project.createdAt)}
+            action={option.none}
+          />
+          <ReadOnlyInput
+            name="updatedAt"
+            label={a18n`Last updated at`}
+            value={formatDateTime(props.project.updatedAt)}
             action={option.none}
           />
           {pipe(

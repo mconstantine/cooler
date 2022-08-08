@@ -71,7 +71,9 @@ export function ProjectForm(props: Props) {
             project.cashData,
             option.map(({ amount }) => amount.toString(10)),
             option.getOrElse(() => '')
-          )
+          ),
+          startTime: project.startTime,
+          endTime: project.endTime
         })),
         option.getOrElse(() => ({
           name: '',
@@ -80,7 +82,9 @@ export function ProjectForm(props: Props) {
           expectedBudget: '',
           cashed: false,
           cashedAt: new Date(),
-          cashedBalance: ''
+          cashedBalance: '',
+          startTime: new Date(),
+          endTime: new Date()
         }))
       ),
       validators: ({ cashed }) => ({
@@ -125,9 +129,17 @@ export function ProjectForm(props: Props) {
             description: input.description,
             client: input.client,
             expectedBudget: input.expectedBudget,
+            startTime: input.startTime,
+            endTime: input.endTime,
             cashData
           }),
-          taskEither.right
+          taskEither.right,
+          taskEither.chain(
+            taskEither.fromPredicate(
+              input => input.endTime.getTime() > input.startTime.getTime(),
+              () => a18n``
+            )
+          )
         )
       }
     },
@@ -159,12 +171,25 @@ export function ProjectForm(props: Props) {
     >
       <Input label={a18n`Name`} {...fieldProps('name')} />
       <TextArea label={a18n`Description`} {...fieldProps('description')} />
+
       <AsyncSelect
         label={a18n`Client`}
         {...fieldProps('client')}
         onQueryChange={props.findClients}
         emptyPlaceholder={a18n`No clients found`}
         codec={ObjectIdFromString}
+      />
+
+      <DateTimePicker
+        label={a18n`Starting date`}
+        mode="date"
+        {...fieldProps('startTime')}
+      />
+
+      <DateTimePicker
+        label={a18n`Ending date`}
+        mode="date"
+        {...fieldProps('endTime')}
       />
 
       <Input label={a18n`Expected budget`} {...fieldProps('expectedBudget')} />
