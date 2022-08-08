@@ -14,7 +14,8 @@ Everything should be in the file at `client/.env.development`.
 
 ### Docker
 
-Run `docker compose -f docker-compose.dev.yml up -d`.
+- Run `sudo chmod +x ./*.sh`
+- Run `docker compose -f docker-compose.dev.yml up -d`
 
 ### Server
 
@@ -42,4 +43,7 @@ APP_VERSION=
 
 > You can leave `APP_NAME` and `APP_VERSION` empty (i.e.: with nothing following the equal sign). The build script will take care of it.
 
-Run `./build.sh`.
+- Run `./build.sh`
+- Move the `build` directory into the server and `cd` inside it
+- Run `./install.sh`
+- Delete the `build` directory from the server to free unused space

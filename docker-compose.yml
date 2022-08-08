@@ -5,13 +5,13 @@ services:
       args:
         APP_NAME: ${APP_NAME}
         APP_VERSION: ${APP_VERSION}
-    container_name: cooler_app
+    container_name: ${APP_NAME}_app
     ports:
       - "5000:5000"
     command: java -jar /opt/app/${APP_NAME}-assembly-${APP_VERSION}.jar
   mongodb:
     image: mongo
-    container_name: cooler_db
+    container_name: ${APP_NAME}_db
     environment:
       - MONGO_INITDB_ROOT_USERNAME=${MONGO_USERNAME}
       - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD}

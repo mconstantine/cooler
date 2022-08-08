@@ -54,4 +54,6 @@ cp server/target/scala-$scala_version/$APP_NAME-assembly-$APP_VERSION.jar build
 cp Dockerfile build
 cp docker-compose.yml build
 
-echo "[$APP_NAME]: Build is ready: move the content of the build folder into the server and run \`docker compose up -d\`"
+cp install.sh build
+
+echo "[$APP_NAME]: Build is ready: move the content of the build folder into the server and run \`install.sh\`"
