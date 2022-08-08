@@ -60,6 +60,8 @@ sealed abstract trait Project(
     description: Option[NonEmptyString],
     expectedBudget: Option[NonNegativeNumber],
     cashData: Option[ProjectCashData],
+    startTime: BsonDateTime,
+    endTime: BsonDateTime,
     createdAt: BsonDateTime,
     updatedAt: BsonDateTime
 ) extends DbDocument {}
@@ -78,6 +80,8 @@ final case class DbProject(
     description: Option[NonEmptyString],
     expectedBudget: Option[NonNegativeNumber],
     cashData: Option[ProjectCashData],
+    startTime: BsonDateTime,
+    endTime: BsonDateTime,
     createdAt: BsonDateTime,
     updatedAt: BsonDateTime
 ) extends Project(
@@ -86,6 +90,8 @@ final case class DbProject(
       description,
       expectedBudget,
       cashData,
+      startTime,
+      endTime,
       createdAt,
       updatedAt
     )
@@ -103,6 +109,8 @@ final case class ProjectWithClientLabel(
     description: Option[NonEmptyString],
     expectedBudget: Option[NonNegativeNumber],
     cashData: Option[ProjectCashData],
+    startTime: BsonDateTime,
+    endTime: BsonDateTime,
     createdAt: BsonDateTime,
     updatedAt: BsonDateTime,
     client: ClientLabel
@@ -112,6 +120,8 @@ final case class ProjectWithClientLabel(
       description,
       expectedBudget,
       cashData,
+      startTime,
+      endTime,
       createdAt,
       updatedAt
     )
@@ -130,6 +140,8 @@ final case class ProjectWithStats(
     description: Option[NonEmptyString],
     expectedBudget: Option[NonNegativeNumber],
     cashData: Option[ProjectCashData],
+    startTime: BsonDateTime,
+    endTime: BsonDateTime,
     createdAt: BsonDateTime,
     updatedAt: BsonDateTime,
     client: ClientLabel,
@@ -143,6 +155,8 @@ final case class ProjectWithStats(
       description,
       expectedBudget,
       cashData,
+      startTime,
+      endTime,
       createdAt,
       updatedAt
     )
@@ -158,7 +172,9 @@ object Project {
       name: String,
       description: Option[String],
       expectedBudget: Option[BigDecimal],
-      cashData: Option[ProjectCashData]
+      cashData: Option[ProjectCashData],
+      startTime: String,
+      endTime: String
   )
 
   given EntityDecoder[IO, InputData] = jsonOf[IO, InputData]
@@ -169,7 +185,9 @@ object Project {
       name: NonEmptyString,
       description: Option[NonEmptyString],
       expectedBudget: Option[NonNegativeNumber],
-      cashData: Option[ProjectCashData]
+      cashData: Option[ProjectCashData],
+      startTime: BsonDateTime,
+      endTime: BsonDateTime
   )
 
   def validateInputData(data: InputData)(using
@@ -178,9 +196,19 @@ object Project {
     data.client.validateObjectId("client"),
     NonEmptyString.validate("name", data.name),
     NonEmptyString.validateOptional("description", data.description),
-    NonNegativeNumber.validateOptional("expectedBudget", data.expectedBudget)
-  ).mapN((client, name, description, expectedBudget) =>
-    ValidInputData(client, name, description, expectedBudget, data.cashData)
+    NonNegativeNumber.validateOptional("expectedBudget", data.expectedBudget),
+    data.startTime.validateBsonDateTime("startTime"),
+    data.endTime.validateBsonDateTime("endTime")
+  ).mapN((client, name, description, expectedBudget, startTime, endTime) =>
+    ValidInputData(
+      client,
+      name,
+      description,
+      expectedBudget,
+      data.cashData,
+      startTime,
+      endTime
+    )
   )
 
   def fromInputData(data: InputData)(using customer: User)(using
@@ -194,6 +222,8 @@ object Project {
       data.description,
       data.expectedBudget,
       data.cashData,
+      data.startTime,
+      data.endTime,
       BsonDateTime(System.currentTimeMillis),
       BsonDateTime(System.currentTimeMillis)
     )
@@ -402,6 +432,8 @@ object Projects {
                     project.cashData,
                     project.createdAt,
                     project.updatedAt,
+                    project.startTime,
+                    project.endTime,
                     project.client,
                     project.expectedWorkingHours,
                     actualWorkingHours,

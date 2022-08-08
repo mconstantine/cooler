@@ -210,13 +210,21 @@ object TestUtils {
       name: String = "Test project",
       description: Option[String] = none[String],
       expectedBudget: Option[BigDecimal] = none[BigDecimal],
-      cashData: Option[ProjectCashData] = none[ProjectCashData]
+      cashData: Option[ProjectCashData] = none[ProjectCashData],
+      startTime: String = BsonDateTime(
+        System.currentTimeMillis - 86400000
+      ).toISOString,
+      endTime: String = BsonDateTime(
+        System.currentTimeMillis - 86400000
+      ).toISOString
   ) = Project.InputData(
     client.toHexString,
     name,
     description,
     expectedBudget,
-    cashData
+    cashData,
+    startTime,
+    endTime
   )
 
   def makeTestTask(

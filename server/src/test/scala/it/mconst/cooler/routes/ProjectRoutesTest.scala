@@ -47,6 +47,9 @@ class ProjectRoutesTest extends IOSuite {
 
   given EntityDecoder[IO, ProjectWithStats] = jsonOf[IO, ProjectWithStats]
 
+  given EntityDecoder[IO, Cursor[ProjectWithClientLabel]] =
+    jsonOf[IO, Cursor[ProjectWithClientLabel]]
+
   final case class TestData(user: User, client: Client)
 
   val testDataFixture = IOFixture(
@@ -125,32 +128,20 @@ class ProjectRoutesTest extends IOSuite {
   test("should find projects (asc)") {
     projectsList.use { projects =>
       val client = testDataFixture().client.asPrivate
-      val projectsWithClientLabel: List[ProjectWithClientLabel] =
-        projects.map(p =>
-          ProjectWithClientLabel(
-            p._id,
-            p.name,
-            p.description,
-            p.expectedBudget,
-            p.cashData,
-            p.createdAt,
-            p.updatedAt,
-            ClientLabel(
-              client._id,
-              ClientType.fromPrivate(client.`type`),
-              client.name
-            )
-          )
-        )
 
       GET(uri"/?query=project&first=2&after=Project%20B")
         .sign(testDataFixture().user)
-        .shouldRespond(
-          Cursor[ProjectWithClientLabel](
+        .shouldRespondLike(
+          (cursor: Cursor[ProjectWithClientLabel]) =>
+            Cursor(
+              cursor.pageInfo,
+              cursor.edges.map(edge => Edge(edge.node._id, edge.cursor))
+            ),
+          Cursor(
             PageInfo(6, Some("Project C"), Some("Project D"), true, true),
             List(
-              Edge(projectsWithClientLabel(2), "Project C"),
-              Edge(projectsWithClientLabel(3), "Project D")
+              Edge(projects(2)._id, "Project C"),
+              Edge(projects(3)._id, "Project D")
             )
           )
         )
@@ -160,32 +151,20 @@ class ProjectRoutesTest extends IOSuite {
   test("should find projects (desc)") {
     projectsList.use { projects =>
       val client = testDataFixture().client.asPrivate
-      val projectsWithClientLabel: List[ProjectWithClientLabel] =
-        projects.map(p =>
-          ProjectWithClientLabel(
-            p._id,
-            p.name,
-            p.description,
-            p.expectedBudget,
-            p.cashData,
-            p.createdAt,
-            p.updatedAt,
-            ClientLabel(
-              client._id,
-              ClientType.fromPrivate(client.`type`),
-              client.name
-            )
-          )
-        )
 
       GET(uri"/?query=project&last=2&before=Project%20E")
         .sign(testDataFixture().user)
-        .shouldRespond(
-          Cursor[ProjectWithClientLabel](
+        .shouldRespondLike(
+          (cursor: Cursor[ProjectWithClientLabel]) =>
+            Cursor(
+              cursor.pageInfo,
+              cursor.edges.map(edge => Edge(edge.node._id, edge.cursor))
+            ),
+          Cursor(
             PageInfo(6, Some("Project D"), Some("Project C"), true, true),
             List(
-              Edge(projectsWithClientLabel(3), "Project D"),
-              Edge(projectsWithClientLabel(2), "Project C")
+              Edge(projects(3)._id, "Project D"),
+              Edge(projects(2)._id, "Project C")
             )
           )
         )

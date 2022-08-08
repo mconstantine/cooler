@@ -257,8 +257,8 @@ class ProjectsCollectionTest extends IOSuite {
     for
       client <- Clients.create(newClientData).orFail.map(_.asBusiness)
       project <- Projects.create(data).orFail
-      update = Project.InputData(
-        client._id.toString,
+      update = makeTestProject(
+        client._id,
         "Updated name",
         Some("Updated description"),
         Some(42f),
@@ -291,8 +291,8 @@ class ProjectsCollectionTest extends IOSuite {
 
     for
       project <- Projects.create(data).orFail
-      update = Project.InputData(
-        client._id.toHexString,
+      update = makeTestProject(
+        client._id,
         "Updated name",
         none[String],
         none[BigDecimal],
@@ -423,25 +423,8 @@ class ProjectsCollectionTest extends IOSuite {
         result <- Projects
           .getLatest(CursorQuery.empty)
           .orFail
-          .map(_.edges.map(_.node))
-          .assertEquals(
-            updated.map(p =>
-              ProjectWithClientLabel(
-                p._id,
-                p.name,
-                p.description,
-                p.expectedBudget,
-                p.cashData,
-                p.createdAt,
-                p.updatedAt,
-                ClientLabel(
-                  client._id,
-                  ClientType.fromPrivate(client.`type`),
-                  client.name
-                )
-              )
-            )
-          )
+          .map(_.edges.map(_.node._id))
+          .assertEquals(updated.map(_._id))
       yield ()
     }
   }
