@@ -76,37 +76,49 @@ class StatsTest extends IOSuite {
             client._id,
             name = "Stats test project 1",
             cashData =
-              Some(ProjectCashData(BsonDateTime(now - 3600000 * 20), 100))
+              Some(ProjectCashData(BsonDateTime(now - 3600000 * 20), 100)),
+            startTime = BsonDateTime(now - 3600000 * 20).toISOString,
+            endTime = BsonDateTime(now).toISOString
           ),
           makeTestProject(
             client._id,
             name = "Stats test project 2",
             cashData =
-              Some(ProjectCashData(BsonDateTime(now - 3600000 * 10), 100))
+              Some(ProjectCashData(BsonDateTime(now - 3600000 * 10), 100)),
+            startTime = BsonDateTime(now - 3600000 * 5).toISOString,
+            endTime = BsonDateTime(now).toISOString
           ),
           makeTestProject(
             client._id,
             name = "Stats test project 3",
-            expectedBudget = Some(50)
+            expectedBudget = Some(50),
+            startTime = BsonDateTime(now - 3600000 * 20).toISOString,
+            endTime = BsonDateTime(now).toISOString
           ),
           makeTestProject(
             client._id,
             name = "Stats test project 4",
-            cashData = none[ProjectCashData]
+            cashData = none[ProjectCashData],
+            startTime = BsonDateTime(now - 3600000 * 20).toISOString,
+            endTime = BsonDateTime(now).toISOString
           ),
           makeTestProject(
             client._id,
             name = "Stats test project 5",
             cashData =
               Some(ProjectCashData(BsonDateTime(now - 3600000 * 100), 100)),
-            expectedBudget = Some(100)
+            expectedBudget = Some(100),
+            startTime = BsonDateTime(now - 3600000 * 100).toISOString,
+            endTime = BsonDateTime(now).toISOString
           ),
           makeTestProject(
             client._id,
             name = "Stats test project 6",
             cashData =
               Some(ProjectCashData(BsonDateTime(now + 3600000 * 5), 100)),
-            expectedBudget = Some(100)
+            expectedBudget = Some(100),
+            startTime = BsonDateTime(now + 3600000 * 5).toISOString,
+            endTime = BsonDateTime(now + 3600000 * 10).toISOString
           )
         )
           .map(Projects.create(_).orFail)

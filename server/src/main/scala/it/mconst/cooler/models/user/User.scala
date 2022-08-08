@@ -231,11 +231,25 @@ object Users {
                 "client" -> "$clients._id"
               )
             ),
-            Aggregates.lookup(
-              Projects.collection.name,
-              "client",
-              "client",
-              "projects"
+            Document(
+              "$lookup" -> Document(
+                "from" -> Projects.collection.name,
+                "localField" -> "client",
+                "foreignField" -> "client",
+                "as" -> "projects",
+                "pipeline" -> Seq(
+                  Aggregates.`match`(
+                    Filters.and(
+                      Filters.gte("startTime", since.toISOString),
+                      Filters.lt(
+                        "endTime",
+                        to.getOrElse(BsonDateTime(System.currentTimeMillis))
+                          .toISOString
+                      )
+                    )
+                  )
+                )
+              )
             ),
             Aggregates.unwind(
               "$projects",
