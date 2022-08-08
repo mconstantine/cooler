@@ -109,11 +109,11 @@ final case class ProjectWithClientLabel(
     description: Option[NonEmptyString],
     expectedBudget: Option[NonNegativeNumber],
     cashData: Option[ProjectCashData],
+    client: ClientLabel,
     startTime: BsonDateTime,
     endTime: BsonDateTime,
     createdAt: BsonDateTime,
-    updatedAt: BsonDateTime,
-    client: ClientLabel
+    updatedAt: BsonDateTime
 ) extends Project(
       _id,
       name,
@@ -256,7 +256,8 @@ object Projects {
           )
         )
       )
-    )
+    ),
+    Aggregates.project(Document("c" -> 0))
   )
 
   def create(
@@ -517,6 +518,8 @@ object Projects {
                 "cashData" -> data.cashData,
                 Collection.UpdateStrategy.UnsetIfEmpty
               )
+              .`with`("startTime" -> data.startTime)
+              .`with`("endTime" -> data.endTime)
               .build
           )
         )
