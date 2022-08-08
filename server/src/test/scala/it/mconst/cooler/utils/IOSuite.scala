@@ -5,15 +5,20 @@ import cats.effect.kernel.Resource
 import cats.effect.SyncIO
 import cats.effect.unsafe.IORuntime
 import cats.syntax.all.none
+import munit.Assertions
 import munit.Fixture
 import munit.FunSuite
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import mongo4cats.client.MongoClient
 
 abstract class IOSuite extends FunSuite {
+  val name: String = s"cooler-test-${this.getClass.getSimpleName.toLowerCase}"
+
+  given Assertions = this
   given ioRuntime: IORuntime = IORuntime.global
   given executionContext: ExecutionContext = ioRuntime.compute
-  given DatabaseName = Config.database.testName
+  given DatabaseName = DatabaseName.unsafe(name)
 
   private val ioTransform: ValueTransform =
     new ValueTransform(
@@ -36,6 +41,19 @@ abstract class IOSuite extends FunSuite {
       extends Exception(
         s"The fixture `$name` was not instantiated. Override `munitFixtures` and include a reference to this fixture."
       )
+
+  override def afterAll(): Unit = {
+    super.afterAll()
+
+    MongoClient
+      .fromConnectionString[IO](Config.database.uri)
+      .use(
+        _.getDatabase(name)
+          .map(_.drop)
+          .unsafeRunSync()
+      )
+      .unsafeRunSync()
+  }
 
   object IOFixture {
     def apply[T](

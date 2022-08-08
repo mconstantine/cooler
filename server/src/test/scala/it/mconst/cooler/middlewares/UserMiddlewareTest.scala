@@ -28,7 +28,6 @@ import org.http4s.implicits.*
 
 class UserMiddlewareTest extends IOSuite {
   given Lang = Lang.Default
-  given Assertions = this
 
   val publicRoutes: HttpRoutes[IO] = HttpRoutes.of[IO] { case GET -> Root =>
     Ok("Public")

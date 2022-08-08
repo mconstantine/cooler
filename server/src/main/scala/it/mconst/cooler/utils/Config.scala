@@ -31,7 +31,6 @@ object Config {
   final case class DatabaseConfig(
       uri: String,
       name: DatabaseName,
-      testName: DatabaseName,
       encryptionKey: String
   )
 

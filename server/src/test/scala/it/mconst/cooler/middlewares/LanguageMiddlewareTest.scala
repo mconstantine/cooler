@@ -24,7 +24,6 @@ class LanguageMiddlewareTest extends IOSuite {
   case class TestData(message: String)
 
   given EntityDecoder[IO, TestData] = jsonOf[IO, TestData]
-  given Assertions = this
 
   val localizedRoutes: LanguageRoutes[IO] = {
     LanguageRoutes.of {

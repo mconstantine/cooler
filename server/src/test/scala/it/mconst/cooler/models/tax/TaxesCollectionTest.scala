@@ -20,7 +20,6 @@ import org.http4s.Status
 
 class TaxesCollectionTest extends IOSuite {
   given Lang = Lang.Default
-  given Assertions = this
 
   val adminFixture = IOFixture(
     "admin",

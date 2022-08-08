@@ -43,7 +43,6 @@ class TaskRoutesTest extends IOSuite {
   val client: HttpClient[IO] = HttpClient.fromHttpApp(app)
 
   given Lang = Lang.Default
-  given Assertions = this
   given HttpClient[IO] = client
 
   given EntityDecoder[IO, Cursor[TaskWithLabels]] =

@@ -61,7 +61,6 @@ class ProjectsCollectionTest extends IOSuite {
 
   given User = testDataFixture().user
   given Lang = Lang.Default
-  given Assertions = this
 
   test("should create a project") {
     val data =

@@ -73,7 +73,6 @@ class TasksCollectionTest extends IOSuite {
 
   given User = testDataFixture().user
   given Lang = Lang.Default
-  given Assertions = this
 
   test("should create a task") {
     val data =

@@ -60,7 +60,6 @@ class DatabaseHooksTest extends IOSuite {
   override val munitFixtures = Seq(adminFixture)
 
   given Lang = Lang.Default
-  given Assertions = this
 
   test("should update the task and project when a session is created") {
     given User = adminFixture()

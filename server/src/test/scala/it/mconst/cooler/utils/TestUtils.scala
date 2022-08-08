@@ -40,6 +40,11 @@ import org.http4s.Request
 import org.http4s.Status
 import munit.Location
 
+object DatabaseName {
+  def unsafe(name: String)(using Assertions): DatabaseName =
+    name.asInstanceOf[DatabaseName]
+}
+
 object TestUtils {
   extension [T](io: IO[T]) {
     def debug = io.map { value =>

@@ -27,8 +27,6 @@ import org.http4s.Request
 
 class UserRoutesTest extends IOSuite {
   given Lang = Lang.Default
-  given Assertions = this
-
   given EntityDecoder[IO, User] = jsonOf[IO, User]
 
   val app = UserRoutes().orNotFound

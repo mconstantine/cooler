@@ -94,7 +94,6 @@ class SessionsCollectionTest extends IOSuite {
   override def munitFixtures = Seq(testDataFixture)
 
   given Lang = Lang.Default
-  given Assertions = this
   given User = testDataFixture().user
 
   test("should start a session") {

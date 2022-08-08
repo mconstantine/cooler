@@ -23,7 +23,6 @@ import org.http4s.Status
 
 class UsersCollectionTest extends IOSuite {
   given Lang = Lang.Default
-  given Assertions = this
 
   val cleanUsersCollection =
     Resource.make(IO.unit)(_ =>

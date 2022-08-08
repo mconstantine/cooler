@@ -196,7 +196,6 @@ class StatsTest extends IOSuite {
   )
 
   given Lang = Lang.Default
-  given Assertions = this
 
   test("should get the stats of a user (empty)") {
     given User = adminFixture()

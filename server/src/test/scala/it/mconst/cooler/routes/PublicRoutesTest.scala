@@ -26,7 +26,6 @@ class PublicRoutesTest extends IOSuite {
   val client: Client[IO] = Client.fromHttpApp(app)
 
   given Lang = Lang.Default
-  given Assertions = this
   given Client[IO] = client
 
   val cleanUsersCollection =

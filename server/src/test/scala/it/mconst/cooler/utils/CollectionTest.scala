@@ -22,7 +22,6 @@ import org.http4s.Status
 
 class CollectionTest extends IOSuite {
   given Lang = Lang.Default
-  given Assertions = this
 
   final case class Person(
       _id: ObjectId,

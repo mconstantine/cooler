@@ -48,7 +48,6 @@ class ClientsCollectionTest extends IOSuite {
 
   given User = adminFixture()
   given Lang = Lang.Default
-  given Assertions = this
 
   test("should create a client") {
     val data = makeTestPrivateClient(addressEmail = "creation-test@example.com")

@@ -66,7 +66,6 @@ class TaskBatchTest extends IOSuite {
   override val munitFixtures = List(testDataFixture)
 
   given Lang = Lang.Default
-  given Assertions = this
 
   test("should work") {
     val data = BatchInputData(
