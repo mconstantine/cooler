@@ -1,12 +1,14 @@
 import { boolean, option } from 'fp-ts'
 import { constVoid, flow, pipe } from 'fp-ts/function'
 import { IO } from 'fp-ts/IO'
+import { Option } from 'fp-ts/Option'
 import { Reader } from 'fp-ts/Reader'
 import { NonEmptyString } from 'io-ts-types'
 import { add } from 'ionicons/icons'
 import { useEffect, useState } from 'react'
 import { a18n } from '../../a18n'
 import { ConnectionList } from '../../components/ConnectionList/ConnectionList'
+import { Toggle } from '../../components/Form/Input/Toggle/Toggle'
 import { RoutedItem } from '../../components/List/List'
 import { projectsRoute, useRouter } from '../../components/Router'
 import { query } from '../../effects/api/api'
@@ -16,6 +18,7 @@ import { Project } from '../../entities/Project'
 import { LocalizedString, unsafePositiveInteger } from '../../globalDomain'
 import { Connection } from '../../misc/Connection'
 import { getProjectsRequest, GetProjectsRequestInput } from './domain'
+import './ProjectsList.scss'
 
 export default function ProjectsList() {
   const { setRoute } = useRouter()
@@ -74,6 +77,20 @@ export default function ProjectsList() {
     )
   }
 
+  const onWithInvoiceDataChange: Reader<
+    Option<boolean>,
+    void
+  > = withInvoiceData => setInput(input => ({ ...input, withInvoiceData }))
+
+  const onCashedChange: Reader<Option<boolean>, void> = cashed =>
+    setInput(input => ({ ...input, cashed }))
+
+  const onStartedChange: Reader<Option<boolean>, void> = started =>
+    setInput(input => ({ ...input, started }))
+
+  const onEndedChange: Reader<Option<boolean>, void> = ended =>
+    setInput(input => ({ ...input, ended }))
+
   useEffect(() => {
     pipe(
       projects,
@@ -96,21 +113,58 @@ export default function ProjectsList() {
   }, [projects])
 
   return (
-    <ConnectionList
-      query={results}
-      title={a18n`Projects`}
-      onLoadMore={option.some(onLoadMore)}
-      action={option.some({
-        type: 'sync',
-        label: a18n`Create new project`,
-        icon: option.some(add),
-        action: () => setRoute(projectsRoute('new'))
-      })}
-      onSearchQueryChange={option.some(onSearchQueryChange)}
-      renderListItem={renderProjectItem}
-      emptyListMessage={a18n`No projects found`}
-    >
-      {/* TODO: 3-state toggles here */}
-    </ConnectionList>
+    <div className="ProjectsList">
+      <ConnectionList
+        query={results}
+        title={a18n`Projects`}
+        onLoadMore={option.some(onLoadMore)}
+        action={option.some({
+          type: 'sync',
+          label: a18n`Create new project`,
+          icon: option.some(add),
+          action: () => setRoute(projectsRoute('new'))
+        })}
+        onSearchQueryChange={option.some(onSearchQueryChange)}
+        renderListItem={renderProjectItem}
+        emptyListMessage={a18n`No projects found`}
+      >
+        <Toggle
+          name="withInvoiceData"
+          mode="3-state"
+          label={a18n`With invoice data`}
+          value={input.withInvoiceData}
+          onChange={onWithInvoiceDataChange}
+          error={option.none}
+          warning={option.none}
+        />
+        <Toggle
+          name="cashed"
+          mode="3-state"
+          label={a18n`Cashed`}
+          value={input.cashed}
+          onChange={onCashedChange}
+          error={option.none}
+          warning={option.none}
+        />
+        <Toggle
+          name="started"
+          mode="3-state"
+          label={a18n`Started`}
+          value={input.started}
+          onChange={onStartedChange}
+          error={option.none}
+          warning={option.none}
+        />
+        <Toggle
+          name="cashed"
+          mode="3-state"
+          label={a18n`Ended`}
+          value={input.ended}
+          onChange={onEndedChange}
+          error={option.none}
+          warning={option.none}
+        />
+      </ConnectionList>
+    </div>
   )
 }

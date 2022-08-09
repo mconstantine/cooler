@@ -1,6 +1,5 @@
 TODO:
 
-[ ] Projects toggles, 3-state (with undefined): cashed, invoice sent, ongoing, future
 [ ] Cypress tests
 [ ] Stats: cashed money per month
 [ ] Stats: cashed money per year
@@ -14,3 +13,4 @@ DONE:
 [X] Use expected budget in stats
 [X] Add "to" dates to user profile, default should be the end of the current month + 1 millisecond
 [X] Add invoice data (optional, number and date) to projects
+[X] Projects toggles, 3-state (with undefined): cashed, invoice sent, ongoing, future

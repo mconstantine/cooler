@@ -1,0 +1,9 @@
+.ProjectsList {
+  .Toggle {
+    margin-top: 24px;
+  }
+
+  .Toggle + .Toggle {
+    margin-top: 0;
+  }
+}
