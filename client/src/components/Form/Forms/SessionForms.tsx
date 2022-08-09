@@ -101,6 +101,7 @@ export function SessionForm(props: Props) {
     >
       <DateTimePicker label={a18n`Start time`} {...fieldProps('startTime')} />
       <Toggle
+        mode="boolean"
         name="didSessionEnd"
         label={a18n`This session already ended`}
         value={didSessionEnd}

@@ -200,7 +200,13 @@ export function TaskForm(props: Props) {
       {pipe(
         props,
         foldFormMode(
-          () => <Toggle label={a18n`Repeat`} {...fieldProps('shouldRepeat')} />,
+          () => (
+            <Toggle
+              mode="boolean"
+              label={a18n`Repeat`}
+              {...fieldProps('shouldRepeat')}
+            />
+          ),
           constNull
         )
       )}

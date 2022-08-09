@@ -1,19 +1,56 @@
-import { option } from 'fp-ts'
-import { constNull, pipe } from 'fp-ts/function'
+import { boolean, option } from 'fp-ts'
+import { constNull, constTrue, pipe } from 'fp-ts/function'
+import { Reader } from 'fp-ts/Reader'
+import { Option } from 'fp-ts/Option'
 import { alert, warning as warningIcon } from 'ionicons/icons'
 import { LocalizedString } from '../../../../globalDomain'
 import { composeClassName } from '../../../../misc/composeClassName'
 import { Banner } from '../../../Banner/Banner'
 import { FieldProps } from '../../useForm'
 import './Toggle.scss'
+import { ChangeEvent, useRef } from 'react'
 
-interface Props extends FieldProps<boolean> {
+type ToggleBooleanMode = 'boolean'
+type ToggleThreeStateMode = '3-state'
+
+interface BooleanProps extends FieldProps<boolean> {
+  mode: ToggleBooleanMode
   label: LocalizedString
   disabled?: boolean
 }
 
+interface ThreeStateProps extends FieldProps<Option<boolean>> {
+  mode: ToggleThreeStateMode
+  label: LocalizedString
+  disabled?: boolean
+}
+
+type Props = BooleanProps | ThreeStateProps
+
+function foldProps<T>(cases: {
+  [k in Props['mode']]: Reader<Extract<Props, { mode: k }>, T>
+}): Reader<Props, T> {
+  return props => cases[props.mode](props as any)
+}
+
 export function Toggle(props: Props) {
-  const checkedClassName = props.value ? 'checked' : ''
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  const checkedClassName = pipe(
+    props,
+    foldProps({
+      boolean: props => (props.value ? 'checked' : ''),
+      '3-state': props =>
+        pipe(
+          props.value,
+          option.fold(
+            () => 'indeterminate',
+            value => (value ? 'checked' : '')
+          )
+        )
+    })
+  )
+
   const disabledClassName = props.disabled ? 'disabled' : ''
 
   const colorClassName = pipe(
@@ -31,6 +68,36 @@ export function Toggle(props: Props) {
     )
   )
 
+  const value: boolean = pipe(
+    props,
+    foldProps({
+      boolean: props => props.value,
+      '3-state': props => pipe(props.value, option.getOrElse(constTrue))
+    })
+  )
+
+  const onChange: Reader<ChangeEvent<HTMLInputElement>, void> = () =>
+    pipe(
+      props,
+      foldProps({
+        boolean: props => props.onChange(!props.value),
+        '3-state': props =>
+          pipe(
+            props.value,
+            option.fold(
+              // none => true
+              () => props.onChange(option.some(true)),
+              boolean.fold(
+                // false => none
+                () => props.onChange(option.none),
+                // true => false
+                () => props.onChange(option.some(false))
+              )
+            )
+          )
+      })
+    )
+
   return (
     <div
       className={composeClassName(
@@ -42,11 +109,12 @@ export function Toggle(props: Props) {
     >
       <label htmlFor={props.name}>
         <input
+          ref={inputRef}
           id={props.name}
           name={props.name}
           type="checkbox"
-          checked={props.value}
-          onChange={e => props.onChange(e.currentTarget.checked)}
+          checked={value}
+          onChange={onChange}
           disabled={props.disabled}
         />
         <span className="label">{props.label}</span>

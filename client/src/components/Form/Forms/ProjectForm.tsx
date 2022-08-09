@@ -224,7 +224,11 @@ export function ProjectForm(props: Props) {
 
       <Input label={a18n`Expected budget`} {...fieldProps('expectedBudget')} />
 
-      <Toggle label={a18n`Invoice data`} {...fieldProps('hasInvoiceData')} />
+      <Toggle
+        mode="boolean"
+        label={a18n`Invoice data`}
+        {...fieldProps('hasInvoiceData')}
+      />
 
       {pipe(
         values.hasInvoiceData,
@@ -243,7 +247,7 @@ export function ProjectForm(props: Props) {
         ))
       )}
 
-      <Toggle label={a18n`Cashed`} {...fieldProps('cashed')} />
+      <Toggle mode="boolean" label={a18n`Cashed`} {...fieldProps('cashed')} />
 
       {pipe(
         values.cashed,

@@ -66,6 +66,10 @@
     }
   }
 
+  &.indeterminate label .switch::after {
+    transform: translate3d(50%, 0, 0);
+  }
+
   &.error {
     color: $color-error-dark;
 
