@@ -1,15 +1,7 @@
 import * as t from 'io-ts'
 import { DateFromISOString, optionFromNullable } from 'io-ts-types'
 import { LocalizedString, NonNegativeNumber, ObjectId } from '../globalDomain'
-
-const PrivateClientType = t.literal('PRIVATE', 'PrivateClientType')
-const BusinessClientType = t.literal('BUSINESS', 'BusinessClientType')
-
-export const ClientType = t.union(
-  [PrivateClientType, BusinessClientType],
-  'ClientType'
-)
-export type ClientType = t.TypeOf<typeof ClientType>
+import { ClientType } from './Client'
 
 export const ClientLabel = t.type(
   {

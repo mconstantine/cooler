@@ -377,6 +377,15 @@ export const CountryValues = {
 export const Country = t.keyof(CountryValues)
 export type Country = t.TypeOf<typeof Country>
 
+export const PrivateClientType = t.literal('PRIVATE', 'PrivateClientType')
+export const BusinessClientType = t.literal('BUSINESS', 'BusinessClientType')
+
+export const ClientType = t.union(
+  [PrivateClientType, BusinessClientType],
+  'ClientType'
+)
+export type ClientType = t.TypeOf<typeof ClientType>
+
 export const ClientCreationCommonInput = t.type(
   {
     addressCountry: Country,
@@ -397,7 +406,7 @@ export const PrivateClientCreationInput = t.intersection([
   ClientCreationCommonInput,
   t.type(
     {
-      type: t.literal('PRIVATE'),
+      type: PrivateClientType,
       fiscalCode: LocalizedString,
       firstName: LocalizedString,
       lastName: LocalizedString
@@ -413,7 +422,7 @@ export const BusinessClientCreationInput = t.intersection(
   [
     ClientCreationCommonInput,
     t.type({
-      type: t.literal('BUSINESS'),
+      type: BusinessClientType,
       countryCode: Country,
       vatNumber: LocalizedString,
       businessName: LocalizedString

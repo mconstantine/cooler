@@ -6,7 +6,12 @@ import {
   makePostRequest,
   makePutRequest
 } from '../../effects/api/useApi'
-import { Client, ClientCreationInput } from '../../entities/Client'
+import {
+  BusinessClientType,
+  Client,
+  ClientCreationInput,
+  PrivateClientType
+} from '../../entities/Client'
 import { Project } from '../../entities/Project'
 import { LocalizedString, ObjectId } from '../../globalDomain'
 import { Connection, ConnectionQueryInput } from '../../misc/Connection'
@@ -14,7 +19,7 @@ import { Connection, ConnectionQueryInput } from '../../misc/Connection'
 const PrivateClientForList = t.type(
   {
     _id: ObjectId,
-    type: t.literal('PRIVATE'),
+    type: PrivateClientType,
     firstName: LocalizedString,
     lastName: LocalizedString
   },
@@ -25,7 +30,7 @@ type PrivateClientForList = t.TypeOf<typeof PrivateClientForList>
 const BusinessClientForList = t.type(
   {
     _id: ObjectId,
-    type: t.literal('BUSINESS'),
+    type: BusinessClientType,
     businessName: LocalizedString
   },
   'BusinessClientForList'
