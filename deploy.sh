@@ -13,3 +13,4 @@ ssh $SSH_URI "cd $SERVER_URI/build; ./install.sh"
 echo "[$APP_NAME]: Cleaning up..."
 
 ssh $SSH_URI "rm -rf $SERVER_URI/build"
+rm -rf ./build
