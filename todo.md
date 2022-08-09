@@ -1,6 +1,5 @@
 TODO:
 
-[ ] Add startTime to task form
 [ ] Add invoice data (optional, number and date) to projects
 [ ] Projects toggles, 3-state (with undefined): cashed, invoice sent, ongoing, future
 [ ] Cypress tests

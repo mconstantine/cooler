@@ -35,8 +35,10 @@ Create a file at `client/.env.production`. Copy the content of `.env.development
 Create a file at `.env`. Set the environment variables for production:
 
 ```
-MONGO_USERNAME=
-MONGO_PASSWORD=
+MONGO_USERNAME=root
+MONGO_PASSWORD=root
+SSH_URI=user@host
+SERVER_URI=/home/user/path/to/directory
 APP_NAME=
 APP_VERSION=
 ```
