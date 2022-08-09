@@ -337,6 +337,15 @@ extension (s: String) {
   }
 }
 
+extension (os: Option[String]) {
+  def validateOptionalBsonDateTime(
+      fieldName: String
+  )(using Lang): Validation[Option[BsonDateTime]] = {
+    os.map(_.validateBsonDateTime(fieldName).map(Some(_)))
+      .getOrElse(Validated.valid(none[BsonDateTime]))
+  }
+}
+
 extension (bdt: BsonDateTime) {
   def toISOString: String = {
     val timestamp = bdt.getValue

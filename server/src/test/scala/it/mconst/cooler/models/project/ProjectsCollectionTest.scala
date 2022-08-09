@@ -262,6 +262,12 @@ class ProjectsCollectionTest extends IOSuite {
         "Updated name",
         Some("Updated description"),
         Some(42f),
+        Some(
+          Project.InvoiceDataInput(
+            "0",
+            BsonDateTime(System.currentTimeMillis).toISOString
+          )
+        ),
         Some(ProjectCashData(BsonDateTime(System.currentTimeMillis), 42.0))
       )
       _ <- IO.delay(Thread.sleep(500))
@@ -285,8 +291,14 @@ class ProjectsCollectionTest extends IOSuite {
       name = "Update unset if empty test",
       description = Some("Some description"),
       expectedBudget = Some(42f),
+      invoiceData = Some(
+        Project.InvoiceDataInput(
+          "0",
+          BsonDateTime(System.currentTimeMillis).toISOString
+        )
+      ),
       cashData =
-        Some(ProjectCashData(BsonDateTime(System.currentTimeMillis), 42f))
+        Some(ProjectCashData(BsonDateTime(System.currentTimeMillis), 42f)),
     )
 
     for
@@ -296,6 +308,7 @@ class ProjectsCollectionTest extends IOSuite {
         "Updated name",
         none[String],
         none[BigDecimal],
+        none[Project.InvoiceDataInput],
         none[ProjectCashData]
       )
       updated <- Projects.update(project._id, update).orFail

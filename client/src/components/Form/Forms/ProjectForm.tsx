@@ -56,35 +56,49 @@ export function ProjectForm(props: Props) {
             },
             option.some(project.client._id)
           ),
+          startTime: project.startTime,
+          endTime: project.endTime,
+          expectedBudget: pipe(
+            project.expectedBudget,
+            option.map(_ => _.toString(10)),
+            option.getOrElse(() => '')
+          ),
+          hasInvoiceData: option.isSome(project.invoiceData),
+          invoiceNumber: pipe(
+            project.invoiceData,
+            option.map(({ number }) => number),
+            option.getOrElse(() => '')
+          ),
+          invoiceDate: pipe(
+            project.invoiceData,
+            option.map(({ date }) => date),
+            option.getOrElse(() => new Date())
+          ),
           cashed: option.isSome(project.cashData),
           cashedAt: pipe(
             project.cashData,
             option.map(({ at }) => at),
             option.getOrElse(() => new Date())
           ),
-          expectedBudget: pipe(
-            project.expectedBudget,
-            option.map(_ => _.toString(10)),
-            option.getOrElse(() => '')
-          ),
           cashedBalance: pipe(
             project.cashData,
             option.map(({ amount }) => amount.toString(10)),
             option.getOrElse(() => '')
-          ),
-          startTime: project.startTime,
-          endTime: project.endTime
+          )
         })),
         option.getOrElse(() => ({
           name: '',
           description: '',
           client: toSelectState<ObjectId>({}, option.none),
           expectedBudget: '',
+          startTime: new Date(),
+          endTime: new Date(),
+          hasInvoiceData: false,
+          invoiceNumber: '',
+          invoiceDate: new Date(),
           cashed: false,
           cashedAt: new Date(),
-          cashedBalance: '',
-          startTime: new Date(),
-          endTime: new Date()
+          cashedBalance: ''
         }))
       ),
       validators: ({ cashed }) => ({
@@ -108,7 +122,8 @@ export function ProjectForm(props: Props) {
               commonErrors.moneyAmount
             )
           )
-        )
+        ),
+        invoiceNumber: validators.nonBlankString(commonErrors.nonBlank)
       }),
       linters: () => ({})
     },
@@ -138,6 +153,21 @@ export function ProjectForm(props: Props) {
             taskEither.fromPredicate(
               input => input.endTime.getTime() > input.startTime.getTime(),
               () => a18n``
+            )
+          ),
+          taskEither.map(result =>
+            pipe(
+              input.hasInvoiceData,
+              boolean.fold(
+                () => ({ ...result, invoiceData: option.none }),
+                () => ({
+                  ...result,
+                  invoiceData: option.some({
+                    number: input.invoiceNumber,
+                    date: input.invoiceDate
+                  })
+                })
+              )
             )
           )
         )
@@ -193,6 +223,26 @@ export function ProjectForm(props: Props) {
       />
 
       <Input label={a18n`Expected budget`} {...fieldProps('expectedBudget')} />
+
+      <Toggle label={a18n`Invoice data`} {...fieldProps('hasInvoiceData')} />
+
+      {pipe(
+        values.hasInvoiceData,
+        boolean.fold(constNull, () => (
+          <>
+            <Input
+              label={a18n`Invoice number`}
+              {...fieldProps('invoiceNumber')}
+            />
+            <DateTimePicker
+              mode="date"
+              label={a18n`Invoice date`}
+              {...fieldProps('invoiceDate')}
+            />
+          </>
+        ))
+      )}
+
       <Toggle label={a18n`Cashed`} {...fieldProps('cashed')} />
 
       {pipe(

@@ -21,6 +21,14 @@ const ProjectCashData = t.type(
 )
 export type ProjectCashData = t.TypeOf<typeof ProjectCashData>
 
+const ProjectInvoiceData = t.type(
+  {
+    number: LocalizedString,
+    date: DateFromISOString
+  },
+  'ProjectInvoiceData'
+)
+
 export const Project = t.type(
   {
     _id: ObjectId,
@@ -28,6 +36,7 @@ export const Project = t.type(
     description: optionFromNullable(LocalizedString),
     client: ClientLabel,
     expectedBudget: optionFromNullable(NonNegativeNumber),
+    invoiceData: optionFromNullable(ProjectInvoiceData),
     cashData: optionFromNullable(ProjectCashData),
     startTime: DateFromISOString,
     endTime: DateFromISOString,
@@ -58,6 +67,7 @@ export const ProjectCreationInput = t.type(
     description: optionFromNullable(LocalizedString),
     client: ObjectId,
     expectedBudget: optionFromNullable(NonNegativeNumber),
+    invoiceData: optionFromNullable(ProjectInvoiceData),
     cashData: optionFromNullable(ProjectCashData),
     startTime: DateFromISOString,
     endTime: DateFromISOString

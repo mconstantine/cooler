@@ -46,6 +46,7 @@ import org.http4s.Status
 
 final case class ProjectCashData(at: BsonDateTime, amount: BigDecimal)
 final case class ProjectCashedBalance(balance: NonNegativeNumber)
+final case class ProjectInvoiceData(number: NonEmptyString, date: BsonDateTime)
 
 object ProjectCashedBalance {
   given EntityEncoder[IO, ProjectCashedBalance] =
@@ -59,6 +60,7 @@ sealed abstract trait Project(
     name: NonEmptyString,
     description: Option[NonEmptyString],
     expectedBudget: Option[NonNegativeNumber],
+    invoiceData: Option[ProjectInvoiceData],
     cashData: Option[ProjectCashData],
     startTime: BsonDateTime,
     endTime: BsonDateTime,
@@ -79,6 +81,7 @@ final case class DbProject(
     name: NonEmptyString,
     description: Option[NonEmptyString],
     expectedBudget: Option[NonNegativeNumber],
+    invoiceData: Option[ProjectInvoiceData],
     cashData: Option[ProjectCashData],
     startTime: BsonDateTime,
     endTime: BsonDateTime,
@@ -89,6 +92,7 @@ final case class DbProject(
       name,
       description,
       expectedBudget,
+      invoiceData,
       cashData,
       startTime,
       endTime,
@@ -108,6 +112,7 @@ final case class ProjectWithClientLabel(
     name: NonEmptyString,
     description: Option[NonEmptyString],
     expectedBudget: Option[NonNegativeNumber],
+    invoiceData: Option[ProjectInvoiceData],
     cashData: Option[ProjectCashData],
     client: ClientLabel,
     startTime: BsonDateTime,
@@ -119,6 +124,7 @@ final case class ProjectWithClientLabel(
       name,
       description,
       expectedBudget,
+      invoiceData,
       cashData,
       startTime,
       endTime,
@@ -139,6 +145,7 @@ final case class ProjectWithStats(
     name: NonEmptyString,
     description: Option[NonEmptyString],
     expectedBudget: Option[NonNegativeNumber],
+    invoiceData: Option[ProjectInvoiceData],
     cashData: Option[ProjectCashData],
     startTime: BsonDateTime,
     endTime: BsonDateTime,
@@ -154,6 +161,7 @@ final case class ProjectWithStats(
       name,
       description,
       expectedBudget,
+      invoiceData,
       cashData,
       startTime,
       endTime,
@@ -167,11 +175,14 @@ object ProjectWithStats {
 }
 
 object Project {
+  final case class InvoiceDataInput(number: String, date: String)
+
   final case class InputData(
       client: String,
       name: String,
       description: Option[String],
       expectedBudget: Option[BigDecimal],
+      invoiceData: Option[InvoiceDataInput],
       cashData: Option[ProjectCashData],
       startTime: String,
       endTime: String
@@ -185,6 +196,7 @@ object Project {
       name: NonEmptyString,
       description: Option[NonEmptyString],
       expectedBudget: Option[NonNegativeNumber],
+      invoiceData: Option[ProjectInvoiceData],
       cashData: Option[ProjectCashData],
       startTime: BsonDateTime,
       endTime: BsonDateTime
@@ -198,17 +210,37 @@ object Project {
     NonEmptyString.validateOptional("description", data.description),
     NonNegativeNumber.validateOptional("expectedBudget", data.expectedBudget),
     data.startTime.validateBsonDateTime("startTime"),
-    data.endTime.validateBsonDateTime("endTime")
-  ).mapN((client, name, description, expectedBudget, startTime, endTime) =>
-    ValidInputData(
-      client,
-      name,
-      description,
-      expectedBudget,
-      data.cashData,
-      startTime,
-      endTime
-    )
+    data.endTime.validateBsonDateTime("endTime"),
+    NonEmptyString.validateOptional(
+      "invoiceData.number",
+      data.invoiceData.map(_.number)
+    ),
+    data.invoiceData
+      .map(_.date)
+      .validateOptionalBsonDateTime("invoiceData.date")
+  ).mapN(
+    (
+        client,
+        name,
+        description,
+        expectedBudget,
+        startTime,
+        endTime,
+        invoiceDataNumber,
+        invoiceDataDate
+    ) =>
+      ValidInputData(
+        client,
+        name,
+        description,
+        expectedBudget,
+        data.invoiceData.map(data =>
+          ProjectInvoiceData(invoiceDataNumber.get, invoiceDataDate.get)
+        ),
+        data.cashData,
+        startTime,
+        endTime
+      )
   )
 
   def fromInputData(data: InputData)(using customer: User)(using
@@ -221,6 +253,7 @@ object Project {
       data.name,
       data.description,
       data.expectedBudget,
+      data.invoiceData,
       data.cashData,
       data.startTime,
       data.endTime,
@@ -430,6 +463,7 @@ object Projects {
                     project.name,
                     project.description,
                     project.expectedBudget,
+                    project.invoiceData,
                     project.cashData,
                     project.startTime,
                     project.endTime,
@@ -500,7 +534,13 @@ object Projects {
           EitherT.rightT[IO, Error](project.client._id)
         else Clients.findById(data.client).map(_._id)
       _ <- collection
-        .useWithCodec[ProjectCashData, BigDecimal, Error, UpdateResult](
+        .useWithCodec[
+          ProjectCashData,
+          ProjectInvoiceData,
+          BigDecimal,
+          Error,
+          UpdateResult
+        ](
           _.update(
             project._id,
             Collection.Update
@@ -512,6 +552,10 @@ object Projects {
               )
               .`with`(
                 "expectedBudget" -> data.expectedBudget,
+                Collection.UpdateStrategy.UnsetIfEmpty
+              )
+              .`with`(
+                "invoiceData" -> data.invoiceData,
                 Collection.UpdateStrategy.UnsetIfEmpty
               )
               .`with`(

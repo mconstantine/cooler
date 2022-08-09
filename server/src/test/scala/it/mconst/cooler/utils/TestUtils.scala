@@ -39,6 +39,7 @@ import org.http4s.HttpApp
 import org.http4s.Request
 import org.http4s.Status
 import munit.Location
+import it.mconst.cooler.models.project.ProjectInvoiceData
 
 object DatabaseName {
   def unsafe(name: String)(using Assertions): DatabaseName =
@@ -210,6 +211,8 @@ object TestUtils {
       name: String = "Test project",
       description: Option[String] = none[String],
       expectedBudget: Option[BigDecimal] = none[BigDecimal],
+      invoiceData: Option[Project.InvoiceDataInput] =
+        none[Project.InvoiceDataInput],
       cashData: Option[ProjectCashData] = none[ProjectCashData],
       startTime: String = BsonDateTime(
         System.currentTimeMillis - 86400000
@@ -222,6 +225,7 @@ object TestUtils {
     name,
     description,
     expectedBudget,
+    invoiceData,
     cashData,
     startTime,
     endTime

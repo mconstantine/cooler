@@ -113,8 +113,12 @@ export const fakeProject: ProjectWithStats = {
   ),
   client: fakeClients[0],
   expectedBudget: option.some(unsafeNonNegativeNumber(1500)),
+  invoiceData: option.some({
+    number: unsafeLocalizedString('199042'),
+    date: new Date(2021, 0, 1, 15, 50)
+  }),
   cashData: option.some({
-    at: new Date(2021, 0, 1, 15, 30),
+    at: new Date(2021, 0, 1, 16, 0),
     amount: unsafeNonNegativeNumber(1500)
   }),
   startTime: new Date(2020, 8, 20, 9, 30),

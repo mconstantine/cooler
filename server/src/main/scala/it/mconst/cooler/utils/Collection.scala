@@ -425,6 +425,25 @@ final case class Collection[F[
       op(CollectionResource(db, _.withAddedCodec[C1].withAddedCodec[C2]))
     )
 
+  def useWithCodec[C1, C2, C3, R](
+      op: CollectionResource[F, Input, Doc] => F[R]
+  )(using
+      ClassTag[C1],
+      ClassTag[C2],
+      ClassTag[C3],
+      MongoCodecProvider[C1],
+      MongoCodecProvider[C2],
+      MongoCodecProvider[C3]
+  ): F[R] =
+    resource.use(db =>
+      op(
+        CollectionResource(
+          db,
+          _.withAddedCodec[C1].withAddedCodec[C2].withAddedCodec[C3]
+        )
+      )
+    )
+
   def useWithCodec[C, R](
       op: CollectionResource[F, Input, Doc] => OptionT[F, R]
   )(using ClassTag[C], MongoCodecProvider[C]): OptionT[F, R] =
@@ -448,6 +467,27 @@ final case class Collection[F[
       )
     )
 
+  def useWithCodec[C1, C2, C3, R](
+      op: CollectionResource[F, Input, Doc] => OptionT[F, R]
+  )(using
+      ClassTag[C1],
+      ClassTag[C2],
+      ClassTag[C3],
+      MongoCodecProvider[C1],
+      MongoCodecProvider[C2],
+      MongoCodecProvider[C3]
+  ): OptionT[F, R] =
+    OptionT(
+      resource.use(db =>
+        op(
+          CollectionResource(
+            db,
+            _.withAddedCodec[C1].withAddedCodec[C2].withAddedCodec[C3]
+          )
+        ).value
+      )
+    )
+
   def useWithCodec[C, E, R](
       op: CollectionResource[F, Input, Doc] => EitherT[F, E, R]
   )(using ClassTag[C], MongoCodecProvider[C]): EitherT[F, E, R] =
@@ -467,6 +507,27 @@ final case class Collection[F[
       resource.use(db =>
         op(
           CollectionResource(db, _.withAddedCodec[C1].withAddedCodec[C2])
+        ).value
+      )
+    )
+
+  def useWithCodec[C1, C2, C3, E, R](
+      op: CollectionResource[F, Input, Doc] => EitherT[F, E, R]
+  )(using
+      ClassTag[C1],
+      ClassTag[C2],
+      ClassTag[C3],
+      MongoCodecProvider[C1],
+      MongoCodecProvider[C2],
+      MongoCodecProvider[C3]
+  ): EitherT[F, E, R] =
+    EitherT(
+      resource.use(db =>
+        op(
+          CollectionResource(
+            db,
+            _.withAddedCodec[C1].withAddedCodec[C2].withAddedCodec[C3]
+          )
         ).value
       )
     )

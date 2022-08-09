@@ -156,6 +156,45 @@ export function ProjectData(props: Props) {
             action={option.none}
           />
           {pipe(
+            props.project.invoiceData,
+            option.fold(
+              () => (
+                <ReadOnlyInput
+                  name="invoiceData"
+                  label={a18n`Invoice data`}
+                  value={a18n`None`}
+                  action={option.none}
+                />
+              ),
+              ({ number, date }) => (
+                <List
+                  heading={option.some(a18n`Invoice data`)}
+                  emptyListMessage={unsafeLocalizedString('')}
+                  items={[
+                    {
+                      key: 'invoiceNumber',
+                      type: 'valued',
+                      label: option.none,
+                      content: a18n`Number`,
+                      description: option.none,
+                      value: number,
+                      progress: option.none
+                    },
+                    {
+                      key: 'invoiceDate',
+                      type: 'valued',
+                      label: option.none,
+                      content: a18n`Date`,
+                      description: option.none,
+                      value: formatDate(date),
+                      progress: option.none
+                    }
+                  ]}
+                />
+              )
+            )
+          )}
+          {pipe(
             props.project.cashData,
             option.fold(
               () => (
