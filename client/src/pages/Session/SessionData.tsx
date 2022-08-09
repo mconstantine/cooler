@@ -1,7 +1,7 @@
 import { array, boolean, option, taskEither } from 'fp-ts'
 import { IO } from 'fp-ts/IO'
 import { constNull, flow, pipe } from 'fp-ts/function'
-import { arrowUp, eye, skull, stop } from 'ionicons/icons'
+import { eye, skull, stop } from 'ionicons/icons'
 import { a18n, formatDate, formatDateTime } from '../../a18n'
 import { ReadOnlyInput } from '../../components/Form/Input/ReadOnlyInput/ReadOnlyInput'
 import { Panel } from '../../components/Panel/Panel'
@@ -133,12 +133,7 @@ export function SessionData(props: Props) {
       () => (
         <Panel
           framed
-          action={option.some({
-            type: 'sync',
-            label: a18n`Back to task`,
-            icon: option.some(arrowUp),
-            action: props.onCancel
-          })}
+          action={option.none}
           title={formatDate(props.session.startTime)}
         >
           <ReadOnlyInput

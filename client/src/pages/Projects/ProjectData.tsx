@@ -25,7 +25,7 @@ import {
 import { LocalizedString } from '../../globalDomain'
 import { makeDeleteProjectRequest, makeUpdateProjectRequest } from './domain'
 import { LoadingButton } from '../../components/Button/LoadingButton/LoadingButton'
-import { arrowUp, eye, skull } from 'ionicons/icons'
+import { eye, skull } from 'ionicons/icons'
 import { useDialog } from '../../effects/useDialog'
 import { Option } from 'fp-ts/Option'
 import { Reader } from 'fp-ts/Reader'
@@ -94,16 +94,7 @@ export function ProjectData(props: Props) {
     isEditing,
     boolean.fold(
       () => (
-        <Panel
-          title={props.project.name}
-          framed
-          action={option.some({
-            type: 'sync',
-            label: a18n`Back to client`,
-            action: () => setRoute(clientsRoute(props.project.client._id)),
-            icon: option.some(arrowUp)
-          })}
-        >
+        <Panel title={props.project.name} framed action={option.none}>
           <ReadOnlyInput
             name="name"
             label={a18n`Name`}

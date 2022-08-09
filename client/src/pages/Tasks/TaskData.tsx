@@ -4,7 +4,7 @@ import { IO } from 'fp-ts/IO'
 import { ReaderTaskEither } from 'fp-ts/ReaderTaskEither'
 import { Option } from 'fp-ts/Option'
 import { Reader } from 'fp-ts/Reader'
-import { arrowUp, eye, skull } from 'ionicons/icons'
+import { eye, skull } from 'ionicons/icons'
 import { useState } from 'react'
 import {
   a18n,
@@ -77,23 +77,11 @@ export default function TaskData(props: Props) {
       )
     )
 
-  const backToProject: IO<void> = () =>
-    setRoute(projectsRoute(props.task.project._id))
-
   return pipe(
     isEditing,
     boolean.fold(
       () => (
-        <Panel
-          title={props.task.name}
-          framed
-          action={option.some({
-            type: 'sync',
-            label: a18n`Back to project`,
-            icon: option.some(arrowUp),
-            action: backToProject
-          })}
-        >
+        <Panel title={props.task.name} framed action={option.none}>
           <ReadOnlyInput
             name="name"
             label={a18n`Name`}
