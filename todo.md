@@ -1,5 +1,6 @@
 TODO:
 
+[ ] Add previous and next projects
 [ ] Cypress tests
 [ ] Stats: cashed money per month
 [ ] Stats: cashed money per year

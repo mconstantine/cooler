@@ -156,7 +156,7 @@ export default function ProjectsList() {
           warning={option.none}
         />
         <Toggle
-          name="cashed"
+          name="ended"
           mode="3-state"
           label={a18n`Ended`}
           value={input.ended}
