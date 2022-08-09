@@ -62,4 +62,4 @@ cp docker-compose.yml build
 
 cp install.sh build
 
-echo "[$APP_NAME]: Build is ready: move the content of the build folder into the server and run \`install.sh\`"
+echo "[$APP_NAME]: Build is ready: you can now run \`deploy.sh\`"
