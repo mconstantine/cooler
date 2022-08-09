@@ -101,7 +101,7 @@ export function ProjectForm(props: Props) {
           cashedBalance: ''
         }))
       ),
-      validators: ({ cashed }) => ({
+      validators: ({ cashed, hasInvoiceData }) => ({
         name: validators.nonBlankString(commonErrors.nonBlank),
         description: validators.fromCodec(
           OptionFromEmptyString,
@@ -123,7 +123,12 @@ export function ProjectForm(props: Props) {
             )
           )
         ),
-        invoiceNumber: validators.nonBlankString(commonErrors.nonBlank)
+        invoiceNumber: pipe(
+          hasInvoiceData,
+          boolean.fold(constUndefined, () =>
+            validators.nonBlankString(commonErrors.nonBlank)
+          )
+        )
       }),
       linters: () => ({})
     },
