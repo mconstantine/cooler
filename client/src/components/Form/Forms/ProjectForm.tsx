@@ -157,7 +157,7 @@ export function ProjectForm(props: Props) {
           taskEither.chain(
             taskEither.fromPredicate(
               input => input.endTime.getTime() > input.startTime.getTime(),
-              () => a18n``
+              () => a18n`Ending date must be greater than starting date`
             )
           ),
           taskEither.map(result =>
