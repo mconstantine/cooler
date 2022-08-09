@@ -34,20 +34,37 @@ import it.mconst.cooler.utils.DatabaseName
 import it.mconst.cooler.utils.DbDocument
 import it.mconst.cooler.utils.Error
 import it.mconst.cooler.utils.given
+import java.time.LocalDate
 import mongo4cats.bson.Document
 import mongo4cats.bson.ObjectId
 import mongo4cats.circe.*
 import mongo4cats.collection.operations.Filter
 import org.bson.BsonDateTime
+import org.bson.conversions.Bson
 import org.http4s.circe.*
 import org.http4s.EntityDecoder
 import org.http4s.EntityEncoder
 import org.http4s.Status
 
 final case class ProjectCashData(at: BsonDateTime, amount: BigDecimal)
-final case class ProjectCashedBalance(balance: NonNegativeNumber)
 final case class ProjectInvoiceData(number: NonEmptyString, date: BsonDateTime)
 
+final case class ProjectQueryFilters(
+    cashed: Option[Boolean],
+    withInvoiceData: Option[Boolean],
+    started: Option[Boolean],
+    ended: Option[Boolean]
+)
+object ProjectQueryFilters {
+  def empty: ProjectQueryFilters = ProjectQueryFilters(
+    none[Boolean],
+    none[Boolean],
+    none[Boolean],
+    none[Boolean]
+  )
+}
+
+final case class ProjectCashedBalance(balance: NonNegativeNumber)
 object ProjectCashedBalance {
   given EntityEncoder[IO, ProjectCashedBalance] =
     jsonEncoderOf[IO, ProjectCashedBalance]
@@ -483,27 +500,47 @@ object Projects {
       Error(Status.NotFound, __.ErrorProjectNotFound)
     )
 
-  def find(query: CursorQuery, notCashedOnly: Boolean)(using customer: User)(
-      using
+  def find(query: CursorQuery, filters: ProjectQueryFilters)(using
+      customer: User
+  )(using
       Lang,
       DatabaseName
   ): EitherT[IO, Error, Cursor[ProjectWithClientLabel]] = {
-    val initialMatch =
-      if notCashedOnly then
-        Seq(
-          Aggregates.`match`(
-            Filters.and(
-              Filters.eq("cashData", null),
-              Filters.eq("user", customer._id)
-            )
-          )
-        )
-      else Seq(Aggregates.`match`(Filters.eq("user", customer._id)))
+    import scala.jdk.CollectionConverters.*
+
+    val now = BsonDateTime(LocalDate.now.toEpochDay * 86400000).toISOString
+    val userFilters: Iterable[Bson] = Iterable(Filters.eq("user", customer._id))
+
+    val cashDataFilters: Iterable[Bson] = filters.cashed match
+      case Some(true)  => Iterable(Filters.ne("cashData", null))
+      case Some(false) => Iterable(Filters.eq("cashData", null))
+      case None        => Iterable.empty
+
+    val invoiceDataFilters: Iterable[Bson] = filters.withInvoiceData match
+      case Some(true)  => Iterable(Filters.ne("invoiceData", null))
+      case Some(false) => Iterable(Filters.eq("invoiceData", null))
+      case None        => Iterable.empty
+
+    val startTimeFilters: Iterable[Bson] = filters.started match
+      case Some(true)  => Iterable(Filters.lte("startTime", now))
+      case Some(false) => Iterable(Filters.gte("startTime", now))
+      case None        => Iterable.empty
+
+    val endTimeFilters: Iterable[Bson] = filters.ended match
+      case Some(true)  => Iterable(Filters.lte("endTime", now))
+      case Some(false) => Iterable(Filters.gte("endTime", now))
+      case None        => Iterable.empty
+
+    val matchFilters =
+      userFilters ++ cashDataFilters ++ invoiceDataFilters ++ startTimeFilters ++ endTimeFilters
 
     collection.use(
-      _.find[ProjectWithClientLabel]("name", initialMatch ++ labelsStages)(
-        query
-      )
+      _.find[ProjectWithClientLabel](
+        "name",
+        Seq(
+          Aggregates.`match`(Filters.and(matchFilters.asJava))
+        ) ++ labelsStages
+      )(query)
     )
   }
 

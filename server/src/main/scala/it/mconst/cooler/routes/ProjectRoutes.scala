@@ -7,6 +7,7 @@ import it.mconst.cooler.middlewares.UserMiddleware
 import it.mconst.cooler.middlewares.UserMiddleware.UserContext
 import it.mconst.cooler.models.*
 import it.mconst.cooler.models.project.Project
+import it.mconst.cooler.models.project.ProjectQueryFilters
 import it.mconst.cooler.models.project.Projects
 import it.mconst.cooler.models.user.User
 import it.mconst.cooler.utils.DatabaseName
@@ -14,8 +15,17 @@ import it.mconst.cooler.utils.given
 import org.http4s.AuthedRoutes
 import org.http4s.dsl.io.*
 
-object NotCashedOnlyMatcher
-    extends OptionalQueryParamDecoderMatcher[Boolean]("notCashedOnly")
+object CashFilterMatcher
+    extends OptionalQueryParamDecoderMatcher[Boolean]("cashed")
+
+object WithInvoiceDataFilterMatcher
+    extends OptionalQueryParamDecoderMatcher[Boolean]("withInvoiceData")
+
+object StartedFilterMatcher
+    extends OptionalQueryParamDecoderMatcher[Boolean]("started")
+
+object EndedFilterMatcher
+    extends OptionalQueryParamDecoderMatcher[Boolean]("ended")
 
 object ProjectRoutes {
   def routes(using DatabaseName): AuthedRoutes[UserContext, IO] =
@@ -36,15 +46,19 @@ object ProjectRoutes {
           AfterMatcher(after) +&
           LastMatcher(last) +&
           BeforeMatcher(before) +&
-          NotCashedOnlyMatcher(notCashedOnly) as context => {
+          CashFilterMatcher(cashed) +&
+          WithInvoiceDataFilterMatcher(withInvoiceData) +&
+          StartedFilterMatcher(started) +&
+          EndedFilterMatcher(ended) as context => {
         given Lang = context.lang
         given User = context.user
 
+        val filters =
+          ProjectQueryFilters(cashed, withInvoiceData, started, ended)
+
         EitherT
           .fromEither[IO](CursorQuery(query, first, after, last, before))
-          .flatMap(query =>
-            Projects.find(query, notCashedOnly.getOrElse(false))
-          )
+          .flatMap(query => Projects.find(query, filters))
           .toResponse
       }
 

@@ -7,7 +7,6 @@ import { add } from 'ionicons/icons'
 import { useEffect, useState } from 'react'
 import { a18n } from '../../a18n'
 import { ConnectionList } from '../../components/ConnectionList/ConnectionList'
-import { Toggle } from '../../components/Form/Input/Toggle/Toggle'
 import { RoutedItem } from '../../components/List/List'
 import { projectsRoute, useRouter } from '../../components/Router'
 import { query } from '../../effects/api/api'
@@ -25,7 +24,10 @@ export default function ProjectsList() {
     query: option.none,
     first: unsafePositiveInteger(20),
     after: option.none,
-    notCashedOnly: false
+    cashed: option.none,
+    withInvoiceData: option.none,
+    started: option.none,
+    ended: option.none
   })
 
   const [projects] = useGet(getProjectsRequest, input)
@@ -72,9 +74,6 @@ export default function ProjectsList() {
     )
   }
 
-  const onNotCashedOnlyChange: Reader<boolean, void> = notCashedOnly =>
-    setInput(input => ({ ...input, notCashedOnly }))
-
   useEffect(() => {
     pipe(
       projects,
@@ -111,14 +110,7 @@ export default function ProjectsList() {
       renderListItem={renderProjectItem}
       emptyListMessage={a18n`No projects found`}
     >
-      <Toggle
-        name="notCashedOnly"
-        label={a18n`Show only not cashed`}
-        value={input.notCashedOnly}
-        onChange={onNotCashedOnlyChange}
-        error={option.none}
-        warning={option.none}
-      />
+      {/* TODO: 3-state toggles here */}
     </ConnectionList>
   )
 }

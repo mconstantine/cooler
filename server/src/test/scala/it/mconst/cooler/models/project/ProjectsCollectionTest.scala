@@ -17,6 +17,7 @@ import it.mconst.cooler.models.user.User
 import it.mconst.cooler.models.user.Users
 import it.mconst.cooler.utils.__
 import it.mconst.cooler.utils.Error
+import java.time.LocalDate
 import mongo4cats.collection.operations.Filter
 import mongo4cats.collection.operations.Update
 import org.bson.BsonDateTime
@@ -142,19 +143,42 @@ class ProjectsCollectionTest extends IOSuite {
 
   def projectsList = Resource.make {
     val client = testDataFixture().client
+    val today = BsonDateTime(LocalDate.now.toEpochDay * 86400000)
+    val yesterday = BsonDateTime(today.getValue - 86400000)
+    val tomorrow = BsonDateTime(today.getValue + 86400000)
 
     val projects: List[Project.InputData] = List(
-      makeTestProject(client._id, name = "Alice"),
-      makeTestProject(client._id, name = "Bob"),
+      makeTestProject(
+        client._id,
+        name = "Alice",
+        invoiceData = Some(Project.InvoiceDataInput("0", today.toISOString))
+      ),
+      makeTestProject(
+        client._id,
+        name = "Bob"
+      ),
       makeTestProject(
         client._id,
         name = "Charlie",
         cashData =
-          Some(ProjectCashData(BsonDateTime(System.currentTimeMillis), 42f))
+          Some(ProjectCashData(BsonDateTime(System.currentTimeMillis), 42f)),
+        endTime = tomorrow.toISOString
       ),
-      makeTestProject(client._id, name = "Daniel"),
-      makeTestProject(client._id, name = "Eleanor"),
-      makeTestProject(client._id, name = "Frederick")
+      makeTestProject(
+        client._id,
+        name = "Daniel",
+        endTime = yesterday.toISOString
+      ),
+      makeTestProject(
+        client._id,
+        name = "Eleanor",
+        startTime = yesterday.toISOString
+      ),
+      makeTestProject(
+        client._id,
+        name = "Frederick",
+        startTime = tomorrow.toISOString
+      )
     )
 
     import cats.syntax.parallel.*
@@ -181,7 +205,7 @@ class ProjectsCollectionTest extends IOSuite {
               first = Some(PositiveInteger.unsafe(2)),
               after = Some("Alice")
             ),
-            false
+            ProjectQueryFilters.empty
           )
           .orFail
         _ = assertEquals(result.pageInfo.totalCount, 4)
@@ -198,31 +222,142 @@ class ProjectsCollectionTest extends IOSuite {
     }
   }
 
-  test("should find only not cashed projects") {
+  test("should handle filters (withInvoiceData)") {
     projectsList.use { projects =>
-      val client = testDataFixture().client.asPrivate
-
       for
-        result <- Projects
+        resultWithTrue <- Projects
           .find(
-            CursorQueryAsc(
-              query = Some("a"),
-              first = Some(PositiveInteger.unsafe(2)),
-              after = Some("Alice")
-            ),
-            true
+            CursorQuery.empty,
+            ProjectQueryFilters(
+              none[Boolean],
+              Some(true),
+              none[Boolean],
+              none[Boolean]
+            )
           )
           .orFail
-        _ = assertEquals(result.pageInfo.totalCount, 3)
-        _ = assertEquals(result.pageInfo.startCursor, Some("Daniel"))
-        _ = assertEquals(result.pageInfo.endCursor, Some("Eleanor"))
-        _ = assertEquals(result.pageInfo.hasPreviousPage, true)
-        _ = assertEquals(result.pageInfo.hasNextPage, false)
-        _ = assertEquals(result.edges.length, 2)
-        _ = assertEquals(
-          result.edges.map(_.node._id),
-          List(projects(3)._id, projects(4)._id)
-        )
+          .map(_.edges.map(_.node._id))
+        resultWithFalse <- Projects
+          .find(
+            CursorQuery.empty,
+            ProjectQueryFilters(
+              none[Boolean],
+              Some(false),
+              none[Boolean],
+              none[Boolean]
+            )
+          )
+          .orFail
+          .map(_.edges.map(_.node._id))
+        _ = assert(resultWithTrue.contains(projects(0)._id))
+        _ = assert(!resultWithTrue.contains(projects(1)._id))
+        _ = assert(resultWithFalse.contains(projects(1)._id))
+        _ = assert(!resultWithFalse.contains(projects(0)._id))
+      yield ()
+    }
+  }
+
+  test("should handle filters (cashed)") {
+    projectsList.use { projects =>
+      for
+        resultWithTrue <- Projects
+          .find(
+            CursorQuery.empty,
+            ProjectQueryFilters(
+              Some(true),
+              none[Boolean],
+              none[Boolean],
+              none[Boolean]
+            )
+          )
+          .orFail
+          .map(_.edges.map(_.node._id))
+        resultWithFalse <- Projects
+          .find(
+            CursorQuery.empty,
+            ProjectQueryFilters(
+              Some(false),
+              none[Boolean],
+              none[Boolean],
+              none[Boolean]
+            )
+          )
+          .orFail
+          .map(_.edges.map(_.node._id))
+        _ = assert(resultWithTrue.contains(projects(2)._id))
+        _ = assert(!resultWithTrue.contains(projects(3)._id))
+        _ = assert(resultWithFalse.contains(projects(3)._id))
+        _ = assert(!resultWithFalse.contains(projects(2)._id))
+      yield ()
+    }
+  }
+
+  test("should handle filters (started)") {
+    projectsList.use { projects =>
+      for
+        resultWithTrue <- Projects
+          .find(
+            CursorQuery.empty,
+            ProjectQueryFilters(
+              none[Boolean],
+              none[Boolean],
+              Some(true),
+              none[Boolean]
+            )
+          )
+          .orFail
+          .map(_.edges.map(_.node._id))
+        resultWithFalse <- Projects
+          .find(
+            CursorQuery.empty,
+            ProjectQueryFilters(
+              none[Boolean],
+              none[Boolean],
+              Some(false),
+              none[Boolean]
+            )
+          )
+          .orFail
+          .map(_.edges.map(_.node._id))
+        _ = assert(resultWithTrue.contains(projects(4)._id))
+        _ = assert(!resultWithTrue.contains(projects(5)._id))
+        _ = assert(resultWithFalse.contains(projects(5)._id))
+        _ = assert(!resultWithFalse.contains(projects(4)._id))
+      yield ()
+    }
+  }
+
+  test("should handle filters (ended)") {
+    projectsList.use { projects =>
+      for
+        resultWithTrue <- Projects
+          .find(
+            CursorQuery.empty,
+            ProjectQueryFilters(
+              none[Boolean],
+              none[Boolean],
+              none[Boolean],
+              Some(true)
+            )
+          )
+          .orFail
+          .map(_.edges.map(_.node._id))
+        resultWithFalse <- Projects
+          .find(
+            CursorQuery.empty,
+            ProjectQueryFilters(
+              none[Boolean],
+              none[Boolean],
+              none[Boolean],
+              Some(false)
+            )
+          )
+          .orFail
+          .map(_.edges.map(_.node._id))
+        _ = assert(resultWithTrue.contains(projects(3)._id))
+        _ = assert(!resultWithTrue.contains(projects(2)._id))
+        _ = assert(resultWithFalse.contains(projects(2)._id))
+        _ = assert(!resultWithFalse.contains(projects(3)._id))
       yield ()
     }
   }
@@ -238,7 +373,7 @@ class ProjectsCollectionTest extends IOSuite {
             .create(makeTestProject(client._id, name = "Adam"))
             .orFail
           result <- Projects
-            .find(CursorQueryAsc(query = Some("a")), false)
+            .find(CursorQueryAsc(query = Some("a")), ProjectQueryFilters.empty)
             .orFail
             .map(_.edges.map(_.node.name.toString))
           _ = assertEquals(result, List("Adam"))
