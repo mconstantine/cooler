@@ -1,6 +1,5 @@
 TODO:
 
-[ ] Add "to" dates to user profile, default should be the end of the current month + 1 millisecond
 [ ] Add startTime to task form
 [ ] Add invoice data (optional, number and date) to projects
 [ ] Projects toggles, 3-state (with undefined): cashed, invoice sent, ongoing, future
@@ -15,3 +14,4 @@ DONE:
 
 [X] Add required startDate and endDate to projects
 [X] Use expected budget in stats
+[X] Add "to" dates to user profile, default should be the end of the current month + 1 millisecond

@@ -33,7 +33,8 @@ export type Profile = t.TypeOf<typeof Profile>
 
 const ProfileStatsQueryInput = t.type(
   {
-    since: DateFromISOString
+    since: DateFromISOString,
+    to: DateFromISOString
   },
   'ProfileStatsQueryInput'
 )
@@ -99,7 +100,8 @@ export const getTasksDueTodayRequest = makeGetRequest({
 
 const CashedBalanceRequestInput = t.type(
   {
-    since: DateFromISOString
+    since: DateFromISOString,
+    to: DateFromISOString
   },
   'CashedBalanceRequestInput'
 )

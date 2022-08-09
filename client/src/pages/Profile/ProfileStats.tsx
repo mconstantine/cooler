@@ -27,16 +27,13 @@ export function ProfileStats() {
   const { taxes } = useTaxes()
   const { currentSessions } = useCurrentSessions()
 
-  const [input, setInput] = useState<ProfileStatsQueryInput>({
-    since: new Date(
-      new Date().getFullYear(),
-      new Date().getMonth(),
-      1,
-      0,
-      0,
-      0,
-      0
-    )
+  const [input, setInput] = useState<ProfileStatsQueryInput>(() => {
+    const now = new Date()
+
+    return {
+      since: new Date(now.getFullYear(), now.getMonth(), 1),
+      to: new Date(now.getFullYear(), now.getMonth() + 1, 1)
+    }
   })
 
   const currentSessionsWithDuration = useSessionsClock(
@@ -68,7 +65,17 @@ export function ProfileStats() {
             mode="date"
             label={a18n`Since`}
             value={input.since}
-            onChange={since => setInput({ since })}
+            onChange={since => setInput(input => ({ ...input, since }))}
+            error={option.none}
+            warning={option.none}
+            disabled={query.isLoading(profileStats)}
+          />
+          <DateTimePicker
+            name="currentSituationTo"
+            mode="date"
+            label={a18n`Until`}
+            value={input.to}
+            onChange={to => setInput(input => ({ ...input, to }))}
             error={option.none}
             warning={option.none}
             disabled={query.isLoading(profileStats)}

@@ -17,16 +17,13 @@ import { calculateNetValue, renderTaxItem } from './utils'
 export function CashedBalance() {
   const { taxes } = useTaxes()
 
-  const [input, setInput] = useState<CashedBalanceRequestInput>({
-    since: new Date(
-      new Date().getFullYear(),
-      new Date().getMonth(),
-      1,
-      0,
-      0,
-      0,
-      0
-    )
+  const [input, setInput] = useState<CashedBalanceRequestInput>(() => {
+    const now = new Date()
+
+    return {
+      since: new Date(now.getFullYear(), now.getMonth(), 1),
+      to: new Date(now.getFullYear(), now.getMonth() + 1, 1)
+    }
   })
 
   const [cashedBalance] = useGet(getCashedBalanceRequest, input)
@@ -50,7 +47,17 @@ export function CashedBalance() {
             mode="date"
             label={a18n`Since`}
             value={input.since}
-            onChange={since => setInput({ since })}
+            onChange={since => setInput(input => ({ ...input, since }))}
+            error={option.none}
+            warning={option.none}
+            disabled={query.isLoading(cashedBalance)}
+          />
+          <DateTimePicker
+            name="cashedBalanceTo"
+            mode="date"
+            label={a18n`Until`}
+            value={input.to}
+            onChange={to => setInput(input => ({ ...input, to }))}
             error={option.none}
             warning={option.none}
             disabled={query.isLoading(cashedBalance)}
