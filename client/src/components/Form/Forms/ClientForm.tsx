@@ -310,7 +310,7 @@ export function ClientForm(props: Props) {
   const title = pipe(
     props.client,
     option.map(getClientName),
-    option.getOrElse(() => a18n`New client`)
+    option.getOrElse(() => a18n`New Client`)
   )
 
   return (

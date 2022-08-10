@@ -120,7 +120,7 @@ export default function ProjectsList() {
         onLoadMore={option.some(onLoadMore)}
         action={option.some({
           type: 'sync',
-          label: a18n`Create new project`,
+          label: a18n`New Project`,
           icon: option.some(add),
           action: () => setRoute(projectsRoute('new'))
         })}

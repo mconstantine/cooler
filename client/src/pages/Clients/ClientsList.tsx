@@ -35,7 +35,7 @@ export default function ClientsList() {
       onSearchQueryChange={option.some(onSearchQueryChange)}
       action={option.some({
         type: 'sync',
-        label: a18n`Create new client`,
+        label: a18n`New Client`,
         icon: option.some(add),
         action: () => setRoute(clientsRoute('new'))
       })}

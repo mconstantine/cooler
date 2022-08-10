@@ -99,7 +99,7 @@ export function ProjectTasks(props: Props) {
       title={a18n`Tasks`}
       action={option.some({
         type: 'sync',
-        label: a18n`Create new Task`,
+        label: a18n`New Task`,
         action: () => setRoute(taskRoute(props.project._id, 'new')),
         icon: option.some(add)
       })}
