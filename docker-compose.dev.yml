@@ -1,7 +1,10 @@
 services:
   mongodb:
     image: mongo
-    container_name: cooler_db_dev
+    container_name: db_dev
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=root
     volumes:
       - "/data/db"
     ports:
