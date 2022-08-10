@@ -20,10 +20,11 @@ import { Option } from 'fp-ts/Option'
 import { HeadingAction } from '../Heading/Heading'
 import { Query } from '../../effects/api/Query'
 import { query } from '../../effects/api/api'
+import { NonEmptyArray } from 'fp-ts/NonEmptyArray'
 
 interface Props<T> extends PropsWithChildren {
   title: LocalizedString
-  action: Option<HeadingAction>
+  actions: Option<NonEmptyArray<HeadingAction>>
   query: Query<LocalizedString, Connection<T>>
   renderListItem: Reader<T, Item>
   onSearchQueryChange: Option<Reader<string, unknown>>
@@ -54,7 +55,7 @@ export function ConnectionList<T>(props: Props<T>) {
   }, [autoFocus])
 
   return (
-    <Panel title={props.title} framed action={props.action}>
+    <Panel title={props.title} framed actions={props.actions}>
       {pipe(
         props.onSearchQueryChange,
         option.fold(constNull, () => (

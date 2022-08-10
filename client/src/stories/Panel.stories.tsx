@@ -1,5 +1,5 @@
 import { Meta, Story } from '@storybook/react'
-import { boolean, either, option } from 'fp-ts'
+import { boolean, either, nonEmptyArray, option } from 'fp-ts'
 import { constVoid, pipe } from 'fp-ts/function'
 import { NonEmptyString } from 'io-ts-types'
 import { heart } from 'ionicons/icons'
@@ -27,29 +27,30 @@ const PanelTemplate: Story<Args> = props => (
         title={props.title}
         framed={props.framed}
         color={props.color}
-        action={option.some(
+        actions={option.some(
           pipe(
             props.actionLabel,
             NonEmptyString.decode,
             either.fold(
               () =>
-                ({
+                nonEmptyArray.of({
                   type: 'icon',
                   action: constVoid,
                   icon: heart
                 } as HeadingAction),
-              label => ({
-                type: 'sync',
-                label: unsafeLocalizedString(label),
-                action: constVoid,
-                icon: pipe(
-                  props.actionIcon,
-                  boolean.fold(
-                    () => option.none,
-                    () => option.some(heart)
+              label =>
+                nonEmptyArray.of({
+                  type: 'sync',
+                  label: unsafeLocalizedString(label),
+                  action: constVoid,
+                  icon: pipe(
+                    props.actionIcon,
+                    boolean.fold(
+                      () => option.none,
+                      () => option.some(heart)
+                    )
                   )
-                )
-              })
+                })
             )
           )
         )}

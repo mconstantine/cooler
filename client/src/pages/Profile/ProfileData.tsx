@@ -81,7 +81,7 @@ export function ProfileData() {
           isEditing,
           boolean.fold(
             () => (
-              <Panel title={a18n`Your data`} framed action={option.none}>
+              <Panel title={a18n`Your data`} framed actions={option.none}>
                 <ReadOnlyInput
                   name="name"
                   label={a18n`Name`}
@@ -127,7 +127,7 @@ export function ProfileData() {
                   />
                   <LoadingButton
                     type="loadingButton"
-                    label={a18n`Delete profile`}
+                    label={option.some(a18n`Delete profile`)}
                     color="danger"
                     flat
                     action={deleteProfile()}

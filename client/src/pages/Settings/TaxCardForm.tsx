@@ -58,7 +58,7 @@ export function TaxCardForm(props: Props) {
               {
                 type: 'async',
                 icon: skull,
-                label: a18n`Delete tax`,
+                label: option.some(a18n`Delete tax`),
                 action: deleteTaxCommand(null),
                 color: 'danger'
               }

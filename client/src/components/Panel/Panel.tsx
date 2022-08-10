@@ -1,3 +1,4 @@
+import { NonEmptyArray } from 'fp-ts/NonEmptyArray'
 import { Option } from 'fp-ts/Option'
 import { PropsWithChildren } from 'react'
 import { Color, LocalizedString } from '../../globalDomain'
@@ -9,7 +10,7 @@ interface Props {
   title?: LocalizedString
   framed?: boolean
   className?: string
-  action: Option<HeadingAction>
+  actions: Option<NonEmptyArray<HeadingAction>>
   color?: Color
 }
 
@@ -27,7 +28,7 @@ export function Panel(props: PropsWithChildren<Props>) {
       )}
     >
       {props.title ? (
-        <Heading size={32} action={props.action}>
+        <Heading size={32} actions={props.actions}>
           {props.title}
         </Heading>
       ) : null}

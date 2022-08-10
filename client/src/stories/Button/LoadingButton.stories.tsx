@@ -1,6 +1,7 @@
 import { Meta, Story } from '@storybook/react'
-import { either, task, taskEither } from 'fp-ts'
+import { either, option, task, taskEither } from 'fp-ts'
 import { pipe, constVoid } from 'fp-ts/function'
+import { NonEmptyString } from 'io-ts-types'
 import { send } from 'ionicons/icons'
 import { unsafeLocalizedString } from '../../a18n'
 import { LoadingButton as LoadingButtonComponent } from '../../components/Button/LoadingButton/LoadingButton'
@@ -24,8 +25,9 @@ function foldLoadingButtonResult<T>(
   }
 }
 
-type Args = Omit<ButtonArgs, 'icon'> & {
+type Args = Omit<ButtonArgs, 'icon' | 'label'> & {
   result: LoadingButtonResult
+  label: string
 }
 
 const success = taskEither.fromTask(
@@ -43,7 +45,12 @@ const LoadingButtonTemplate: Story<Args> = props => {
       <Content>
         <LoadingButtonComponent
           type="loadingButton"
-          label={props.label}
+          label={pipe(
+            props.label,
+            NonEmptyString.decode,
+            option.fromEither,
+            option.map(unsafeLocalizedString)
+          )}
           action={pipe(
             props.result,
             foldLoadingButtonResult(

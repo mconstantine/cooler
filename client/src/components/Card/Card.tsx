@@ -24,7 +24,7 @@ interface SyncAction {
 
 interface AsyncAction {
   type: 'async'
-  label: LocalizedString
+  label: Option<LocalizedString>
   action: TaskEither<LocalizedString, unknown>
   icon: string
   color?: Color
@@ -58,7 +58,7 @@ export function Card(props: Props) {
   const [error, setError] = useState<Option<LocalizedString>>(option.none)
 
   return (
-    <Panel className="Card" action={option.none}>
+    <Panel className="Card" actions={option.none}>
       <List
         heading={option.none}
         unwrapDescriptions={props.unwrapDescription}
@@ -80,33 +80,39 @@ export function Card(props: Props) {
         ))
       )}
       <Buttons>
-        {props.actions.map(
-          foldAction(
-            action => (
-              <Button
-                key={action.label}
-                type="button"
-                label={action.label}
-                action={action.action}
-                icon={option.none}
-                color={action.color}
-                flat
-              />
-            ),
-            action => (
-              <LoadingButton
-                key={action.label}
-                type="loadingButton"
-                label={action.label}
-                action={pipe(
-                  taskEither.rightIO(() => setError(option.none)),
-                  taskEither.chain(() => action.action),
-                  taskEither.bimap(flow(option.some, setError), constVoid)
-                )}
-                icon={action.icon}
-                color={action.color}
-                flat
-              />
+        {props.actions.map((action, index) =>
+          pipe(
+            action,
+            foldAction(
+              action => (
+                <Button
+                  key={action.label}
+                  type="button"
+                  label={action.label}
+                  action={action.action}
+                  icon={option.none}
+                  color={action.color}
+                  flat
+                />
+              ),
+              action => (
+                <LoadingButton
+                  key={pipe(
+                    action.label,
+                    option.getOrElse<string | number>(() => index)
+                  )}
+                  type="loadingButton"
+                  label={action.label}
+                  action={pipe(
+                    taskEither.rightIO(() => setError(option.none)),
+                    taskEither.chain(() => action.action),
+                    taskEither.bimap(flow(option.some, setError), constVoid)
+                  )}
+                  icon={action.icon}
+                  color={action.color}
+                  flat
+                />
+              )
             )
           )
         )}

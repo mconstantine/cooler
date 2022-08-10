@@ -32,7 +32,7 @@ export function TasksDueToday() {
       () => <LoadingBlock />,
       error => <ErrorPanel error={error} />,
       tasks => (
-        <Panel title={a18n`Tasks due today`} action={option.none} framed>
+        <Panel title={a18n`Tasks due today`} actions={option.none} framed>
           {pipe(
             tasks,
             nonEmptyArray.fromArray,

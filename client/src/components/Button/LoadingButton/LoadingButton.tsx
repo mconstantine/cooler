@@ -1,6 +1,8 @@
 import { taskEither } from 'fp-ts'
 import { pipe } from 'fp-ts/function'
+import { Option } from 'fp-ts/Option'
 import { useEffect, useState } from 'react'
+import { LocalizedString } from '../../../globalDomain'
 
 import {
   ControlledLoadingButton,
@@ -10,8 +12,13 @@ import {
   InputProps
 } from './ControlledLoadingButton'
 
-type Props = Omit<CommonProps, 'loadingState'> &
-  (Omit<ButtonProps, 'loadingState'> | Omit<InputProps, 'loadingState'>)
+type Props = Omit<CommonProps, 'loadingState' | 'label'> &
+  (
+    | Omit<ButtonProps, 'loadingState' | 'label'>
+    | Omit<InputProps, 'loadingState'>
+  ) & {
+    label: Option<LocalizedString>
+  }
 
 export function LoadingButton(props: Props) {
   const [loadingState, setLoadingState] = useState<LoadingState>('default')

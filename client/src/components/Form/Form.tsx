@@ -22,10 +22,11 @@ import { Banner } from '../Banner/Banner'
 import { Panel } from '../Panel/Panel'
 import './Form.scss'
 import { HeadingAction } from '../Heading/Heading'
+import { NonEmptyArray } from 'fp-ts/NonEmptyArray'
 
 interface Props extends PropsWithChildren {
   title: LocalizedString
-  headingAction: Option<HeadingAction>
+  actions: Option<NonEmptyArray<HeadingAction>>
   submit: TaskEither<LocalizedString, unknown>
   submitLabel?: LocalizedString
   submitIcon?: string
@@ -73,7 +74,7 @@ export function Form(props: Props) {
   }, [loadingState])
 
   return (
-    <Panel title={props.title} framed action={props.headingAction}>
+    <Panel title={props.title} framed actions={props.actions}>
       <form className="Form" onSubmit={onSubmit}>
         {props.children}
 
@@ -98,7 +99,7 @@ export function Form(props: Props) {
                 key={0}
                 type="loadingInput"
                 color="primary"
-                label={submitLabel}
+                label={option.some(submitLabel)}
                 icon={submitIcon}
                 loadingState={loadingState}
               />,

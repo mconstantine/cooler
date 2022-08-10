@@ -25,6 +25,7 @@
   }
 
   > .Heading {
+    flex-wrap: wrap;
     margin-bottom: 32px;
 
     @include ss('padding-top', $spacing-medium-mobile, $spacing-medium-desktop);

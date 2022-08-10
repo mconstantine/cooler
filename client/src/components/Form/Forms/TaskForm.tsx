@@ -1,4 +1,4 @@
-import { boolean, option } from 'fp-ts'
+import { boolean, nonEmptyArray, option } from 'fp-ts'
 import { constNull, constUndefined, pipe } from 'fp-ts/function'
 import { useState } from 'react'
 import { a18n, leadZero, unsafeLocalizedString } from '../../../a18n'
@@ -152,7 +152,7 @@ export function TaskForm(props: Props) {
   return (
     <Form
       title={a18n`New Task for "${props.project.name}"`}
-      headingAction={option.none}
+      actions={option.none}
       formError={formError}
       submit={submit}
       additionalButtons={[
@@ -247,11 +247,13 @@ function NamingTips() {
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} framed>
         <Heading
           size={32}
-          action={option.some({
-            type: 'icon',
-            action: () => setIsModalOpen(false),
-            icon: close
-          })}
+          actions={option.some(
+            nonEmptyArray.of({
+              type: 'icon',
+              action: () => setIsModalOpen(false),
+              icon: close
+            })
+          )}
         >
           {a18n`Tips for repeating tasks' names`}
         </Heading>

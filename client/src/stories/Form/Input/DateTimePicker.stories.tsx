@@ -27,7 +27,7 @@ const DateTimePickerTemplate: Story<Args> = props => {
   return (
     <CoolerStory>
       <Content>
-        <Panel framed action={option.none}>
+        <Panel framed actions={option.none}>
           <DateTimePickerComponent
             name="dateTimePicker"
             mode={props.mode}

@@ -80,7 +80,7 @@ export function UserForm(props: Props) {
   return (
     <Form
       title={a18n`Edit your data`}
-      headingAction={option.none}
+      actions={option.none}
       formError={formError}
       submit={submit}
       additionalButtons={[

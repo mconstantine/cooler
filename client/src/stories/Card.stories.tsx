@@ -44,7 +44,7 @@ const CardTemplate: Story<Args> = props => {
             },
             {
               type: 'async',
-              label: unsafeLocalizedString('Async action'),
+              label: option.some(unsafeLocalizedString('Async action')),
               action: pipe(
                 props.shouldFail,
                 boolean.fold(

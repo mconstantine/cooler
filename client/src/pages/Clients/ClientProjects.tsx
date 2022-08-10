@@ -36,7 +36,7 @@ export function ClientProjects(props: Props) {
       title={a18n`Projects`}
       query={results}
       onSearchQueryChange={option.some(onSearchQueryChange)}
-      action={option.none}
+      actions={option.none}
       onLoadMore={option.some(onLoadMore)}
       renderListItem={renderItem}
       emptyListMessage={a18n`No projects found`}

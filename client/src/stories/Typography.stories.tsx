@@ -10,33 +10,33 @@ import { CoolerStory } from './CoolerStory'
 export const Headings: Story = () => (
   <CoolerStory>
     <Content>
-      <Panel framed action={option.none}>
-        <Heading size={40} action={option.none}>
+      <Panel framed actions={option.none}>
+        <Heading size={40} actions={option.none}>
           {unsafeLocalizedString('Lorem ipsum, dolor sit amet')}
         </Heading>
       </Panel>
-      <Panel framed action={option.none}>
-        <Heading size={36} action={option.none}>
+      <Panel framed actions={option.none}>
+        <Heading size={36} actions={option.none}>
           {unsafeLocalizedString('Lorem ipsum, dolor sit amet')}
         </Heading>
       </Panel>
-      <Panel framed action={option.none}>
-        <Heading size={32} action={option.none}>
+      <Panel framed actions={option.none}>
+        <Heading size={32} actions={option.none}>
           {unsafeLocalizedString('Lorem ipsum, dolor sit amet')}
         </Heading>
       </Panel>
-      <Panel framed action={option.none}>
-        <Heading size={27} action={option.none}>
+      <Panel framed actions={option.none}>
+        <Heading size={27} actions={option.none}>
           {unsafeLocalizedString('Lorem ipsum, dolor sit amet')}
         </Heading>
       </Panel>
-      <Panel framed action={option.none}>
-        <Heading size={24} action={option.none}>
+      <Panel framed actions={option.none}>
+        <Heading size={24} actions={option.none}>
           {unsafeLocalizedString('Lorem ipsum, dolor sit amet')}
         </Heading>
       </Panel>
-      <Panel framed action={option.none}>
-        <Heading size={21} action={option.none}>
+      <Panel framed actions={option.none}>
+        <Heading size={21} actions={option.none}>
           {unsafeLocalizedString('Lorem ipsum, dolor sit amet')}
         </Heading>
       </Panel>
@@ -47,7 +47,7 @@ export const Headings: Story = () => (
 export const Mix: Story = () => (
   <CoolerStory>
     <Content>
-      <Heading size={40} action={option.none}>
+      <Heading size={40} actions={option.none}>
         {unsafeLocalizedString('Lorem ipsum, dolor sit amet')}
       </Heading>
       <Body>
@@ -56,7 +56,7 @@ export const Mix: Story = () => (
         )}
       </Body>
 
-      <Heading size={36} action={option.none}>
+      <Heading size={36} actions={option.none}>
         {unsafeLocalizedString('Lorem ipsum, dolor sit amet')}
       </Heading>
       <Body>
@@ -65,7 +65,7 @@ export const Mix: Story = () => (
         )}
       </Body>
 
-      <Heading size={32} action={option.none}>
+      <Heading size={32} actions={option.none}>
         {unsafeLocalizedString('Lorem ipsum, dolor sit amet')}
       </Heading>
       <Body>
@@ -74,7 +74,7 @@ export const Mix: Story = () => (
         )}
       </Body>
 
-      <Heading size={27} action={option.none}>
+      <Heading size={27} actions={option.none}>
         {unsafeLocalizedString('Lorem ipsum, dolor sit amet')}
       </Heading>
       <Body>
@@ -83,7 +83,7 @@ export const Mix: Story = () => (
         )}
       </Body>
 
-      <Heading size={24} action={option.none}>
+      <Heading size={24} actions={option.none}>
         {unsafeLocalizedString('Lorem ipsum, dolor sit amet')}
       </Heading>
       <Body>
@@ -92,7 +92,7 @@ export const Mix: Story = () => (
         )}
       </Body>
 
-      <Heading size={21} action={option.none}>
+      <Heading size={21} actions={option.none}>
         {unsafeLocalizedString('Lorem ipsum, dolor sit amet')}
       </Heading>
       <Body>
@@ -101,24 +101,24 @@ export const Mix: Story = () => (
         )}
       </Body>
 
-      <Heading size={40} action={option.none}>
+      <Heading size={40} actions={option.none}>
         {unsafeLocalizedString('Lorem ipsum, dolor sit amet')}
       </Heading>
-      <Heading size={36} action={option.none}>
+      <Heading size={36} actions={option.none}>
         {unsafeLocalizedString('Lorem ipsum, dolor sit amet')}
       </Heading>
       <p></p>
-      <Heading size={32} action={option.none}>
+      <Heading size={32} actions={option.none}>
         {unsafeLocalizedString('Lorem ipsum, dolor sit amet')}
       </Heading>
-      <Heading size={27} action={option.none}>
+      <Heading size={27} actions={option.none}>
         {unsafeLocalizedString('Lorem ipsum, dolor sit amet')}
       </Heading>
       <p></p>
-      <Heading size={24} action={option.none}>
+      <Heading size={24} actions={option.none}>
         {unsafeLocalizedString('Lorem ipsum, dolor sit amet')}
       </Heading>
-      <Heading size={21} action={option.none}>
+      <Heading size={21} actions={option.none}>
         {unsafeLocalizedString('Lorem ipsum, dolor sit amet')}
       </Heading>
     </Content>

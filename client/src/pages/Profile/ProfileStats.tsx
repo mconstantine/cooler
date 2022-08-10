@@ -56,7 +56,7 @@ export function ProfileStats() {
       () => <LoadingBlock />,
       error => <ErrorPanel error={error} />,
       taxes => (
-        <Panel title={a18n`Current situation`} framed action={option.none}>
+        <Panel title={a18n`Current situation`} framed actions={option.none}>
           <Body>
             {a18n`Information about the amount of time you expect to work VS how much you already did, as well as the amount of money you will earn, since a given date`}
           </Body>

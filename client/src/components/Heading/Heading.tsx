@@ -6,9 +6,11 @@ import { composeClassName } from '../../misc/composeClassName'
 import { Option } from 'fp-ts/Option'
 import { TaskEither } from 'fp-ts/TaskEither'
 import { IO } from 'fp-ts/IO'
-import { option } from 'fp-ts'
+import { nonEmptyArray, option } from 'fp-ts'
 import { Button } from '../Button/Button/Button'
 import { LoadingButton } from '../Button/LoadingButton/LoadingButton'
+import { NonEmptyArray } from 'fp-ts/NonEmptyArray'
+import { Buttons } from '../Button/Buttons/Buttons'
 
 export const HeadingSize = t.keyof({
   40: true,
@@ -63,7 +65,7 @@ interface IconAction {
 
 interface AsyncAction {
   type: 'async'
-  label: LocalizedString
+  label: Option<LocalizedString>
   action: TaskEither<LocalizedString, unknown>
   icon: string
   color?: Color
@@ -93,7 +95,7 @@ interface Props {
   color?: Color
   className?: string
   children: LocalizedString
-  action: Option<HeadingAction>
+  actions: Option<NonEmptyArray<HeadingAction>>
 }
 
 export function Heading(props: Props) {
@@ -111,41 +113,53 @@ export function Heading(props: Props) {
     )
   )
 
-  const action = pipe(
-    props.action,
-    option.fold(
-      constNull,
-      foldHeadingAction(
-        action => (
-          <Button
-            type="button"
-            label={action.label}
-            icon={action.icon}
-            color={action.color}
-            action={action.action}
-            flat={isActionFlat}
-          />
-        ),
-        action => (
-          <Button
-            type="iconButton"
-            icon={action.icon}
-            color={action.color}
-            action={action.action}
-          />
-        ),
-        action => (
-          <LoadingButton
-            type="loadingButton"
-            label={action.label}
-            icon={action.icon}
-            color={action.color}
-            action={action.action}
-            flat={isActionFlat}
-          />
-        )
-      )
-    )
+  const actions = pipe(
+    props.actions,
+    option.fold(constNull, actions => (
+      <Buttons>
+        {pipe(
+          actions,
+          nonEmptyArray.mapWithIndex((index, action) =>
+            pipe(
+              action,
+              foldHeadingAction(
+                action => (
+                  <Button
+                    key={index}
+                    type="button"
+                    label={action.label}
+                    icon={action.icon}
+                    color={action.color}
+                    action={action.action}
+                    flat={isActionFlat}
+                  />
+                ),
+                action => (
+                  <Button
+                    key={index}
+                    type="iconButton"
+                    icon={action.icon}
+                    color={action.color}
+                    action={action.action}
+                  />
+                ),
+                action => (
+                  <LoadingButton
+                    key={index}
+                    type="loadingButton"
+                    label={action.label}
+                    icon={action.icon}
+                    color={action.color}
+                    action={action.action}
+                    flat={isActionFlat}
+                  />
+                )
+              )
+            )
+          )
+        )}
+      </Buttons>
+    ))
   )
 
   return (
@@ -168,7 +182,7 @@ export function Heading(props: Props) {
           () => <h6>{props.children}</h6>
         )
       )}
-      {action}
+      {actions}
     </div>
   )
 }

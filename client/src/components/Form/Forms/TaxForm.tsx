@@ -64,7 +64,7 @@ export function TaxForm(props: Props) {
   return (
     <Form
       title={title}
-      headingAction={option.none}
+      actions={option.none}
       formError={formError}
       submit={submit}
       additionalButtons={pipe(

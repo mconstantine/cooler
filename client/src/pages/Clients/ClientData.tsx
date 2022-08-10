@@ -78,7 +78,7 @@ export function ClientData(props: Props) {
     isEditing,
     boolean.fold(
       () => (
-        <Panel title={getClientName(props.client)} framed action={option.none}>
+        <Panel title={getClientName(props.client)} framed actions={option.none}>
           {pipe(
             props.client,
             foldClient(
@@ -199,7 +199,7 @@ export function ClientData(props: Props) {
             />
             <LoadingButton
               type="loadingButton"
-              label={a18n`Delete client`}
+              label={option.some(a18n`Delete client`)}
               color="danger"
               flat
               action={deleteClient(props.client)}

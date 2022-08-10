@@ -133,7 +133,7 @@ export function SessionData(props: Props) {
       () => (
         <Panel
           framed
-          action={option.none}
+          actions={option.none}
           title={formatDate(props.session.startTime)}
         >
           <ReadOnlyInput
@@ -208,7 +208,7 @@ export function SessionData(props: Props) {
                     type="loadingButton"
                     icon={stop}
                     color="primary"
-                    label={a18n`Stop`}
+                    label={option.some(a18n`Stop`)}
                     action={onStop}
                   />
                 ),
@@ -227,7 +227,7 @@ export function SessionData(props: Props) {
               type="loadingButton"
               icon={skull}
               color="danger"
-              label={a18n`Delete session`}
+              label={option.some(a18n`Delete session`)}
               action={deleteSession(props.session)}
             />
           </Buttons>

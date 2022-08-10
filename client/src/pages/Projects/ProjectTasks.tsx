@@ -1,4 +1,4 @@
-import { boolean, option } from 'fp-ts'
+import { boolean, nonEmptyArray, option } from 'fp-ts'
 import { constVoid, pipe } from 'fp-ts/function'
 import { IO } from 'fp-ts/IO'
 import { Reader } from 'fp-ts/Reader'
@@ -97,12 +97,14 @@ export function ProjectTasks(props: Props) {
   return (
     <ConnectionList
       title={a18n`Tasks`}
-      action={option.some({
-        type: 'sync',
-        label: a18n`New Task`,
-        action: () => setRoute(taskRoute(props.project._id, 'new')),
-        icon: option.some(add)
-      })}
+      actions={option.some(
+        nonEmptyArray.of({
+          type: 'sync',
+          label: a18n`New Task`,
+          action: () => setRoute(taskRoute(props.project._id, 'new')),
+          icon: option.some(add)
+        })
+      )}
       query={tasks}
       onLoadMore={option.some(onLoadMore)}
       onSearchQueryChange={option.none}

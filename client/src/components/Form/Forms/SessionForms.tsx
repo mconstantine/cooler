@@ -87,7 +87,7 @@ export function SessionForm(props: Props) {
   return (
     <Form
       title={a18n`New Session`}
-      headingAction={option.none}
+      actions={option.none}
       formError={formError}
       submit={submit}
       additionalButtons={[

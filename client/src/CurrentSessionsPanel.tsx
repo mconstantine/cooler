@@ -1,4 +1,4 @@
-import { boolean, option } from 'fp-ts'
+import { boolean, nonEmptyArray, option } from 'fp-ts'
 import { constFalse, constNull, constTrue, pipe } from 'fp-ts/function'
 import { Option } from 'fp-ts/Option'
 import { NonEmptyArray } from 'fp-ts/NonEmptyArray'
@@ -102,12 +102,14 @@ function MultipleSessionsMessagePanel(
       color="warning"
       framed
       title={a18n`${props.sessionsCount} started sessions`}
-      action={option.some({
-        type: 'sync',
-        icon: option.some(eye),
-        label: a18n`Details`,
-        action: () => setRoute(currentSessionsRoute())
-      })}
+      actions={option.some(
+        nonEmptyArray.of({
+          type: 'sync',
+          icon: option.some(eye),
+          label: a18n`Details`,
+          action: () => setRoute(currentSessionsRoute())
+        })
+      )}
     />
   )
 }
@@ -125,19 +127,21 @@ function SingleSessionMessagePanel(props: SingleSessionMessagePanelProps) {
       color="warning"
       framed
       title={a18n`One started session (${duration})`}
-      action={option.some({
-        type: 'sync',
-        icon: option.some(eye),
-        label: a18n`Details`,
-        action: () =>
-          setRoute(
-            sessionRoute(
-              props.session.project._id,
-              props.session.task._id,
-              props.session._id
+      actions={option.some(
+        nonEmptyArray.of({
+          type: 'sync',
+          icon: option.some(eye),
+          label: a18n`Details`,
+          action: () =>
+            setRoute(
+              sessionRoute(
+                props.session.project._id,
+                props.session.task._id,
+                props.session._id
+              )
             )
-          )
-      })}
+        })
+      )}
     />
   )
 }

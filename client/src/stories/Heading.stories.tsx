@@ -1,5 +1,5 @@
 import { Meta, Story } from '@storybook/react'
-import { option } from 'fp-ts'
+import { nonEmptyArray, option } from 'fp-ts'
 import { constVoid, pipe } from 'fp-ts/function'
 import { NonEmptyString } from 'io-ts-types'
 import { unsafeLocalizedString } from '../a18n'
@@ -26,16 +26,18 @@ const HeadingTemplate: Story<Args> = props => {
         <HeadingComponent
           size={props.size}
           color={props.color}
-          action={pipe(
+          actions={pipe(
             props.actionLabel,
             NonEmptyString.decode,
             option.fromEither,
-            option.map(label => ({
-              type: 'sync',
-              label: unsafeLocalizedString(label),
-              action: constVoid,
-              icon: option.none
-            }))
+            option.map(label =>
+              nonEmptyArray.of({
+                type: 'sync',
+                label: unsafeLocalizedString(label),
+                action: constVoid,
+                icon: option.none
+              })
+            )
           )}
         >
           {unsafeLocalizedString('Lorem ipsum dolor sit amet.')}

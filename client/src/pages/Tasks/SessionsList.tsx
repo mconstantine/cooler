@@ -1,4 +1,4 @@
-import { array, boolean, option } from 'fp-ts'
+import { array, boolean, nonEmptyArray, option } from 'fp-ts'
 import { constVoid, flow, pipe } from 'fp-ts/function'
 import { TaskEither } from 'fp-ts/TaskEither'
 import { Reader } from 'fp-ts/Reader'
@@ -163,12 +163,14 @@ export function SessionsList(props: Props) {
     <ConnectionList
       title={a18n`Sessions`}
       query={allSessions}
-      action={option.some({
-        type: 'async',
-        label: a18n`Start new session`,
-        action: props.onCreateSessionButtonClick,
-        icon: add
-      })}
+      actions={option.some(
+        nonEmptyArray.of({
+          type: 'async',
+          label: option.some(a18n`Start new session`),
+          action: props.onCreateSessionButtonClick,
+          icon: add
+        })
+      )}
       onLoadMore={option.none}
       onSearchQueryChange={option.none}
       renderListItem={renderSessionItem}

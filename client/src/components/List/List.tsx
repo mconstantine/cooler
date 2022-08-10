@@ -130,7 +130,7 @@ export function List(props: Props) {
       {pipe(
         props.heading,
         option.map(heading => (
-          <Heading size={24} className="heading" action={option.none}>
+          <Heading size={24} className="heading" actions={option.none}>
             {heading}
           </Heading>
         )),

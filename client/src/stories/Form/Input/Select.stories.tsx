@@ -49,9 +49,8 @@ const SelectTemplate: Story<Args> = props => {
     option.none
   )
 
-  const [filteredProvinces, setFilteredProvinces] = useState<
-    Partial<typeof ProvinceValues>
-  >(ProvinceValues)
+  const [filteredProvinces, setFilteredProvinces] =
+    useState<Partial<typeof ProvinceValues>>(ProvinceValues)
 
   const [isLoadingProvinces, setIsLoadingProvinces] = useState(false)
 
@@ -96,7 +95,7 @@ const SelectTemplate: Story<Args> = props => {
   return (
     <CoolerStory>
       <Content>
-        <Panel framed action={option.none}>
+        <Panel framed actions={option.none}>
           {pipe(
             props.type,
             foldSelectType(

@@ -1,4 +1,4 @@
-import { boolean, option } from 'fp-ts'
+import { boolean, nonEmptyArray, option } from 'fp-ts'
 import { constVoid, flow, pipe } from 'fp-ts/function'
 import { IO } from 'fp-ts/IO'
 import { Option } from 'fp-ts/Option'
@@ -118,12 +118,14 @@ export default function ProjectsList() {
         query={results}
         title={a18n`Projects`}
         onLoadMore={option.some(onLoadMore)}
-        action={option.some({
-          type: 'sync',
-          label: a18n`New Project`,
-          icon: option.some(add),
-          action: () => setRoute(projectsRoute('new'))
-        })}
+        actions={option.some(
+          nonEmptyArray.of({
+            type: 'sync',
+            label: a18n`New Project`,
+            icon: option.some(add),
+            action: () => setRoute(projectsRoute('new'))
+          })
+        )}
         onSearchQueryChange={option.some(onSearchQueryChange)}
         renderListItem={renderProjectItem}
         emptyListMessage={a18n`No projects found`}

@@ -45,7 +45,7 @@ export function Modal(props: PropsWithChildren<Props>) {
     >
       <div className="dim" onClick={onClose} />
 
-      <Panel framed={props.framed} action={option.none}>
+      <Panel framed={props.framed} actions={option.none}>
         {props.children}
       </Panel>
     </div>,

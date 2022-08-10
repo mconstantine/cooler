@@ -17,7 +17,7 @@ export type CommonProps = Pick<
   'color' | 'disabled'
 > & {
   loadingState: LoadingState
-  label: LocalizedString
+  label: Option<LocalizedString>
   icon: string
   flat?: boolean
   labels?: {
@@ -87,7 +87,7 @@ export const ControlledLoadingButton: FC<Props> = ({
 
   const color = getColor(props.loadingState, props.color || 'default')
   const disabledClassName = disabled ? 'disabled' : ''
-  const flatClassName = flat ? 'flat' : ''
+  const flatClassName = option.isNone(props.label) || flat ? 'flat' : ''
   const stateClassName = `state-${props.loadingState}`
   const iconAnimatingClassName = pipe(
     nextIcon,
@@ -154,9 +154,24 @@ export const ControlledLoadingButton: FC<Props> = ({
               actionProp()
             }
 
-            return <button onClick={action}>{props.label}</button>
+            return (
+              <button onClick={action}>
+                {pipe(
+                  props.label,
+                  option.getOrElse(() => '')
+                )}
+              </button>
+            )
           },
-          props => <input type="submit" value={props.label} />
+          props => (
+            <input
+              type="submit"
+              value={pipe(
+                props.label,
+                option.getOrElse(() => '')
+              )}
+            />
+          )
         )
       )}
     </div>

@@ -81,7 +81,7 @@ export default function TaskData(props: Props) {
     isEditing,
     boolean.fold(
       () => (
-        <Panel title={props.task.name} framed action={option.none}>
+        <Panel title={props.task.name} framed actions={option.none}>
           <ReadOnlyInput
             name="name"
             label={a18n`Name`}
@@ -163,7 +163,7 @@ export default function TaskData(props: Props) {
             />
             <LoadingButton
               type="loadingButton"
-              label={a18n`Delete task`}
+              label={option.some(a18n`Delete task`)}
               color="danger"
               flat
               action={deleteTask(props.task)}

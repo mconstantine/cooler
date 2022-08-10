@@ -47,7 +47,7 @@ export function RegistrationForm(props: Props) {
 
   return (
     <>
-      <Panel color="warning" action={option.none} framed>
+      <Panel color="warning" actions={option.none} framed>
         <Banner
           icon={warning}
           content={a18n`Only existing users can register new users, unless there are no users registered.`}
@@ -55,7 +55,7 @@ export function RegistrationForm(props: Props) {
       </Panel>
       <Form
         title={a18n`Register`}
-        headingAction={option.none}
+        actions={option.none}
         submit={submit}
         formError={formError}
       >

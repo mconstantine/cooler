@@ -192,7 +192,7 @@ export function ProjectForm(props: Props) {
           project => project.name
         )
       )}
-      headingAction={option.none}
+      actions={option.none}
       submit={submit}
       formError={formError}
       additionalButtons={[

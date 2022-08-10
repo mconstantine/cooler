@@ -62,7 +62,7 @@ const ListWithButtonsTemplate: Story<DefaultArgs> = props => {
               },
               {
                 type: 'loadingButton',
-                label: unsafeLocalizedString('Button label'),
+                label: option.some(unsafeLocalizedString('Button label')),
                 icon: send,
                 action: taskEither.fromIO(constVoid)
               }

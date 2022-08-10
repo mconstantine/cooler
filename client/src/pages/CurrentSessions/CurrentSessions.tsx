@@ -34,7 +34,7 @@ function NonEmptyCurrentSessions(props: NonEmptyCurrentSessionsProps) {
   const { setRoute } = useRouter()
 
   return (
-    <Panel title={a18n`Current sessions`} action={option.none} framed>
+    <Panel title={a18n`Current sessions`} actions={option.none} framed>
       <List
         heading={option.none}
         emptyListMessage={a18n`No sessions are currently running`}

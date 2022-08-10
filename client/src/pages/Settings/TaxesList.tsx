@@ -32,7 +32,7 @@ export function TaxesList() {
       () => <LoadingBlock />,
       error => <ErrorPanel error={error} />,
       taxes => (
-        <Panel title={a18n`Taxes`} action={option.none} framed>
+        <Panel title={a18n`Taxes`} actions={option.none} framed>
           {taxes.map(tax => (
             <TaxCardForm key={tax._id} tax={tax} />
           ))}

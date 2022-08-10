@@ -43,7 +43,7 @@ export function LoginForm(props: Props) {
     <>
       <Form
         title={a18n`Login`}
-        headingAction={option.none}
+        actions={option.none}
         submit={submit}
         formError={formError}
       >

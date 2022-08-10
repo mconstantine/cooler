@@ -10,7 +10,7 @@ interface Props {
 
 export function ErrorPanel(props: Props) {
   return (
-    <Panel className="ErrorPanel" action={option.none} framed color="danger">
+    <Panel className="ErrorPanel" actions={option.none} framed color="danger">
       <Body>{props.error}</Body>
     </Panel>
   )

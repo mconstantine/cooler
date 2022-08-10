@@ -62,7 +62,7 @@ export function TaskProgress(props: Props) {
       () => <LoadingBlock />,
       error => <ErrorPanel error={error} />,
       taxes => (
-        <Panel title={a18n`Progress`} framed action={option.none}>
+        <Panel title={a18n`Progress`} framed actions={option.none}>
           <List
             heading={option.some(a18n`Time`)}
             emptyListMessage={unsafeLocalizedString('')}

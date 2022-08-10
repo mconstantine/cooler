@@ -35,7 +35,7 @@ export function LatestProjects() {
       () => <LoadingBlock />,
       error => <ErrorPanel error={error} />,
       projects => (
-        <Panel title={a18n`Latest projects`} framed action={option.none}>
+        <Panel title={a18n`Latest projects`} framed actions={option.none}>
           {pipe(
             getConnectionNodes(projects),
             nonEmptyArray.fromArray,

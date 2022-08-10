@@ -111,7 +111,7 @@ export function ProjectCashDataForm(props: Props) {
   return (
     <Form
       title={a18n`Cash project`}
-      headingAction={option.none}
+      actions={option.none}
       formError={formError}
       submit={submit}
       additionalButtons={[

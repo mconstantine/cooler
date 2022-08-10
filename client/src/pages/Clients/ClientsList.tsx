@@ -1,4 +1,4 @@
-import { option } from 'fp-ts'
+import { nonEmptyArray, option } from 'fp-ts'
 import { Reader } from 'fp-ts/Reader'
 import { a18n } from '../../a18n'
 import { ConnectionList } from '../../components/ConnectionList/ConnectionList'
@@ -33,12 +33,14 @@ export default function ClientsList() {
       title={a18n`Clients`}
       query={clients}
       onSearchQueryChange={option.some(onSearchQueryChange)}
-      action={option.some({
-        type: 'sync',
-        label: a18n`New Client`,
-        icon: option.some(add),
-        action: () => setRoute(clientsRoute('new'))
-      })}
+      actions={option.some(
+        nonEmptyArray.of({
+          type: 'sync',
+          label: a18n`New Client`,
+          icon: option.some(add),
+          action: () => setRoute(clientsRoute('new'))
+        })
+      )}
       onLoadMore={option.some(onLoadMore)}
       renderListItem={renderClientItem}
       emptyListMessage={a18n`No clients found`}

@@ -157,12 +157,14 @@ const ConnectionListTemplate: Story<Args> = props => {
       <Content>
         <ConnectionListComponent
           title={unsafeLocalizedString('Entities')}
-          action={option.some({
-            type: 'sync',
-            label: props.actionLabel,
-            icon: option.none,
-            action: props.action
-          })}
+          actions={option.some(
+            nonEmptyArray.of({
+              type: 'sync',
+              label: props.actionLabel,
+              icon: option.none,
+              action: props.action
+            })
+          )}
           query={request}
           onSearchQueryChange={option.some(onQuerySearchChange)}
           onLoadMore={option.some(onLoadMore)}

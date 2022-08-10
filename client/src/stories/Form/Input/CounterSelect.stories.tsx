@@ -27,7 +27,7 @@ const CounterSelectTemplate: Story<Args> = props => {
   return (
     <CoolerStory>
       <Content>
-        <Panel framed action={option.none}>
+        <Panel framed actions={option.none}>
           <CounterSelectComponent
             name="counterSelect"
             label={props.label}

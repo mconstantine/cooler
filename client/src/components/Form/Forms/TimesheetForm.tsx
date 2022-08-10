@@ -99,7 +99,7 @@ export function TimesheetForm(props: Props) {
   return (
     <Form
       title={a18n`New Timesheet`}
-      headingAction={option.none}
+      actions={option.none}
       formError={formError}
       submit={submit}
       submitLabel={a18n`Download`}

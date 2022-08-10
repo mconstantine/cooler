@@ -41,7 +41,7 @@ export function CashedBalance() {
       () => <LoadingBlock />,
       error => <ErrorPanel error={error} />,
       ({ balance, taxes }) => (
-        <Panel title={a18n`Cashed balance`} framed action={option.none}>
+        <Panel title={a18n`Cashed balance`} framed actions={option.none}>
           <DateTimePicker
             name="cashedBalanceSince"
             mode="date"

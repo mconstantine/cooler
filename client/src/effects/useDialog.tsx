@@ -151,7 +151,7 @@ export function useDialog<I, E, O>(
 
   const getDialogContent = (input: I) => (
     <>
-      <Heading size={27} action={option.none}>
+      <Heading size={27} actions={option.none}>
         {props.title(input)}
       </Heading>
       <Body>{props.message(input)}</Body>
