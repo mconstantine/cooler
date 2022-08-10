@@ -13,12 +13,14 @@ import {
   isHomeRoute,
   isProjectsRoute,
   isSettingsRoute,
+  Location,
   projectsRoute,
   settingsRoute,
   useRouter
 } from '../Router'
 import { useState } from 'react'
 import { composeClassName } from '../../misc/composeClassName'
+import { Reader } from 'fp-ts/Reader'
 
 export function Menu() {
   const { theme, setTheme } = useTheme()
@@ -35,6 +37,11 @@ export function Menu() {
         )
       )
     )
+
+  const setPage: Reader<Location, void> = location => {
+    setIsMenuOpen(false)
+    setRoute(location)
+  }
 
   return (
     <div className={composeClassName('Menu', isMenuOpen ? 'open' : '')}>
@@ -60,7 +67,7 @@ export function Menu() {
           type="button"
           label={a18n`Clients`}
           icon={option.none}
-          action={() => setRoute(clientsRoute('all'))}
+          action={() => setPage(clientsRoute('all'))}
           flat
           active={isClientsRoute(route)}
         />
@@ -68,7 +75,7 @@ export function Menu() {
           type="button"
           label={a18n`Projects`}
           icon={option.none}
-          action={() => setRoute(projectsRoute('all'))}
+          action={() => setPage(projectsRoute('all'))}
           flat
           active={isProjectsRoute(route)}
         />
@@ -76,7 +83,7 @@ export function Menu() {
           type="button"
           label={a18n`Profile`}
           icon={option.none}
-          action={() => setRoute(homeRoute())}
+          action={() => setPage(homeRoute())}
           flat
           active={isHomeRoute(route)}
         />
@@ -84,7 +91,7 @@ export function Menu() {
           type="button"
           label={a18n`Settings`}
           icon={option.none}
-          action={() => setRoute(settingsRoute())}
+          action={() => setPage(settingsRoute())}
           flat
           active={isSettingsRoute(route)}
         />
