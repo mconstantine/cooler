@@ -1,6 +1,5 @@
 import { option } from 'fp-ts'
-import { a18n } from '../../../../a18n'
-import { LocalizedString } from '../../../../globalDomain'
+import { a18n, unsafeLocalizedString } from '../../../../a18n'
 import { Button } from '../../../Button/Button/Button'
 import { Banner } from '../../../Banner/Banner'
 import './DaysGrid.scss'
@@ -14,26 +13,37 @@ interface Props {
 }
 
 export function DaysGrid(props: Props) {
-  const date = new Date(props.year, props.month, 1)
+  const firstDayOfMonth = new Date(props.year, props.month, 1)
   const today = new Date()
 
-  date.setDate(1 - date.getDay())
+  const nearestSunday = new Date(
+    props.year,
+    props.month,
+    1 - firstDayOfMonth.getDay()
+  )
 
-  const weekDayLabels = new Array(7).fill(null).map(() => {
-    date.setDate(date.getDate() + 1)
+  const weekDayLabels = new Array(7).fill(null).map((_, index) =>
+    unsafeLocalizedString(
+      new Date(
+        nearestSunday.getFullYear(),
+        nearestSunday.getMonth(),
+        nearestSunday.getDate() + index + 1
+      ).toLocaleDateString(a18n.getLocale(), {
+        weekday: 'short'
+      })
+    )
+  )
 
-    return date.toLocaleDateString(a18n.getLocale(), {
-      weekday: 'short'
-    }) as LocalizedString
-  })
-
-  date.setDate(1)
-  date.setDate(1 - date.getDay())
-
-  const days = new Array(35).fill(null).map(() => {
-    date.setDate(date.getDate() + 1)
-    return new Date(date)
-  })
+  const days = new Array(42)
+    .fill(null)
+    .map(
+      (_, index) =>
+        new Date(
+          nearestSunday.getFullYear(),
+          nearestSunday.getMonth(),
+          nearestSunday.getDate() + index + 1
+        )
+    )
 
   return (
     <div className="DaysGrid">
@@ -45,11 +55,11 @@ export function DaysGrid(props: Props) {
           key={day.toISOString()}
           type="button"
           flat
-          label={
+          label={unsafeLocalizedString(
             day.toLocaleDateString(a18n.getLocale(), {
               day: 'numeric'
-            }) as LocalizedString
-          }
+            })
+          )}
           icon={option.none}
           action={() => props.onChange(day)}
           disabled={props.disabled || day.getMonth() !== props.month}

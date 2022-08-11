@@ -16,3 +16,4 @@ DONE:
 [X] Projects toggles, 3-state (with undefined): cashed, invoice sent, ongoing, future
 [X] Add previous and next projects
 [X] Invoices list
+[X] Fix calendar (e.g.: 2021-05-31 is not selectable)

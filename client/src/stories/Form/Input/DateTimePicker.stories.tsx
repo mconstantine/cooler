@@ -22,7 +22,7 @@ interface Args {
 }
 
 const DateTimePickerTemplate: Story<Args> = props => {
-  const [date, setDate] = useState(new Date(2021, 0, 1, 12))
+  const [date, setDate] = useState(new Date(2021, 4, 31, 12))
 
   return (
     <CoolerStory>
