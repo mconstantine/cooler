@@ -210,36 +210,13 @@ object Users {
       since: BsonDateTime,
       to: Option[BsonDateTime]
   )(using customer: User)(using DatabaseName): IO[UserStats] =
-    collection.use(c =>
+    Projects.collection.use(c =>
       c.raw(
         _.aggregateWithCodec[UserStats](
           Seq(
-            Aggregates.`match`(Filters.eq("_id", customer._id)),
-            Aggregates.lookup(
-              Clients.collection.name,
-              "_id",
-              "user",
-              "clients"
-            ),
-            Aggregates.unwind(
-              "$clients",
-              UnwindOptions().preserveNullAndEmptyArrays(false)
-            ),
-            Aggregates.project(
-              Document(
-                "_id" -> 1,
-                "client" -> "$clients._id"
-              )
-            ),
-            Document(
-              "$lookup" -> Document(
-                "from" -> Projects.collection.name,
-                "localField" -> "client",
-                "foreignField" -> "client",
-                "as" -> "projects",
-                "pipeline" -> Seq(
                   Aggregates.`match`(
                     Filters.and(
+                Filters.eq("user", customer._id),
                       Filters.gte("startTime", since.toISOString),
                       Filters.lt(
                         "endTime",
@@ -247,27 +224,19 @@ object Users {
                           .toISOString
                       )
                     )
-                  )
-                )
-              )
-            ),
-            Aggregates.unwind(
-              "$projects",
-              UnwindOptions().preserveNullAndEmptyArrays(false)
             ),
             Aggregates.project(
               Document(
                 "_id" -> 1,
-                "project" -> "$projects._id",
                 "expectedBudget" -> Document(
-                  "$ifNull" -> Seq("$projects.expectedBudget", 0)
+                  "$ifNull" -> Seq("$expectedBudget", 0)
                 )
               )
             ),
             Document(
               "$lookup" -> Document(
                 "from" -> Tasks.collection.name,
-                "localField" -> "project",
+                "localField" -> "_id",
                 "foreignField" -> "project",
                 "as" -> "tasks",
                 "pipeline" -> Seq(
@@ -372,7 +341,7 @@ object Users {
               )
             ),
             Aggregates.group(
-              "$_id",
+              null,
               BsonField(
                 "expectedWorkingHours",
                 Document("$sum" -> "$expectedWorkingHours")
