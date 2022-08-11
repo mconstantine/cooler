@@ -82,3 +82,17 @@ export const getProjectTasksRequest = makeGetRequest({
   inputCodec: ProjectTasksConnectionQueryInput,
   outputCodec: Connection(Task)
 })
+
+export const makeGetPreviousProjectQuery = (_id: ObjectId) =>
+  makeGetRequest({
+    url: `/projects/${_id}/previous`,
+    inputCodec: t.void,
+    outputCodec: Project
+  })
+
+export const makeGetNextProjectQuery = (_id: ObjectId) =>
+  makeGetRequest({
+    url: `/projects/${_id}/next`,
+    inputCodec: t.void,
+    outputCodec: Project
+  })

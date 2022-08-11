@@ -91,6 +91,20 @@ object ProjectRoutes {
         Projects.findById(id).toResponse
       }
 
+      case GET -> Root / ObjectIdParam(id) / "previous" as context => {
+        given Lang = context.lang
+        given User = context.user
+
+        Projects.getPrevious(id).toResponse
+      }
+
+      case GET -> Root / ObjectIdParam(id) / "next" as context => {
+        given Lang = context.lang
+        given User = context.user
+
+        Projects.getNext(id).toResponse
+      }
+
       case ctxReq @ PUT -> Root / ObjectIdParam(id) as context => {
         given Lang = context.lang
         given User = context.user

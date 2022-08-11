@@ -1,6 +1,5 @@
 TODO:
 
-[ ] Add previous and next projects
 [ ] Invoices list
 [ ] Cypress tests
 [ ] Stats: cashed money per month
@@ -16,3 +15,4 @@ DONE:
 [X] Add "to" dates to user profile, default should be the end of the current month + 1 millisecond
 [X] Add invoice data (optional, number and date) to projects
 [X] Projects toggles, 3-state (with undefined): cashed, invoice sent, ongoing, future
+[X] Add previous and next projects

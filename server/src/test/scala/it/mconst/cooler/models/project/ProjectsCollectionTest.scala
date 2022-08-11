@@ -181,16 +181,13 @@ class ProjectsCollectionTest extends IOSuite {
       )
     )
 
-    import cats.syntax.parallel.*
+    import cats.syntax.traverse.*
 
-    Projects.collection.use(_.raw(_.deleteMany(Filter.empty)).flatMap { _ =>
-      projects
-        .map(Projects.create(_).orFail)
-        .parSequence
-        .map(
-          _.sortWith(_.name.toString < _.name.toString)
-        )
-    })
+    Projects.collection.use(
+      _.raw(_.deleteMany(Filter.empty)).flatMap(_ =>
+        projects.traverse(Projects.create(_).orFail)
+      )
+    )
   }(_ => Projects.collection.use(_.raw(_.deleteMany(Filter.empty)).void))
 
   test("should find a project") {
@@ -380,6 +377,26 @@ class ProjectsCollectionTest extends IOSuite {
         yield ()
       }
     }
+  }
+
+  test("should find the next project") {
+    projectsList.use(projects =>
+      Projects
+        .getNext(projects(1)._id)
+        .orFail
+        .map(_._id)
+        .assertEquals(projects(2)._id)
+    )
+  }
+
+  test("should find the previous project") {
+    projectsList.use(projects =>
+      Projects
+        .getPrevious(projects(1)._id)
+        .orFail
+        .map(_._id)
+        .assertEquals(projects(0)._id)
+    )
   }
 
   test("should update a project") {

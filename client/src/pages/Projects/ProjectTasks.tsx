@@ -94,6 +94,15 @@ export function ProjectTasks(props: Props) {
     )
   }, [searchResults])
 
+  useEffect(() => {
+    setInput({
+      project: props.project._id,
+      query: option.none,
+      last: unsafePositiveInteger(10),
+      before: option.none
+    })
+  }, [props.project._id])
+
   return (
     <ConnectionList
       title={a18n`Tasks`}

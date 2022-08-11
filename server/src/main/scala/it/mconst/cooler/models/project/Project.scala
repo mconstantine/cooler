@@ -544,6 +544,51 @@ object Projects {
     )
   }
 
+  def getNext(_id: ObjectId)(using
+      customer: User
+  )(using Lang, DatabaseName): EitherT[IO, Error, ProjectWithClientLabel] =
+    EitherT.fromOptionF(
+      collection.use(
+        _.raw(
+          _.aggregateWithCodec[ProjectWithClientLabel](
+            Seq(
+              Aggregates.`match`(
+                Filters.and(
+                  Filters.eq("user", customer._id),
+                  Filters.gt("_id", _id)
+                )
+              ),
+              Aggregates.limit(1)
+            ) ++ labelsStages
+          ).first
+        )
+      ),
+      Error(Status.NotFound, __.ErrorProjectNotFound)
+    )
+
+  def getPrevious(_id: ObjectId)(using
+      customer: User
+  )(using Lang, DatabaseName): EitherT[IO, Error, ProjectWithClientLabel] =
+    EitherT.fromOptionF(
+      collection.use(
+        _.raw(
+          _.aggregateWithCodec[ProjectWithClientLabel](
+            Seq(
+              Aggregates.`match`(
+                Filters.and(
+                  Filters.eq("user", customer._id),
+                  Filters.lt("_id", _id)
+                )
+              ),
+              Aggregates.sort(Document("_id" -> -1)),
+              Aggregates.limit(1)
+            ) ++ labelsStages
+          ).first
+        )
+      ),
+      Error(Status.NotFound, __.ErrorProjectNotFound)
+    )
+
   def getLatest(query: CursorQuery)(using
       customer: User
   )(using

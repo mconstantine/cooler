@@ -15,6 +15,7 @@ import { ObjectId } from '../../globalDomain'
 import { makeGetProjectQuery } from './domain'
 import { ProjectData } from './ProjectData'
 import { ProjectProgress } from './ProjectProgress'
+import { ProjectSiblings } from './ProjectSiblings'
 import { ProjectTasks } from './ProjectTasks'
 
 interface Props {
@@ -50,6 +51,7 @@ export default function Project(props: Props) {
             onUpdate={onUpdate}
             onDelete={onDelete}
           />
+          <ProjectSiblings project={project} />
           <ProjectProgress project={project} />
           <ProjectTasks project={project} />
         </TaxesProvider>

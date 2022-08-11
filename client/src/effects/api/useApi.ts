@@ -248,12 +248,12 @@ function useQuery<I, II, O, OO>(
   useEffect(() => {
     reloadQuery(request, input)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [input])
+  }, [input, request.url])
 
   return [queryState, () => reloadQuery(request, input)]
 }
 
-function useCommand<I, II, O, OO>(
+export function useCommand<I, II, O, OO>(
   request: Request<I, II, O, OO>
 ): ReaderTaskEither<I, LocalizedString, O> {
   const { withLogin } = useAccount()

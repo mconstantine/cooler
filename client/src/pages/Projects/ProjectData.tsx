@@ -94,7 +94,7 @@ export function ProjectData(props: Props) {
     isEditing,
     boolean.fold(
       () => (
-        <Panel title={props.project.name} framed action={option.none}>
+        <Panel title={props.project.name} framed actions={option.none}>
           <ReadOnlyInput
             name="name"
             label={a18n`Name`}
@@ -269,7 +269,7 @@ export function ProjectData(props: Props) {
             />
             <LoadingButton
               type="loadingButton"
-              label={a18n`Delete project`}
+              label={option.some(a18n`Delete project`)}
               color="danger"
               flat
               action={deleteProject(props.project)}
