@@ -45,7 +45,7 @@ APP_VERSION=
 
 > You can leave `APP_NAME` and `APP_VERSION` empty (i.e.: with nothing following the equal sign). The build script will take care of it.
 
+- Make sure that you have the local database up (e.g.: Docker) so the server tests can run
+- Make sure you have the SSH key added, otherwise the build will be useless (it won't break, but it won't deploy anything. It will also delete the build directory so it won't be enough to run the deploy again, you will have to build again)
 - Run `./build.sh`
-- Move the `build` directory into the server and `cd` inside it
-- Run `./install.sh`
-- Delete the `build` directory from the server to free unused space
+- Run `./deploy.sh`
