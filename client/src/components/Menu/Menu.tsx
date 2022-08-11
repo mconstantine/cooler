@@ -15,9 +15,11 @@ import {
   isInvoicesRoute,
   isProjectsRoute,
   isSettingsRoute,
+  isStatsRoute,
   Location,
   projectsRoute,
   settingsRoute,
+  statsRoute,
   useRouter
 } from '../Router'
 import { useState } from 'react'
@@ -96,6 +98,14 @@ export function Menu() {
           action={() => setPage(homeRoute())}
           flat
           active={isHomeRoute(route)}
+        />
+        <Button
+          type="button"
+          label={a18n`Stats`}
+          icon={option.none}
+          action={() => setPage(statsRoute())}
+          flat
+          active={isStatsRoute(route)}
         />
         <Button
           type="button"

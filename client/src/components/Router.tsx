@@ -43,72 +43,77 @@ export function foldRouteSubject<T>(
   }
 }
 
-interface Home {
+interface HomeRoute {
   readonly _tag: 'Home'
 }
 
-interface Clients {
+interface ClientsRoute {
   readonly _tag: 'Clients'
   readonly subject: RouteSubject
 }
 
-interface Projects {
+interface ProjectsRoute {
   readonly _tag: 'Projects'
   readonly subject: RouteSubject
 }
 
-interface Task {
+interface TaskRoute {
   readonly _tag: 'Task'
   readonly project: ObjectIdFromString
   readonly subject: DependentEntitySubject
 }
 
-interface Session {
+interface SessionRoute {
   readonly _tag: 'Session'
   readonly project: ObjectIdFromString
   readonly task: ObjectIdFromString
   readonly subject: ObjectIdFromString
 }
 
-interface Settings {
+interface SettingsRoute {
   readonly _tag: 'Settings'
 }
 
-interface CurrentSessions {
+interface CurrentSessionsRoute {
   readonly _tag: 'CurrentSessions'
 }
 
-interface Invoices {
+interface InvoicesRoute {
   readonly _tag: 'Invoices'
 }
 
-interface NotFound {
+interface StatsRoute {
+  readonly _tag: 'Stats'
+}
+
+interface NotFoundRoute {
   readonly _tag: 'NotFound'
 }
 
 export type Location =
-  | Home
-  | Clients
-  | Projects
-  | Task
-  | Session
-  | Settings
-  | CurrentSessions
-  | Invoices
-  | NotFound
+  | HomeRoute
+  | ClientsRoute
+  | ProjectsRoute
+  | TaskRoute
+  | SessionRoute
+  | SettingsRoute
+  | CurrentSessionsRoute
+  | InvoicesRoute
+  | StatsRoute
+  | NotFoundRoute
 
-export function homeRoute(): Home {
+export function homeRoute(): HomeRoute {
   return { _tag: 'Home' }
 }
 
-export function clientsRoute(subject: RouteSubject): Clients {
+export function clientsRoute(subject: RouteSubject): ClientsRoute {
   return {
     _tag: 'Clients',
     subject
   }
 }
 
-export function projectsRoute(subject: RouteSubject): Projects {
+export function projectsRoute(subject: RouteSubject): ProjectsRoute {
   return {
     _tag: 'Projects',
     subject
@@ -118,7 +123,7 @@ export function projectsRoute(subject: RouteSubject): Projects {
 export function taskRoute(
   project: ObjectIdFromString,
   subject: DependentEntitySubject
-): Task {
+): TaskRoute {
   return {
     _tag: 'Task',
     project,
@@ -130,7 +135,7 @@ export function sessionRoute(
   project: ObjectIdFromString,
   task: ObjectIdFromString,
   subject: ObjectIdFromString
-): Session {
+): SessionRoute {
   return {
     _tag: 'Session',
     project,
@@ -139,19 +144,23 @@ export function sessionRoute(
   }
 }
 
-export function currentSessionsRoute(): CurrentSessions {
+export function currentSessionsRoute(): CurrentSessionsRoute {
   return { _tag: 'CurrentSessions' }
 }
 
-export function settingsRoute(): Settings {
+export function settingsRoute(): SettingsRoute {
   return { _tag: 'Settings' }
 }
 
-export function invoicesRoute(): Invoices {
+export function invoicesRoute(): InvoicesRoute {
   return { _tag: 'Invoices' }
 }
 
-function notFoundRoute(): NotFound {
+export function statsRoute(): StatsRoute {
+  return { _tag: 'Stats' }
+}
+
+function notFoundRoute(): NotFoundRoute {
   return { _tag: 'NotFound' }
 }
 
@@ -185,6 +194,10 @@ export function isCurrentSessionsRoute(location: Location): boolean {
 
 export function isInvoicesRoute(location: Location): boolean {
   return location._tag === 'Invoices'
+}
+
+export function isStatsRoute(location: Location): boolean {
+  return location._tag === 'Stats'
 }
 
 export function foldLocation<T>(matches: {
@@ -222,6 +235,7 @@ const sessionMatch = lit('projects')
 const invoicesMatch = lit('invoices')
 const settingsMatch = lit('settings').then(end)
 const currentSessionsMatch = lit('current-sessions').then(end)
+const statsMatch = lit('stats')
 const notFoundMatch = lit('not-found')
 
 const router = zero<Location>()
@@ -239,6 +253,7 @@ const router = zero<Location>()
   .alt(settingsMatch.parser.map(() => settingsRoute()))
   .alt(currentSessionsMatch.parser.map(() => currentSessionsRoute()))
   .alt(invoicesMatch.parser.map(() => invoicesRoute()))
+  .alt(statsMatch.parser.map(() => statsRoute()))
 
 interface Props {
   render: (location: Location) => JSX.Element
@@ -261,6 +276,7 @@ function formatLocation(location: Location): string {
       CurrentSessions: location =>
         format(currentSessionsMatch.formatter, location),
       Invoices: location => format(invoicesMatch.formatter, location),
+      Stats: location => format(statsMatch.formatter, location),
       NotFound: location => format(notFoundMatch.formatter, location)
     })
   )

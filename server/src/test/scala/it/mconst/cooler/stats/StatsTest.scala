@@ -21,9 +21,11 @@ import it.mconst.cooler.models.session.SessionWithLabels
 import it.mconst.cooler.models.task.DbTask
 import it.mconst.cooler.models.task.Tasks
 import it.mconst.cooler.models.task.TaskWithLabels
+import it.mconst.cooler.models.user.CashPerMonth
 import it.mconst.cooler.models.user.User
 import it.mconst.cooler.models.user.Users
 import it.mconst.cooler.models.user.UserStats
+import java.time.LocalDate
 import mongo4cats.collection.operations.Filter
 import org.bson.BsonDateTime
 
@@ -325,5 +327,86 @@ class StatsTest extends IOSuite {
         .map(_.actualWorkingHours.toNumber)
         .assertEquals(BigDecimal(7))
     }
+  }
+
+  test("should get avg cash per month (empty)") {
+    given User = adminFixture()
+
+    Users
+      .getAvgCashPerMonth(
+        BsonDateTime(System.currentTimeMillis - 3153600000L),
+        Some(BsonDateTime(System.currentTimeMillis))
+      )
+      .assertEquals(Iterable.empty)
+  }
+
+  test("should get avg cash per month (with data)") {
+    given User = adminFixture()
+
+    for
+      client <- Clients
+        .create(
+          makeTestPrivateClient(addressEmail =
+            "get-avg-cash-per-month-test@example.com"
+          )
+        )
+        .orFail
+      _ <- Projects
+        .create(
+          makeTestProject(
+            client._id,
+            cashData = Some(
+              ProjectCashData(
+                BsonDateTime(LocalDate.of(2000, 1, 1).toEpochDay * 86400000L),
+                1000
+              )
+            )
+          )
+        )
+        .orFail
+      _ <- Projects
+        .create(
+          makeTestProject(
+            client._id,
+            cashData = Some(
+              ProjectCashData(
+                BsonDateTime(LocalDate.of(2000, 1, 20).toEpochDay * 86400000L),
+                1000
+              )
+            )
+          )
+        )
+        .orFail
+      _ <- Projects
+        .create(
+          makeTestProject(
+            client._id,
+            cashData = Some(
+              ProjectCashData(
+                BsonDateTime(LocalDate.of(2000, 3, 10).toEpochDay * 86400000L),
+                1000
+              )
+            )
+          )
+        )
+        .orFail
+      _ <- Users
+        .getAvgCashPerMonth(
+          BsonDateTime(LocalDate.of(2000, 1, 1).toEpochDay * 86400000L),
+          Some(BsonDateTime(LocalDate.of(2000, 3, 31).toEpochDay * 86400000L))
+        )
+        .assertEquals(
+          Iterable(
+            CashPerMonth(
+              BsonDateTime(LocalDate.of(2000, 1, 1).toEpochDay * 86400000L),
+              2000
+            ),
+            CashPerMonth(
+              BsonDateTime(LocalDate.of(2000, 3, 1).toEpochDay * 86400000L),
+              1000
+            )
+          )
+        )
+    yield ()
   }
 }

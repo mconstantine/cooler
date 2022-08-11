@@ -14,7 +14,7 @@
   min-height: $menu-height-mobile;
   overflow: hidden;
   transition: height $transition-medium ease;
-  @include ss('padding', $spacing-medium-mobile, $spacing-medium-desktop);
+  padding: $spacing-medium-mobile;
 
   &.open {
     height: 100%;
@@ -34,8 +34,7 @@
     flex-direction: column;
 
     transition: opacity $transition-fast linear,
-      visibility $transition-fast linear,
-      transform $transition-fast ease;
+      visibility $transition-fast linear, transform $transition-fast ease;
 
     opacity: 0;
     visibility: hidden;
@@ -52,7 +51,7 @@
   }
 }
 
-@media all and (min-width: 500px) {
+@media all and (min-width: 720px) {
   .Menu {
     min-height: 0;
     flex-direction: row;
@@ -60,7 +59,8 @@
     align-items: center;
   }
 
-  .Menu, .Menu.open {
+  .Menu,
+  .Menu.open {
     height: $menu-height-desktop;
   }
 

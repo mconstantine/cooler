@@ -6,6 +6,8 @@
     "@capacitor/android": "3.6.0",
     "@capacitor/cli": "^3.6.0",
     "@capacitor/core": "^3.6.0",
+    "@nivo/core": "^0.79.0",
+    "@nivo/line": "^0.79.1",
     "a18n": "^1.9.5",
     "bson-objectid": "^2.0.3",
     "fp-ts-routing": "^0.5.4",

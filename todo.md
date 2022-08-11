@@ -1,10 +1,9 @@
 TODO:
 
-[ ] Cypress tests
-[ ] Stats: cashed money per month
-[ ] Stats: cashed money per year
+[ ] Stats: add yearly totals to cash per month. Fill the holes?
 [ ] Stats: cashed money per client
-[ ] Stats: avg hourly cost
+[ ] Cypress tests
+[ ] Stats: avg hourly cost?
 [ ] Client stat: avg time between invoice and cashing
 
 DONE:
@@ -17,3 +16,4 @@ DONE:
 [X] Add previous and next projects
 [X] Invoices list
 [X] Fix calendar (e.g.: 2021-05-31 is not selectable)
+[X] Stats: cashed money per month

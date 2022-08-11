@@ -50,6 +50,13 @@ object UserRoutes {
         given User = context.user
         Ok(Users.getStats(since, to))
       }
+
+      case GET -> Root / "stats" / "avg-cash-per-month" :?
+          DateTimeMatcher(since) +&
+          OptionalDateTimeMatcher(to) as context => {
+        given User = context.user
+        Ok.apply(Users.getAvgCashPerMonth(since, to))
+      }
     }
 
   def apply()(using DatabaseName) = UserMiddleware(routes)

@@ -79,7 +79,6 @@ final case class UserStats(
     budget: NonNegativeNumber,
     balance: NonNegativeNumber
 )
-
 object UserStats {
   given EntityEncoder[IO, UserStats] = jsonEncoderOf[IO, UserStats]
 
@@ -89,6 +88,12 @@ object UserStats {
     NonNegativeNumber.unsafe(0f),
     NonNegativeNumber.unsafe(0f)
   )
+}
+
+final case class CashPerMonth(monthDate: BsonDateTime, cash: BigDecimal)
+object CashPerMonth {
+  given EntityEncoder[IO, Iterable[CashPerMonth]] =
+    jsonEncoderOf[IO, Iterable[CashPerMonth]]
 }
 
 object User {
@@ -214,16 +219,16 @@ object Users {
       c.raw(
         _.aggregateWithCodec[UserStats](
           Seq(
-                  Aggregates.`match`(
-                    Filters.and(
+            Aggregates.`match`(
+              Filters.and(
                 Filters.eq("user", customer._id),
-                      Filters.gte("startTime", since.toISOString),
-                      Filters.lt(
-                        "endTime",
-                        to.getOrElse(BsonDateTime(System.currentTimeMillis))
-                          .toISOString
-                      )
-                    )
+                Filters.gte("startTime", since.toISOString),
+                Filters.lt(
+                  "endTime",
+                  to.getOrElse(BsonDateTime(System.currentTimeMillis))
+                    .toISOString
+                )
+              )
             ),
             Aggregates.project(
               Document(
@@ -366,6 +371,60 @@ object Users {
             )
           )
         ).first.map(_.getOrElse(UserStats.empty))
+      )
+    )
+
+  def getAvgCashPerMonth(since: BsonDateTime, to: Option[BsonDateTime])(using
+      customer: User
+  )(using DatabaseName): IO[Iterable[CashPerMonth]] =
+    Projects.collection.use(
+      _.raw(
+        _.aggregateWithCodec[CashPerMonth](
+          Seq(
+            Aggregates.`match`(
+              Filters.and(
+                Filters.eq("user", customer._id),
+                Filters.ne("cashData", null),
+                Filters.gte("cashData.at", since.toISOString),
+                Filters.lt(
+                  "cashData.at",
+                  to.getOrElse(BsonDateTime(System.currentTimeMillis))
+                    .toISOString
+                )
+              )
+            ),
+            Aggregates.group(
+              Document(
+                "$dateTrunc" -> Document(
+                  "date" -> Document(
+                    "$dateFromString" -> Document(
+                      "dateString" -> "$cashData.at"
+                    )
+                  ),
+                  "unit" -> "month"
+                )
+              ),
+              BsonField(
+                "cash",
+                Document(
+                  "$sum" -> "$cashData.amount"
+                )
+              )
+            ),
+            Aggregates.sort(Document("_id" -> 1)),
+            Aggregates.project(
+              Document(
+                "_id" -> 0,
+                "monthDate" -> Document(
+                  "$dateToString" -> Document(
+                    "date" -> "$_id"
+                  )
+                ),
+                "cash" -> 1
+              )
+            )
+          )
+        ).all
       )
     )
 

@@ -54,6 +54,7 @@ export function CurrentSessionsPanel() {
                 ),
               CurrentSessions: constFalse,
               Invoices: constTrue,
+              Stats: constTrue,
               NotFound: constFalse
             })
           )
