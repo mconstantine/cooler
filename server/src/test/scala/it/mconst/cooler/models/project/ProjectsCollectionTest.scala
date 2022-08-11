@@ -151,7 +151,7 @@ class ProjectsCollectionTest extends IOSuite {
       makeTestProject(
         client._id,
         name = "Alice",
-        invoiceData = Some(Project.InvoiceDataInput("0", today.toISOString))
+        invoiceData = Some(Project.InvoiceDataInput("00", today.toISOString))
       ),
       makeTestProject(
         client._id,
@@ -162,7 +162,8 @@ class ProjectsCollectionTest extends IOSuite {
         name = "Charlie",
         cashData =
           Some(ProjectCashData(BsonDateTime(System.currentTimeMillis), 42f)),
-        endTime = tomorrow.toISOString
+        endTime = tomorrow.toISOString,
+        invoiceData = Some(Project.InvoiceDataInput("02", today.toISOString))
       ),
       makeTestProject(
         client._id,
@@ -172,12 +173,14 @@ class ProjectsCollectionTest extends IOSuite {
       makeTestProject(
         client._id,
         name = "Eleanor",
-        startTime = yesterday.toISOString
+        startTime = yesterday.toISOString,
+        invoiceData = Some(Project.InvoiceDataInput("01", today.toISOString))
       ),
       makeTestProject(
         client._id,
         name = "Frederick",
-        startTime = tomorrow.toISOString
+        startTime = tomorrow.toISOString,
+        invoiceData = Some(Project.InvoiceDataInput("42", today.toISOString))
       )
     )
 
@@ -377,6 +380,18 @@ class ProjectsCollectionTest extends IOSuite {
         yield ()
       }
     }
+  }
+
+  test("should find invoices") {
+    projectsList.use(projects =>
+      Projects
+        .findInvoices(
+          CursorQueryAsc(Some("0"), Some(PositiveInteger.unsafe(1)), Some("01"))
+        )
+        .orFail
+        .map(_.edges.map(_.node.invoiceNumber.toString))
+        .assertEquals(List("02"))
+    )
   }
 
   test("should find the next project") {

@@ -53,6 +53,7 @@ export function CurrentSessionsPanel() {
                   boolean.fold(constTrue, () => sessions[0]._id !== subject)
                 ),
               CurrentSessions: constFalse,
+              Invoices: constTrue,
               NotFound: constFalse
             })
           )

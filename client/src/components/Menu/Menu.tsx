@@ -9,8 +9,10 @@ import './Menu.scss'
 import {
   clientsRoute,
   homeRoute,
+  invoicesRoute,
   isClientsRoute,
   isHomeRoute,
+  isInvoicesRoute,
   isProjectsRoute,
   isSettingsRoute,
   Location,
@@ -78,6 +80,14 @@ export function Menu() {
           action={() => setPage(projectsRoute('all'))}
           flat
           active={isProjectsRoute(route)}
+        />
+        <Button
+          type="button"
+          label={a18n`Invoices`}
+          icon={option.none}
+          action={() => setPage(invoicesRoute())}
+          flat
+          active={isInvoicesRoute(route)}
         />
         <Button
           type="button"

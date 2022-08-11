@@ -64,6 +64,18 @@ object ProjectQueryFilters {
   )
 }
 
+final case class InvoicesListItem(
+    _id: ObjectId,
+    name: NonEmptyString,
+    invoiceNumber: NonEmptyString,
+    invoiceDate: BsonDateTime,
+    clientName: NonEmptyString
+)
+object InvoicesListItem {
+  given EntityEncoder[IO, Cursor[InvoicesListItem]] =
+    jsonEncoderOf[IO, Cursor[InvoicesListItem]]
+}
+
 final case class ProjectCashedBalance(balance: NonNegativeNumber)
 object ProjectCashedBalance {
   given EntityEncoder[IO, ProjectCashedBalance] =
@@ -543,6 +555,33 @@ object Projects {
       )(query)
     )
   }
+
+  def findInvoices(query: CursorQuery)(using
+      customer: User
+  )(using Lang, DatabaseName): EitherT[IO, Error, Cursor[InvoicesListItem]] =
+    collection.use(
+      _.find[InvoicesListItem](
+        "invoiceNumber",
+        Seq(
+          Aggregates.`match`(
+            Filters.and(
+              Filters.eq("user", customer._id),
+              Filters.ne("invoiceData", null)
+            )
+          )
+        ) ++ labelsStages ++ Seq(
+          Aggregates.project(
+            Document(
+              "_id" -> 1,
+              "name" -> 1,
+              "invoiceNumber" -> "$invoiceData.number",
+              "invoiceDate" -> "$invoiceData.date",
+              "clientName" -> "$client.name"
+            )
+          )
+        )
+      )(query)
+    )
 
   def getNext(_id: ObjectId)(using
       customer: User

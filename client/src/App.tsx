@@ -17,6 +17,7 @@ const Profile = lazy(() => import('./pages/Profile/Profile'))
 const Settings = lazy(() => import('./pages/Settings/Settings'))
 const Tasks = lazy(() => import('./pages/Tasks/Tasks'))
 const Session = lazy(() => import('./pages/Session/Session'))
+const Invoices = lazy(() => import('./pages/Invoices/Invoices'))
 const NotFound = lazy(() => import('./pages/NotFound'))
 
 export function App() {
@@ -54,6 +55,7 @@ export function App() {
                           ),
                           Settings: () => <Settings />,
                           CurrentSessions: () => <CurrentSessions />,
+                          Invoices: () => <Invoices />,
                           NotFound: () => <NotFound />
                         })
                       )}

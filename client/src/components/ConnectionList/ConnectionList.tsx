@@ -31,10 +31,12 @@ interface Props<T> extends PropsWithChildren {
   onLoadMore: Option<IO<unknown>>
   emptyListMessage: LocalizedString
   autoFocus?: boolean
+  inputLabel?: LocalizedString
 }
 
 export function ConnectionList<T>(props: Props<T>) {
   const autoFocus = props.autoFocus ?? true
+  const inputLabel = props.inputLabel || a18n`Search`
   const [queryString, setQueryString] = useState('')
 
   const debouncedSearch = useDebounce(
@@ -62,7 +64,7 @@ export function ConnectionList<T>(props: Props<T>) {
           <Input
             type="text"
             name="search"
-            label={a18n`Search`}
+            label={inputLabel}
             value={queryString}
             onChange={setQueryString}
             color={pipe(

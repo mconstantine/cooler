@@ -84,6 +84,21 @@ object ProjectRoutes {
         Ok(Projects.getCashedBalance(since, to))
       }
 
+      case GET -> Root / "invoices" :?
+          QueryMatcher(query) +&
+          FirstMatcher(first) +&
+          AfterMatcher(after) +&
+          LastMatcher(last) +&
+          BeforeMatcher(before) as context => {
+        given Lang = context.lang
+        given User = context.user
+
+        EitherT
+          .fromEither[IO](CursorQuery(query, first, after, last, before))
+          .flatMap(Projects.findInvoices(_))
+          .toResponse
+      }
+
       case GET -> Root / ObjectIdParam(id) as context => {
         given Lang = context.lang
         given User = context.user

@@ -1,6 +1,5 @@
 TODO:
 
-[ ] Invoices list
 [ ] Cypress tests
 [ ] Stats: cashed money per month
 [ ] Stats: cashed money per year
@@ -16,3 +15,4 @@ DONE:
 [X] Add invoice data (optional, number and date) to projects
 [X] Projects toggles, 3-state (with undefined): cashed, invoice sent, ongoing, future
 [X] Add previous and next projects
+[X] Invoices list

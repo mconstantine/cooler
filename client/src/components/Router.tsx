@@ -78,6 +78,10 @@ interface CurrentSessions {
   readonly _tag: 'CurrentSessions'
 }
 
+interface Invoices {
+  readonly _tag: 'Invoices'
+}
+
 interface NotFound {
   readonly _tag: 'NotFound'
 }
@@ -90,6 +94,7 @@ export type Location =
   | Session
   | Settings
   | CurrentSessions
+  | Invoices
   | NotFound
 
 export function homeRoute(): Home {
@@ -142,6 +147,10 @@ export function settingsRoute(): Settings {
   return { _tag: 'Settings' }
 }
 
+export function invoicesRoute(): Invoices {
+  return { _tag: 'Invoices' }
+}
+
 function notFoundRoute(): NotFound {
   return { _tag: 'NotFound' }
 }
@@ -172,6 +181,10 @@ export function isSettingsRoute(location: Location): boolean {
 
 export function isCurrentSessionsRoute(location: Location): boolean {
   return location._tag === 'CurrentSessions'
+}
+
+export function isInvoicesRoute(location: Location): boolean {
+  return location._tag === 'Invoices'
 }
 
 export function foldLocation<T>(matches: {
@@ -206,10 +219,10 @@ const sessionMatch = lit('projects')
   .then(type('subject', ObjectIdFromString))
   .then(end)
 
-const notFoundMatch = lit('not-found')
-
+const invoicesMatch = lit('invoices')
 const settingsMatch = lit('settings').then(end)
 const currentSessionsMatch = lit('current-sessions').then(end)
+const notFoundMatch = lit('not-found')
 
 const router = zero<Location>()
   .alt(homeMatch.parser.map(homeRoute))
@@ -225,6 +238,7 @@ const router = zero<Location>()
   )
   .alt(settingsMatch.parser.map(() => settingsRoute()))
   .alt(currentSessionsMatch.parser.map(() => currentSessionsRoute()))
+  .alt(invoicesMatch.parser.map(() => invoicesRoute()))
 
 interface Props {
   render: (location: Location) => JSX.Element
@@ -246,6 +260,7 @@ function formatLocation(location: Location): string {
       Settings: location => format(settingsMatch.formatter, location),
       CurrentSessions: location =>
         format(currentSessionsMatch.formatter, location),
+      Invoices: location => format(invoicesMatch.formatter, location),
       NotFound: location => format(notFoundMatch.formatter, location)
     })
   )
