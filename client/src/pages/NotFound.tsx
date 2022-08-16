@@ -17,7 +17,7 @@ export default function NotFound() {
         {
           type: 'sync',
           label: a18n`Go home`,
-          action: () => setRoute(homeRoute())
+          action: _ => setRoute(homeRoute(), _)
         }
       ]}
     />

@@ -4,13 +4,13 @@ import { Color, LocalizedString } from '../../globalDomain'
 import { constFalse, constNull, constTrue, pipe } from 'fp-ts/function'
 import { composeClassName } from '../../misc/composeClassName'
 import { Option } from 'fp-ts/Option'
-import { TaskEither } from 'fp-ts/TaskEither'
-import { IO } from 'fp-ts/IO'
 import { nonEmptyArray, option } from 'fp-ts'
 import { Button } from '../Button/Button/Button'
 import { LoadingButton } from '../Button/LoadingButton/LoadingButton'
 import { NonEmptyArray } from 'fp-ts/NonEmptyArray'
 import { Buttons } from '../Button/Buttons/Buttons'
+import { Reader } from 'fp-ts/Reader'
+import { ReaderTaskEither } from 'fp-ts/ReaderTaskEither'
 
 export const HeadingSize = t.keyof({
   40: true,
@@ -52,21 +52,21 @@ interface SyncAction {
   type: 'sync'
   label: LocalizedString
   icon: Option<string>
-  action: IO<void>
+  action: Reader<boolean, unknown>
   color?: Color
 }
 
 interface IconAction {
   type: 'icon'
   icon: string
-  action: IO<void>
+  action: Reader<boolean, unknown>
   color?: Color
 }
 
 interface AsyncAction {
   type: 'async'
   label: Option<LocalizedString>
-  action: TaskEither<LocalizedString, unknown>
+  action: ReaderTaskEither<boolean, LocalizedString, unknown>
   icon: string
   color?: Color
 }

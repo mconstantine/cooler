@@ -52,7 +52,7 @@ export function LatestProjects() {
                       label: option.some(project.client.name),
                       content: project.name,
                       description: project.description,
-                      action: () => setRoute(projectsRoute(project._id)),
+                      action: _ => setRoute(projectsRoute(project._id), _),
                       details: true
                     }))
                   )}

@@ -165,9 +165,10 @@ export function SessionData(props: Props) {
             action={option.some({
               type: 'sync',
               label: a18n`Details`,
-              action: () =>
+              action: _ =>
                 setRoute(
-                  taskRoute(props.session.project._id, props.session.task._id)
+                  taskRoute(props.session.project._id, props.session.task._id),
+                  _
                 ),
               icon: option.some(eye)
             })}
@@ -179,7 +180,8 @@ export function SessionData(props: Props) {
             action={option.some({
               type: 'sync',
               label: a18n`Details`,
-              action: () => setRoute(projectsRoute(props.session.project._id)),
+              action: _ =>
+                setRoute(projectsRoute(props.session.project._id), _),
               icon: option.some(eye)
             })}
           />
@@ -190,7 +192,7 @@ export function SessionData(props: Props) {
             action={option.some({
               type: 'sync',
               label: a18n`Details`,
-              action: () => setRoute(clientsRoute(props.session.client._id)),
+              action: _ => setRoute(clientsRoute(props.session.client._id), _),
               icon: option.some(eye)
             })}
           />
@@ -209,7 +211,7 @@ export function SessionData(props: Props) {
                     icon={stop}
                     color="primary"
                     label={option.some(a18n`Stop`)}
-                    action={onStop}
+                    action={() => onStop}
                   />
                 ),
                 () => (
@@ -228,7 +230,7 @@ export function SessionData(props: Props) {
               icon={skull}
               color="danger"
               label={option.some(a18n`Delete session`)}
-              action={deleteSession(props.session)}
+              action={() => deleteSession(props.session)}
             />
           </Buttons>
         </Panel>

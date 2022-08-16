@@ -43,7 +43,7 @@ export default function ProjectsList() {
     label: option.some(project.client.name),
     content: project.name,
     description: project.description,
-    action: () => setRoute(projectsRoute(project._id)),
+    action: _ => setRoute(projectsRoute(project._id), _),
     details: true
   })
 
@@ -123,7 +123,7 @@ export default function ProjectsList() {
             type: 'sync',
             label: a18n`New Project`,
             icon: option.some(add),
-            action: () => setRoute(projectsRoute('new'))
+            action: _ => setRoute(projectsRoute('new'), _)
           })
         )}
         onSearchQueryChange={option.some(onSearchQueryChange)}

@@ -1,5 +1,3 @@
-import { IO } from 'fp-ts/IO'
-import { TaskEither } from 'fp-ts/TaskEither'
 import { Option } from 'fp-ts/Option'
 import { useState } from 'react'
 import { Color, LocalizedString } from '../../globalDomain'
@@ -14,18 +12,20 @@ import { constNull, constVoid, flow, pipe } from 'fp-ts/function'
 import { Banner } from '../Banner/Banner'
 import { skull } from 'ionicons/icons'
 import { unsafeLocalizedString } from '../../a18n'
+import { Reader } from 'fp-ts/Reader'
+import { ReaderTaskEither } from 'fp-ts/ReaderTaskEither'
 
 interface SyncAction {
   type: 'sync'
   label: LocalizedString
-  action: IO<void>
+  action: Reader<boolean, void>
   color?: Color
 }
 
 interface AsyncAction {
   type: 'async'
   label: Option<LocalizedString>
-  action: TaskEither<LocalizedString, unknown>
+  action: ReaderTaskEither<boolean, LocalizedString, unknown>
   icon: string
   color?: Color
 }
@@ -103,11 +103,13 @@ export function Card(props: Props) {
                   )}
                   type="loadingButton"
                   label={action.label}
-                  action={pipe(
-                    taskEither.rightIO(() => setError(option.none)),
-                    taskEither.chain(() => action.action),
-                    taskEither.bimap(flow(option.some, setError), constVoid)
-                  )}
+                  action={_ =>
+                    pipe(
+                      taskEither.rightIO(() => setError(option.none)),
+                      taskEither.chain(() => action.action(_)),
+                      taskEither.bimap(flow(option.some, setError), constVoid)
+                    )
+                  }
                   icon={action.icon}
                   color={action.color}
                   flat

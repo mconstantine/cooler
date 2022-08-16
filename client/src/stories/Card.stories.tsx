@@ -45,13 +45,15 @@ const CardTemplate: Story<Args> = props => {
             {
               type: 'async',
               label: option.some(unsafeLocalizedString('Async action')),
-              action: pipe(
-                props.shouldFail,
-                boolean.fold(
-                  () => taskEither.rightIO(constVoid),
-                  () => taskEither.left(unsafeLocalizedString("I'm an error!"))
-                )
-              ),
+              action: () =>
+                pipe(
+                  props.shouldFail,
+                  boolean.fold(
+                    () => taskEither.rightIO(constVoid),
+                    () =>
+                      taskEither.left(unsafeLocalizedString("I'm an error!"))
+                  )
+                ),
               icon: heart
             }
           ]}

@@ -1,7 +1,7 @@
 import { option } from 'fp-ts'
 import { constNull, constUndefined, pipe } from 'fp-ts/function'
+import { ReaderTaskEither } from 'fp-ts/ReaderTaskEither'
 import { Option } from 'fp-ts/Option'
-import { TaskEither } from 'fp-ts/TaskEither'
 import { checkmark, reload, skull } from 'ionicons/icons'
 import { ComponentProps, FC, MouseEvent, useEffect, useState } from 'react'
 import { Color, LocalizedString } from '../../../globalDomain'
@@ -29,7 +29,7 @@ export type CommonProps = Pick<
 
 export interface ButtonProps extends CommonProps {
   type: 'loadingButton'
-  action: TaskEither<any, any>
+  action: ReaderTaskEither<boolean, unknown, unknown>
 }
 
 export interface InputProps extends CommonProps {
@@ -151,7 +151,7 @@ export const ControlledLoadingButton: FC<Props> = ({
                 return
               }
 
-              actionProp()
+              actionProp(e.ctrlKey || e.metaKey || e.button === 1)()
             }
 
             return (

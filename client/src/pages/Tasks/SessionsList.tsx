@@ -87,8 +87,14 @@ export function SessionsList(props: Props) {
     )
   )
 
-  const onSessionListItemClick: Reader<Session, void> = session =>
-    setRoute(sessionRoute(props.task.project._id, props.task._id, session._id))
+  const onSessionListItemClick = (
+    session: Session,
+    shouldOpenInNewTab: boolean
+  ) =>
+    setRoute(
+      sessionRoute(props.task.project._id, props.task._id, session._id),
+      shouldOpenInNewTab
+    )
 
   const renderSessionItem: Reader<Session, RoutedItem> = session => {
     const startDateString = formatDate(session.startTime)
@@ -128,7 +134,7 @@ export function SessionsList(props: Props) {
         )
       ),
       description: option.none,
-      action: () => onSessionListItemClick(session),
+      action: _ => onSessionListItemClick(session, _),
       details: true
     }
   }
@@ -167,7 +173,7 @@ export function SessionsList(props: Props) {
         nonEmptyArray.of({
           type: 'async',
           label: option.some(a18n`Start new session`),
-          action: props.onCreateSessionButtonClick,
+          action: () => props.onCreateSessionButtonClick,
           icon: add
         })
       )}

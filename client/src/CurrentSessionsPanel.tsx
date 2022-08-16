@@ -109,7 +109,7 @@ function MultipleSessionsMessagePanel(
           type: 'sync',
           icon: option.some(eye),
           label: a18n`Details`,
-          action: () => setRoute(currentSessionsRoute())
+          action: _ => setRoute(currentSessionsRoute(), _)
         })
       )}
     />
@@ -134,13 +134,14 @@ function SingleSessionMessagePanel(props: SingleSessionMessagePanelProps) {
           type: 'sync',
           icon: option.some(eye),
           label: a18n`Details`,
-          action: () =>
+          action: _ =>
             setRoute(
               sessionRoute(
                 props.session.project._id,
                 props.session.task._id,
                 props.session._id
-              )
+              ),
+              _
             )
         })
       )}

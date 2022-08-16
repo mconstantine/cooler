@@ -34,21 +34,23 @@ export function TaskCreation(props: Props) {
           createTask,
           taskEither.chain(task =>
             taskEither.fromIO(() =>
-              setRoute(taskRoute(props.project, task._id))
+              setRoute(taskRoute(props.project, task._id), false)
             )
           )
         ),
         flow(
           createTasksBatch,
           taskEither.chain(() =>
-            taskEither.fromIO(() => setRoute(projectsRoute(props.project)))
+            taskEither.fromIO(() =>
+              setRoute(projectsRoute(props.project), false)
+            )
           )
         )
       )
     )
   }
 
-  const onCancel: IO<void> = () => setRoute(projectsRoute(props.project))
+  const onCancel: IO<void> = () => setRoute(projectsRoute(props.project), false)
 
   return pipe(
     project,

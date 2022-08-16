@@ -47,7 +47,7 @@ export default function Task(props: Props) {
   const onUpdate: Reader<TaskWithStats, void> = setTask
 
   const onDelete: Reader<TaskWithStats, void> = task =>
-    setRoute(projectsRoute(task.project._id))
+    setRoute(projectsRoute(task.project._id), false)
 
   useEffect(() => {
     const fetchTask = getTaskCommand()

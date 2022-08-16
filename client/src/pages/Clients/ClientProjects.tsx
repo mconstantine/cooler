@@ -27,7 +27,7 @@ export function ClientProjects(props: Props) {
     label: option.none,
     content: project.name,
     description: project.description,
-    action: () => setRoute(projectsRoute(project._id)),
+    action: _ => setRoute(projectsRoute(project._id), _),
     details: true
   })
 

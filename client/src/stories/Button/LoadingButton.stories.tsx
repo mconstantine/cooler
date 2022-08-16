@@ -51,13 +51,15 @@ const LoadingButtonTemplate: Story<Args> = props => {
             option.fromEither,
             option.map(unsafeLocalizedString)
           )}
-          action={pipe(
-            props.result,
-            foldLoadingButtonResult(
-              () => success,
-              () => failure
+          action={() =>
+            pipe(
+              props.result,
+              foldLoadingButtonResult(
+                () => success,
+                () => failure
+              )
             )
-          )}
+          }
           icon={send}
           color={props.color}
           flat={props.flat}

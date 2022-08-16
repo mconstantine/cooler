@@ -117,7 +117,7 @@ export function ProjectData(props: Props) {
             action={option.some({
               type: 'sync',
               label: a18n`Details`,
-              action: () => setRoute(clientsRoute(props.project.client._id)),
+              action: _ => setRoute(clientsRoute(props.project.client._id), _),
               icon: option.some(eye)
             })}
           />
@@ -272,7 +272,7 @@ export function ProjectData(props: Props) {
               label={option.some(a18n`Delete project`)}
               color="danger"
               flat
-              action={deleteProject(props.project)}
+              action={() => deleteProject(props.project)}
               icon={skull}
             />
           </Buttons>

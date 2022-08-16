@@ -27,7 +27,7 @@ export default function Invoices() {
       label: option.some(invoice.clientName),
       content: invoice.name,
       description: option.some(a18n`${invoiceNumber} – ${invoiceDate}`),
-      action: () => setRoute(projectsRoute(invoice._id)),
+      action: _ => setRoute(projectsRoute(invoice._id), _),
       details: true
     }
   }

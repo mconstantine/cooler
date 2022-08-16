@@ -24,7 +24,6 @@ import {
 } from '../Router'
 import { useState } from 'react'
 import { composeClassName } from '../../misc/composeClassName'
-import { Reader } from 'fp-ts/Reader'
 
 export function Menu() {
   const { theme, setTheme } = useTheme()
@@ -42,9 +41,9 @@ export function Menu() {
       )
     )
 
-  const setPage: Reader<Location, void> = location => {
+  const setPage = (location: Location, shouldOpenInNewTab: boolean) => {
     setIsMenuOpen(false)
-    setRoute(location)
+    setRoute(location, shouldOpenInNewTab)
   }
 
   return (
@@ -71,7 +70,7 @@ export function Menu() {
           type="button"
           label={a18n`Clients`}
           icon={option.none}
-          action={() => setPage(clientsRoute('all'))}
+          action={_ => setPage(clientsRoute('all'), _)}
           flat
           active={isClientsRoute(route)}
         />
@@ -79,7 +78,7 @@ export function Menu() {
           type="button"
           label={a18n`Projects`}
           icon={option.none}
-          action={() => setPage(projectsRoute('all'))}
+          action={_ => setPage(projectsRoute('all'), _)}
           flat
           active={isProjectsRoute(route)}
         />
@@ -87,7 +86,7 @@ export function Menu() {
           type="button"
           label={a18n`Invoices`}
           icon={option.none}
-          action={() => setPage(invoicesRoute())}
+          action={_ => setPage(invoicesRoute(), _)}
           flat
           active={isInvoicesRoute(route)}
         />
@@ -95,7 +94,7 @@ export function Menu() {
           type="button"
           label={a18n`Profile`}
           icon={option.none}
-          action={() => setPage(homeRoute())}
+          action={_ => setPage(homeRoute(), _)}
           flat
           active={isHomeRoute(route)}
         />
@@ -103,7 +102,7 @@ export function Menu() {
           type="button"
           label={a18n`Stats`}
           icon={option.none}
-          action={() => setPage(statsRoute())}
+          action={_ => setPage(statsRoute(), _)}
           flat
           active={isStatsRoute(route)}
         />
@@ -111,7 +110,7 @@ export function Menu() {
           type="button"
           label={a18n`Settings`}
           icon={option.none}
-          action={() => setPage(settingsRoute())}
+          action={_ => setPage(settingsRoute(), _)}
           flat
           active={isSettingsRoute(route)}
         />

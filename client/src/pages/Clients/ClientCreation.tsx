@@ -17,11 +17,11 @@ export default function ClientCreation() {
     flow(
       createClient,
       taskEither.chain(client =>
-        taskEither.fromIO(() => setRoute(clientsRoute(client._id)))
+        taskEither.fromIO(() => setRoute(clientsRoute(client._id), false))
       )
     )
 
-  const onCancel: IO<void> = () => setRoute(clientsRoute('all'))
+  const onCancel: IO<void> = () => setRoute(clientsRoute('all'), false)
 
   return (
     <ClientForm client={option.none} onSubmit={onSubmit} onCancel={onCancel} />

@@ -32,7 +32,7 @@ export default function Project(props: Props) {
   const onUpdate: Reader<ProjectWithStats, void> = setProject
 
   const onDelete: Reader<ProjectType, void> = () =>
-    setRoute(projectsRoute('all'))
+    setRoute(projectsRoute('all'), false)
 
   useEffect(() => {
     const fetchProject = getProjectCommand()

@@ -130,7 +130,7 @@ export function ProfileData() {
                     label={option.some(a18n`Delete profile`)}
                     color="danger"
                     flat
-                    action={deleteProfile()}
+                    action={_ => deleteProfile()}
                     icon={skull}
                   />
                 </Buttons>

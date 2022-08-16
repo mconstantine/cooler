@@ -1,5 +1,6 @@
 import { boolean, option } from 'fp-ts'
 import { constNull, pipe } from 'fp-ts/function'
+import { Reader } from 'fp-ts/Reader'
 import { Option } from 'fp-ts/Option'
 import { HTMLProps } from 'react'
 import { Color, LocalizedString } from '../../../globalDomain'
@@ -21,14 +22,14 @@ interface DefaultButtonProps {
   label: LocalizedString
   icon: Option<string>
   flat?: boolean
-  action: () => unknown
+  action: Reader<boolean, unknown>
 }
 
 interface IconButtonProps {
   type: 'iconButton'
   icon: string
   size?: 'large' | 'medium' | 'small'
-  action: () => unknown
+  action: Reader<boolean, unknown>
 }
 
 export type ButtonProps = CommonProps & (DefaultButtonProps | IconButtonProps)
@@ -127,7 +128,7 @@ export function Button(props: ButtonProps) {
           return
         }
 
-        return props.action()
+        return props.action(e.ctrlKey || e.metaKey || e.button === 1)
       }}
     >
       {pipe(

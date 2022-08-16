@@ -45,9 +45,14 @@ function NonEmptyCurrentSessions(props: NonEmptyCurrentSessionsProps) {
             label: option.some(session.task.name),
             content: formatDuration(session.duration, true),
             description: option.none,
-            action: () =>
+            action: _ =>
               setRoute(
-                sessionRoute(session.project._id, session.task._id, session._id)
+                sessionRoute(
+                  session.project._id,
+                  session.task._id,
+                  session._id
+                ),
+                _
               ),
             details: true
           })

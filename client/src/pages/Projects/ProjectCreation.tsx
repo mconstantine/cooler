@@ -22,11 +22,11 @@ export default function ProjectCreation() {
   > = flow(
     createProject,
     taskEither.chain(project =>
-      taskEither.fromIO(() => setRoute(projectsRoute(project._id)))
+      taskEither.fromIO(() => setRoute(projectsRoute(project._id), false))
     )
   )
 
-  const onCancel: IO<void> = () => setRoute(projectsRoute('all'))
+  const onCancel: IO<void> = () => setRoute(projectsRoute('all'), false)
 
   return (
     <ProjectForm

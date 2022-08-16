@@ -47,8 +47,8 @@ export function TasksDueToday() {
                     label: option.some(task.project.name),
                     content: task.name,
                     description: task.description,
-                    action: () =>
-                      setRoute(taskRoute(task.project._id, task._id)),
+                    action: _ =>
+                      setRoute(taskRoute(task.project._id, task._id), _),
                     details: true
                   }))}
                   emptyListMessage={a18n`No tasks due today`}

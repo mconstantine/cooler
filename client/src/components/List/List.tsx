@@ -20,7 +20,6 @@ import './List.scss'
 import { chevronForward } from 'ionicons/icons'
 import { Heading } from '../Heading/Heading'
 import { Body } from '../Body/Body'
-import { IO } from 'fp-ts/IO'
 import { Banner } from '../Banner/Banner'
 import { Button } from '../Button/Button/Button'
 import { Reader } from 'fp-ts/Reader'
@@ -68,7 +67,9 @@ export interface ReadonlyItemWithIcon extends CommonItemProps {
 export interface RoutedItem extends CommonItemProps {
   type: 'routed'
   details?: boolean
-  action: IO<unknown>
+  // This boolean indicates whether the click was done while pushing Ctrl, Cmd or the middle mouse button,
+  // i.e.: if links should open in a new window
+  action: Reader<boolean, unknown>
 }
 
 export interface RoutedItemWithIcon extends CommonItemProps {
@@ -76,7 +77,9 @@ export interface RoutedItemWithIcon extends CommonItemProps {
   icon: string
   iconColor: Color
   details?: boolean
-  action: IO<unknown>
+  // This boolean indicates whether the click was done while pushing Ctrl, Cmd or the middle mouse button,
+  // i.e.: if links should open in a new window
+  action: Reader<boolean, unknown>
 }
 
 export interface ValuedItem extends CommonItemProps {
@@ -229,7 +232,7 @@ export function List(props: Props) {
                     return
                   }
 
-                  return item.action()
+                  return item.action(e.ctrlKey || e.metaKey || e.button === 1)
                 }
               }
 

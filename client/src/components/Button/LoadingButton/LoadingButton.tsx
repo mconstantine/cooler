@@ -1,5 +1,6 @@
 import { taskEither } from 'fp-ts'
 import { pipe } from 'fp-ts/function'
+import { ReaderTaskEither } from 'fp-ts/ReaderTaskEither'
 import { Option } from 'fp-ts/Option'
 import { useEffect, useState } from 'react'
 import { LocalizedString } from '../../../globalDomain'
@@ -35,14 +36,15 @@ export function LoadingButton(props: Props) {
   }, [loadingState])
 
   if (props.type === 'loadingButton') {
-    const action = pipe(
-      taskEither.fromIO(() => setLoadingState('loading')),
-      taskEither.chain(() => props.action),
-      taskEither.bimap(
-        () => setLoadingState('error'),
-        () => setLoadingState('success')
+    const action: ReaderTaskEither<boolean, unknown, unknown> = _ =>
+      pipe(
+        taskEither.fromIO(() => setLoadingState('loading')),
+        taskEither.chain(() => props.action(_)),
+        taskEither.bimap(
+          () => setLoadingState('error'),
+          () => setLoadingState('success')
+        )
       )
-    )
 
     return (
       <ControlledLoadingButton

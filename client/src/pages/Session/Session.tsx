@@ -27,7 +27,7 @@ export default function Session(props: Props) {
   const onUpdate: Reader<SessionC, void> = setSession
 
   const backToTask: IO<void> = () =>
-    setRoute(taskRoute(props.projectId, props.taskId))
+    setRoute(taskRoute(props.projectId, props.taskId), false)
 
   useEffect(() => {
     const fetchSession = fetchSessionCommand()

@@ -42,7 +42,7 @@ export function ProjectSiblings(props: Props) {
             label: option.some(label),
             content: project.name,
             description: option.some(project.client.name),
-            action: () => setRoute(projectsRoute(project._id)),
+            action: _ => setRoute(projectsRoute(project._id), _),
             details: true
           })
       ),

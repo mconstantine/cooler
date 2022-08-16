@@ -104,7 +104,7 @@ export default function TaskData(props: Props) {
             action={option.some({
               type: 'sync',
               label: a18n`Details`,
-              action: () => setRoute(projectsRoute(props.task.project._id)),
+              action: _ => setRoute(projectsRoute(props.task.project._id), _),
               icon: option.some(eye)
             })}
           />
@@ -115,7 +115,7 @@ export default function TaskData(props: Props) {
             action={option.some({
               type: 'sync',
               label: a18n`Details`,
-              action: () => setRoute(clientsRoute(props.task.client._id)),
+              action: _ => setRoute(clientsRoute(props.task.client._id), _),
               icon: option.some(eye)
             })}
           />
@@ -166,7 +166,7 @@ export default function TaskData(props: Props) {
               label={option.some(a18n`Delete task`)}
               color="danger"
               flat
-              action={deleteTask(props.task)}
+              action={() => deleteTask(props.task)}
               icon={skull}
             />
           </Buttons>

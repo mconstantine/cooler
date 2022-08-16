@@ -202,7 +202,7 @@ export function ClientData(props: Props) {
               label={option.some(a18n`Delete client`)}
               color="danger"
               flat
-              action={deleteClient(props.client)}
+              action={() => deleteClient(props.client)}
               icon={skull}
             />
           </Buttons>

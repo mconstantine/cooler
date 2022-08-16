@@ -1,6 +1,5 @@
 TODO:
 
-[ ] Cmd/Ctrl/middle mouse btn + click should open links on another tab
 [ ] Keep a cache in connection lists
 [ ] Stats: cashed money per client
 [ ] Cypress tests
@@ -19,3 +18,4 @@ DONE:
 [X] Fix calendar (e.g.: 2021-05-31 is not selectable)
 [X] Stats: cashed money per month
 [X] Stats: add yearly totals to cash per month. Fill the holes? Apply taxes and make the net serie?
+[X] Cmd/Ctrl/middle mouse btn + click should open links on another tab

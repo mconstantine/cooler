@@ -1,5 +1,5 @@
 import { Meta, Story } from '@storybook/react'
-import { boolean, either, option, taskEither } from 'fp-ts'
+import { boolean, either, option, readerTaskEither } from 'fp-ts'
 import { constVoid, pipe } from 'fp-ts/function'
 import { NonEmptyString } from 'io-ts-types'
 import { heart, send } from 'ionicons/icons'
@@ -64,7 +64,7 @@ const ListWithButtonsTemplate: Story<DefaultArgs> = props => {
                 type: 'loadingButton',
                 label: option.some(unsafeLocalizedString('Button label')),
                 icon: send,
-                action: taskEither.fromIO(constVoid)
+                action: readerTaskEither.fromIO(constVoid)
               }
             ]
           }))}

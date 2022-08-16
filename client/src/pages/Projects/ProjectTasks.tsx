@@ -69,7 +69,7 @@ export function ProjectTasks(props: Props) {
     label: option.some(task.project.name),
     content: task.name,
     description: task.description,
-    action: () => setRoute(taskRoute(props.project._id, task._id)),
+    action: _ => setRoute(taskRoute(props.project._id, task._id), _),
     details: true
   })
 
@@ -110,7 +110,7 @@ export function ProjectTasks(props: Props) {
         nonEmptyArray.of({
           type: 'sync',
           label: a18n`New Task`,
-          action: () => setRoute(taskRoute(props.project._id, 'new')),
+          action: _ => setRoute(taskRoute(props.project._id, 'new'), _),
           icon: option.some(add)
         })
       )}

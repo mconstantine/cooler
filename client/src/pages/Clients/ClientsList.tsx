@@ -18,7 +18,7 @@ export default function ClientsList() {
     label: option.none,
     content: getClientName(client),
     description: option.none,
-    action: () => setRoute(clientsRoute(client._id)),
+    action: _ => setRoute(clientsRoute(client._id), _),
     details: true
   })
 
@@ -38,7 +38,7 @@ export default function ClientsList() {
           type: 'sync',
           label: a18n`New Client`,
           icon: option.some(add),
-          action: () => setRoute(clientsRoute('new'))
+          action: _ => setRoute(clientsRoute('new'), _)
         })
       )}
       onLoadMore={option.some(onLoadMore)}

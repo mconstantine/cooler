@@ -20,10 +20,12 @@ export default function Client(props: Props) {
   const [client, setClient, fetchClient] = useReactiveCommand(
     makeClientQuery(props._id)
   )
-  const { setRoute } = useRouter()
 
+  const { setRoute } = useRouter()
   const onUpdate: Reader<ClientType, void> = setClient
-  const onDelete: Reader<ClientType, void> = () => setRoute(clientsRoute('all'))
+
+  const onDelete: Reader<ClientType, void> = () =>
+    setRoute(clientsRoute('all'), false)
 
   useEffect(() => {
     fetchClient()()

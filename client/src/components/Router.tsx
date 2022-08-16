@@ -316,15 +316,21 @@ export function Router(props: Props) {
 
 interface UseRouterOutput {
   route: Location
-  setRoute: Reader<Location, void>
+  setRoute: (location: Location, newTab: boolean) => void
 }
 
 export function useRouter(): UseRouterOutput {
   const { location, setLocation } = useContext(LocationContext)
 
-  const setRoute = (location: Location) => {
-    setLocation(location)
-    window.history.pushState(null, '', formatLocation(location))
+  const setRoute = (location: Location, newTab: boolean) => {
+    const url = formatLocation(location)
+
+    if (newTab) {
+      window.open(url, '_blank')
+    } else {
+      setLocation(location)
+      window.history.pushState(null, '', url)
+    }
   }
 
   return {
