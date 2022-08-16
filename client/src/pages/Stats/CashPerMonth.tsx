@@ -4,6 +4,11 @@ import { a18n, formatMoneyAmount } from '../../a18n'
 import { foldTheme, useTheme } from '../../contexts/ThemeContext'
 import { CashPerMonth } from './domain'
 import { Theme } from '@nivo/core'
+import { useTaxes } from '../../contexts/TaxesContext'
+import { query } from '../../effects/api/api'
+import { LoadingBlock } from '../../components/Loading/LoadingBlock'
+import { ErrorPanel } from '../../components/ErrorPanel/ErrorPanel'
+import { calculateNetValue } from '../Profile/utils'
 
 export interface Props {
   data: CashPerMonth
@@ -11,6 +16,7 @@ export interface Props {
 
 export function CashPerMonthChart(props: Props) {
   const { theme } = useTheme()
+  const { taxes } = useTaxes()
 
   const formatDateShort = (date: Date) =>
     date.toLocaleDateString(a18n.getLocale(), {
@@ -18,11 +24,19 @@ export function CashPerMonthChart(props: Props) {
       month: 'short'
     })
 
-  const lineColor = pipe(
+  const primaryColor = pipe(
     theme,
     foldTheme(
       () => '#2196f3',
       () => '#90caf9'
+    )
+  )
+
+  const secondaryColor = pipe(
+    theme,
+    foldTheme(
+      () => '#4caf50',
+      () => '#81c784'
     )
   )
 
@@ -60,34 +74,58 @@ export function CashPerMonthChart(props: Props) {
     )
   )
 
-  return (
-    <div style={{ width: '100%', height: '50vh', marginTop: '48px' }}>
-      <ResponsiveLineCanvas
-        theme={chartTheme}
-        margin={{ top: 20, right: 20, bottom: 60, left: 80 }}
-        data={[
-          {
-            id: 'cashPerMonth',
-            data: props.data.map(({ monthDate, cash }) => ({
-              x: monthDate,
-              y: cash
-            }))
-          }
-        ]}
-        colors={lineColor}
-        xFormat={value => formatDateShort(value as Date)}
-        yFormat={value => formatMoneyAmount(value as number)}
-        axisLeft={{
-          legend: a18n`Money`,
-          legendOffset: 8
-        }}
-        axisBottom={{
-          legend: a18n`Time`,
-          tickValues: props.data.map(_ => _.monthDate),
-          format: formatDateShort,
-          legendOffset: -8
-        }}
-      />
-    </div>
+  return pipe(
+    taxes,
+    query.fold(
+      () => <LoadingBlock />,
+      error => <ErrorPanel error={error} />,
+      taxes => (
+        <div style={{ width: '100%', height: '50vh', marginTop: '48px' }}>
+          <ResponsiveLineCanvas
+            theme={chartTheme}
+            margin={{ top: 20, right: 20, bottom: 70, left: 40 }}
+            data={[
+              {
+                id: a18n`Gross`,
+                data: props.data.map(({ monthDate, cash }) => ({
+                  x: monthDate,
+                  y: cash
+                }))
+              },
+              {
+                id: a18n`Net`,
+                data: props.data.map(({ monthDate, cash }) => ({
+                  x: monthDate,
+                  y: calculateNetValue(cash, taxes)
+                }))
+              }
+            ]}
+            colors={[primaryColor, secondaryColor]}
+            xFormat={value => formatDateShort(value as Date)}
+            yFormat={value => formatMoneyAmount(value as number)}
+            axisLeft={{
+              legend: a18n`Money`,
+              legendOffset: 8
+            }}
+            axisBottom={{
+              legend: a18n`Time`,
+              tickValues: props.data.map(_ => _.monthDate),
+              format: formatDateShort,
+              legendOffset: -8
+            }}
+            legends={[
+              {
+                anchor: 'bottom',
+                direction: 'row',
+                translateX: 0,
+                translateY: 50,
+                itemWidth: 60,
+                itemHeight: 16
+              }
+            ]}
+          />
+        </div>
+      )
+    )
   )
 }
