@@ -44,6 +44,7 @@ import org.http4s.EntityDecoder
 import org.http4s.EntityEncoder
 import org.http4s.Status
 import scala.collection.JavaConverters.*
+import it.mconst.cooler.models.task.Task.TruncationResult
 
 opaque type WeekdayBitMask = Int
 
@@ -208,6 +209,12 @@ object Task {
       to: BsonDateTime,
       repeat: WeekdayBitMask
   )
+
+  final case class TruncationResult(deletedCount: Long)
+  object TruncationResult {
+    given EntityEncoder[IO, TruncationResult] =
+      jsonEncoderOf[IO, TruncationResult]
+  }
 
   def validateInputData(
       data: InputData
@@ -688,4 +695,40 @@ object Tasks {
         )
       )
     yield task
+
+  def truncate(
+      projectId: ObjectId
+  )(using
+      customer: User
+  )(using Lang, DatabaseName): EitherT[IO, Error, TruncationResult] =
+    for
+      deletionResult <- EitherT.right(
+        collection.use(
+          _.raw(
+            _.deleteMany(
+              Filter
+                .eq("user", customer._id)
+                .and(Filter.eq("project", projectId))
+            )
+          )
+        )
+      )
+      result <- EitherT.fromEither[IO](
+        if deletionResult.wasAcknowledged then
+          Right(TruncationResult(deletionResult.getDeletedCount))
+        else Left(Error(Status.InternalServerError, __.ErrorUnknown))
+      )
+      _ <- EitherT.right(
+        Sessions.collection
+          .use(
+            _.raw(
+              _.deleteMany(
+                Filter
+                  .eq("user", customer._id)
+                  .and(Filter.eq("project", projectId))
+              )
+            )
+          )
+      )
+    yield result
 }

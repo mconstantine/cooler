@@ -88,6 +88,15 @@ object TaskRoutes {
 
         Tasks.delete(id).toResponse
       }
+
+      case DELETE -> Root / ObjectIdParam(
+            projectId
+          ) / "truncate" as context => {
+        given Lang = context.lang
+        given User = context.user
+
+        Tasks.truncate(projectId).toResponse
+      }
     }
 
   def apply()(using DatabaseName) = UserMiddleware(routes)

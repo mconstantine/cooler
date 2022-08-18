@@ -14,6 +14,7 @@ import it.mconst.cooler.models.client.Client
 import it.mconst.cooler.models.client.Clients
 import it.mconst.cooler.models.project.Project
 import it.mconst.cooler.models.project.Projects
+import it.mconst.cooler.models.session.Sessions
 import it.mconst.cooler.models.user.User
 import it.mconst.cooler.models.user.Users
 import it.mconst.cooler.utils.__
@@ -480,5 +481,74 @@ class TasksCollectionTest extends IOSuite {
         }
       yield ()
     }
+  }
+
+  test("should truncate tasks and sessions of a project and a user") {
+    otherUser.use(otherUser => {
+      for
+        task1 <- Tasks
+          .create(makeTestTask(testDataFixture().project._id))
+          .orFail
+        task2 <- Tasks
+          .create(makeTestTask(testDataFixture().project._id))
+          .orFail
+        session1 <- Sessions.start(makeTestSession(task1._id)).orFail
+        session2 <- Sessions.start(makeTestSession(task2._id)).orFail
+        otherUserClient <- {
+          given User = otherUser
+          Clients
+            .create(makeTestPrivateClient())
+            .orFail
+        }
+        otherUserProject <- {
+          given User = otherUser
+          Projects
+            .create(makeTestProject(otherUserClient._id))
+            .orFail
+        }
+        otherUserTask <- {
+          given User = otherUser
+          Tasks
+            .create(makeTestTask(otherUserProject._id))
+            .orFail
+        }
+        otherUserSession <- {
+          given User = otherUser
+          Sessions
+            .start(makeTestSession(otherUserTask._id))
+            .orFail
+        }
+        result <- Tasks.truncate(testDataFixture().project._id).orFail
+        _ = assertEquals(result.deletedCount, 2L)
+        _ <- Tasks
+          .findById(task1._id)
+          .assertEquals(Left(Error(Status.NotFound, __.ErrorTaskNotFound)))
+        _ <- Tasks
+          .findById(task2._id)
+          .assertEquals(Left(Error(Status.NotFound, __.ErrorTaskNotFound)))
+        _ <- Sessions
+          .findById(session1._id)
+          .assertEquals(Left(Error(Status.NotFound, __.ErrorSessionNotFound)))
+        _ <- Sessions
+          .findById(session2._id)
+          .assertEquals(Left(Error(Status.NotFound, __.ErrorSessionNotFound)))
+        _ <- {
+          given User = otherUser
+          Tasks
+            .findById(otherUserTask._id)
+            .orFail
+            .map(_._id)
+            .assertEquals(otherUserTask._id)
+        }
+        _ <- {
+          given User = otherUser
+          Sessions
+            .findById(otherUserSession._id)
+            .orFail
+            .map(_._id)
+            .assertEquals(otherUserSession._id)
+        }
+      yield ()
+    })
   }
 }
