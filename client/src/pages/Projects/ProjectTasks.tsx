@@ -1,20 +1,23 @@
-import { boolean, nonEmptyArray, option } from 'fp-ts'
+import { boolean, nonEmptyArray, option, readerTaskEither } from 'fp-ts'
 import { constVoid, pipe } from 'fp-ts/function'
 import { IO } from 'fp-ts/IO'
 import { Reader } from 'fp-ts/Reader'
-import { add } from 'ionicons/icons'
+import { add, skull } from 'ionicons/icons'
 import { useEffect, useState } from 'react'
 import { a18n } from '../../a18n'
 import { ConnectionList } from '../../components/ConnectionList/ConnectionList'
+import { HeadingAction } from '../../components/Heading/Heading'
 import { RoutedItem } from '../../components/List/List'
 import { taskRoute, useRouter } from '../../components/Router'
 import { query } from '../../effects/api/api'
 import { Query } from '../../effects/api/Query'
-import { useGet } from '../../effects/api/useApi'
+import { useDelete, useGet } from '../../effects/api/useApi'
+import { useDialog } from '../../effects/useDialog'
 import { Project } from '../../entities/Project'
 import { Task } from '../../entities/Task'
 import { LocalizedString, unsafePositiveInteger } from '../../globalDomain'
-import { Connection } from '../../misc/Connection'
+import { Connection, emptyConnection } from '../../misc/Connection'
+import { makeTruncateTasksRequest } from '../Tasks/domain'
 import {
   getProjectTasksRequest,
   ProjectTasksConnectionQueryInput
@@ -26,6 +29,24 @@ interface Props {
 
 export function ProjectTasks(props: Props) {
   const { setRoute } = useRouter()
+
+  const deleteAllTasksCommand = useDelete(
+    makeTruncateTasksRequest(props.project._id)
+  )
+
+  const [Dialog, deleteAllTasks] = useDialog<void, LocalizedString, void>(
+    pipe(
+      deleteAllTasksCommand,
+      readerTaskEither.chain(() =>
+        readerTaskEither.fromIO(() => setTasks(query.right(emptyConnection())))
+      )
+    ),
+    {
+      title: () => a18n`Are you sure you want to delete all tasks?`,
+      message: () =>
+        a18n`All the tasks, sessions and data will be lost forever!`
+    }
+  )
 
   const [input, setInput] = useState<ProjectTasksConnectionQueryInput>({
     project: props.project._id,
@@ -104,21 +125,35 @@ export function ProjectTasks(props: Props) {
   }, [props.project._id])
 
   return (
-    <ConnectionList
-      title={a18n`Tasks`}
-      actions={option.some(
-        nonEmptyArray.of({
-          type: 'sync',
-          label: a18n`New Task`,
-          action: _ => setRoute(taskRoute(props.project._id, 'new'), _),
-          icon: option.some(add)
-        })
-      )}
-      query={tasks}
-      onLoadMore={option.some(onLoadMore)}
-      onSearchQueryChange={option.none}
-      renderListItem={renderTaskItem}
-      emptyListMessage={a18n`No tasks found`}
-    />
+    <>
+      <ConnectionList
+        title={a18n`Tasks`}
+        actions={option.some(
+          pipe(
+            nonEmptyArray.of<HeadingAction>({
+              type: 'sync',
+              label: a18n`New Task`,
+              action: _ => setRoute(taskRoute(props.project._id, 'new'), _),
+              icon: option.some(add)
+            }),
+            nonEmptyArray.concat(
+              nonEmptyArray.of<HeadingAction>({
+                type: 'sync',
+                label: a18n`Delete all`,
+                action: deleteAllTasks(),
+                icon: option.some(skull),
+                color: 'danger'
+              })
+            )
+          )
+        )}
+        query={tasks}
+        onLoadMore={option.some(onLoadMore)}
+        onSearchQueryChange={option.none}
+        renderListItem={renderTaskItem}
+        emptyListMessage={a18n`No tasks found`}
+      />
+      <Dialog />
+    </>
   )
 }

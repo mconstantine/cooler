@@ -12,7 +12,7 @@ import {
   TasksBatchCreationInput,
   TaskWithStats
 } from '../../entities/Task'
-import { ObjectId } from '../../globalDomain'
+import { NonNegativeInteger, ObjectId } from '../../globalDomain'
 import { Connection, ConnectionQueryInput } from '../../misc/Connection'
 
 export const makeTaskQuery = (_id: ObjectId) =>
@@ -74,3 +74,18 @@ export const startSessionRequest = makePostRequest({
   inputCodec: SessionCreationInput,
   outputCodec: Session
 })
+
+const TruncationRequestOutput = t.type(
+  {
+    deletedCount: NonNegativeInteger
+  },
+  'TruncationRequestOutput'
+)
+export type TruncationRequestOutput = t.TypeOf<typeof TruncationRequestOutput>
+
+export const makeTruncateTasksRequest = (_id: ObjectId) =>
+  makeDeleteRequest({
+    url: `/tasks/${_id}/truncate`,
+    inputCodec: t.void,
+    outputCodec: TruncationRequestOutput
+  })

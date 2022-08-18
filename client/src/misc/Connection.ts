@@ -8,7 +8,7 @@ import {
   unsafeNonNegativeInteger
 } from '../globalDomain'
 import { pipe } from 'fp-ts/function'
-import { boolean } from 'fp-ts'
+import { boolean, option } from 'fp-ts'
 
 interface CursorBrand {
   readonly Cursor: unique symbol
@@ -148,5 +148,18 @@ export function deleteFromConnection<T extends { _id: ObjectId }>(
       totalCount: unsafeNonNegativeInteger(connection.pageInfo.totalCount - 1)
     },
     edges: connection.edges.filter(({ node }) => node._id !== deletedNode._id)
+  }
+}
+
+export function emptyConnection<T extends { _id: ObjectId }>(): Connection<T> {
+  return {
+    pageInfo: {
+      totalCount: unsafeNonNegativeInteger(0),
+      startCursor: option.none,
+      endCursor: option.none,
+      hasPreviousPage: false,
+      hasNextPage: false
+    },
+    edges: []
   }
 }
