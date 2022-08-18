@@ -164,6 +164,19 @@ export function TaskForm(props: Props) {
         }
       ]}
     >
+      {pipe(
+        props,
+        foldFormMode(
+          () => (
+            <Toggle
+              mode="boolean"
+              label={a18n`Repeat`}
+              {...fieldProps('shouldRepeat')}
+            />
+          ),
+          constNull
+        )
+      )}
       <Input label={a18n`Name`} {...fieldProps('name')} />
       {pipe(
         props,
@@ -197,19 +210,6 @@ export function TaskForm(props: Props) {
           )
         )}
       />
-      {pipe(
-        props,
-        foldFormMode(
-          () => (
-            <Toggle
-              mode="boolean"
-              label={a18n`Repeat`}
-              {...fieldProps('shouldRepeat')}
-            />
-          ),
-          constNull
-        )
-      )}
       {pipe(
         values.shouldRepeat,
         boolean.fold(constNull, () => (

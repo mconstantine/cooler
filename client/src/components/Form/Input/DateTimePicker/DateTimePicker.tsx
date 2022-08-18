@@ -135,13 +135,19 @@ export function DateTimePicker(props: Props) {
   const isPickingTime = mode === 'time' || mode === 'datetime'
 
   const confirm = () => {
-    setCurrentView('date')
+    if (mode === 'date' || mode === 'datetime') {
+      setCurrentView('date')
+    }
+
     setIsOpen(false)
     submit()
   }
 
   const cancel = () => {
-    setCurrentView('date')
+    if (mode === 'date' || mode === 'datetime') {
+      setCurrentView('date')
+    }
+
     setIsOpen(false)
     setValues(getInitialValues(props.value))
   }

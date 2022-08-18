@@ -1,6 +1,5 @@
 TODO:
 
-[ ] Keep a cache in connection lists
 [ ] Stats: cashed money per client
 [ ] Cypress tests
 [ ] Stats: avg hourly cost?
