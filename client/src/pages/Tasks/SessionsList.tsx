@@ -1,4 +1,4 @@
-import { array, boolean, nonEmptyArray, option } from 'fp-ts'
+import { array, boolean, nonEmptyArray, option, taskEither } from 'fp-ts'
 import { constVoid, flow, pipe } from 'fp-ts/function'
 import { TaskEither } from 'fp-ts/TaskEither'
 import { Reader } from 'fp-ts/Reader'
@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react'
 import { a18n, formatDate, formatDuration, formatTime } from '../../a18n'
 import { ConnectionList } from '../../components/ConnectionList/ConnectionList'
 import { RoutedItem } from '../../components/List/List'
-import { useGet } from '../../effects/api/useApi'
+import { useGet, usePost } from '../../effects/api/useApi'
 import { Session } from '../../entities/Session'
 import { TaskWithStats } from '../../entities/Task'
 import {
@@ -21,11 +21,18 @@ import {
   getConnectionNodes,
   unsafeCursor
 } from '../../misc/Connection'
-import { makeGetSessionsRequest } from './domain'
-import { add } from 'ionicons/icons'
+import { makeGetSessionsRequest, startSessionRequest } from './domain'
+import { add, play } from 'ionicons/icons'
 import { query } from '../../effects/api/api'
 import { useCurrentSessions } from '../../contexts/CurrentSessionsContext'
 import { sessionRoute, useRouter } from '../../components/Router'
+import { HeadingAction } from '../../components/Heading/Heading'
+import { Modal } from '../../components/Modal/Modal'
+import { ReaderTaskEither } from 'fp-ts/ReaderTaskEither'
+import {
+  AddWorkingHoursForm,
+  FormData
+} from '../../components/Form/Forms/AddWorkingHoursForm'
 
 interface Props {
   task: TaskWithStats
@@ -42,8 +49,13 @@ export function SessionsList(props: Props) {
     before: option.none
   })
 
-  const [sessions] = useGet(makeGetSessionsRequest(props.task._id), input)
+  const [sessions, reload] = useGet(
+    makeGetSessionsRequest(props.task._id),
+    input
+  )
   const [time, setTime] = useState<number>(Date.now())
+  const [isAddingWorkingHours, setIsAddingWorkingHours] = useState(false)
+  const createSession = usePost(startSessionRequest)
 
   const allSessions = pipe(
     sessions,
@@ -139,6 +151,27 @@ export function SessionsList(props: Props) {
     }
   }
 
+  const onAddWorkingHoursFormSubmit: ReaderTaskEither<
+    FormData,
+    LocalizedString,
+    void
+  > = data =>
+    pipe(
+      createSession({
+        task: props.task._id,
+        startTime: data.startTime,
+        endTime: option.some(
+          new Date(data.startTime.getTime() + data.hoursCount * 3600000)
+        )
+      }),
+      taskEither.chain(() =>
+        taskEither.fromIO(() => {
+          setIsAddingWorkingHours(false)
+          reload()
+        })
+      )
+    )
+
   useEffect(() => {
     const interval = pipe(
       allSessions,
@@ -166,21 +199,43 @@ export function SessionsList(props: Props) {
   }, [allSessions])
 
   return (
-    <ConnectionList
-      title={a18n`Sessions`}
-      query={allSessions}
-      actions={option.some(
-        nonEmptyArray.of({
-          type: 'async',
-          label: option.some(a18n`Start new session`),
-          action: () => props.onCreateSessionButtonClick,
-          icon: add
-        })
-      )}
-      onLoadMore={option.none}
-      onSearchQueryChange={option.none}
-      renderListItem={renderSessionItem}
-      emptyListMessage={a18n`No sessions found`}
-    />
+    <>
+      <ConnectionList
+        title={a18n`Sessions`}
+        query={allSessions}
+        actions={option.some(
+          pipe(
+            nonEmptyArray.of<HeadingAction>({
+              type: 'async',
+              label: option.some(a18n`Start new session`),
+              action: () => props.onCreateSessionButtonClick,
+              icon: play
+            }),
+            nonEmptyArray.concat(
+              nonEmptyArray.of<HeadingAction>({
+                type: 'sync',
+                label: a18n`Add working hours`,
+                action: () => setIsAddingWorkingHours(true),
+                icon: option.some(add)
+              })
+            )
+          )
+        )}
+        onLoadMore={option.none}
+        onSearchQueryChange={option.none}
+        renderListItem={renderSessionItem}
+        emptyListMessage={a18n`No sessions found`}
+      />
+      <Modal
+        isOpen={isAddingWorkingHours}
+        onClose={() => setIsAddingWorkingHours(false)}
+      >
+        <AddWorkingHoursForm
+          startTime={props.task.startTime}
+          onSubmit={onAddWorkingHoursFormSubmit}
+          onCancel={() => setIsAddingWorkingHours(false)}
+        />
+      </Modal>
+    </>
   )
 }
