@@ -23,6 +23,7 @@ import it.mconst.cooler.models.project.ClientLabel
 import it.mconst.cooler.models.project.DbProject
 import it.mconst.cooler.models.project.Projects
 import it.mconst.cooler.models.session.Sessions
+import it.mconst.cooler.models.task.Task.TruncationResult
 import it.mconst.cooler.models.user.User
 import it.mconst.cooler.utils.__
 import it.mconst.cooler.utils.Collection
@@ -44,7 +45,6 @@ import org.http4s.EntityDecoder
 import org.http4s.EntityEncoder
 import org.http4s.Status
 import scala.collection.JavaConverters.*
-import it.mconst.cooler.models.task.Task.TruncationResult
 
 opaque type WeekdayBitMask = Int
 
@@ -182,7 +182,6 @@ object Task {
       startTime: String,
       expectedWorkingHours: Float,
       hourlyCost: Float,
-      from: String,
       to: String,
       repeat: Int
   )
@@ -205,7 +204,6 @@ object Task {
       startTime: BsonDateTime,
       expectedWorkingHours: PositiveFloat,
       hourlyCost: PositiveFloat,
-      from: BsonDateTime,
       to: BsonDateTime,
       repeat: WeekdayBitMask
   )
@@ -245,7 +243,6 @@ object Task {
     data.startTime.validateBsonDateTime("startTime"),
     PositiveFloat.validate("expectedWorkingHours", data.expectedWorkingHours),
     PositiveFloat.validate("hourlyCost", data.hourlyCost),
-    data.from.validateBsonDateTime("from"),
     data.to.validateBsonDateTime("to"),
     WeekdayBitMask.validate("repeat", data.repeat)
   ).mapN(
@@ -255,7 +252,6 @@ object Task {
         startTime,
         expectedWorkingHours,
         hourlyCost,
-        from,
         to,
         repeat
     ) =>
@@ -265,7 +261,6 @@ object Task {
         startTime,
         expectedWorkingHours,
         hourlyCost,
-        from,
         to,
         repeat
       )
@@ -348,9 +343,9 @@ object Task {
         )
 
         val startEpochDay =
-          Math.floor(validData.from.getValue / 86400000).toLong
+          Math.floor(validData.startTime.getValue / 86400000).toLong
 
-        val startTime = validData.from.getValue - startEpochDay * 86400000
+        val startTime = validData.startTime.getValue - startEpochDay * 86400000
         val endEpochDay = Math.floor(validData.to.getValue / 86400000).toLong
 
         val validDays = startEpochDay

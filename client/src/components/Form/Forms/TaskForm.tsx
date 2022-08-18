@@ -100,7 +100,6 @@ export function TaskForm(props: Props) {
             expectedWorkingHours: '',
             hourlyCost: '',
             startTime: new Date(),
-            from: new Date(),
             to: new Date(),
             repeat: 0 as NonNegativeInteger
           }),
@@ -114,7 +113,6 @@ export function TaskForm(props: Props) {
             hourlyCost: task.hourlyCost.toString(10),
             shouldRepeat: false,
             project: props.project._id,
-            from: task.startTime,
             to: task.startTime,
             repeat: 0 as NonNegativeInteger
           })
@@ -202,25 +200,14 @@ export function TaskForm(props: Props) {
       <DateTimePicker
         label={a18n`Starting at`}
         {...fieldProps('startTime')}
-        mode={pipe(
-          values.shouldRepeat,
-          boolean.fold(
-            () => 'datetime',
-            () => 'time'
-          )
-        )}
+        mode="datetime"
       />
       {pipe(
         values.shouldRepeat,
         boolean.fold(constNull, () => (
           <>
             <DateTimePicker
-              label={a18n`From`}
-              {...fieldProps('from')}
-              mode="date"
-            />
-            <DateTimePicker
-              label={a18n`To`}
+              label={a18n`Ending on`}
               {...fieldProps('to')}
               mode="date"
             />

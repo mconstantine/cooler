@@ -74,19 +74,26 @@ class TaskBatchTest extends IOSuite {
       LocalDate.of(2018, 1, 1).toString() + "T09:00:00.000Z",
       8,
       25,
-      LocalDate.of(2018, 1, 1).toString() + "T09:00:00.000Z",
-      LocalDate.of(2018, 1, 31).toString() + "T09:00:00.000Z",
+      LocalDate.of(2018, 1, 31).toString() + "T00:00:00.000Z",
       0x1111111
     )
 
     given User = testDataFixture().user
 
-    Tasks
-      .create(data)
-      .orFail
-      .map(List.from(_))
-      .map(_.size)
-      .assertEquals(31)
+    for
+      result <- Tasks
+        .create(data)
+        .orFail
+        .map(List.from(_))
+      _ = assertEquals(result.size, 31)
+      _ = assertEquals(
+        result
+          .map(_.startTime.toISOString.slice(11, 24))
+          .filter(_ == "09:00:00.000Z")
+          .size,
+        31
+      )
+    yield ()
   }
 
   test("should handle weekday repetition") {
@@ -96,7 +103,6 @@ class TaskBatchTest extends IOSuite {
       LocalDate.of(2018, 1, 1).toString() + "T09:00:00.000Z",
       8,
       25,
-      LocalDate.of(2018, 1, 1).toString() + "T09:00:00.000Z",
       LocalDate.of(2018, 1, 7).toString() + "T09:00:00.000Z",
       0x1001011
     )
@@ -125,7 +131,6 @@ class TaskBatchTest extends IOSuite {
       LocalDate.of(2018, 1, 1).toString() + "T09:00:00.000Z",
       8,
       25,
-      LocalDate.of(2018, 1, 1).toString() + "T09:00:00.000Z",
       LocalDate.of(2018, 1, 1).toString() + "T09:00:00.000Z",
       0x0000001
     )

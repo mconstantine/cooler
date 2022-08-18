@@ -57,7 +57,6 @@ export const TasksBatchCreationInput = t.type(
     hourlyCost: NonNegativeNumber,
     project: ObjectId,
     startTime: DateFromISOString,
-    from: DateFromISOString,
     to: DateFromISOString,
     repeat: NonNegativeInteger
   },
