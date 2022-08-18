@@ -486,6 +486,7 @@ class TasksCollectionTest extends IOSuite {
   test("should truncate tasks and sessions of a project and a user") {
     otherUser.use(otherUser => {
       for
+        _ <- Tasks.collection.use(_.raw(_.deleteMany(Filter.empty)))
         task1 <- Tasks
           .create(makeTestTask(testDataFixture().project._id))
           .orFail
