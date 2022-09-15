@@ -40,6 +40,14 @@ export function CashPerMonthChart(props: Props) {
     )
   )
 
+  const errorColor = pipe(
+    theme,
+    foldTheme(
+      () => '#f44336',
+      () => '#e57373'
+    )
+  )
+
   const chartTheme: Theme = pipe(
     theme,
     foldTheme<Theme>(
@@ -74,12 +82,22 @@ export function CashPerMonthChart(props: Props) {
     )
   )
 
-  return pipe(
+  const data = pipe(
     taxes,
+    query.map(taxes =>
+      props.data.map(({ monthDate, cash }) => {
+        const netValue = calculateNetValue(cash, taxes)
+        return { monthDate, cash, netValue }
+      })
+    )
+  )
+
+  return pipe(
+    data,
     query.fold(
       () => <LoadingBlock />,
       error => <ErrorPanel error={error} />,
-      taxes => (
+      data => (
         <div style={{ width: '100%', height: '50vh', marginTop: '48px' }}>
           <ResponsiveLineCanvas
             theme={chartTheme}
@@ -87,20 +105,27 @@ export function CashPerMonthChart(props: Props) {
             data={[
               {
                 id: a18n`Gross`,
-                data: props.data.map(({ monthDate, cash }) => ({
+                data: data.map(({ monthDate, cash }) => ({
                   x: monthDate,
                   y: cash
                 }))
               },
               {
                 id: a18n`Net`,
-                data: props.data.map(({ monthDate, cash }) => ({
+                data: data.map(({ monthDate, netValue }) => ({
                   x: monthDate,
-                  y: calculateNetValue(cash, taxes)
+                  y: netValue
+                }))
+              },
+              {
+                id: a18n`Taxes`,
+                data: data.map(({ monthDate, cash, netValue }) => ({
+                  x: monthDate,
+                  y: cash - netValue
                 }))
               }
             ]}
-            colors={[primaryColor, secondaryColor]}
+            colors={[primaryColor, secondaryColor, errorColor]}
             xFormat={value => formatDateShort(value as Date)}
             yFormat={value => formatMoneyAmount(value as number)}
             axisLeft={{

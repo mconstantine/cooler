@@ -24,20 +24,24 @@ export function CashPerYear(props: Props) {
         <List
           heading={option.some(a18n`Cashed amount per year`)}
           emptyListMessage={a18n`No data found`}
+          unwrapDescriptions
           items={pipe(
             props.data,
             record.toArray,
             array.map(([yearString, cashedAmount]): ValuedItem => {
-              const netValue = formatMoneyAmount(
-                calculateNetValue(cashedAmount, taxes)
-              )
+              const netValue = calculateNetValue(cashedAmount, taxes)
+              const netValueString = formatMoneyAmount(netValue)
+              const taxesAmount = cashedAmount - netValue
+              const taxesString = formatMoneyAmount(taxesAmount)
 
               return {
                 key: yearString,
                 type: 'valued',
                 label: option.none,
                 content: unsafeLocalizedString(yearString),
-                description: option.some(a18n`Net value: ${netValue}`),
+                description: option.some(
+                  a18n`Net value: ${netValueString}, taxes: ${taxesString}`
+                ),
                 value: formatMoneyAmount(cashedAmount),
                 progress: option.none
               }

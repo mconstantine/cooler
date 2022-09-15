@@ -4,9 +4,13 @@ TODO:
 [ ] Cypress tests
 [ ] Stats: avg hourly cost?
 [ ] Client stat: avg time between invoice and cashing
+[ ] Next task and previous task
+[ ] Put task percentage or something in tasks list (project page)
+[ ] Project filters cache
 
 DONE:
 
+[X] Add total taxes to stats
 [X] Add required startDate and endDate to projects
 [X] Use expected budget in stats
 [X] Add "to" dates to user profile, default should be the end of the current month + 1 millisecond
