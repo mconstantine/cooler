@@ -15,7 +15,7 @@ import it.mconst.cooler.models.client.Clients
 import it.mconst.cooler.models.project.Projects
 import it.mconst.cooler.models.project.ProjectWithClientLabel
 import it.mconst.cooler.models.task.Tasks
-import it.mconst.cooler.models.task.TaskWithLabels
+import it.mconst.cooler.models.task.TaskWithStats
 import it.mconst.cooler.models.user.User
 import it.mconst.cooler.models.user.Users
 import it.mconst.cooler.utils.__
@@ -31,7 +31,7 @@ class SessionsCollectionTest extends IOSuite {
       user: User,
       client: Client,
       project: ProjectWithClientLabel,
-      task: TaskWithLabels
+      task: TaskWithStats
   )
 
   val testDataFixture = IOFixture(

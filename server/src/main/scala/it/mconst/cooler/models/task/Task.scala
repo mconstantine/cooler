@@ -128,12 +128,6 @@ final case class TaskWithLabels(
 object TaskWithLabels {
   given EntityEncoder[IO, TaskWithLabels] =
     jsonEncoderOf[IO, TaskWithLabels]
-
-  given EntityEncoder[IO, Iterable[TaskWithLabels]] =
-    jsonEncoderOf[IO, Iterable[TaskWithLabels]]
-
-  given EntityEncoder[IO, Cursor[TaskWithLabels]] =
-    jsonEncoderOf[IO, Cursor[TaskWithLabels]]
 }
 
 final case class TaskWithStats(
@@ -161,6 +155,12 @@ final case class TaskWithStats(
 
 object TaskWithStats {
   given EntityEncoder[IO, TaskWithStats] = jsonEncoderOf[IO, TaskWithStats]
+
+  given EntityEncoder[IO, Iterable[TaskWithStats]] =
+    jsonEncoderOf[IO, Iterable[TaskWithStats]]
+
+  given EntityEncoder[IO, Cursor[TaskWithStats]] =
+    jsonEncoderOf[IO, Cursor[TaskWithStats]]
 }
 
 object Task {
@@ -379,7 +379,7 @@ object Tasks {
   def collection(using DatabaseName) =
     Collection[IO, Task.InputData, DbTask]("tasks")
 
-  def labelsStages(using DatabaseName) = Seq(
+  def labelsStagesNoStats(using DatabaseName) = Seq(
     Aggregates.lookup(Clients.collection.name, "client", "_id", "c"),
     Aggregates.unwind("$c"),
     Aggregates.lookup(Projects.collection.name, "project", "_id", "p"),
@@ -417,11 +417,53 @@ object Tasks {
     )
   )
 
+  def labelsStages(using DatabaseName) = labelsStagesNoStats ++ Seq(
+    Document(
+      "$lookup" -> Document(
+        "from" -> Sessions.collection.name,
+        "localField" -> "_id",
+        "foreignField" -> "task",
+        "as" -> "sessions",
+        "pipeline" -> Seq(
+          Aggregates.project(
+            Document(
+              "_id" -> 0,
+              "actualWorkingHours" -> Document(
+                "$dateDiff" -> Document(
+                  "startDate" -> Document(
+                    "$dateFromString" -> Document(
+                      "dateString" -> "$startTime"
+                    )
+                  ),
+                  "endDate" -> Document(
+                    "$dateFromString" -> Document(
+                      "dateString" -> "$endTime"
+                    )
+                  ),
+                  "unit" -> "second"
+                )
+              )
+            )
+          )
+        )
+      )
+    ),
+    Aggregates.addFields(
+      Field(
+        "actualWorkingHours",
+        Document(
+          "$sum" -> "$sessions.actualWorkingHours"
+        )
+      )
+    ),
+    Aggregates.project(Document("sessions" -> 0))
+  )
+
   def create(
       data: Task.InputData
   )(using
       customer: User
-  )(using Lang, DatabaseName): EitherT[IO, Error, TaskWithLabels] =
+  )(using Lang, DatabaseName): EitherT[IO, Error, TaskWithStats] =
     collection.use { c =>
       for
         projectId <- EitherT
@@ -432,7 +474,7 @@ object Tasks {
           Task.fromInputData(data, project.client._id)
         )
         result <- c.create(data)
-        task <- findByIdNoStats(result)
+        task <- findById(result)
         _ <- Projects.collection.use(
           _.update(
             project._id,
@@ -448,7 +490,7 @@ object Tasks {
       data: Task.BatchInputData
   )(using
       customer: User
-  )(using Lang, DatabaseName): EitherT[IO, Error, Iterable[TaskWithLabels]] = {
+  )(using Lang, DatabaseName): EitherT[IO, Error, Iterable[TaskWithStats]] = {
     collection.use(c =>
       for {
         projectId <- EitherT
@@ -470,7 +512,7 @@ object Tasks {
         )
         tasks <- EitherT.right[Error](
           c.raw(
-            _.aggregateWithCodec[TaskWithLabels](
+            _.aggregateWithCodec[TaskWithStats](
               Seq(
                 Aggregates.`match`(Filters.in("_id", ids.asJava))
               ) ++ labelsStages
@@ -497,7 +539,7 @@ object Tasks {
                     Filters.eq("_id", _id)
                   )
                 )
-              ) ++ labelsStages
+              ) ++ labelsStagesNoStats
             ).first
           )
         ),
@@ -521,47 +563,7 @@ object Tasks {
                     Filters.eq("_id", _id)
                   )
                 )
-              ) ++ labelsStages ++ Seq(
-                Document(
-                  "$lookup" -> Document(
-                    "from" -> Sessions.collection.name,
-                    "localField" -> "_id",
-                    "foreignField" -> "task",
-                    "as" -> "sessions",
-                    "pipeline" -> Seq(
-                      Aggregates.project(
-                        Document(
-                          "_id" -> 0,
-                          "actualWorkingHours" -> Document(
-                            "$dateDiff" -> Document(
-                              "startDate" -> Document(
-                                "$dateFromString" -> Document(
-                                  "dateString" -> "$startTime"
-                                )
-                              ),
-                              "endDate" -> Document(
-                                "$dateFromString" -> Document(
-                                  "dateString" -> "$endTime"
-                                )
-                              ),
-                              "unit" -> "second"
-                            )
-                          )
-                        )
-                      )
-                    )
-                  )
-                ),
-                Aggregates.addFields(
-                  Field(
-                    "actualWorkingHours",
-                    Document(
-                      "$sum" -> "$sessions.actualWorkingHours"
-                    )
-                  )
-                ),
-                Aggregates.project(Document("sessions" -> 0))
-              )
+              ) ++ labelsStages
             ).first.map(
               _.flatMap(task =>
                 NonNegativeNumber
@@ -593,13 +595,13 @@ object Tasks {
   )(using
       Lang,
       DatabaseName
-  ): EitherT[IO, Error, Cursor[TaskWithLabels]] = {
+  ): EitherT[IO, Error, Cursor[TaskWithStats]] = {
     val matchStage = project.fold(Filters.eq("user", customer._id))(_id =>
       Filters.and(Filters.eq("user", customer._id), Filters.eq("project", _id))
     )
 
     collection.use(
-      _.find[TaskWithLabels](
+      _.find[TaskWithStats](
         "updatedAt",
         Seq(Aggregates.`match`(matchStage)) ++ labelsStages
       )(CursorQuery.fromCursorNoQuery(query))
@@ -608,10 +610,10 @@ object Tasks {
 
   def getDue(since: BsonDateTime, to: Option[BsonDateTime])(using
       customer: User
-  )(using DatabaseName): IO[Iterable[TaskWithLabels]] =
+  )(using DatabaseName): IO[Iterable[TaskWithStats]] =
     collection.use(
       _.raw(
-        _.aggregateWithCodec[TaskWithLabels](
+        _.aggregateWithCodec[TaskWithStats](
           Seq(
             Aggregates.`match`(
               Filters.and(

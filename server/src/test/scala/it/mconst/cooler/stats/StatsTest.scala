@@ -20,7 +20,7 @@ import it.mconst.cooler.models.session.Sessions
 import it.mconst.cooler.models.session.SessionWithLabels
 import it.mconst.cooler.models.task.DbTask
 import it.mconst.cooler.models.task.Tasks
-import it.mconst.cooler.models.task.TaskWithLabels
+import it.mconst.cooler.models.task.TaskWithStats
 import it.mconst.cooler.models.user.CashPerMonth
 import it.mconst.cooler.models.user.User
 import it.mconst.cooler.models.user.Users
@@ -53,7 +53,7 @@ class StatsTest extends IOSuite {
   final case class TestData(
       client: Client,
       projects: List[ProjectWithClientLabel],
-      tasks: List[TaskWithLabels],
+      tasks: List[TaskWithStats],
       sessions: List[SessionWithLabels]
   )
 
