@@ -429,18 +429,23 @@ object Tasks {
             Document(
               "_id" -> 0,
               "actualWorkingHours" -> Document(
-                "$dateDiff" -> Document(
-                  "startDate" -> Document(
-                    "$dateFromString" -> Document(
-                      "dateString" -> "$startTime"
+                "$divide" -> Seq(
+                  Document(
+                    "$dateDiff" -> Document(
+                      "startDate" -> Document(
+                        "$dateFromString" -> Document(
+                          "dateString" -> "$startTime"
+                        )
+                      ),
+                      "endDate" -> Document(
+                        "$dateFromString" -> Document(
+                          "dateString" -> "$endTime"
+                        )
+                      ),
+                      "unit" -> "second"
                     )
                   ),
-                  "endDate" -> Document(
-                    "$dateFromString" -> Document(
-                      "dateString" -> "$endTime"
-                    )
-                  ),
-                  "unit" -> "second"
+                  3600
                 )
               )
             )
