@@ -14,7 +14,7 @@ import { Query } from '../../effects/api/Query'
 import { useDelete, useGet } from '../../effects/api/useApi'
 import { useDialog } from '../../effects/useDialog'
 import { Project } from '../../entities/Project'
-import { Task } from '../../entities/Task'
+import { TaskWithStats } from '../../entities/Task'
 import { LocalizedString, unsafePositiveInteger } from '../../globalDomain'
 import { Connection, emptyConnection } from '../../misc/Connection'
 import { makeTruncateTasksRequest } from '../Tasks/domain'
@@ -55,9 +55,9 @@ export function ProjectTasks(props: Props) {
     before: option.none
   })
 
-  const [tasks, setTasks] = useState<Query<LocalizedString, Connection<Task>>>(
-    query.loading
-  )
+  const [tasks, setTasks] = useState<
+    Query<LocalizedString, Connection<TaskWithStats>>
+  >(query.loading)
 
   const [searchResults] = useGet(getProjectTasksRequest, input)
 
@@ -84,15 +84,28 @@ export function ProjectTasks(props: Props) {
       )
     )
 
-  const renderTaskItem: Reader<Task, RoutedItem> = task => ({
-    type: 'routed',
-    key: task._id,
-    label: option.some(task.project.name),
-    content: task.name,
-    description: task.description,
-    action: _ => setRoute(taskRoute(props.project._id, task._id), _),
-    details: true
-  })
+  const renderTaskItem: Reader<TaskWithStats, RoutedItem> = task => {
+    const workingHours = Math.round(task.actualWorkingHours).toString(10)
+    const workingHoursString = a18n`${workingHours} working hours.`
+
+    const taskDescription = pipe(
+      task.description,
+      option.map(description => ` ${description}`),
+      option.getOrElse(() => '')
+    )
+
+    const description = a18n`${workingHoursString}${taskDescription}`
+
+    return {
+      type: 'routed',
+      key: task._id,
+      label: option.some(task.project.name),
+      content: task.name,
+      description: option.some(description),
+      action: _ => setRoute(taskRoute(props.project._id, task._id), _),
+      details: true
+    }
+  }
 
   useEffect(() => {
     pipe(

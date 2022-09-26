@@ -1,11 +1,10 @@
 TODO:
 
+[ ] Next task and previous task
 [ ] Stats: cashed money per client
 [ ] Cypress tests
 [ ] Stats: avg hourly cost?
 [ ] Client stat: avg time between invoice and cashing
-[ ] Next task and previous task
-[ ] Put task percentage or something in tasks list (project page)
 [ ] Project filters cache
 
 DONE:
@@ -22,3 +21,4 @@ DONE:
 [X] Stats: cashed money per month
 [X] Stats: add yearly totals to cash per month. Fill the holes? Apply taxes and make the net serie?
 [X] Cmd/Ctrl/middle mouse btn + click should open links on another tab
+[X] Put task percentage or something in tasks list (project page)

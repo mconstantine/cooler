@@ -11,7 +11,7 @@ import {
   ProjectCreationInput,
   ProjectWithStats
 } from '../../entities/Project'
-import { Task } from '../../entities/Task'
+import { TaskWithStats } from '../../entities/Task'
 import { ObjectId } from '../../globalDomain'
 import { Connection, ConnectionQueryInput } from '../../misc/Connection'
 
@@ -80,7 +80,7 @@ export type ProjectTasksConnectionQueryInput = t.TypeOf<
 export const getProjectTasksRequest = makeGetRequest({
   url: `/tasks`,
   inputCodec: ProjectTasksConnectionQueryInput,
-  outputCodec: Connection(Task)
+  outputCodec: Connection(TaskWithStats)
 })
 
 export const makeGetPreviousProjectQuery = (_id: ObjectId) =>
