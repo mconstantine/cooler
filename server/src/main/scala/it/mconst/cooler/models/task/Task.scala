@@ -569,27 +569,7 @@ object Tasks {
                   )
                 )
               ) ++ labelsStages
-            ).first.map(
-              _.flatMap(task =>
-                NonNegativeNumber
-                  .decode(task.actualWorkingHours.toNumber / 3600f)
-                  .map(actualWorkingHours =>
-                    TaskWithStats(
-                      task._id,
-                      task.name,
-                      task.description,
-                      task.startTime,
-                      task.expectedWorkingHours,
-                      task.hourlyCost,
-                      task.createdAt,
-                      task.updatedAt,
-                      task.client,
-                      task.project,
-                      actualWorkingHours
-                    )
-                  )
-              )
-            )
+            ).first
           )
         ),
       Error(Status.NotFound, __.ErrorTaskNotFound)
