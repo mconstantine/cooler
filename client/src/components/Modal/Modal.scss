@@ -12,18 +12,8 @@
   align-items: center;
   opacity: 0;
   visibility: hidden;
-  transform: translate3d(0, 10vh, 0);
   transition: opacity $transition-fast linear,
-    visibility $transition-fast linear,
-    transform $transition-fast $easing-default;
-
-  &.open {
-    visibility: visible;
-    opacity: 1;
-    transform: translate3d(0, 0, 0);
-    transition: opacity $transition-fast linear,
-      transform $transition-fast $easing-default;
-  }
+    visibility $transition-fast linear;
 
   .dim {
     position: absolute;
@@ -39,5 +29,17 @@
     width: 90vw;
     max-height: 90vh;
     overflow: auto;
+    transition: transform $transition-fast $easing-default;
+    transform: translate3d(0, 10vh, 0);
+  }
+
+  &.open {
+    visibility: visible;
+    opacity: 1;
+    transition: opacity $transition-fast linear;
+
+    .Panel {
+      transform: translate3d(0, 0, 0);
+    }
   }
 }
