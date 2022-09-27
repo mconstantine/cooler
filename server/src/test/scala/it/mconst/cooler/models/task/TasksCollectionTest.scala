@@ -153,19 +153,61 @@ class TasksCollectionTest extends IOSuite {
     val project = testDataFixture().project
 
     val tasks: List[Task.InputData] = List(
-      makeTestTask(project._id),
-      makeTestTask(project._id),
-      makeTestTask(project._id),
-      makeTestTask(project._id),
-      makeTestTask(project._id),
-      makeTestTask(project._id)
+      makeTestTask(
+        project._id,
+        startTime = BsonDateTime(
+          LocalDateTime
+            .of(2000, 1, 1, 9, 30)
+            .toEpochSecond(ZoneOffset.UTC) * 1000
+        ).toISOString
+      ),
+      makeTestTask(
+        project._id,
+        startTime = BsonDateTime(
+          LocalDateTime
+            .of(2000, 1, 2, 9, 30)
+            .toEpochSecond(ZoneOffset.UTC) * 1000
+        ).toISOString
+      ),
+      makeTestTask(
+        project._id,
+        startTime = BsonDateTime(
+          LocalDateTime
+            .of(2000, 1, 3, 9, 30)
+            .toEpochSecond(ZoneOffset.UTC) * 1000
+        ).toISOString
+      ),
+      makeTestTask(
+        project._id,
+        startTime = BsonDateTime(
+          LocalDateTime
+            .of(2000, 1, 4, 9, 30)
+            .toEpochSecond(ZoneOffset.UTC) * 1000
+        ).toISOString
+      ),
+      makeTestTask(
+        project._id,
+        startTime = BsonDateTime(
+          LocalDateTime
+            .of(2000, 1, 5, 9, 30)
+            .toEpochSecond(ZoneOffset.UTC) * 1000
+        ).toISOString
+      ),
+      makeTestTask(
+        project._id,
+        startTime = BsonDateTime(
+          LocalDateTime
+            .of(2000, 1, 6, 9, 30)
+            .toEpochSecond(ZoneOffset.UTC) * 1000
+        ).toISOString
+      )
     )
 
-    Tasks.collection.use(_.raw(_.deleteMany(Filter.empty)).flatMap { _ =>
-      tasks.traverse(data =>
-        IO.delay(Thread.sleep(1)).flatMap(_ => Tasks.create(data).orFail)
+    Tasks.collection.use(
+      _.raw(_.deleteMany(Filter.empty)).flatMap(_ =>
+        tasks.traverse(Tasks.create(_).orFail)
       )
-    })
+    )
   }(_ => Tasks.collection.use(_.raw(_.deleteMany(Filter.empty)).void))
 
   test("should find a task") {
@@ -175,7 +217,7 @@ class TasksCollectionTest extends IOSuite {
           .find(
             CursorNoQueryAsc(
               first = Some(PositiveInteger.unsafe(2)),
-              after = Some(tasks(1).updatedAt.toISOString)
+              after = Some(tasks(1).startTime.toISOString)
             ),
             none[ObjectId]
           )
@@ -183,11 +225,11 @@ class TasksCollectionTest extends IOSuite {
         _ = assertEquals(result.pageInfo.totalCount, 6)
         _ = assertEquals(
           result.pageInfo.startCursor,
-          Some(tasks(2).updatedAt.toISOString)
+          Some(tasks(2).startTime.toISOString)
         )
         _ = assertEquals(
           result.pageInfo.endCursor,
-          Some(tasks(3).updatedAt.toISOString)
+          Some(tasks(3).startTime.toISOString)
         )
         _ = assertEquals(result.pageInfo.hasPreviousPage, true)
         _ = assertEquals(result.pageInfo.hasNextPage, true)

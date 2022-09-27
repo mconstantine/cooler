@@ -587,7 +587,7 @@ object Tasks {
 
     collection.use(
       _.find[TaskWithStats](
-        "updatedAt",
+        "startTime",
         Seq(Aggregates.`match`(matchStage)) ++ labelsStages
       )(CursorQuery.fromCursorNoQuery(query))
     )

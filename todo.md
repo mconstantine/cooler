@@ -1,5 +1,7 @@
 TODO:
 
+[ ] Progress bar goes over 100%
+[ ] Adding working hours does not update progress
 [ ] Next task and previous task
 [ ] Stats: cashed money per client
 [ ] Cypress tests

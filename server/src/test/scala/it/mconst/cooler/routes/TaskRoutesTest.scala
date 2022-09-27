@@ -25,6 +25,7 @@ import it.mconst.cooler.utils.Error
 import it.mconst.cooler.utils.given
 import java.time.format.DateTimeFormatter
 import java.time.LocalDateTime
+import java.time.ZoneOffset
 import mongo4cats.bson.ObjectId
 import mongo4cats.circe.*
 import mongo4cats.collection.operations.Filter
@@ -122,30 +123,56 @@ class TaskRoutesTest extends IOSuite {
 
   def tasksList = Resource.make {
     val tasks = List(
-      makeTestTask(testDataFixture().project._id),
-      makeTestTask(testDataFixture().project._id),
-      makeTestTask(testDataFixture().project._id),
-      makeTestTask(testDataFixture().project._id),
-      makeTestTask(testDataFixture().project._id),
-      makeTestTask(testDataFixture().project._id)
+      makeTestTask(
+        testDataFixture().project._id,
+        startTime = BsonDateTime(
+          LocalDateTime.of(2000, 1, 1, 9, 0, 0).toEpochSecond(ZoneOffset.UTC)
+        ).toISOString
+      ),
+      makeTestTask(
+        testDataFixture().project._id,
+        startTime = BsonDateTime(
+          LocalDateTime.of(2000, 1, 2, 9, 0, 0).toEpochSecond(ZoneOffset.UTC)
+        ).toISOString
+      ),
+      makeTestTask(
+        testDataFixture().project._id,
+        startTime = BsonDateTime(
+          LocalDateTime.of(2000, 1, 3, 9, 0, 0).toEpochSecond(ZoneOffset.UTC)
+        ).toISOString
+      ),
+      makeTestTask(
+        testDataFixture().project._id,
+        startTime = BsonDateTime(
+          LocalDateTime.of(2000, 1, 4, 9, 0, 0).toEpochSecond(ZoneOffset.UTC)
+        ).toISOString
+      ),
+      makeTestTask(
+        testDataFixture().project._id,
+        startTime = BsonDateTime(
+          LocalDateTime.of(2000, 1, 5, 9, 0, 0).toEpochSecond(ZoneOffset.UTC)
+        ).toISOString
+      ),
+      makeTestTask(
+        testDataFixture().project._id,
+        startTime = BsonDateTime(
+          LocalDateTime.of(2000, 1, 6, 9, 0, 0).toEpochSecond(ZoneOffset.UTC)
+        ).toISOString
+      )
     )
 
     given User = testDataFixture().user
 
     Tasks.collection
       .use(_.raw(_.deleteMany(Filter.empty)))
-      .flatMap(_ =>
-        tasks.traverse(data =>
-          IO.delay(Thread.sleep(1)).flatMap(_ => Tasks.create(data).orFail)
-        )
-      )
+      .flatMap(_ => tasks.traverse(Tasks.create(_).orFail))
   }(_ => Tasks.collection.use(_.raw(_.deleteMany(Filter.empty)).void))
 
   test("should find tasks (asc)") {
     tasksList.use { tasks =>
       GET(
         Uri
-          .fromString(s"/?first=2&after=${tasks(1).updatedAt.toISOString}")
+          .fromString(s"/?first=2&after=${tasks(1).startTime.toISOString}")
           .getOrElse(fail(""))
       )
         .sign(testDataFixture().user)
@@ -158,14 +185,14 @@ class TaskRoutesTest extends IOSuite {
           Cursor[ObjectId](
             PageInfo(
               6,
-              Some(tasks(2).updatedAt.toISOString),
-              Some(tasks(3).updatedAt.toISOString),
+              Some(tasks(2).startTime.toISOString),
+              Some(tasks(3).startTime.toISOString),
               true,
               true
             ),
             List(
-              Edge(tasks(2)._id, tasks(2).updatedAt.toISOString),
-              Edge(tasks(3)._id, tasks(3).updatedAt.toISOString)
+              Edge(tasks(2)._id, tasks(2).startTime.toISOString),
+              Edge(tasks(3)._id, tasks(3).startTime.toISOString)
             )
           )
         )
@@ -176,7 +203,7 @@ class TaskRoutesTest extends IOSuite {
     tasksList.use { tasks =>
       GET(
         Uri
-          .fromString(s"/?last=2&before=${tasks(4).updatedAt.toISOString}")
+          .fromString(s"/?last=2&before=${tasks(4).startTime.toISOString}")
           .getOrElse(fail(""))
       )
         .sign(testDataFixture().user)
@@ -189,14 +216,14 @@ class TaskRoutesTest extends IOSuite {
           Cursor[ObjectId](
             PageInfo(
               6,
-              Some(tasks(3).updatedAt.toISOString),
-              Some(tasks(2).updatedAt.toISOString),
+              Some(tasks(3).startTime.toISOString),
+              Some(tasks(2).startTime.toISOString),
               true,
               true
             ),
             List(
-              Edge(tasks(3)._id, tasks(3).updatedAt.toISOString),
-              Edge(tasks(2)._id, tasks(2).updatedAt.toISOString)
+              Edge(tasks(3)._id, tasks(3).startTime.toISOString),
+              Edge(tasks(2)._id, tasks(2).startTime.toISOString)
             )
           )
         )
