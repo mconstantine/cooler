@@ -37,6 +37,7 @@ import {
 interface Props {
   task: TaskWithStats
   onCreateSessionButtonClick: TaskEither<LocalizedString, unknown>
+  onWorkingHoursAdded: Reader<Session, unknown>
 }
 
 export function SessionsList(props: Props) {
@@ -164,8 +165,9 @@ export function SessionsList(props: Props) {
           new Date(data.startTime.getTime() + data.hoursCount * 3600000)
         )
       }),
-      taskEither.chain(() =>
+      taskEither.chain(session =>
         taskEither.fromIO(() => {
+          props.onWorkingHoursAdded(session)
           setIsAddingWorkingHours(false)
           reload()
         })

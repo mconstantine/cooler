@@ -1,7 +1,11 @@
 import { option, taskEither } from 'fp-ts'
-import { pipe } from 'fp-ts/function'
+import { constVoid, pipe } from 'fp-ts/function'
 import { TaskEither } from 'fp-ts/TaskEither'
-import { LocalizedString, ObjectId } from '../../globalDomain'
+import {
+  LocalizedString,
+  ObjectId,
+  unsafeNonNegativeNumber
+} from '../../globalDomain'
 import { usePost, useReactiveCommand } from '../../effects/api/useApi'
 import { makeTaskQuery, startSessionRequest } from './domain'
 import { useCurrentSessions } from '../../contexts/CurrentSessionsContext'
@@ -16,6 +20,7 @@ import { TaxesProvider } from '../../contexts/TaxesContext'
 import TaskData from './TaskData'
 import { TaskProgress } from './TaskProgress'
 import { SessionsList } from './SessionsList'
+import { Session } from '../../entities/Session'
 
 interface Props {
   _id: ObjectId
@@ -44,6 +49,27 @@ export default function Task(props: Props) {
     )
   )
 
+  const onWorkingHoursAdded: Reader<Session, void> = session =>
+    pipe(
+      session.endTime,
+      option.fold(constVoid, endTime => {
+        const sessionDuration =
+          (endTime.getTime() - session.startTime.getTime()) / 3600000
+
+        return pipe(
+          task,
+          query.fold(constVoid, constVoid, task =>
+            setTask({
+              ...task,
+              actualWorkingHours: unsafeNonNegativeNumber(
+                task.actualWorkingHours + sessionDuration
+              )
+            })
+          )
+        )
+      })
+    )
+
   const onUpdate: Reader<TaskWithStats, void> = setTask
 
   const onDelete: Reader<TaskWithStats, void> = task =>
@@ -66,6 +92,7 @@ export default function Task(props: Props) {
           <SessionsList
             task={task}
             onCreateSessionButtonClick={onCreateSessionButtonClick}
+            onWorkingHoursAdded={onWorkingHoursAdded}
           />
         </TaxesProvider>
       )
