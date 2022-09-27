@@ -593,6 +593,57 @@ object Tasks {
     )
   }
 
+  def getNext(_id: ObjectId)(using
+      customer: User
+  )(using Lang, DatabaseName): EitherT[IO, Error, TaskWithLabels] =
+    for
+      task <- findByIdNoStats(_id)
+      result <- EitherT.fromOptionF(
+        collection.use(
+          _.raw(
+            _.aggregateWithCodec[TaskWithLabels](
+              Seq(
+                Aggregates.`match`(
+                  Filters.and(
+                    Filters.eq("project", task.project._id),
+                    Filters.gt("startTime", task.startTime.toISOString)
+                  )
+                ),
+                Aggregates.limit(1)
+              ) ++ labelsStagesNoStats
+            ).first
+          )
+        ),
+        Error(Status.NotFound, __.ErrorTaskNotFound)
+      )
+    yield result
+
+  def getPrevious(_id: ObjectId)(using
+      customer: User
+  )(using Lang, DatabaseName): EitherT[IO, Error, TaskWithLabels] =
+    for
+      task <- findByIdNoStats(_id)
+      result <- EitherT.fromOptionF(
+        collection.use(
+          _.raw(
+            _.aggregateWithCodec[TaskWithLabels](
+              Seq(
+                Aggregates.`match`(
+                  Filters.and(
+                    Filters.eq("project", task.project._id),
+                    Filters.lt("startTime", task.startTime.toISOString)
+                  )
+                ),
+                Aggregates.sort(Document("startTime" -> -1)),
+                Aggregates.limit(1)
+              ) ++ labelsStagesNoStats
+            ).first
+          )
+        ),
+        Error(Status.NotFound, __.ErrorTaskNotFound)
+      )
+    yield result
+
   def getDue(since: BsonDateTime, to: Option[BsonDateTime])(using
       customer: User
   )(using DatabaseName): IO[Iterable[TaskWithStats]] =

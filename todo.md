@@ -1,6 +1,6 @@
 TODO:
 
-[ ] Next task and previous task
+[ ] Working hours in project tasks description should be by the minute
 [ ] Stats: cashed money per client
 [ ] Cypress tests
 [ ] Stats: avg hourly cost?
@@ -24,3 +24,4 @@ DONE:
 [X] Put task percentage or something in tasks list (project page)
 [X] Progress bar goes over 100%
 [X] Adding working hours does not update progress
+[X] Next task and previous task

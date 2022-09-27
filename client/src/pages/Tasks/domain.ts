@@ -22,6 +22,20 @@ export const makeTaskQuery = (_id: ObjectId) =>
     outputCodec: TaskWithStats
   })
 
+export const makeGetPreviousTaskQuery = (_id: ObjectId) =>
+  makeGetRequest({
+    url: `/tasks/${_id}/previous`,
+    inputCodec: t.void,
+    outputCodec: Task
+  })
+
+export const makeGetNextTaskQuery = (_id: ObjectId) =>
+  makeGetRequest({
+    url: `/tasks/${_id}/next`,
+    inputCodec: t.void,
+    outputCodec: Task
+  })
+
 export const makeCreateTaskRequest = makePostRequest({
   url: '/tasks',
   inputCodec: TaskCreationInput,

@@ -21,6 +21,7 @@ import TaskData from './TaskData'
 import { TaskProgress } from './TaskProgress'
 import { SessionsList } from './SessionsList'
 import { Session } from '../../entities/Session'
+import { TaskSiblings } from './TaskSiblings'
 
 interface Props {
   _id: ObjectId
@@ -88,6 +89,7 @@ export default function Task(props: Props) {
       task => (
         <TaxesProvider>
           <TaskData task={task} onUpdate={onUpdate} onDelete={onDelete} />
+          <TaskSiblings task={task} />
           <TaskProgress task={task} />
           <SessionsList
             task={task}

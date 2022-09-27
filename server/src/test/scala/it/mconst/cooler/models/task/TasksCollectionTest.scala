@@ -242,6 +242,26 @@ class TasksCollectionTest extends IOSuite {
     }
   }
 
+  test("should find the next task") {
+    tasksList.use(tasks =>
+      Tasks
+        .getNext(tasks(1)._id)
+        .orFail
+        .map(_._id)
+        .assertEquals(tasks(2)._id)
+    )
+  }
+
+  test("should find the previous task") {
+    tasksList.use(tasks =>
+      Tasks
+        .getPrevious(tasks(1)._id)
+        .orFail
+        .map(_._id)
+        .assertEquals(tasks(0)._id)
+    )
+  }
+
   test("should find tasks by project") {
     tasksList.use { _ =>
       for
