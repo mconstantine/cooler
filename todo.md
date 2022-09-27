@@ -1,7 +1,5 @@
 TODO:
 
-[ ] Progress bar goes over 100%
-[ ] Adding working hours does not update progress
 [ ] Next task and previous task
 [ ] Stats: cashed money per client
 [ ] Cypress tests
@@ -24,3 +22,5 @@ DONE:
 [X] Stats: add yearly totals to cash per month. Fill the holes? Apply taxes and make the net serie?
 [X] Cmd/Ctrl/middle mouse btn + click should open links on another tab
 [X] Put task percentage or something in tasks list (project page)
+[X] Progress bar goes over 100%
+[X] Adding working hours does not update progress

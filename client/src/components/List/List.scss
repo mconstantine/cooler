@@ -200,6 +200,7 @@
 }
 
 .light .List li .itemProgressBar {
+  max-width: 100%;
   background-color: rgba(#000, 0.25);
 
   &.primary {
