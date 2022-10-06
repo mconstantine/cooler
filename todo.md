@@ -1,6 +1,7 @@
 TODO:
 
 [ ] Working hours in project tasks description should be by the minute
+[ ] Add working hours: form modal is over calendar modal
 [ ] Stats: cashed money per client
 [ ] Cypress tests
 [ ] Stats: avg hourly cost?
@@ -25,3 +26,4 @@ DONE:
 [X] Progress bar goes over 100%
 [X] Adding working hours does not update progress
 [X] Next task and previous task
+[X] Wrong rounding in actual working hours in project tasks list

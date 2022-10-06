@@ -4,7 +4,7 @@ import { IO } from 'fp-ts/IO'
 import { Reader } from 'fp-ts/Reader'
 import { add, skull } from 'ionicons/icons'
 import { useEffect, useState } from 'react'
-import { a18n } from '../../a18n'
+import { a18n, formatNumber } from '../../a18n'
 import { ConnectionList } from '../../components/ConnectionList/ConnectionList'
 import { HeadingAction } from '../../components/Heading/Heading'
 import { RoutedItem } from '../../components/List/List'
@@ -85,7 +85,7 @@ export function ProjectTasks(props: Props) {
     )
 
   const renderTaskItem: Reader<TaskWithStats, RoutedItem> = task => {
-    const workingHours = Math.round(task.actualWorkingHours).toString(10)
+    const workingHours = formatNumber(task.actualWorkingHours, option.some(1))
     const workingHoursString = a18n`${workingHours} working hours.`
 
     const taskDescription = pipe(

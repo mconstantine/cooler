@@ -1,5 +1,7 @@
 import originalA18n, { LocaleResource } from 'a18n'
+import { option } from 'fp-ts'
 import { pipe } from 'fp-ts/function'
+import { Option } from 'fp-ts/Option'
 import { LocalizedString, Month } from './globalDomain'
 
 interface A18n {
@@ -127,17 +129,21 @@ export function formatDuration(
 
 export function formatNumber(
   n: number,
-  formatDecimals = false
+  formatDecimals: Option<number> = option.none
 ): LocalizedString {
-  return (
-    formatDecimals || n % 1 !== 0 ? n.toFixed(2) : n.toString()
-  ) as LocalizedString
+  if (n % 1 !== 0 || option.isSome(formatDecimals)) {
+    return n.toFixed(
+      option.getOrElse(() => 2)(formatDecimals)
+    ) as LocalizedString
+  } else {
+    return n.toString(10) as LocalizedString
+  }
 }
 
 export function formatMoneyAmount(moneyAmount: number): LocalizedString {
   return pipe(
     moneyAmount,
-    n => formatNumber(Math.abs(n), true),
+    n => formatNumber(Math.abs(n), option.some(2)),
     s => (moneyAmount >= 0 ? `€${s}` : `-€${s}`),
     unsafeLocalizedString
   )
