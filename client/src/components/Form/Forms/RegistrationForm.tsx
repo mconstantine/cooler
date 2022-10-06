@@ -1,5 +1,7 @@
 import { option } from 'fp-ts'
 import { IO } from 'fp-ts/IO'
+import { constNull, constUndefined, pipe } from 'fp-ts/function'
+import { Option } from 'fp-ts/Option'
 import { ReaderTaskEither } from 'fp-ts/ReaderTaskEither'
 import { NonEmptyString } from 'io-ts-types'
 import { warning } from 'ionicons/icons'
@@ -21,8 +23,9 @@ export interface FormData {
 }
 
 interface Props {
-  onLoginLinkClick: IO<void>
+  onLoginLinkClick: Option<IO<void>>
   onSubmit: ReaderTaskEither<FormData, LocalizedString, unknown>
+  onCancel: Option<IO<void>>
 }
 
 export function RegistrationForm(props: Props) {
@@ -58,6 +61,17 @@ export function RegistrationForm(props: Props) {
         actions={option.none}
         submit={submit}
         formError={formError}
+        additionalButtons={pipe(
+          props.onCancel,
+          option.fold(constUndefined, onCancel => [
+            {
+              type: 'button',
+              label: a18n`Cancel`,
+              action: onCancel,
+              icon: option.none
+            }
+          ])
+        )}
       >
         <Input
           {...fieldProps('name')}
@@ -77,9 +91,14 @@ export function RegistrationForm(props: Props) {
           autoComplete="new-password"
         />
       </Form>
-      <Body color="primary" onClick={props.onLoginLinkClick}>
-        {a18n`Or login`}
-      </Body>
+      {pipe(
+        props.onLoginLinkClick,
+        option.fold(constNull, onLoginLinkClick => (
+          <Body color="primary" onClick={onLoginLinkClick}>
+            {a18n`Or login`}
+          </Body>
+        ))
+      )}
     </>
   )
 }

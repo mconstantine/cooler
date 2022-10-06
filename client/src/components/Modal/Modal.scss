@@ -24,7 +24,7 @@
     background-color: rgba(#000, $text-high-emphasis-amount);
   }
 
-  .Panel {
+  & > .Panel {
     position: relative;
     width: 90vw;
     max-height: 90vh;

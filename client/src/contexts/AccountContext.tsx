@@ -36,7 +36,7 @@ import {
   RegistrationForm
 } from '../components/Form/Forms/RegistrationForm'
 
-const RegistrationInput = t.type(
+export const RegistrationInput = t.type(
   {
     name: NonEmptyString,
     email: EmailString,
@@ -44,7 +44,7 @@ const RegistrationInput = t.type(
   },
   'RegistrationInput'
 )
-type RegistrationInput = t.TypeOf<typeof RegistrationInput>
+export type RegistrationInput = t.TypeOf<typeof RegistrationInput>
 
 const LoginInput = t.type(
   {
@@ -231,8 +231,9 @@ export function AccountProvider(props: PropsWithChildren) {
                   ),
                   Registration: () => (
                     <RegistrationForm
-                      onLoginLinkClick={onLoginButtonClick}
+                      onLoginLinkClick={option.some(onLoginButtonClick)}
                       onSubmit={register}
+                      onCancel={option.none}
                     />
                   )
                 })

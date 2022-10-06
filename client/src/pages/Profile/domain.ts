@@ -7,6 +7,7 @@ import {
 import {
   makeDeleteRequest,
   makeGetRequest,
+  makePostRequest,
   makePutRequest
 } from '../../effects/api/useApi'
 import {
@@ -18,6 +19,7 @@ import {
 import { Task } from '../../entities/Task'
 import { Connection, ConnectionQueryInput } from '../../misc/Connection'
 import { Project } from '../../entities/Project'
+import { LoginOutput, RegistrationInput } from '../../contexts/AccountContext'
 
 const Profile = t.type(
   {
@@ -126,4 +128,10 @@ export const getLatestProjectsRequest = makeGetRequest({
   url: '/projects/latest',
   inputCodec: ConnectionQueryInput,
   outputCodec: Connection(Project)
+})
+
+export const registerUserRequest = makePostRequest({
+  url: '/users',
+  inputCodec: RegistrationInput,
+  outputCodec: LoginOutput
 })

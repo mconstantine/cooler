@@ -9,19 +9,30 @@ import { Button } from '../../components/Button/Button/Button'
 import { Buttons } from '../../components/Button/Buttons/Buttons'
 import { LoadingButton } from '../../components/Button/LoadingButton/LoadingButton'
 import { ErrorPanel } from '../../components/ErrorPanel/ErrorPanel'
+import {
+  FormData,
+  RegistrationForm
+} from '../../components/Form/Forms/RegistrationForm'
 import { UserForm } from '../../components/Form/Forms/UserForm'
 import { ReadOnlyInput } from '../../components/Form/Input/ReadOnlyInput/ReadOnlyInput'
 import { LoadingBlock } from '../../components/Loading/LoadingBlock'
+import { Modal } from '../../components/Modal/Modal'
 import { Panel } from '../../components/Panel/Panel'
 import { useAccount } from '../../contexts/AccountContext'
 import { query } from '../../effects/api/api'
-import { useDelete, usePut, useReactiveCommand } from '../../effects/api/useApi'
+import {
+  useDelete,
+  usePost,
+  usePut,
+  useReactiveCommand
+} from '../../effects/api/useApi'
 import { useDialog } from '../../effects/useDialog'
 import { LocalizedString } from '../../globalDomain'
 import {
   deleteProfileRequest,
   getProfileRequest,
   ProfileUpdateInput,
+  registerUserRequest,
   updateProfileRequest
 } from './domain'
 
@@ -33,6 +44,7 @@ export function ProfileData() {
 
   const updateProfileCommand = usePut(updateProfileRequest)
   const deleteProfileCommand = useDelete(deleteProfileRequest)
+  const registerUserCommand = usePost(registerUserRequest)
 
   const onUpdate: ReaderTaskEither<ProfileUpdateInput, LocalizedString, void> =
     pipe(updateProfileCommand, readerTaskEither.map(setProfile))
@@ -43,6 +55,7 @@ export function ProfileData() {
   )
 
   const [isEditing, setIsEditing] = useState(false)
+  const [isInviting, setIsInviting] = useState(false)
   const [error, setError] = useState<Option<LocalizedString>>(option.none)
 
   const [Dialog, deleteProfile] = useDialog<void, void, void>(
@@ -59,13 +72,26 @@ export function ProfileData() {
     }
   )
 
-  const onSubmit: ReaderTaskEither<ProfileUpdateInput, LocalizedString, void> =
-    flow(
-      onUpdate,
-      taskEither.chain(readerTaskEither.fromIO(() => setIsEditing(false)))
-    )
+  const onUserFormSubmit: ReaderTaskEither<
+    ProfileUpdateInput,
+    LocalizedString,
+    void
+  > = flow(
+    onUpdate,
+    taskEither.chain(readerTaskEither.fromIO(() => setIsEditing(false)))
+  )
 
-  const onCancel = () => setIsEditing(false)
+  const onUserFormCancel = () => setIsEditing(false)
+  const onInviteButtonClick = () => setIsInviting(true)
+  const onInviteFormCancel = () => setIsInviting(false)
+
+  const onInviteFormSubmit: ReaderTaskEither<FormData, LocalizedString, void> =
+    pipe(
+      registerUserCommand,
+      readerTaskEither.chain(() =>
+        readerTaskEither.fromIO(() => setIsInviting(false))
+      )
+    )
 
   useEffect(() => {
     getProfile()()
@@ -120,6 +146,13 @@ export function ProfileData() {
                   />
                   <Button
                     type="button"
+                    label={a18n`Invite`}
+                    action={onInviteButtonClick}
+                    icon={option.none}
+                    flat
+                  />
+                  <Button
+                    type="button"
                     label={a18n`Logout`}
                     action={logout}
                     icon={option.none}
@@ -135,13 +168,20 @@ export function ProfileData() {
                   />
                 </Buttons>
                 <Dialog />
+                <Modal isOpen={isInviting} onClose={onInviteFormCancel} framed>
+                  <RegistrationForm
+                    onSubmit={onInviteFormSubmit}
+                    onCancel={option.some(onInviteFormCancel)}
+                    onLoginLinkClick={option.none}
+                  />
+                </Modal>
               </Panel>
             ),
             () => (
               <UserForm
                 user={profile}
-                onSubmit={onSubmit}
-                onCancel={onCancel}
+                onSubmit={onUserFormSubmit}
+                onCancel={onUserFormCancel}
               />
             )
           )

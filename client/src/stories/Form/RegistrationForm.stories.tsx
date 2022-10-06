@@ -1,5 +1,5 @@
 import { Meta, Story } from '@storybook/react'
-import { boolean, taskEither } from 'fp-ts'
+import { boolean, option, taskEither } from 'fp-ts'
 import { pipe } from 'fp-ts/function'
 import { IO } from 'fp-ts/IO'
 import { Reader } from 'fp-ts/Reader'
@@ -31,8 +31,9 @@ const RegistrationFormTemplate: Story<Args> = props => {
     <CoolerStory>
       <Content>
         <RegistrationFormComponent
-          onLoginLinkClick={props.onLoginLinkClick}
+          onLoginLinkClick={option.some(props.onLoginLinkClick)}
           onSubmit={onSubmit}
+          onCancel={option.none}
         />
       </Content>
     </CoolerStory>
