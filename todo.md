@@ -1,6 +1,5 @@
 TODO:
 
-[ ] Working hours in project tasks description should be by the minute
 [ ] Stats: cashed money per client
 [ ] Cypress tests
 [ ] Stats: avg hourly cost?
@@ -27,3 +26,4 @@ DONE:
 [X] Next task and previous task
 [X] Wrong rounding in actual working hours in project tasks list
 [X] Add working hours: form modal is over calendar modal
+[X] Working hours in project tasks description should be by the minute
