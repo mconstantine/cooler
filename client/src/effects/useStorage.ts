@@ -4,9 +4,12 @@ import { Either } from 'fp-ts/Either'
 import { Option } from 'fp-ts/Option'
 import { Theme } from '../contexts/ThemeContext'
 import { LoginOutput } from '../contexts/AccountContext'
+import { ProjectQueryFilters } from '../pages/Projects/domain'
 
 interface StorageMap {
+  theme: Theme
   account: LoginOutput
+  projectQueryFilters: ProjectQueryFilters
 }
 
 function storageValueToString<K extends keyof StorageMap>(
@@ -14,8 +17,16 @@ function storageValueToString<K extends keyof StorageMap>(
   value: StorageMap[K]
 ): string {
   switch (key) {
+    case 'theme':
+      return pipe(value as Theme, Theme.encode, JSON.stringify)
     case 'account':
       return pipe(value as LoginOutput, LoginOutput.encode, JSON.stringify)
+    case 'projectQueryFilters':
+      return pipe(
+        value as ProjectQueryFilters,
+        ProjectQueryFilters.encode,
+        JSON.stringify
+      )
     default:
       throw new Error(`Called writeStorage with unknown key "${key}"`)
   }
@@ -34,6 +45,12 @@ function stringToStorageValue<K extends keyof StorageMap>(
       return pipe(
         either.tryCatch(() => JSON.parse(value), identity) as Either<any, any>,
         either.chain(LoginOutput.decode),
+        option.fromEither
+      ) as Option<StorageMap[K]>
+    case 'projectQueryFilters':
+      return pipe(
+        either.tryCatch(() => JSON.parse(value), identity) as Either<any, any>,
+        either.chain(ProjectQueryFilters.decode),
         option.fromEither
       ) as Option<StorageMap[K]>
     default:

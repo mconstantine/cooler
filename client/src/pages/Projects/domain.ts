@@ -15,7 +15,7 @@ import { TaskWithStats } from '../../entities/Task'
 import { ObjectId } from '../../globalDomain'
 import { Connection, ConnectionQueryInput } from '../../misc/Connection'
 
-const ProjectQueryFilters = t.type(
+export const ProjectQueryFilters = t.type(
   {
     cashed: optionFromNullable(t.boolean),
     withInvoiceData: optionFromNullable(t.boolean),
@@ -24,6 +24,7 @@ const ProjectQueryFilters = t.type(
   },
   'ProjectQueryFilters'
 )
+export type ProjectQueryFilters = t.TypeOf<typeof ProjectQueryFilters>
 
 const GetProjectsRequestInput = t.intersection(
   [ConnectionQueryInput, ProjectQueryFilters],

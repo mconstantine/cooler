@@ -4,7 +4,6 @@ TODO:
 [ ] Cypress tests
 [ ] Stats: avg hourly cost?
 [ ] Client stat: avg time between invoice and cashing
-[ ] Project filters cache
 
 DONE:
 
@@ -27,3 +26,4 @@ DONE:
 [X] Wrong rounding in actual working hours in project tasks list
 [X] Add working hours: form modal is over calendar modal
 [X] Working hours in project tasks description should be by the minute
+[X] Project filters cache

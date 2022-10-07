@@ -14,14 +14,20 @@ import { projectsRoute, useRouter } from '../../components/Router'
 import { query } from '../../effects/api/api'
 import { Query } from '../../effects/api/Query'
 import { useGet } from '../../effects/api/useApi'
+import { useStorage } from '../../effects/useStorage'
 import { Project } from '../../entities/Project'
 import { LocalizedString, unsafePositiveInteger } from '../../globalDomain'
 import { Connection } from '../../misc/Connection'
-import { getProjectsRequest, GetProjectsRequestInput } from './domain'
+import {
+  getProjectsRequest,
+  GetProjectsRequestInput,
+  ProjectQueryFilters
+} from './domain'
 import './ProjectsList.scss'
 
 export default function ProjectsList() {
   const { setRoute } = useRouter()
+  const { readStorage, writeStorage } = useStorage()
 
   const [input, setInput] = useState<GetProjectsRequestInput>({
     query: option.none,
@@ -50,7 +56,7 @@ export default function ProjectsList() {
   const onSearchQueryChange: Reader<string, void> = flow(
     NonEmptyString.decode,
     option.fromEither,
-    query => setInput({ ...input, query })
+    query => setInput(input => ({ ...input, query }))
   )
 
   const onLoadMore: IO<void> = () => {
@@ -77,19 +83,35 @@ export default function ProjectsList() {
     )
   }
 
+  const setAndSaveFilters = (filters: Partial<ProjectQueryFilters>): void => {
+    setInput(input => ({ ...input, ...filters }))
+
+    const currentFilters: ProjectQueryFilters = {
+      withInvoiceData: input.withInvoiceData,
+      cashed: input.cashed,
+      started: input.started,
+      ended: input.ended
+    }
+
+    writeStorage('projectQueryFilters', {
+      ...currentFilters,
+      ...filters
+    })
+  }
+
   const onWithInvoiceDataChange: Reader<
     Option<boolean>,
     void
-  > = withInvoiceData => setInput(input => ({ ...input, withInvoiceData }))
+  > = withInvoiceData => setAndSaveFilters({ withInvoiceData })
 
   const onCashedChange: Reader<Option<boolean>, void> = cashed =>
-    setInput(input => ({ ...input, cashed }))
+    setAndSaveFilters({ cashed })
 
   const onStartedChange: Reader<Option<boolean>, void> = started =>
-    setInput(input => ({ ...input, started }))
+    setAndSaveFilters({ started })
 
   const onEndedChange: Reader<Option<boolean>, void> = ended =>
-    setInput(input => ({ ...input, ended }))
+    setAndSaveFilters({ ended })
 
   useEffect(() => {
     pipe(
@@ -111,6 +133,18 @@ export default function ProjectsList() {
       )
     )
   }, [projects])
+
+  useEffect(() => {
+    pipe(
+      readStorage('projectQueryFilters'),
+      option.fold(constVoid, filters =>
+        setInput(input => ({
+          ...input,
+          ...filters
+        }))
+      )
+    )
+  }, [readStorage])
 
   return (
     <div className="ProjectsList">
