@@ -1,60 +1,37 @@
-const apiUrl = Cypress.env('apiUrl')
+import { CyHttpMessages, Method } from 'cypress/types/net-stubbing'
 
-declare namespace Cypress {
-  interface Chainable {
-    mockApiCall: typeof mockApiCall
-    mockApiCallWithError: typeof mockApiCallWithError
-    mockApiConnection: typeof mockApiConnection
-    skipLogin: typeof skipLogin
+declare global {
+  namespace Cypress {
+    interface Chainable {
+      mockApiCall: typeof mockApiCall
+      mockApiCallWithError: typeof mockApiCallWithError
+      mockApiConnection: typeof mockApiConnection
+      skipLogin: typeof skipLogin
+    }
   }
 }
 
+const apiUrl = Cypress.env('apiUrl')
+
 function mockApiCall<T>(
-  operationName: string,
-  data: Record<string, T>
-): Cypress.Chainable<null>
-function mockApiCall(
-  operationName: string,
-  fixture: string
-): Cypress.Chainable<null>
-function mockApiCall<T>(
-  operationName: string,
-  data: string | Record<string, T>
+  method: Method,
+  path: string,
+  data: T | string
 ): Cypress.Chainable<null> {
-  return cy.intercept('POST', apiUrl, req => {
-    if (req.body.operationName === operationName) {
-      req.reply(
-        typeof data === 'string' ? { fixture: data } : { body: { data } }
-      )
-    }
+  return cy.intercept(method, `${apiUrl}${path}`, req => {
+    req.reply(typeof data === 'string' ? { fixture: data } : { body: data })
   })
 }
 Cypress.Commands.add('mockApiCall', mockApiCall)
 
 function mockApiCallWithError(
-  operationName: string,
-  statusCode: number,
-  errorCode: string,
-  errorMessage: string
+  method: Method,
+  path: string,
+  status: number,
+  message: string
 ): Cypress.Chainable<null> {
-  return cy.intercept('POST', apiUrl, req => {
-    if (req.body.operationName !== operationName) {
-      return
-    }
-
-    req.reply({
-      statusCode,
-      body: {
-        errors: [
-          {
-            extensions: {
-              code: errorCode
-            },
-            message: errorMessage
-          }
-        ]
-      }
-    })
+  return cy.intercept(method, `${apiUrl}${path}`, req => {
+    req.reply(status, { status, message })
   })
 }
 Cypress.Commands.add('mockApiCallWithError', mockApiCallWithError)
@@ -63,51 +40,65 @@ function skipLogin() {
   localStorage.setItem(
     'account',
     JSON.stringify({
-      type: 'loggedIn',
       accessToken: 'some-access-token',
       refreshToken: 'some-refresh-token',
-      expiration: new Date(Date.now() + 86400000)
+      expiration: new Date(Date.now() + 86400000).toISOString()
     })
   )
 }
 Cypress.Commands.add('skipLogin', skipLogin)
 
-function mockApiConnection<T extends { id: number }>(
-  operationName: string,
-  allData: T[],
-  getItemName: (item: T) => string
+function mockApiConnection<T>(
+  path: string,
+  allData: T[] | string,
+  searchField: keyof T
 ): Cypress.Chainable<null> {
-  return cy.intercept('POST', apiUrl, req => {
-    if (req.body.operationName !== operationName) {
-      return
+  const handleData = (req: CyHttpMessages.IncomingHttpRequest, data: T[]) => {
+    const query: string | null = req.query['query']?.toString() ?? null
+    const first: string | null = req.query['first']?.toString() ?? null
+    const last: string | null = req.query['last']?.toString() ?? null
+    const after: string | null = req.query['after']?.toString() ?? null
+    const before: string | null = req.query['before']?.toString() ?? null
+
+    const pattern: RegExp | null = query ? new RegExp(query, 'i') : null
+
+    const filtered = pattern
+      ? data.filter(item => pattern.test(item[searchField] as string))
+      : data
+
+    const sliced = first
+      ? filtered.slice(0, parseInt(first))
+      : last
+      ? filtered.reverse().slice(0, parseInt(last))
+      : filtered
+
+    return {
+      pageInfo: {
+        totalCount: data.length,
+        startCursor: sliced[0][searchField] || null,
+        endCursor: sliced[sliced.length - 1][searchField] || null,
+        hasPreviousPage: before || after || false,
+        hasNextPage: sliced.length < filtered.length
+      },
+      edges: sliced.map(item => ({
+        cursor: item[searchField] || null,
+        node: item
+      }))
     }
+  }
 
-    const name: string | null = req.body.variables.name
-    const first: number = req.body.variables.first
-
-    const filtered = name
-      ? allData.filter(item => new RegExp(name).test(getItemName(item)))
-      : allData
-
-    const sliced = filtered.slice(0, first)
-
-    req.reply({
-      data: {
-        [operationName]: {
-          totalCount: allData.length,
-          pageInfo: {
-            startCursor: btoa(sliced[0].id.toString(10)),
-            endCursor: btoa(sliced[sliced.length - 1].id.toString(10)),
-            hasPreviousPage: false,
-            hasNextPage: sliced.length < filtered.length
-          },
-          edges: sliced.map(item => ({
-            cursor: btoa(item.id.toString(10)),
-            node: item
-          }))
-        }
-      }
-    })
-  })
+  if (typeof allData === 'string') {
+    return cy
+      .fixture<T[]>(allData)
+      .then(data =>
+        cy.intercept('GET', `${apiUrl}${path}?*`, req =>
+          req.reply(handleData(req, data))
+        )
+      )
+  } else {
+    return cy.intercept('GET', `${apiUrl}${path}?*`, req =>
+      req.reply(handleData(req, allData))
+    )
+  }
 }
 Cypress.Commands.add('mockApiConnection', mockApiConnection)

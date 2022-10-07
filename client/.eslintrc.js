@@ -3,7 +3,7 @@ module.exports = {
   plugins: ['fp-ts', 'cypress'],
   parserOptions: {
     tsconfigRootDir: __dirname,
-    project: ['./tsconfig.json']
+    project: ['./tsconfig.json', './cypress/tsconfig.json']
   },
   rules: {
     'no-fallthrough': 'off',

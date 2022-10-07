@@ -95,10 +95,27 @@ const ObjectIdString = t.brand(
 )
 type ObjectIdString = t.TypeOf<typeof ObjectIdString>
 
+export function unsafeObjectIdString(s: string): ObjectIdString {
+  return pipe(
+    ObjectIdFromString.decode(s),
+    either.fold(() => {
+      throw new Error('Called unsafeObjectIdString on invalid ObjectId string')
+    }, identity)
+  )
+}
+
 const ObjectIdFromServer = t.type({
   $oid: ObjectIdString
 })
 type ObjectIdStringFromServer = t.TypeOf<typeof ObjectIdFromServer>
+
+export function unsafeObjectIdStringFromServer(
+  s: string
+): ObjectIdStringFromServer {
+  return {
+    $oid: unsafeObjectIdString(s)
+  }
+}
 
 export const ObjectId = new t.Type<ObjectIdString, ObjectIdStringFromServer>(
   'ObjectId',

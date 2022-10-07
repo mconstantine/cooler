@@ -1,0 +1,212 @@
+[
+  {
+    "_id": {
+      "$oid": "634035b36cc82edbc8cbc4e6"
+    },
+    "name": "Project 1",
+    "description": null,
+    "client": {
+      "_id": {
+        "$oid": "634035d06182c11090263218"
+      },
+      "type": "BUSINESS",
+      "name": "Acne Inc."
+    },
+    "expectedBudget": null,
+    "invoiceData": null,
+    "cashData": null,
+    "startTime": "2000-01-01T09:30:00.000Z",
+    "endTime": "2000-01-31T09:30:00.000Z",
+    "createdAt": "1999-12-03T19:07:42.666Z",
+    "updatedAt": "1999-12-03T19:07:42.666Z"
+  },
+  {
+    "_id": {
+      "$oid": "634037732945a92dde2707a9"
+    },
+    "name": "Project 2",
+    "description": null,
+    "client": {
+      "_id": {
+        "$oid": "634035d06182c11090263218"
+      },
+      "type": "BUSINESS",
+      "name": "Acne Inc."
+    },
+    "expectedBudget": null,
+    "invoiceData": null,
+    "cashData": null,
+    "startTime": "2000-02-01T09:30:00.000Z",
+    "endTime": "2000-02-29T09:30:00.000Z",
+    "createdAt": "1999-12-03T19:07:42.666Z",
+    "updatedAt": "1999-12-03T19:07:42.666Z"
+  },
+  {
+    "_id": {
+      "$oid": "63403779cdfd3ab74c30faae"
+    },
+    "name": "Project 3",
+    "description": null,
+    "client": {
+      "_id": {
+        "$oid": "634035d06182c11090263218"
+      },
+      "type": "BUSINESS",
+      "name": "Acne Inc."
+    },
+    "expectedBudget": null,
+    "invoiceData": null,
+    "cashData": null,
+    "startTime": "2000-03-01T09:30:00.000Z",
+    "endTime": "2000-03-31T09:30:00.000Z",
+    "createdAt": "1999-12-03T19:07:42.666Z",
+    "updatedAt": "1999-12-03T19:07:42.666Z"
+  },
+  {
+    "_id": {
+      "$oid": "6340378182d057fd7303f85c"
+    },
+    "name": "Project 4",
+    "description": null,
+    "client": {
+      "_id": {
+        "$oid": "634035d06182c11090263218"
+      },
+      "type": "BUSINESS",
+      "name": "Acne Inc."
+    },
+    "expectedBudget": null,
+    "invoiceData": null,
+    "cashData": null,
+    "startTime": "2000-04-01T09:30:00.000Z",
+    "endTime": "2000-04-30T09:30:00.000Z",
+    "createdAt": "1999-12-03T19:07:42.666Z",
+    "updatedAt": "1999-12-03T19:07:42.666Z"
+  },
+  {
+    "_id": {
+      "$oid": "63403789a41d8421abffd41a"
+    },
+    "name": "Project 5",
+    "description": null,
+    "client": {
+      "_id": {
+        "$oid": "634035d06182c11090263218"
+      },
+      "type": "BUSINESS",
+      "name": "Acne Inc."
+    },
+    "expectedBudget": null,
+    "invoiceData": null,
+    "cashData": null,
+    "startTime": "2000-05-01T09:30:00.000Z",
+    "endTime": "2000-05-31T09:30:00.000Z",
+    "createdAt": "1999-12-03T19:07:42.666Z",
+    "updatedAt": "1999-12-03T19:07:42.666Z"
+  },
+  {
+    "_id": {
+      "$oid": "6340378f91c709c4bffac723"
+    },
+    "name": "Project 6",
+    "description": null,
+    "client": {
+      "_id": {
+        "$oid": "634035d06182c11090263218"
+      },
+      "type": "BUSINESS",
+      "name": "Acne Inc."
+    },
+    "expectedBudget": null,
+    "invoiceData": null,
+    "cashData": null,
+    "startTime": "2000-06-01T09:30:00.000Z",
+    "endTime": "2000-06-30T09:30:00.000Z",
+    "createdAt": "1999-12-03T19:07:42.666Z",
+    "updatedAt": "1999-12-03T19:07:42.666Z"
+  },
+  {
+    "_id": {
+      "$oid": "63403795411ecf59e3b3259a"
+    },
+    "name": "Project 7",
+    "description": null,
+    "client": {
+      "_id": {
+        "$oid": "634035d06182c11090263218"
+      },
+      "type": "BUSINESS",
+      "name": "Acne Inc."
+    },
+    "expectedBudget": null,
+    "invoiceData": null,
+    "cashData": null,
+    "startTime": "2000-07-01T09:30:00.000Z",
+    "endTime": "2000-07-31T09:30:00.000Z",
+    "createdAt": "1999-12-03T19:07:42.666Z",
+    "updatedAt": "1999-12-03T19:07:42.666Z"
+  },
+  {
+    "_id": {
+      "$oid": "6340379a938d41cf16e13423"
+    },
+    "name": "Project 8",
+    "description": null,
+    "client": {
+      "_id": {
+        "$oid": "634035d06182c11090263218"
+      },
+      "type": "BUSINESS",
+      "name": "Acne Inc."
+    },
+    "expectedBudget": null,
+    "invoiceData": null,
+    "cashData": null,
+    "startTime": "2000-08-01T09:30:00.000Z",
+    "endTime": "2000-08-31T09:30:00.000Z",
+    "createdAt": "1999-12-03T19:07:42.666Z",
+    "updatedAt": "1999-12-03T19:07:42.666Z"
+  },
+  {
+    "_id": {
+      "$oid": "634037a0fa00165e60bc3223"
+    },
+    "name": "Project 9",
+    "description": null,
+    "client": {
+      "_id": {
+        "$oid": "634035d06182c11090263218"
+      },
+      "type": "BUSINESS",
+      "name": "Acne Inc."
+    },
+    "expectedBudget": null,
+    "invoiceData": null,
+    "cashData": null,
+    "startTime": "2000-09-01T09:30:00.000Z",
+    "endTime": "2000-09-30T09:30:00.000Z",
+    "createdAt": "1999-12-03T19:07:42.666Z",
+    "updatedAt": "1999-12-03T19:07:42.666Z"
+  },
+  {
+    "_id": {
+      "$oid": "634037a66a85f1db6fe6d73e"
+    },
+    "name": "Project 10",
+    "description": null,
+    "client": {
+      "_id": {
+        "$oid": "634035d06182c11090263218"
+      },
+      "type": "BUSINESS",
+      "name": "Acne Inc."
+    },
+    "expectedBudget": null,
+    "invoiceData": null,
+    "cashData": null,
+    "startTime": "2000-10-01T09:30:00.000Z",
+    "endTime": "2000-10-31T09:30:00.000Z",
+    "createdAt": "1999-12-03T19:07:42.666Z",
+    "updatedAt": "1999-12-03T19:07:42.666Z"
+  }
+]

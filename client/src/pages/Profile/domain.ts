@@ -21,7 +21,7 @@ import { Connection, ConnectionQueryInput } from '../../misc/Connection'
 import { Project } from '../../entities/Project'
 import { LoginOutput, RegistrationInput } from '../../contexts/AccountContext'
 
-const Profile = t.type(
+export const Profile = t.type(
   {
     _id: ObjectId,
     name: LocalizedString,
@@ -42,7 +42,7 @@ const ProfileStatsQueryInput = t.type(
 )
 export type ProfileStatsQueryInput = t.TypeOf<typeof ProfileStatsQueryInput>
 
-const ProfileStats = t.type(
+export const ProfileStats = t.type(
   {
     expectedWorkingHours: NonNegativeNumber,
     actualWorkingHours: NonNegativeNumber,
@@ -51,6 +51,7 @@ const ProfileStats = t.type(
   },
   'UserStatsQueryOutput'
 )
+export type ProfileStats = t.TypeOf<typeof ProfileStats>
 
 export const getProfileRequest = makeGetRequest({
   url: '/users/me',
@@ -111,12 +112,15 @@ export type CashedBalanceRequestInput = t.TypeOf<
   typeof CashedBalanceRequestInput
 >
 
-const CashedBalanceRequestOutput = t.type(
+export const CashedBalanceRequestOutput = t.type(
   {
     balance: NonNegativeNumber
   },
   'CashedBalanceRequestOutput'
 )
+export type CashedBalanceRequestOutput = t.TypeOf<
+  typeof CashedBalanceRequestOutput
+>
 
 export const getCashedBalanceRequest = makeGetRequest({
   url: '/projects/cashedBalance',

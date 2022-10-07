@@ -1,0 +1,16 @@
+[
+  {
+    "_id": {
+      "$oid": "63402c2a03331dbd4ebd19df"
+    },
+    "label": "Some Tax",
+    "value": 0.25
+  },
+  {
+    "_id": {
+      "$oid": "63402c4498cc9ba69cc96818"
+    },
+    "label": "Another Tax",
+    "value": 0.05
+  }
+]

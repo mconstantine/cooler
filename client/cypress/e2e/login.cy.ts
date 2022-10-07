@@ -1,3 +1,6 @@
+import { LoginOutput } from '../../src/contexts/AccountContext'
+import { unsafeNonEmptyString } from '../../src/globalDomain'
+
 describe('Login page', () => {
   it('should render the interface', () => {
     cy.visit('/')
@@ -6,38 +9,39 @@ describe('Login page', () => {
     cy.findByRole('button', { name: 'Submit' }).should('be.visible')
   })
 
-  it('should login', async () => {
+  it('should login', () => {
     const email = 'some-email@example.com'
     const password = 'S0m3P4ssw0rd!'
 
-    cy.mockApiCall('loginUser', {
-      loginUser: {
-        accessToken: 'some-access-token',
-        refreshToken: 'some-refresh-token',
-        expiration: new Date(Date.now() + 86400000).toISOString()
-      }
+    cy.mockApiCall<LoginOutput>('POST', '/login', {
+      accessToken: unsafeNonEmptyString('some-access-token'),
+      refreshToken: unsafeNonEmptyString('some-refresh-token'),
+      expiration: new Date(Date.now() + 86400000)
     }).as('login')
 
-    cy.mockApiCall('me', 'profile').as('profile')
-    cy.visit('/')
+    cy.mockProfileCalls()
 
+    cy.visit('/')
     cy.findByRole('textbox', { name: 'E-mail address' }).type(email)
     cy.findByLabelText('Password').type(password)
     cy.findByRole('button', { name: 'Submit' }).click()
 
     cy.wait('@login')
-    cy.wait('@profile')
+    cy.wait('@me')
+    cy.wait('@taxes')
+    cy.wait('@stats')
+    cy.wait('@cashed-balance')
+    cy.wait('@tasks-due-today')
+    cy.wait('@latest-projects')
+    cy.wait('@open-sessions')
 
     cy.url().should('equal', Cypress.config().baseUrl + '/')
-    cy.findByRole('heading', { name: 'Profile' }).should('be.visible')
   })
 
-  it('should display errors', () => {
+  it.only('should display errors', () => {
     const errorMessage = 'This is an error, like wrong e-mail or password'
 
-    cy.mockApiCallWithError('loginUser', 400, 'COOLER_400', errorMessage).as(
-      'login'
-    )
+    cy.mockApiCallWithError('POST', '/login', 400, errorMessage).as('login')
 
     cy.visit('/')
     cy.findByRole('textbox', { name: 'E-mail address' }).type(
