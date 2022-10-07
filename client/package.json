@@ -28,6 +28,7 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
+    "test:cypress": "cypress open",
     "eject": "react-scripts eject",
     "storybook": "start-storybook -p 6006 -s public --no-manager-cache",
     "build-storybook": "build-storybook -s public"
