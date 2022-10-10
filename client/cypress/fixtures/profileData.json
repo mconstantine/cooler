@@ -1,0 +1,7 @@
+{
+  "_id": { "$oid": "63403e22f3aca1ee52e74f8e" },
+  "name": "John Doe",
+  "email": "john.doe@example.com",
+  "createdAt": "2022-10-07T14:56:34.022Z",
+  "updatedAt": "2022-10-07T14:56:34.022Z"
+}

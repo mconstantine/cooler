@@ -1,5 +1,5 @@
 import { boolean, option, readerTaskEither, taskEither } from 'fp-ts'
-import { constNull, flow, pipe } from 'fp-ts/function'
+import { constNull, constVoid, flow, pipe } from 'fp-ts/function'
 import { Option } from 'fp-ts/Option'
 import { ReaderTaskEither } from 'fp-ts/ReaderTaskEither'
 import { skull } from 'ionicons/icons'
@@ -46,8 +46,31 @@ export function ProfileData() {
   const deleteProfileCommand = useDelete(deleteProfileRequest)
   const registerUserCommand = usePost(registerUserRequest)
 
-  const onUpdate: ReaderTaskEither<ProfileUpdateInput, LocalizedString, void> =
-    pipe(updateProfileCommand, readerTaskEither.map(setProfile))
+  const onUpdate: ReaderTaskEither<
+    ProfileUpdateInput,
+    LocalizedString,
+    void
+  > = update =>
+    pipe(
+      updateProfileCommand(update),
+      taskEither.chain(response =>
+        taskEither.fromIO(() => {
+          setProfile(response)
+
+          pipe(
+            profile,
+            query.fold(constVoid, constVoid, profile => {
+              if (
+                update.email !== profile.email ||
+                option.isSome(update.password)
+              ) {
+                logout()
+              }
+            })
+          )
+        })
+      )
+    )
 
   const onDelete: ReaderTaskEither<void, LocalizedString, void> = pipe(
     deleteProfileCommand,

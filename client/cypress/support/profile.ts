@@ -20,13 +20,11 @@ declare global {
 }
 
 function mockProfileCalls() {
-  cy.mockApiCall<t.OutputOf<typeof Profile>>('GET', '/users/me', {
-    _id: unsafeObjectIdStringFromServer(new ObjectID().toHexString()),
-    name: 'John Doe',
-    email: 'john.doe@example.com',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  }).as('me')
+  cy.mockApiCall<t.OutputOf<typeof Profile>>(
+    'GET',
+    '/users/me',
+    'profileData'
+  ).as('me')
 
   cy.mockApiConnection<Tax>('/taxes', 'taxes', 'label').as('taxes')
 
@@ -41,7 +39,7 @@ function mockProfileCalls() {
     'GET',
     '/projects/cashedBalance?*',
     { balance: 10000 }
-  ).as('cashed-balance')
+  ).as('cashedBalance')
 
   cy.mockApiCall<t.OutputOf<typeof Task>[]>('GET', '/tasks/due?*', [
     {
@@ -63,14 +61,14 @@ function mockProfileCalls() {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     }
-  ]).as('tasks-due-today')
+  ]).as('tasksDueToday')
 
   cy.mockApiConnection<Project>('/projects/latest?*', 'projects', 'name').as(
-    'latest-projects'
+    'latestProjects'
   )
 
   cy.mockApiCall<t.OutputOf<typeof Session>[]>('GET', '/sessions/open', []).as(
-    'open-sessions'
+    'openSessions'
   )
 }
 Cypress.Commands.add('mockProfileCalls', mockProfileCalls)
