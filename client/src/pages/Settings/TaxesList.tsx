@@ -45,7 +45,7 @@ export function TaxesList() {
                   type="button"
                   icon={option.some(add)}
                   action={onAddButtonClick}
-                  label={a18n`New Tax`}
+                  label={a18n`New tax`}
                   color="primary"
                 />
               ),

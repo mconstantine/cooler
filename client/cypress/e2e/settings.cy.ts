@@ -1,67 +1,87 @@
+import ObjectID from 'bson-objectid'
+import * as t from 'io-ts'
+import { Tax } from '../../src/entities/Tax'
+import { unsafeObjectIdStringFromServer } from '../../src/globalDomain'
+
 describe('Settings page', () => {
   beforeEach(() => {
     cy.skipLogin()
-    cy.mockApiCall('me', 'profile').as('profile')
+    cy.mockProfileCalls()
     cy.visit('/')
-    cy.wait('@profile')
+
+    cy.wait('@me')
+    cy.wait('@taxes')
+    cy.wait('@stats')
+    cy.wait('@cashedBalance')
+    cy.wait('@tasksDueToday')
+    cy.wait('@latestProjects')
+    cy.wait('@openSessions')
+
     cy.findByRole('button', { name: 'Settings' }).click()
   })
 
   it('should allow to manipulate taxes', () => {
-    const taxName = 'Some tax'
-    const taxValue = 42
-    const updatedTaxName = 'Some tax updated'
-    const updatedTaxValue = 24.5
+    const taxId = unsafeObjectIdStringFromServer(new ObjectID().toHexString())
+    const taxLabel = 'Test tax'
+    const taxValue = 0.42
+    const updatedTaxLabel = 'Test tax updated'
+    const updatedTaxValue = 0.245
 
-    cy.mockApiCall('createTax', {
-      createTax: {
-        id: 42,
-        label: taxName,
-        value: taxValue / 100
-      }
+    cy.mockApiCall<t.OutputOf<typeof Tax>>('POST', '/taxes', {
+      _id: taxId,
+      label: taxLabel,
+      value: taxValue
     }).as('createTax')
 
-    cy.mockApiCall('updateTax', {
-      updateTax: {
-        id: 42,
-        label: updatedTaxName,
-        value: updatedTaxValue / 100
-      }
+    cy.mockApiCall<t.OutputOf<typeof Tax>>('PUT', `/taxes/${taxId.$oid}`, {
+      _id: taxId,
+      label: updatedTaxLabel,
+      value: updatedTaxValue
     }).as('updateTax')
 
-    cy.mockApiCall('deleteTax', {
-      deleteTax: {
-        id: 42,
-        label: updatedTaxName,
-        value: updatedTaxValue / 100
-      }
+    cy.mockApiCall('DELETE', `/taxes/${taxId.$oid}`, {
+      _id: taxId,
+      label: updatedTaxLabel,
+      value: updatedTaxValue
     }).as('deleteTax')
 
     cy.findByRole('button', { name: 'New tax' }).click()
-    cy.findByRole('textbox', { name: 'Name' }).type(taxName)
-    cy.findByRole('textbox', { name: 'Value (%)' }).type(taxValue.toString(10))
-    cy.findByRole('button', { name: 'Submit' }).click()
+    cy.findByRole('textbox', { name: 'Name' }).type(taxLabel)
 
+    cy.findByRole('textbox', { name: 'Value (%)' }).type(
+      (taxValue * 100).toString(10)
+    )
+
+    cy.findByRole('button', { name: 'Submit' }).click()
     cy.wait('@createTax')
-    cy.findByText(taxName).should('be.visible')
-    cy.findByText(`${taxValue.toFixed(2)}%`).should('be.visible')
+    cy.findByText(taxLabel).should('be.visible')
+    cy.findByText(`${(taxValue * 100).toFixed(2)}%`).should('be.visible')
 
     cy.findAllByRole('button', { name: 'Edit' }).invoke('first').click()
-    cy.findByRole('textbox', { name: 'Name' }).clear().type(updatedTaxName)
+
+    cy.findByRole('textbox', { name: 'Name' })
+      .invoke('val')
+      .should('eq', taxLabel)
+
+    cy.findByRole('textbox', { name: 'Name' }).clear().type(updatedTaxLabel)
+
+    cy.findByRole('textbox', { name: 'Value (%)' })
+      .invoke('val')
+      .should('eq', (taxValue * 100).toFixed(2))
+
     cy.findByRole('textbox', { name: 'Value (%)' })
       .clear()
-      .type(updatedTaxValue.toString(10))
+      .type((updatedTaxValue * 100).toString(10))
+
     cy.findByRole('button', { name: 'Submit' }).click()
-
     cy.wait('@updateTax')
-    cy.findByText(updatedTaxName).should('be.visible')
-    cy.findByText(`${updatedTaxValue.toFixed(2)}%`).should('be.visible')
 
-    cy.findAllByRole('button', { name: 'Delete' }).invoke('first').click()
+    cy.findByText(updatedTaxLabel).should('be.visible')
+    cy.findByText(`${(updatedTaxValue * 100).toFixed(2)}%`).should('be.visible')
+    cy.findAllByRole('button', { name: 'Delete tax' }).invoke('first').click()
     cy.findByRole('button', { name: 'Confirm' }).click()
-
     cy.wait('@deleteTax')
-    cy.findByText(updatedTaxName).should('not.exist')
-    cy.findByText(`${updatedTaxValue.toFixed(2)}%`).should('not.exist')
+    cy.findByText(updatedTaxLabel).should('not.exist')
+    cy.findByText(`${(updatedTaxValue * 100).toFixed(2)}%`).should('not.exist')
   })
 })

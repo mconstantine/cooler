@@ -38,7 +38,7 @@ describe('Login page', () => {
     cy.url().should('equal', Cypress.config().baseUrl + '/')
   })
 
-  it.only('should display errors', () => {
+  it('should display errors', () => {
     const errorMessage = 'This is an error, like wrong e-mail or password'
 
     cy.mockApiCallWithError('POST', '/login', 400, errorMessage).as('login')
