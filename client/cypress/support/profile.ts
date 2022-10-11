@@ -9,7 +9,6 @@ import {
 import { Tax } from '../../src/entities/Tax'
 import { Task } from '../../src/entities/Task'
 import { Project } from '../../src/entities/Project'
-import { Session } from '../../src/entities/Session'
 
 declare global {
   namespace Cypress {
@@ -67,8 +66,6 @@ function mockProfileCalls() {
     'latestProjects'
   )
 
-  cy.mockApiCall<t.OutputOf<typeof Session>[]>('GET', '/sessions/open', []).as(
-    'openSessions'
-  )
+  cy.mockOpenSettingsCall()
 }
 Cypress.Commands.add('mockProfileCalls', mockProfileCalls)

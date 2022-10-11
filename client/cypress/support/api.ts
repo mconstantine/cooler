@@ -66,19 +66,26 @@ function mockApiConnection<T>(
       ? data.filter(item => pattern.test(item[searchField] as string))
       : data
 
+    const target: number =
+      (after
+        ? filtered.findIndex(item => item[searchField] === after)
+        : before
+        ? filtered.reverse().findIndex(item => item[searchField] === before)
+        : -1) + 1
+
     const sliced = first
-      ? filtered.slice(0, parseInt(first))
+      ? filtered.slice(target, target + parseInt(first))
       : last
-      ? filtered.reverse().slice(0, parseInt(last))
+      ? filtered.reverse().slice(target, target + parseInt(last))
       : filtered
 
     return {
       pageInfo: {
-        totalCount: data.length,
+        totalCount: filtered.length,
         startCursor: sliced[0][searchField] || null,
         endCursor: sliced[sliced.length - 1][searchField] || null,
-        hasPreviousPage: before || after || false,
-        hasNextPage: sliced.length < filtered.length
+        hasPreviousPage: !!before || !!after,
+        hasNextPage: target + sliced.length < filtered.length
       },
       edges: sliced.map(item => ({
         cursor: item[searchField] || null,

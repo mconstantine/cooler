@@ -1,0 +1,674 @@
+[
+  {
+    "_id": {
+      "$oid": "62ea99f493e1ae1ad1fd4ab7"
+    },
+    "type": "BUSINESS",
+    "countryCode": "IT",
+    "vatNumber": "0000000000",
+    "businessName": "Client 1",
+    "addressCountry": "IT",
+    "addressProvince": "RE",
+    "addressCity": "City",
+    "addressZIP": "12345",
+    "addressStreet": "Some street",
+    "addressStreetNumber": "42",
+    "addressEmail": "client@example.com",
+    "user": {
+      "$oid": "62ea99f493e1ae1ad1fd4ab3"
+    },
+    "createdAt": "2020-09-02T17:11:44.000Z",
+    "updatedAt": "2020-09-02T17:11:44.000Z"
+  },
+  {
+    "_id": {
+      "$oid": "62ea99f493e1ae1ad1fd4ab8"
+    },
+    "type": "BUSINESS",
+    "countryCode": "IT",
+    "vatNumber": "0000000000",
+    "businessName": "Client 2",
+    "addressCountry": "IT",
+    "addressProvince": "MI",
+    "addressCity": "City",
+    "addressZIP": "12345",
+    "addressStreet": "Some street",
+    "addressStreetNumber": "42",
+    "addressEmail": "client@example.com",
+    "user": {
+      "$oid": "62ea99f493e1ae1ad1fd4ab3"
+    },
+    "createdAt": "2020-09-30T21:45:14.000Z",
+    "updatedAt": "2020-09-30T21:45:14.000Z"
+  },
+  {
+    "_id": {
+      "$oid": "62ea99f493e1ae1ad1fd4aba"
+    },
+    "type": "BUSINESS",
+    "countryCode": "IT",
+    "vatNumber": "0000000000",
+    "businessName": "Client 3",
+    "addressCountry": "IT",
+    "addressProvince": "NA",
+    "addressCity": "City",
+    "addressZIP": "12345",
+    "addressStreet": "Some street",
+    "addressStreetNumber": "42",
+    "addressEmail": "client@example.com",
+    "user": {
+      "$oid": "62ea99f493e1ae1ad1fd4ab3"
+    },
+    "createdAt": "2021-05-07T16:10:39.000Z",
+    "updatedAt": "2021-05-07T16:10:39.000Z"
+  },
+  {
+    "_id": {
+      "$oid": "62ea99f493e1ae1ad1fd4abb"
+    },
+    "type": "BUSINESS",
+    "countryCode": "IT",
+    "vatNumber": "0000000000",
+    "businessName": "Client 4",
+    "addressCountry": "IT",
+    "addressProvince": "MI",
+    "addressCity": "City",
+    "addressZIP": "12345",
+    "addressStreet": "Some street",
+    "addressStreetNumber": "42",
+    "addressEmail": "client@example.com",
+    "user": {
+      "$oid": "62ea99f493e1ae1ad1fd4ab3"
+    },
+    "createdAt": "2021-09-26T11:00:44.000Z",
+    "updatedAt": "2021-09-26T11:00:44.000Z"
+  },
+  {
+    "_id": {
+      "$oid": "62ea99f493e1ae1ad1fd4abc"
+    },
+    "type": "BUSINESS",
+    "countryCode": "IT",
+    "vatNumber": "0000000000",
+    "businessName": "Client 5",
+    "addressCountry": "IT",
+    "addressProvince": "CA",
+    "addressCity": "City",
+    "addressZIP": "12345",
+    "addressStreet": "Some street",
+    "addressStreetNumber": "42",
+    "addressEmail": "client@example.com",
+    "user": {
+      "$oid": "62ea99f493e1ae1ad1fd4ab3"
+    },
+    "createdAt": "2021-10-18T08:37:38.000Z",
+    "updatedAt": "2021-11-02T09:44:31.000Z"
+  },
+  {
+    "_id": {
+      "$oid": "62ea99f493e1ae1ad1fd4abd"
+    },
+    "type": "BUSINESS",
+    "countryCode": "IT",
+    "vatNumber": "0000000000",
+    "businessName": "Client 6",
+    "addressCountry": "IT",
+    "addressProvince": "MI",
+    "addressCity": "City",
+    "addressZIP": "12345",
+    "addressStreet": "Some street",
+    "addressStreetNumber": "42",
+    "addressEmail": "client@example.com",
+    "user": {
+      "$oid": "62ea99f493e1ae1ad1fd4ab3"
+    },
+    "createdAt": "2021-12-30T14:28:44.000Z",
+    "updatedAt": "2021-12-30T14:28:44.000Z"
+  },
+  {
+    "_id": {
+      "$oid": "62ea99f493e1ae1ad1fd4abe"
+    },
+    "type": "BUSINESS",
+    "countryCode": "IT",
+    "vatNumber": "0000000000",
+    "businessName": "Client 7",
+    "addressCountry": "IT",
+    "addressProvince": "MI",
+    "addressCity": "City",
+    "addressZIP": "12345",
+    "addressStreet": "Some street",
+    "addressStreetNumber": "42",
+    "addressEmail": "client@example.com",
+    "user": {
+      "$oid": "62ea99f493e1ae1ad1fd4ab3"
+    },
+    "createdAt": "2022-01-05T15:46:37.000Z",
+    "updatedAt": "2022-01-05T15:46:37.000Z"
+  },
+  {
+    "_id": {
+      "$oid": "62ea99f493e1ae1ad1fd4abf"
+    },
+    "type": "BUSINESS",
+    "countryCode": "IT",
+    "vatNumber": "0000000000",
+    "businessName": "Client 8",
+    "addressCountry": "IT",
+    "addressProvince": "MI",
+    "addressCity": "City",
+    "addressZIP": "12345",
+    "addressStreet": "Some street",
+    "addressStreetNumber": "42",
+    "addressEmail": "client@example.com",
+    "user": {
+      "$oid": "62ea99f493e1ae1ad1fd4ab3"
+    },
+    "createdAt": "2022-01-31T17:59:34.000Z",
+    "updatedAt": "2022-01-31T17:59:34.000Z"
+  },
+  {
+    "_id": {
+      "$oid": "72ea99f493e1ae1ad1fd4ab7"
+    },
+    "type": "BUSINESS",
+    "countryCode": "IT",
+    "vatNumber": "0000000000",
+    "businessName": "Client 9",
+    "addressCountry": "IT",
+    "addressProvince": "RE",
+    "addressCity": "City",
+    "addressZIP": "12345",
+    "addressStreet": "Some street",
+    "addressStreetNumber": "42",
+    "addressEmail": "client@example.com",
+    "user": {
+      "$oid": "62ea99f493e1ae1ad1fd4ab3"
+    },
+    "createdAt": "2020-09-02T17:11:44.000Z",
+    "updatedAt": "2020-09-02T17:11:44.000Z"
+  },
+  {
+    "_id": {
+      "$oid": "72ea99f493e1ae1ad1fd4ab8"
+    },
+    "type": "BUSINESS",
+    "countryCode": "IT",
+    "vatNumber": "0000000000",
+    "businessName": "Client 10",
+    "addressCountry": "IT",
+    "addressProvince": "MI",
+    "addressCity": "City",
+    "addressZIP": "12345",
+    "addressStreet": "Some street",
+    "addressStreetNumber": "42",
+    "addressEmail": "client@example.com",
+    "user": {
+      "$oid": "62ea99f493e1ae1ad1fd4ab3"
+    },
+    "createdAt": "2020-09-30T21:45:14.000Z",
+    "updatedAt": "2020-09-30T21:45:14.000Z"
+  },
+  {
+    "_id": {
+      "$oid": "72ea99f493e1ae1ad1fd4aba"
+    },
+    "type": "BUSINESS",
+    "countryCode": "IT",
+    "vatNumber": "0000000000",
+    "businessName": "Client 11",
+    "addressCountry": "IT",
+    "addressProvince": "NA",
+    "addressCity": "City",
+    "addressZIP": "12345",
+    "addressStreet": "Some street",
+    "addressStreetNumber": "42",
+    "addressEmail": "client@example.com",
+    "user": {
+      "$oid": "62ea99f493e1ae1ad1fd4ab3"
+    },
+    "createdAt": "2021-05-07T16:10:39.000Z",
+    "updatedAt": "2021-05-07T16:10:39.000Z"
+  },
+  {
+    "_id": {
+      "$oid": "72ea99f493e1ae1ad1fd4abb"
+    },
+    "type": "BUSINESS",
+    "countryCode": "IT",
+    "vatNumber": "0000000000",
+    "businessName": "Client 12",
+    "addressCountry": "IT",
+    "addressProvince": "MI",
+    "addressCity": "City",
+    "addressZIP": "12345",
+    "addressStreet": "Some street",
+    "addressStreetNumber": "42",
+    "addressEmail": "client@example.com",
+    "user": {
+      "$oid": "62ea99f493e1ae1ad1fd4ab3"
+    },
+    "createdAt": "2021-09-26T11:00:44.000Z",
+    "updatedAt": "2021-09-26T11:00:44.000Z"
+  },
+  {
+    "_id": {
+      "$oid": "72ea99f493e1ae1ad1fd4abc"
+    },
+    "type": "BUSINESS",
+    "countryCode": "IT",
+    "vatNumber": "0000000000",
+    "businessName": "Client 13",
+    "addressCountry": "IT",
+    "addressProvince": "CA",
+    "addressCity": "City",
+    "addressZIP": "12345",
+    "addressStreet": "Some street",
+    "addressStreetNumber": "42",
+    "addressEmail": "client@example.com",
+    "user": {
+      "$oid": "62ea99f493e1ae1ad1fd4ab3"
+    },
+    "createdAt": "2021-10-18T08:37:38.000Z",
+    "updatedAt": "2021-11-02T09:44:31.000Z"
+  },
+  {
+    "_id": {
+      "$oid": "72ea99f493e1ae1ad1fd4abd"
+    },
+    "type": "BUSINESS",
+    "countryCode": "IT",
+    "vatNumber": "0000000000",
+    "businessName": "Client 14",
+    "addressCountry": "IT",
+    "addressProvince": "MI",
+    "addressCity": "City",
+    "addressZIP": "12345",
+    "addressStreet": "Some street",
+    "addressStreetNumber": "42",
+    "addressEmail": "client@example.com",
+    "user": {
+      "$oid": "62ea99f493e1ae1ad1fd4ab3"
+    },
+    "createdAt": "2021-12-30T14:28:44.000Z",
+    "updatedAt": "2021-12-30T14:28:44.000Z"
+  },
+  {
+    "_id": {
+      "$oid": "72ea99f493e1ae1ad1fd4abe"
+    },
+    "type": "BUSINESS",
+    "countryCode": "IT",
+    "vatNumber": "0000000000",
+    "businessName": "Client 15",
+    "addressCountry": "IT",
+    "addressProvince": "MI",
+    "addressCity": "City",
+    "addressZIP": "12345",
+    "addressStreet": "Some street",
+    "addressStreetNumber": "42",
+    "addressEmail": "client@example.com",
+    "user": {
+      "$oid": "62ea99f493e1ae1ad1fd4ab3"
+    },
+    "createdAt": "2022-01-05T15:46:37.000Z",
+    "updatedAt": "2022-01-05T15:46:37.000Z"
+  },
+  {
+    "_id": {
+      "$oid": "72ea99f493e1ae1ad1fd4abf"
+    },
+    "type": "BUSINESS",
+    "countryCode": "IT",
+    "vatNumber": "0000000000",
+    "businessName": "Client 16",
+    "addressCountry": "IT",
+    "addressProvince": "MI",
+    "addressCity": "City",
+    "addressZIP": "12345",
+    "addressStreet": "Some street",
+    "addressStreetNumber": "42",
+    "addressEmail": "client@example.com",
+    "user": {
+      "$oid": "62ea99f493e1ae1ad1fd4ab3"
+    },
+    "createdAt": "2022-01-31T17:59:34.000Z",
+    "updatedAt": "2022-01-31T17:59:34.000Z"
+  },
+  {
+    "_id": {
+      "$oid": "82ea99f493e1ae1ad1fd4ab7"
+    },
+    "type": "BUSINESS",
+    "countryCode": "IT",
+    "vatNumber": "0000000000",
+    "businessName": "Client 17",
+    "addressCountry": "IT",
+    "addressProvince": "RE",
+    "addressCity": "City",
+    "addressZIP": "12345",
+    "addressStreet": "Some street",
+    "addressStreetNumber": "42",
+    "addressEmail": "client@example.com",
+    "user": {
+      "$oid": "62ea99f493e1ae1ad1fd4ab3"
+    },
+    "createdAt": "2020-09-02T17:11:44.000Z",
+    "updatedAt": "2020-09-02T17:11:44.000Z"
+  },
+  {
+    "_id": {
+      "$oid": "82ea99f493e1ae1ad1fd4ab8"
+    },
+    "type": "BUSINESS",
+    "countryCode": "IT",
+    "vatNumber": "0000000000",
+    "businessName": "Client 18",
+    "addressCountry": "IT",
+    "addressProvince": "MI",
+    "addressCity": "City",
+    "addressZIP": "12345",
+    "addressStreet": "Some street",
+    "addressStreetNumber": "42",
+    "addressEmail": "client@example.com",
+    "user": {
+      "$oid": "62ea99f493e1ae1ad1fd4ab3"
+    },
+    "createdAt": "2020-09-30T21:45:14.000Z",
+    "updatedAt": "2020-09-30T21:45:14.000Z"
+  },
+  {
+    "_id": {
+      "$oid": "82ea99f493e1ae1ad1fd4aba"
+    },
+    "type": "BUSINESS",
+    "countryCode": "IT",
+    "vatNumber": "0000000000",
+    "businessName": "Client 19",
+    "addressCountry": "IT",
+    "addressProvince": "NA",
+    "addressCity": "City",
+    "addressZIP": "12345",
+    "addressStreet": "Some street",
+    "addressStreetNumber": "42",
+    "addressEmail": "client@example.com",
+    "user": {
+      "$oid": "62ea99f493e1ae1ad1fd4ab3"
+    },
+    "createdAt": "2021-05-07T16:10:39.000Z",
+    "updatedAt": "2021-05-07T16:10:39.000Z"
+  },
+  {
+    "_id": {
+      "$oid": "82ea99f493e1ae1ad1fd4abb"
+    },
+    "type": "BUSINESS",
+    "countryCode": "IT",
+    "vatNumber": "0000000000",
+    "businessName": "Client 20",
+    "addressCountry": "IT",
+    "addressProvince": "MI",
+    "addressCity": "City",
+    "addressZIP": "12345",
+    "addressStreet": "Some street",
+    "addressStreetNumber": "42",
+    "addressEmail": "client@example.com",
+    "user": {
+      "$oid": "62ea99f493e1ae1ad1fd4ab3"
+    },
+    "createdAt": "2021-09-26T11:00:44.000Z",
+    "updatedAt": "2021-09-26T11:00:44.000Z"
+  },
+  {
+    "_id": {
+      "$oid": "82ea99f493e1ae1ad1fd4abc"
+    },
+    "type": "BUSINESS",
+    "countryCode": "IT",
+    "vatNumber": "0000000000",
+    "businessName": "Client 21",
+    "addressCountry": "IT",
+    "addressProvince": "CA",
+    "addressCity": "City",
+    "addressZIP": "12345",
+    "addressStreet": "Some street",
+    "addressStreetNumber": "42",
+    "addressEmail": "client@example.com",
+    "user": {
+      "$oid": "62ea99f493e1ae1ad1fd4ab3"
+    },
+    "createdAt": "2021-10-18T08:37:38.000Z",
+    "updatedAt": "2021-11-02T09:44:31.000Z"
+  },
+  {
+    "_id": {
+      "$oid": "82ea99f493e1ae1ad1fd4abd"
+    },
+    "type": "BUSINESS",
+    "countryCode": "IT",
+    "vatNumber": "0000000000",
+    "businessName": "Client 22",
+    "addressCountry": "IT",
+    "addressProvince": "MI",
+    "addressCity": "City",
+    "addressZIP": "12345",
+    "addressStreet": "Some street",
+    "addressStreetNumber": "42",
+    "addressEmail": "client@example.com",
+    "user": {
+      "$oid": "62ea99f493e1ae1ad1fd4ab3"
+    },
+    "createdAt": "2021-12-30T14:28:44.000Z",
+    "updatedAt": "2021-12-30T14:28:44.000Z"
+  },
+  {
+    "_id": {
+      "$oid": "82ea99f493e1ae1ad1fd4abe"
+    },
+    "type": "BUSINESS",
+    "countryCode": "IT",
+    "vatNumber": "0000000000",
+    "businessName": "Client 23",
+    "addressCountry": "IT",
+    "addressProvince": "MI",
+    "addressCity": "City",
+    "addressZIP": "12345",
+    "addressStreet": "Some street",
+    "addressStreetNumber": "42",
+    "addressEmail": "client@example.com",
+    "user": {
+      "$oid": "62ea99f493e1ae1ad1fd4ab3"
+    },
+    "createdAt": "2022-01-05T15:46:37.000Z",
+    "updatedAt": "2022-01-05T15:46:37.000Z"
+  },
+  {
+    "_id": {
+      "$oid": "82ea99f493e1ae1ad1fd4abf"
+    },
+    "type": "BUSINESS",
+    "countryCode": "IT",
+    "vatNumber": "0000000000",
+    "businessName": "Client 24",
+    "addressCountry": "IT",
+    "addressProvince": "MI",
+    "addressCity": "City",
+    "addressZIP": "12345",
+    "addressStreet": "Some street",
+    "addressStreetNumber": "42",
+    "addressEmail": "client@example.com",
+    "user": {
+      "$oid": "62ea99f493e1ae1ad1fd4ab3"
+    },
+    "createdAt": "2022-01-31T17:59:34.000Z",
+    "updatedAt": "2022-01-31T17:59:34.000Z"
+  },
+  {
+    "_id": {
+      "$oid": "92ea99f493e1ae1ad1fd4ab7"
+    },
+    "type": "BUSINESS",
+    "countryCode": "IT",
+    "vatNumber": "0000000000",
+    "businessName": "Client 25",
+    "addressCountry": "IT",
+    "addressProvince": "RE",
+    "addressCity": "City",
+    "addressZIP": "12345",
+    "addressStreet": "Some street",
+    "addressStreetNumber": "42",
+    "addressEmail": "client@example.com",
+    "user": {
+      "$oid": "62ea99f493e1ae1ad1fd4ab3"
+    },
+    "createdAt": "2020-09-02T17:11:44.000Z",
+    "updatedAt": "2020-09-02T17:11:44.000Z"
+  },
+  {
+    "_id": {
+      "$oid": "92ea99f493e1ae1ad1fd4ab8"
+    },
+    "type": "BUSINESS",
+    "countryCode": "IT",
+    "vatNumber": "0000000000",
+    "businessName": "Client 26",
+    "addressCountry": "IT",
+    "addressProvince": "MI",
+    "addressCity": "City",
+    "addressZIP": "12345",
+    "addressStreet": "Some street",
+    "addressStreetNumber": "42",
+    "addressEmail": "client@example.com",
+    "user": {
+      "$oid": "62ea99f493e1ae1ad1fd4ab3"
+    },
+    "createdAt": "2020-09-30T21:45:14.000Z",
+    "updatedAt": "2020-09-30T21:45:14.000Z"
+  },
+  {
+    "_id": {
+      "$oid": "92ea99f493e1ae1ad1fd4aba"
+    },
+    "type": "BUSINESS",
+    "countryCode": "IT",
+    "vatNumber": "0000000000",
+    "businessName": "Client 27",
+    "addressCountry": "IT",
+    "addressProvince": "NA",
+    "addressCity": "City",
+    "addressZIP": "12345",
+    "addressStreet": "Some street",
+    "addressStreetNumber": "42",
+    "addressEmail": "client@example.com",
+    "user": {
+      "$oid": "62ea99f493e1ae1ad1fd4ab3"
+    },
+    "createdAt": "2021-05-07T16:10:39.000Z",
+    "updatedAt": "2021-05-07T16:10:39.000Z"
+  },
+  {
+    "_id": {
+      "$oid": "92ea99f493e1ae1ad1fd4abb"
+    },
+    "type": "BUSINESS",
+    "countryCode": "IT",
+    "vatNumber": "0000000000",
+    "businessName": "Client 28",
+    "addressCountry": "IT",
+    "addressProvince": "MI",
+    "addressCity": "City",
+    "addressZIP": "12345",
+    "addressStreet": "Some street",
+    "addressStreetNumber": "42",
+    "addressEmail": "client@example.com",
+    "user": {
+      "$oid": "62ea99f493e1ae1ad1fd4ab3"
+    },
+    "createdAt": "2021-09-26T11:00:44.000Z",
+    "updatedAt": "2021-09-26T11:00:44.000Z"
+  },
+  {
+    "_id": {
+      "$oid": "92ea99f493e1ae1ad1fd4abc"
+    },
+    "type": "BUSINESS",
+    "countryCode": "IT",
+    "vatNumber": "0000000000",
+    "businessName": "Client 29",
+    "addressCountry": "IT",
+    "addressProvince": "CA",
+    "addressCity": "City",
+    "addressZIP": "12345",
+    "addressStreet": "Some street",
+    "addressStreetNumber": "42",
+    "addressEmail": "client@example.com",
+    "user": {
+      "$oid": "62ea99f493e1ae1ad1fd4ab3"
+    },
+    "createdAt": "2021-10-18T08:37:38.000Z",
+    "updatedAt": "2021-11-02T09:44:31.000Z"
+  },
+  {
+    "_id": {
+      "$oid": "92ea99f493e1ae1ad1fd4abd"
+    },
+    "type": "BUSINESS",
+    "countryCode": "IT",
+    "vatNumber": "0000000000",
+    "businessName": "Client 30",
+    "addressCountry": "IT",
+    "addressProvince": "MI",
+    "addressCity": "City",
+    "addressZIP": "12345",
+    "addressStreet": "Some street",
+    "addressStreetNumber": "42",
+    "addressEmail": "client@example.com",
+    "user": {
+      "$oid": "62ea99f493e1ae1ad1fd4ab3"
+    },
+    "createdAt": "2021-12-30T14:28:44.000Z",
+    "updatedAt": "2021-12-30T14:28:44.000Z"
+  },
+  {
+    "_id": {
+      "$oid": "92ea99f493e1ae1ad1fd4abe"
+    },
+    "type": "BUSINESS",
+    "countryCode": "IT",
+    "vatNumber": "0000000000",
+    "businessName": "Client 31",
+    "addressCountry": "IT",
+    "addressProvince": "MI",
+    "addressCity": "City",
+    "addressZIP": "12345",
+    "addressStreet": "Some street",
+    "addressStreetNumber": "42",
+    "addressEmail": "client@example.com",
+    "user": {
+      "$oid": "62ea99f493e1ae1ad1fd4ab3"
+    },
+    "createdAt": "2022-01-05T15:46:37.000Z",
+    "updatedAt": "2022-01-05T15:46:37.000Z"
+  },
+  {
+    "_id": {
+      "$oid": "92ea99f493e1ae1ad1fd4abf"
+    },
+    "type": "BUSINESS",
+    "countryCode": "IT",
+    "vatNumber": "0000000000",
+    "businessName": "Client 32",
+    "addressCountry": "IT",
+    "addressProvince": "MI",
+    "addressCity": "City",
+    "addressZIP": "12345",
+    "addressStreet": "Some street",
+    "addressStreetNumber": "42",
+    "addressEmail": "client@example.com",
+    "user": {
+      "$oid": "62ea99f493e1ae1ad1fd4ab3"
+    },
+    "createdAt": "2022-01-31T17:59:34.000Z",
+    "updatedAt": "2022-01-31T17:59:34.000Z"
+  }
+]
