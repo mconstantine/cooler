@@ -66,6 +66,6 @@ function mockProfileCalls() {
     'latestProjects'
   )
 
-  cy.mockOpenSettingsCall()
+  cy.mockOpenSessionsCall()
 }
 Cypress.Commands.add('mockProfileCalls', mockProfileCalls)

@@ -36,7 +36,7 @@ export default function ClientsList() {
       actions={option.some(
         nonEmptyArray.of({
           type: 'sync',
-          label: a18n`New Client`,
+          label: a18n`New client`,
           icon: option.some(add),
           action: _ => setRoute(clientsRoute('new'), _)
         })

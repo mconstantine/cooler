@@ -4,14 +4,14 @@ import { Session } from '../../src/entities/Session'
 declare global {
   namespace Cypress {
     interface Chainable {
-      mockOpenSettingsCall: typeof mockOpenSettingsCall
+      mockOpenSessionsCall: typeof mockOpenSessionsCall
     }
   }
 }
 
-function mockOpenSettingsCall() {
+function mockOpenSessionsCall() {
   cy.mockApiCall<t.OutputOf<typeof Session>[]>('GET', '/sessions/open', []).as(
     'openSessions'
   )
 }
-Cypress.Commands.add('mockOpenSettingsCall', mockOpenSettingsCall)
+Cypress.Commands.add('mockOpenSessionsCall', mockOpenSessionsCall)
