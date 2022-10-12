@@ -1,0 +1,234 @@
+[
+  {
+    "_id": {
+      "$oid": "62ea99f493e1ae1ad1fd4c17"
+    },
+    "name": "Task 1",
+    "description": null,
+    "startTime": "2000-01-01T08:00:25.000Z",
+    "expectedWorkingHours": 8,
+    "hourlyCost": 20,
+    "project": {
+      "_id": {
+        "$oid": "62ea99f493e1ae1ad1fd4ad8"
+      },
+      "name": "Project"
+    },
+    "client": {
+      "_id": {
+        "$oid": "62ea99f493e1ae1ad1fd4abc"
+      },
+      "type": "BUSINESS",
+      "name": "Client"
+    },
+    "user": {
+      "$oid": "62ea99f493e1ae1ad1fd4ab3"
+    },
+    "createdAt": "2000-01-01T15:36:09.000Z",
+    "updatedAt": "2000-01-01T15:39:06.000Z",
+    "actualWorkingHours": 7
+  },
+  {
+    "_id": {
+      "$oid": "62ea99f493e1ae1ad1fd4c18"
+    },
+    "name": "Task 2",
+    "description": null,
+    "startTime": "2000-01-02T08:00:25.000Z",
+    "expectedWorkingHours": 8,
+    "hourlyCost": 20,
+    "project": {
+      "_id": {
+        "$oid": "62ea99f493e1ae1ad1fd4ad8"
+      },
+      "name": "Project"
+    },
+    "client": {
+      "_id": {
+        "$oid": "62ea99f493e1ae1ad1fd4abc"
+      },
+      "type": "BUSINESS",
+      "name": "Client"
+    },
+    "user": {
+      "$oid": "62ea99f493e1ae1ad1fd4ab3"
+    },
+    "createdAt": "2000-01-02T15:36:09.000Z",
+    "updatedAt": "2000-01-02T15:39:06.000Z",
+    "actualWorkingHours": 7
+  },
+  {
+    "_id": {
+      "$oid": "62ea99f493e1ae1ad1fd4c19"
+    },
+    "name": "Task 3",
+    "description": null,
+    "startTime": "2000-01-03T08:00:25.000Z",
+    "expectedWorkingHours": 8,
+    "hourlyCost": 20,
+    "project": {
+      "_id": {
+        "$oid": "62ea99f493e1ae1ad1fd4ad8"
+      },
+      "name": "Project"
+    },
+    "client": {
+      "_id": {
+        "$oid": "62ea99f493e1ae1ad1fd4abc"
+      },
+      "type": "BUSINESS",
+      "name": "Client"
+    },
+    "user": {
+      "$oid": "62ea99f493e1ae1ad1fd4ab3"
+    },
+    "createdAt": "2000-01-03T15:36:09.000Z",
+    "updatedAt": "2000-01-03T15:39:06.000Z",
+    "actualWorkingHours": 7
+  },
+  {
+    "_id": {
+      "$oid": "62ea99f493e1ae1ad1fd4c1a"
+    },
+    "name": "Task 4",
+    "description": null,
+    "startTime": "2000-01-04T08:00:25.000Z",
+    "expectedWorkingHours": 8,
+    "hourlyCost": 20,
+    "project": {
+      "_id": {
+        "$oid": "62ea99f493e1ae1ad1fd4ad8"
+      },
+      "name": "Project"
+    },
+    "client": {
+      "_id": {
+        "$oid": "62ea99f493e1ae1ad1fd4abc"
+      },
+      "type": "BUSINESS",
+      "name": "Client"
+    },
+    "user": {
+      "$oid": "62ea99f493e1ae1ad1fd4ab3"
+    },
+    "createdAt": "2000-01-04T15:36:09.000Z",
+    "updatedAt": "2000-01-04T15:39:06.000Z",
+    "actualWorkingHours": 7
+  },
+  {
+    "_id": {
+      "$oid": "62ea99f493e1ae1ad1fd4c1b"
+    },
+    "name": "Task 5",
+    "description": null,
+    "startTime": "2000-01-05T08:00:25.000Z",
+    "expectedWorkingHours": 8,
+    "hourlyCost": 20,
+    "project": {
+      "_id": {
+        "$oid": "62ea99f493e1ae1ad1fd4ad8"
+      },
+      "name": "Project"
+    },
+    "client": {
+      "_id": {
+        "$oid": "62ea99f493e1ae1ad1fd4abc"
+      },
+      "type": "BUSINESS",
+      "name": "Client"
+    },
+    "user": {
+      "$oid": "62ea99f493e1ae1ad1fd4ab3"
+    },
+    "createdAt": "2000-01-05T15:36:09.000Z",
+    "updatedAt": "2000-01-05T15:39:06.000Z",
+    "actualWorkingHours": 7
+  },
+  {
+    "_id": {
+      "$oid": "62ea99f493e1ae1ad1fd4c1c"
+    },
+    "name": "Task 6",
+    "description": null,
+    "startTime": "2000-01-06T08:00:25.000Z",
+    "expectedWorkingHours": 8,
+    "hourlyCost": 20,
+    "project": {
+      "_id": {
+        "$oid": "62ea99f493e1ae1ad1fd4ad8"
+      },
+      "name": "Project"
+    },
+    "client": {
+      "_id": {
+        "$oid": "62ea99f493e1ae1ad1fd4abc"
+      },
+      "type": "BUSINESS",
+      "name": "Client"
+    },
+    "user": {
+      "$oid": "62ea99f493e1ae1ad1fd4ab3"
+    },
+    "createdAt": "2000-01-06T15:36:09.000Z",
+    "updatedAt": "2000-01-06T15:39:06.000Z",
+    "actualWorkingHours": 7
+  },
+  {
+    "_id": {
+      "$oid": "62ea99f493e1ae1ad1fd4c1d"
+    },
+    "name": "Task 7",
+    "description": null,
+    "startTime": "2000-01-07T08:00:25.000Z",
+    "expectedWorkingHours": 8,
+    "hourlyCost": 20,
+    "project": {
+      "_id": {
+        "$oid": "62ea99f493e1ae1ad1fd4ad8"
+      },
+      "name": "Project"
+    },
+    "client": {
+      "_id": {
+        "$oid": "62ea99f493e1ae1ad1fd4abc"
+      },
+      "type": "BUSINESS",
+      "name": "Client"
+    },
+    "user": {
+      "$oid": "62ea99f493e1ae1ad1fd4ab3"
+    },
+    "createdAt": "2000-01-07T15:36:09.000Z",
+    "updatedAt": "2000-01-07T15:39:06.000Z",
+    "actualWorkingHours": 7
+  },
+  {
+    "_id": {
+      "$oid": "62ea99f493e1ae1ad1fd4c1e"
+    },
+    "name": "Task 8",
+    "description": null,
+    "startTime": "2000-01-08T08:00:25.000Z",
+    "expectedWorkingHours": 8,
+    "hourlyCost": 20,
+    "project": {
+      "_id": {
+        "$oid": "62ea99f493e1ae1ad1fd4ad8"
+      },
+      "name": "Project"
+    },
+    "client": {
+      "_id": {
+        "$oid": "62ea99f493e1ae1ad1fd4abc"
+      },
+      "type": "BUSINESS",
+      "name": "Client"
+    },
+    "user": {
+      "$oid": "62ea99f493e1ae1ad1fd4ab3"
+    },
+    "createdAt": "2000-01-08T15:36:09.000Z",
+    "updatedAt": "2000-01-08T15:39:06.000Z",
+    "actualWorkingHours": 7
+  }
+]

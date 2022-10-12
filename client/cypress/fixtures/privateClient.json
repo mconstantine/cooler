@@ -1,0 +1,21 @@
+{
+  "_id": {
+    "$oid": "62ea99f493e1ae1ad1fd4ac1"
+  },
+  "type": "PRIVATE",
+  "fiscalCode": "ABCDEF98G76H543X",
+  "firstName": "Private",
+  "lastName": "Client",
+  "addressCountry": "IT",
+  "addressProvince": "MI",
+  "addressCity": "City",
+  "addressZIP": "12345",
+  "addressStreet": "Some street",
+  "addressStreetNumber": "42",
+  "addressEmail": "client@example.com",
+  "user": {
+    "$oid": "62ea99f493e1ae1ad1fd4ab3"
+  },
+  "createdAt": "2022-01-31T17:59:34.000Z",
+  "updatedAt": "2022-01-31T17:59:34.000Z"
+}

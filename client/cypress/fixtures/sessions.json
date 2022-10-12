@@ -1,0 +1,66 @@
+[
+  {
+    "_id": {
+      "$oid": "62ea99f493e1ae1ad1fd4d26"
+    },
+    "startTime": "2000-01-01T09:30:00.000Z",
+    "endTime": "2000-01-01T13:30:00.000Z",
+    "task": {
+      "_id": {
+        "$oid": "62ea99f493e1ae1ad1fd4b39"
+      },
+      "name": "Task",
+      "startTime": "2000-01-01T08:30:00.000Z"
+    },
+    "project": {
+      "_id": {
+        "$oid": "62ea99f493e1ae1ad1fd4ac7"
+      },
+      "name": "Project"
+    },
+    "client": {
+      "_id": {
+        "$oid": "62ea99f493e1ae1ad1fd4ab7"
+      },
+      "type": "BUSINESS",
+      "name": "Client"
+    },
+    "user": {
+      "$oid": "62ea99f493e1ae1ad1fd4ab3"
+    },
+    "createdAt": "2000-01-01T08:30:12.000Z",
+    "updatedAt": "2000-01-01T16:30:20.000Z"
+  },
+  {
+    "_id": {
+      "$oid": "62ea99f493e1ae1ad1fd4d26"
+    },
+    "startTime": "2000-01-01T15:00:00.000Z",
+    "endTime": "2000-01-01T19:00:00.000Z",
+    "task": {
+      "_id": {
+        "$oid": "62ea99f493e1ae1ad1fd4b39"
+      },
+      "name": "Task",
+      "startTime": "2000-01-01T09:30:00.000Z"
+    },
+    "project": {
+      "_id": {
+        "$oid": "62ea99f493e1ae1ad1fd4ac7"
+      },
+      "name": "Project"
+    },
+    "client": {
+      "_id": {
+        "$oid": "62ea99f493e1ae1ad1fd4ab7"
+      },
+      "type": "BUSINESS",
+      "name": "Client"
+    },
+    "user": {
+      "$oid": "62ea99f493e1ae1ad1fd4ab3"
+    },
+    "createdAt": "2000-01-01T08:30:12.000Z",
+    "updatedAt": "2000-01-01T16:30:20.000Z"
+  }
+]
