@@ -1,6 +1,9 @@
 import { Meta, Story } from '@storybook/react'
 import { either, option, task, taskEither } from 'fp-ts'
-import { pipe, constVoid } from 'fp-ts/function'
+import { constVoid, pipe } from 'fp-ts/function'
+import { IO } from 'fp-ts/IO'
+import { Reader } from 'fp-ts/Reader'
+import { TaskEither } from 'fp-ts/TaskEither'
 import { NonEmptyString } from 'io-ts-types'
 import { send } from 'ionicons/icons'
 import { unsafeLocalizedString } from '../../a18n'
@@ -12,9 +15,9 @@ import { ButtonArgs, buttonArgTypes } from './args'
 type LoadingButtonResult = 'Success' | 'Failure'
 
 function foldLoadingButtonResult<T>(
-  whenSuccess: () => T,
-  whenFailure: () => T
-): (result: LoadingButtonResult) => T {
+  whenSuccess: IO<T>,
+  whenFailure: IO<T>
+): Reader<LoadingButtonResult, T> {
   return result => {
     switch (result) {
       case 'Success':
@@ -30,12 +33,12 @@ type Args = Omit<ButtonArgs, 'icon' | 'label'> & {
   label: string
 }
 
-const success = taskEither.fromTask(
+const success: TaskEither<string, void> = taskEither.fromTask(
   pipe(task.fromIO(constVoid), task.delay(2000))
 )
 
-const failure = pipe(
-  task.fromIO(() => either.left(new Error('Some Error!'))),
+const failure: TaskEither<string, void> = pipe(
+  task.fromIO(() => either.left('Some Error!')),
   task.delay(2000)
 )
 
@@ -86,7 +89,7 @@ LoadingButton.argTypes = {
     name: 'Result',
     control: {
       type: 'select',
-      options: ['Success', 'Error']
+      options: ['Success', 'Failure']
     },
     description:
       'Whether the button should be in a successful or error state after loading'
