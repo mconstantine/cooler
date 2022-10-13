@@ -53,12 +53,12 @@ const ListWithButtonsTemplate: Story<DefaultArgs> = props => {
                 type: 'button',
                 label: unsafeLocalizedString('Button label'),
                 icon: option.none,
-                action: () => {}
+                action: constVoid
               },
               {
                 type: 'iconButton',
                 icon: heart,
-                action: () => {}
+                action: constVoid
               },
               {
                 type: 'loadingButton',

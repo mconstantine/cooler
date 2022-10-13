@@ -1,5 +1,5 @@
 import { option } from 'fp-ts'
-import { pipe } from 'fp-ts/function'
+import { constNull, pipe } from 'fp-ts/function'
 import { alert, warning as warningIcon } from 'ionicons/icons'
 import { forwardRef, InputHTMLAttributes, useState } from 'react'
 import { LocalizedString } from '../../../../globalDomain'
@@ -75,18 +75,15 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             () =>
               pipe(
                 warning,
-                option.fold(
-                  () => null,
-                  warning => (
-                    <div className="warning">
-                      <Banner
-                        content={warning}
-                        icon={warningIcon}
-                        color="warning"
-                      />
-                    </div>
-                  )
-                )
+                option.fold(constNull, warning => (
+                  <div className="warning">
+                    <Banner
+                      content={warning}
+                      icon={warningIcon}
+                      color="warning"
+                    />
+                  </div>
+                ))
               ),
             error => (
               <div className="error">

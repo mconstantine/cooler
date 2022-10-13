@@ -1,6 +1,6 @@
 import ObjectID from 'bson-objectid'
 import { boolean, either, option } from 'fp-ts'
-import { flow, identity, pipe } from 'fp-ts/function'
+import { constUndefined, flow, identity, pipe } from 'fp-ts/function'
 import { Option } from 'fp-ts/Option'
 import * as t from 'io-ts'
 import { IntFromString, NonEmptyString, NumberFromString } from 'io-ts-types'
@@ -367,7 +367,7 @@ export function optionFromUndefined<T extends t.Mixed>(
           () => t.success(option.none as Option<T>)
         )
       ),
-    option.fold(() => undefined, identity)
+    option.fold(constUndefined, identity)
   )
 }
 

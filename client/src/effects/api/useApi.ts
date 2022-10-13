@@ -3,7 +3,7 @@ import { TaskEither } from 'fp-ts/TaskEither'
 import { IO } from 'fp-ts/IO'
 import { Reader } from 'fp-ts/Reader'
 import { either, option, readerTaskEither, taskEither } from 'fp-ts'
-import { pipe, flow } from 'fp-ts/function'
+import { pipe, flow, constUndefined } from 'fp-ts/function'
 import { reportErrors } from './reportErrors'
 import { useEffect, useMemo, useState } from 'react'
 import { query } from './api'
@@ -155,10 +155,10 @@ export function makeRequest<I, II, O, OO>(
           body: pipe(
             request.method,
             foldHttpMethod({
-              GET: () => undefined,
+              GET: constUndefined,
               POST: createBody,
               PUT: createBody,
-              DELETE: () => undefined
+              DELETE: constUndefined
             })
           )
         }),
