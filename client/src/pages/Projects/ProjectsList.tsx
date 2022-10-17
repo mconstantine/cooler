@@ -56,7 +56,12 @@ export default function ProjectsList() {
   const onSearchQueryChange: Reader<string, void> = flow(
     NonEmptyString.decode,
     option.fromEither,
-    query => setInput(input => ({ ...input, query }))
+    query =>
+      setInput(input => ({
+        ...input,
+        query,
+        after: option.none
+      }))
   )
 
   const onLoadMore: IO<void> = () => {
@@ -155,7 +160,7 @@ export default function ProjectsList() {
         actions={option.some(
           nonEmptyArray.of({
             type: 'sync',
-            label: a18n`New Project`,
+            label: a18n`New project`,
             icon: option.some(add),
             action: _ => setRoute(projectsRoute('new'), _)
           })

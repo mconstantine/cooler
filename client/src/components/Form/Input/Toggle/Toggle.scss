@@ -10,7 +10,8 @@
     cursor: pointer;
 
     input[type='checkbox'] {
-      display: none;
+      visibility: hidden;
+      position: absolute;
     }
 
     .label {

@@ -1,7 +1,7 @@
 TODO:
 
+[-] Cypress tests
 [ ] Stats: cashed money per client
-[ ] Cypress tests
 [ ] Stats: avg hourly cost?
 [ ] Client stat: avg time between invoice and cashing
 

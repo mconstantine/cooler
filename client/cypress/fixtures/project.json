@@ -1,0 +1,31 @@
+{
+  "_id": {
+    "$oid": "634035b36cc82edbc8cbc4e6"
+  },
+  "name": "Project",
+  "description": "Description",
+  "client": {
+    "_id": {
+      "$oid": "634035d06182c11090263218"
+    },
+    "type": "BUSINESS",
+    "name": "Acne Inc."
+  },
+  "expectedBudget": 3360,
+  "invoiceData": {
+    "number": "20000000000000000001",
+    "date": "2000-01-30T12:02:00.000Z"
+  },
+  "cashData": {
+    "at": "2000-02-01T15:56:39.000Z",
+    "amount": 3360
+  },
+  "startTime": "2000-01-01T09:30:00.000Z",
+  "endTime": "2000-01-31T09:30:00.000Z",
+  "expectedWorkingHours": 168,
+  "actualWorkingHours": 168,
+  "budget": 3360,
+  "balance": 3360,
+  "createdAt": "1999-12-03T19:07:42.666Z",
+  "updatedAt": "2000-02-03T19:07:42.666Z"
+}
