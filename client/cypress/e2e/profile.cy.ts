@@ -92,11 +92,10 @@ describe('Profile page', () => {
   })
 
   it('should correctly switch "since" date for current situation', () => {
-    cy.findAllByRole('textbox', { name: 'Since' }).invoke('first').click()
-    cy.findByRole('textbox', { name: 'Year' }).clear().type('2021')
-    cy.findByRole('textbox', { name: 'Month' }).clear().type('April').blur()
-    cy.findAllByRole('button', { name: '30' }).invoke('last').click()
-    cy.findByRole('button', { name: 'Confirm' }).click()
+    cy.setCalendar(
+      cy.findAllByRole('textbox', { name: 'Since' }).invoke('first'),
+      new Date(2021, 3, 30)
+    )
 
     cy.wait('@stats').then(interception => {
       const url = new URL(interception.request.url)
@@ -110,11 +109,10 @@ describe('Profile page', () => {
   })
 
   it('should correctly switch "until" date for current situation', () => {
-    cy.findAllByRole('textbox', { name: 'Until' }).invoke('first').click()
-    cy.findByRole('textbox', { name: 'Year' }).clear().type('2100')
-    cy.findByRole('textbox', { name: 'Month' }).clear().type('February').blur()
-    cy.findAllByRole('button', { name: '1' }).invoke('last').click()
-    cy.findByRole('button', { name: 'Confirm' }).click()
+    cy.setCalendar(
+      cy.findAllByRole('textbox', { name: 'Until' }).invoke('first'),
+      new Date(2100, 1, 1)
+    )
 
     cy.wait('@stats').then(interception => {
       const url = new URL(interception.request.url)
@@ -128,11 +126,10 @@ describe('Profile page', () => {
   })
 
   it('should correctly switch "since" date for cashed balance', () => {
-    cy.findAllByRole('textbox', { name: 'Since' }).invoke('eq', 1).click()
-    cy.findByRole('textbox', { name: 'Year' }).clear().type('2021')
-    cy.findByRole('textbox', { name: 'Month' }).clear().type('April').blur()
-    cy.findAllByRole('button', { name: '30' }).invoke('last').click()
-    cy.findByRole('button', { name: 'Confirm' }).click()
+    cy.setCalendar(
+      cy.findAllByRole('textbox', { name: 'Since' }).invoke('eq', 1),
+      new Date(2021, 3, 30)
+    )
 
     cy.wait('@cashedBalance').then(interception => {
       const url = new URL(interception.request.url)
@@ -146,11 +143,10 @@ describe('Profile page', () => {
   })
 
   it('should correctly switch "until" date for cashed balance', () => {
-    cy.findAllByRole('textbox', { name: 'Until' }).invoke('eq', 1).click()
-    cy.findByRole('textbox', { name: 'Year' }).clear().type('2100')
-    cy.findByRole('textbox', { name: 'Month' }).clear().type('February').blur()
-    cy.findAllByRole('button', { name: '1' }).invoke('first').click()
-    cy.findByRole('button', { name: 'Confirm' }).click()
+    cy.setCalendar(
+      cy.findAllByRole('textbox', { name: 'Until' }).invoke('eq', 1),
+      new Date(2100, 1, 1)
+    )
 
     cy.wait('@cashedBalance').then(interception => {
       const url = new URL(interception.request.url)

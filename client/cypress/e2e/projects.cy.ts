@@ -1,5 +1,3 @@
-import { localizedMonthNames } from '../../src/a18n'
-import { unsafeNonNegativeInteger } from '../../src/globalDomain'
 import project from '../fixtures/project.json'
 
 describe('Projects pages', () => {
@@ -186,42 +184,15 @@ describe('Projects pages', () => {
       cy.findByRole('textbox', { name: 'Client' }).click()
       cy.findByRole('listitem', { name: 'Client 1' }).click()
 
-      const startTime = new Date(project.startTime)
-      const endTime = new Date(project.endTime)
-      const invoiceDate = new Date(project.invoiceData.date)
-      const cashedAt = new Date(project.cashData.at)
+      cy.setCalendar(
+        cy.findByRole('textbox', { name: 'Starting date' }),
+        new Date(project.startTime)
+      )
 
-      const startMonth =
-        localizedMonthNames[unsafeNonNegativeInteger(startTime.getMonth())]
-      const endMonth =
-        localizedMonthNames[unsafeNonNegativeInteger(endTime.getMonth())]
-      const invoiceMonth =
-        localizedMonthNames[unsafeNonNegativeInteger(invoiceDate.getMonth())]
-      const cashedAtMonth =
-        localizedMonthNames[unsafeNonNegativeInteger(cashedAt.getMonth())]
-
-      cy.findByRole('textbox', { name: 'Starting date' }).click()
-      cy.findByRole('textbox', { name: 'Year' })
-        .clear()
-        .type(startTime.getFullYear().toString(10))
-      cy.findByRole('textbox', { name: 'Month' })
-        .clear()
-        .type(startMonth)
-        .blur()
-      cy.findAllByRole('button', { name: startTime.getDate().toString(10) })
-        .invoke('last')
-        .click()
-      cy.findByRole('button', { name: 'Confirm' }).click()
-
-      cy.findByRole('textbox', { name: 'Ending date' }).click()
-      cy.findByRole('textbox', { name: 'Year' })
-        .clear()
-        .type(endTime.getFullYear().toString(10))
-      cy.findByRole('textbox', { name: 'Month' }).clear().type(endMonth).blur()
-      cy.findAllByRole('button', { name: endTime.getDate().toString(10) })
-        .invoke('last')
-        .click()
-      cy.findByRole('button', { name: 'Confirm' }).click()
+      cy.setCalendar(
+        cy.findByRole('textbox', { name: 'Ending date' }),
+        new Date(project.endTime)
+      )
 
       cy.findByRole('textbox', { name: 'Expected budget' }).type(
         data.expectedBudget.toString(10)
@@ -232,18 +203,10 @@ describe('Projects pages', () => {
         data.invoiceData.number
       )
 
-      cy.findByRole('textbox', { name: 'Invoice date' }).click()
-      cy.findByRole('textbox', { name: 'Year' })
-        .clear()
-        .type(invoiceDate.getFullYear().toString(10))
-      cy.findByRole('textbox', { name: 'Month' })
-        .clear()
-        .type(invoiceMonth)
-        .blur()
-      cy.findAllByRole('button', { name: invoiceDate.getDate().toString(10) })
-        .invoke('last')
-        .click()
-      cy.findByRole('button', { name: 'Confirm' }).click()
+      cy.setCalendar(
+        cy.findByRole('textbox', { name: 'Invoice date' }),
+        new Date(project.invoiceData.date)
+      )
 
       cy.findByLabelText('Cashed').click({ force: true })
 
@@ -251,18 +214,10 @@ describe('Projects pages', () => {
         data.cashData.amount.toString(10)
       )
 
-      cy.findByRole('textbox', { name: 'Cashed on' }).click()
-      cy.findByRole('textbox', { name: 'Year' })
-        .clear()
-        .type(cashedAt.getFullYear().toString(10))
-      cy.findByRole('textbox', { name: 'Month' })
-        .clear()
-        .type(cashedAtMonth)
-        .blur()
-      cy.findAllByRole('button', { name: cashedAt.getDate().toString(10) })
-        .invoke('last')
-        .click()
-      cy.findByRole('button', { name: 'Confirm' }).click()
+      cy.setCalendar(
+        cy.findByRole('textbox', { name: 'Cashed on' }),
+        new Date(project.cashData.at)
+      )
 
       cy.mockProjectCalls()
 
@@ -310,42 +265,15 @@ describe('Projects pages', () => {
       cy.findByRole('textbox', { name: 'Client' }).click()
       cy.findByRole('listitem', { name: 'Client 1' }).click()
 
-      const startTime = new Date(data.startTime)
-      const endTime = new Date(data.endTime)
-      const invoiceDate = new Date(data.invoiceData.date)
-      const cashedAt = new Date(data.cashData.at)
+      cy.setCalendar(
+        cy.findByRole('textbox', { name: 'Starting date' }),
+        new Date(data.startTime)
+      )
 
-      const startMonth =
-        localizedMonthNames[unsafeNonNegativeInteger(startTime.getMonth())]
-      const endMonth =
-        localizedMonthNames[unsafeNonNegativeInteger(endTime.getMonth())]
-      const invoiceMonth =
-        localizedMonthNames[unsafeNonNegativeInteger(invoiceDate.getMonth())]
-      const cashedAtMonth =
-        localizedMonthNames[unsafeNonNegativeInteger(cashedAt.getMonth())]
-
-      cy.findByRole('textbox', { name: 'Starting date' }).click()
-      cy.findByRole('textbox', { name: 'Year' })
-        .clear()
-        .type(startTime.getFullYear().toString(10))
-      cy.findByRole('textbox', { name: 'Month' })
-        .clear()
-        .type(startMonth)
-        .blur()
-      cy.findAllByRole('button', { name: startTime.getDate().toString(10) })
-        .invoke('last')
-        .click()
-      cy.findByRole('button', { name: 'Confirm' }).click()
-
-      cy.findByRole('textbox', { name: 'Ending date' }).click()
-      cy.findByRole('textbox', { name: 'Year' })
-        .clear()
-        .type(endTime.getFullYear().toString(10))
-      cy.findByRole('textbox', { name: 'Month' }).clear().type(endMonth).blur()
-      cy.findAllByRole('button', { name: endTime.getDate().toString(10) })
-        .invoke('last')
-        .click()
-      cy.findByRole('button', { name: 'Confirm' }).click()
+      cy.setCalendar(
+        cy.findByRole('textbox', { name: 'Ending date' }),
+        new Date(data.endTime)
+      )
 
       cy.findByRole('textbox', { name: 'Expected budget' })
         .clear()
@@ -355,35 +283,19 @@ describe('Projects pages', () => {
         .clear()
         .type(data.invoiceData.number)
 
-      cy.findByRole('textbox', { name: 'Invoice date' }).click()
-      cy.findByRole('textbox', { name: 'Year' })
-        .clear()
-        .type(invoiceDate.getFullYear().toString(10))
-      cy.findByRole('textbox', { name: 'Month' })
-        .clear()
-        .type(invoiceMonth)
-        .blur()
-      cy.findAllByRole('button', { name: invoiceDate.getDate().toString(10) })
-        .invoke('last')
-        .click()
-      cy.findByRole('button', { name: 'Confirm' }).click()
+      cy.setCalendar(
+        cy.findByRole('textbox', { name: 'Invoice date' }),
+        new Date(data.invoiceData.date)
+      )
 
       cy.findByRole('textbox', { name: 'Cashed balance' })
         .clear()
         .type(data.cashData.amount.toString(10))
 
-      cy.findByRole('textbox', { name: 'Cashed on' }).click()
-      cy.findByRole('textbox', { name: 'Year' })
-        .clear()
-        .type(cashedAt.getFullYear().toString(10))
-      cy.findByRole('textbox', { name: 'Month' })
-        .clear()
-        .type(cashedAtMonth)
-        .blur()
-      cy.findAllByRole('button', { name: cashedAt.getDate().toString(10) })
-        .invoke('last')
-        .click()
-      cy.findByRole('button', { name: 'Confirm' }).click()
+      cy.setCalendar(
+        cy.findByRole('textbox', { name: 'Cashed on' }),
+        new Date(data.cashData.at)
+      )
 
       cy.findByRole('button', { name: 'Submit' }).click()
       cy.wait('@updateProject')

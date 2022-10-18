@@ -1,4 +1,5 @@
 import '@testing-library/cypress/add-commands'
+import './utils'
 import './api'
 import './common'
 import './profile'
