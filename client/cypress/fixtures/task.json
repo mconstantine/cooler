@@ -1,0 +1,29 @@
+{
+  "_id": {
+    "$oid": "62ea99f493e1ae1ad1fd4c17"
+  },
+  "name": "Task 1",
+  "description": "Description",
+  "startTime": "2000-01-01T08:00:25.000Z",
+  "expectedWorkingHours": 8,
+  "hourlyCost": 20,
+  "project": {
+    "_id": {
+      "$oid": "62ea99f493e1ae1ad1fd4ad8"
+    },
+    "name": "Project"
+  },
+  "client": {
+    "_id": {
+      "$oid": "62ea99f493e1ae1ad1fd4abc"
+    },
+    "type": "BUSINESS",
+    "name": "Client"
+  },
+  "user": {
+    "$oid": "62ea99f493e1ae1ad1fd4ab3"
+  },
+  "createdAt": "2000-01-01T15:36:09.000Z",
+  "updatedAt": "2000-01-01T15:39:06.000Z",
+  "actualWorkingHours": 8
+}

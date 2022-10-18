@@ -148,7 +148,7 @@ export function ProjectTasks(props: Props) {
           pipe(
             nonEmptyArray.of<HeadingAction>({
               type: 'sync',
-              label: a18n`New Task`,
+              label: a18n`New task`,
               action: _ => setRoute(taskRoute(props.project._id, 'new'), _),
               icon: option.some(add)
             }),
