@@ -82,14 +82,38 @@ export function CashPerMonthChart(props: Props) {
     )
   )
 
+  const years = props.data.map(entry => entry.monthDate.getFullYear())
+  const minYear = Math.min(...years)
+  const maxYear = Math.max(...years)
+
+  const yearsRange = new Array(maxYear - minYear + 1)
+    .fill(null)
+    .map((_, index) => minYear + index)
+
+  const monthsRange = new Array(12).fill(null).map((_, index) => index)
+
+  const monthDates = yearsRange
+    .flatMap(year => monthsRange.map(month => new Date(year, month)))
+    .filter(monthDate => monthDate.getTime() <= Date.now())
+
   const data = pipe(
     taxes,
-    query.map(taxes =>
-      props.data.map(({ monthDate, cash }) => {
-        const netValue = calculateNetValue(cash, taxes)
-        return { monthDate, cash, netValue }
+    query.map(taxes => {
+      return monthDates.flatMap(monthDate => {
+        const entry = props.data.find(
+          entry =>
+            entry.monthDate.getFullYear() === monthDate.getFullYear() &&
+            entry.monthDate.getMonth() === monthDate.getMonth()
+        )
+
+        if (entry) {
+          const netValue = calculateNetValue(entry.cash, taxes)
+          return { monthDate, cash: entry.cash, netValue }
+        } else {
+          return { monthDate, cash: 0, netValue: 0 }
+        }
       })
-    )
+    })
   )
 
   return pipe(
@@ -134,7 +158,7 @@ export function CashPerMonthChart(props: Props) {
             }}
             axisBottom={{
               legend: a18n`Time`,
-              tickValues: props.data.map(_ => _.monthDate),
+              tickValues: monthDates,
               format: formatDateShort,
               legendOffset: -8
             }}
