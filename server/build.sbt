@@ -1,6 +1,6 @@
 name := "cooler"
 version := "1.0.0"
-scalaVersion := "3.1.2"
+scalaVersion := "3.3.1"
 
 val http4sVersion = "0.23.11"
 val circeVersion = "0.14.1"
