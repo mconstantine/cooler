@@ -10,12 +10,15 @@ services:
       - "5000:5000"
     command: java -jar /opt/app/${APP_NAME}-assembly-${APP_VERSION}.jar
   mongodb:
-    image: mongo
+    image: mongo:6-jammy
     container_name: ${APP_NAME}_db
     environment:
       - MONGO_INITDB_ROOT_USERNAME=${MONGO_USERNAME}
       - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD}
     volumes:
-      - "/data/db"
+      - 495e6af467713d0ac881f03a48168a718d454ae30dac13fae43b184522f32793:/data/db
     restart: unless-stopped
     command: mongod
+volumes:
+  495e6af467713d0ac881f03a48168a718d454ae30dac13fae43b184522f32793:
+    external: true
