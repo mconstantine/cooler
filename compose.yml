@@ -1,0 +1,33 @@
+version: "3"
+
+services:
+  app:
+    build:
+      context: .
+      args:
+        # must be the same in server/build.sbt
+        appName: "cooler"
+        # must be the same in server/build.sbt
+        appVersion: "1.0.0"
+        # must be the same in server/build.sbt
+        scalaVersion: "3.3.1"
+    restart: unless-stopped
+    container_name: app
+    networks:
+      - caddy_default
+    command: java -jar server.jar
+  mongodb:
+    image: mongo:6-jammy
+    restart: unless-stopped
+    container_name: db
+    env_file:
+      - .env
+    volumes:
+      - cooler_db:/data/db
+    command: mongod
+volumes:
+  cooler_db:
+    external: true
+networks:
+  caddy_default:
+    external: true

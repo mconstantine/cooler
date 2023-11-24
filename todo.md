@@ -1,5 +1,6 @@
 TODO:
 
+[ ] Remove SASS and go to latest Node version
 [-] Cypress tests
 [ ] Stats: cashed money per client
 [ ] Stats: avg hourly cost?
