@@ -2,9 +2,9 @@
 
 FROM ubuntu:latest
 
-ARG appName
-ARG appVersion
-ARG scalaVersion
+ARG appName="cooler"
+ARG appVersion="1.0.0"
+ARG scalaVersion="3.3.1"
 
 WORKDIR /home
 

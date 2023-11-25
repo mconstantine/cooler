@@ -12,11 +12,11 @@ Everything should be in the file at `client/.env.development`.
 
 ## Development and testing
 
-TODO: to be rebuilt.
+Spin up the database with `docker compose -p cooler -f compose-dev.yml up -d`. You may need to create the volume (`docker volume create cooler_db`).
 
 ### Server
 
-Use Metals.
+Use Metals or SBT commands.
 
 ### Client
 
