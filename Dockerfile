@@ -1,15 +1,12 @@
 # syntax=docker/dockerfile:1
 
-FROM ubuntu:latest
+FROM ubuntu:latest as back-end
 
 ARG appName="cooler"
 ARG appVersion="1.0.0"
 ARG scalaVersion="3.3.1"
 
 WORKDIR /home
-
-# this will host the server environment
-RUN mkdir -p src/main/resources
 
 # back-end framework
 # Scala
@@ -25,6 +22,25 @@ RUN apt-get install sbt -y
 # Java
 RUN apt-get install default-jre -y
 
+ARG serverConfigPath="./server/src/main/resources/application.json"
+
+# this will host the server environment
+RUN mkdir -p src/main/resources
+
+# back-end build
+COPY ./server server
+COPY ${serverConfigPath} src/main/resources/application.json
+RUN cd server && sbt assembly
+RUN mv "server/target/scala-${scalaVersion}/${appName}-assembly-${appVersion}.jar" server.jar
+EXPOSE 5000
+
+RUN rm -rf server
+RUN apt-get remove sbt -y
+RUN apt-get purge sbt -y
+RUN apt-get autoremove -y
+
+FROM back-end as full-stack
+
 # front-end framework
 # Node
 RUN mkdir -p /etc/apt/keyrings
@@ -34,12 +50,6 @@ RUN apt-get update
 RUN apt-get install nodejs -y
 RUN corepack enable
 
-# back-end build
-COPY ./server server
-COPY ./server/src/main/resources/application.production.json src/main/resources/application.json
-RUN cd server && sbt assembly
-RUN mv "server/target/scala-${scalaVersion}/${appName}-assembly-${appVersion}.jar" server.jar
-
 # front-end build
 COPY ./client client
 RUN cd client && yarn
@@ -48,9 +58,6 @@ RUN mv client/build static
 
 # cleanup
 RUN rm -rf client
-RUN rm -rf server
 RUN apt-get remove nodejs -y
 RUN apt-get purge nodejs -y
-RUN apt-get remove sbt -y
-RUN apt-get purge sbt -y
 RUN apt-get autoremove -y

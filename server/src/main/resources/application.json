@@ -1,12 +1,12 @@
 {
   "environment": "development",
   "server": {
-    "host": "localhost",
+    "host": "0.0.0.0",
     "port": 5000,
     "frontendPath": "../client/build"
   },
   "database": {
-    "uri": "mongodb://root:root@localhost:27017/?authSource=admin",
+    "uri": "mongodb://root:root@mongodb:27017/?authSource=admin",
     "name": "cooler",
     "encryptionKey": "fb233db76df0f0c70226703d202a069554e899828bb63f0c"
   },

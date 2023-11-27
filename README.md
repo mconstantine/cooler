@@ -12,7 +12,12 @@ Everything should be in the file at `client/.env.development`.
 
 ## Development and testing
 
-Spin up the database with `docker compose -p cooler -f compose-dev.yml up -d`. You may need to create the volume (`docker volume create cooler_db`).
+### Containers
+
+- Database only (for wirking on back-end): `docker compose -p cooler -f dev.compose.yml up mongodb -d`
+- Database and back-end (for working on front-end): `docker compose -p cooler -f dev.compose.yml up -d`
+
+You may need to create the volume for the database to save data into: `docker volume create cooler_db`
 
 ### Server
 
@@ -38,4 +43,9 @@ MONGO_INITDB_ROOT_PASSWORD=root
 
 Update `appName`, `appVersion` and `scalaVersion` inside `compose.yml` if needed, matching the values of `server/build.sbt`.
 
-Run `docker compose build`.
+- `docker compose build`
+- `docker push registry.mconst.it/cooler`
+
+From the server:
+
+- `docker compose up -d` (still not sure about how it will sync with changes)

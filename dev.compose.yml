@@ -1,10 +1,11 @@
 version: "3"
 
 services:
-  cooler:
-    image: registry.mconst.it/cooler
+  app:
+    image: cooler/dev
     build:
       context: .
+      target: back-end
       args:
         # must be the same in server/build.sbt
         appName: "cooler"
@@ -12,26 +13,21 @@ services:
         appVersion: "1.0.0"
         # must be the same in server/build.sbt
         scalaVersion: "3.3.1"
-        serverConfigPath: "./server/src/main/resources/application.production.json"
-    restart: unless-stopped
-    container_name: app
-    depends_on:
-      - mongodb
-    networks:
-      - caddy_default
+    container_name: dev-backend
+    ports:
+      - "5000:5000"
     command: java -jar server.jar
   mongodb:
     image: mongo:6-jammy
-    restart: unless-stopped
-    container_name: db
-    env_file:
-      - .env
+    container_name: dev-db
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: root
     volumes:
       - cooler_db:/data/db
     command: mongod
+    ports:
+      - "27017:27017"
 volumes:
   cooler_db:
-    external: true
-networks:
-  caddy_default:
     external: true
