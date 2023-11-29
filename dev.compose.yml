@@ -5,7 +5,7 @@ services:
     image: cooler/dev
     build:
       context: .
-      target: back-end
+      target: development-environment
       args:
         # must be the same in server/build.sbt
         appName: "cooler"
@@ -16,7 +16,7 @@ services:
     container_name: dev-backend
     ports:
       - "5000:5000"
-    command: java -jar server.jar
+    command: sleep infinity
   mongodb:
     image: mongo:6-jammy
     container_name: dev-db
