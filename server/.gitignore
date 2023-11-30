@@ -1,12 +1,3 @@
-.bloop/
 .bsp/
-.metals/
-project/*
-!project/plugins.sbt
 target/
-.scalafmt.conf
-node_modules/
-data/*.db
-notes.md
-.DS_Store
 /src/main/resources/application.production.json

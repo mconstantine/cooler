@@ -2,10 +2,6 @@
 
 FROM ubuntu:latest as development-environment
 
-ARG appName="cooler"
-ARG appVersion="1.0.0"
-ARG scalaVersion="3.3.1"
-
 WORKDIR /cooler
 
 # Setup
@@ -25,7 +21,7 @@ RUN apt-get install sbt -y
 
 ### Java
 
-RUN apt-get install default-jre -y
+RUN apt-get install default-jdk -y
 
 # Front-end
 
@@ -38,42 +34,43 @@ RUN apt-get update
 RUN apt-get install nodejs -y
 RUN corepack enable
 
+# COPY server server
+# COPY client client
 RUN git clone https://github.com/mconstantine/cooler.git .
 
 EXPOSE 5000
 EXPOSE 3000
+EXPOSE 6006
 
-FROM development-environment AS deploy
+FROM development-environment AS build
 
 # Build
 
 ## Backend
 
-ARG serverConfigPath="./server/src/main/resources/application.json"
-
-RUN mkdir -p src/main/resources
-RUN cp ${serverConfigPath} src/main/resources/application.json
+RUN cd server && sbt compile
 RUN cd server && sbt assembly
-RUN mv "server/target/scala-${scalaVersion}/${appName}-assembly-${appVersion}.jar" server.jar
+# RUN mv "" server.jar
 
 ## Front-end
 
 RUN cd client && yarn
 RUN cd client && yarn build
-RUN mv client/build static
 
-# Cleanup
+FROM ubuntu:latest
 
-## Backend
+WORKDIR /cooler
 
-RUN rm -rf server
-RUN apt-get remove sbt -y
-RUN apt-get purge sbt -y
-RUN apt-get autoremove -y
+ARG serverConfigPath="server/src/main/resources/application.json"
+ARG appName="cooler"
+ARG appVersion="1.0.0"
+ARG scalaVersion="3.3.1"
 
-## Front-end
+COPY ${serverConfigPath} src/main/resources/application.json
+COPY --from=build cooler/server/target/scala-${scalaVersion}/${appName}-assembly-${appVersion}.jar server.jar
+COPY --from=build cooler/client/build static
 
-RUN rm -rf client
-RUN apt-get remove nodejs -y
-RUN apt-get purge nodejs -y
-RUN apt-get autoremove -y
+RUN apt-get update
+RUN apt-get install default-jre -y
+
+CMD java -jar server.jar

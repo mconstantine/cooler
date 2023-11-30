@@ -12,7 +12,7 @@ services:
         appVersion: "1.0.0"
         # must be the same in server/build.sbt
         scalaVersion: "3.3.1"
-        serverConfigPath: "./server/src/main/resources/application.production.json"
+        serverConfigPath: "server/src/main/resources/application.production.json"
     restart: unless-stopped
     container_name: app
     depends_on:
@@ -28,6 +28,8 @@ services:
       - .env
     volumes:
       - cooler_db:/data/db
+    networks:
+      - caddy_default
     command: mongod
 volumes:
   cooler_db:

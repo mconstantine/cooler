@@ -17,7 +17,7 @@ Everything should be in the file at `client/.env.development`.
 You may need to create the volume for the database to save data into: `docker volume create cooler_db`
 
 - Make sure you have the [Docker](https://marketplace.visualstudio.com/items?itemName=ms-azuretools.vscode-docker) and [Dev Containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) extensions installed
-- Run `docker compose -p cooler-dev -f dev.compose.yml up -d`
+- Run `docker compose -p cooler-dev -f compose.dev.yml up -d`
 - Attach VSCode to the `cooler/dev` container. Open the `cooler` folder
 
 #### Server
@@ -53,9 +53,10 @@ MONGO_INITDB_ROOT_PASSWORD=root
 
 Update `appName`, `appVersion` and `scalaVersion` inside `compose.yml` if needed, matching the values of `server/build.sbt`.
 
-- `docker compose build`
+- `docker compose build --no-cache`
 - `docker push registry.mconst.it/cooler`
 
 From the server:
 
-- `docker compose up -d` (still not sure about how it will sync with changes)
+- If it changed, copy the `compose.yml` file into the server
+- `docker compose up -d`

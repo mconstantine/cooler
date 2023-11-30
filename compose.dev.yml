@@ -16,7 +16,7 @@ services:
     container_name: dev-backend
     ports:
       - "5000:5000"
-    command: sleep infinity
+    command: /bin/sh -c "while sleep 1000; do :; done"
   mongodb:
     image: mongo:6-jammy
     container_name: dev-db
