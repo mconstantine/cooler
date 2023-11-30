@@ -1,3 +1,5 @@
 .bsp/
 target/
 /src/main/resources/application.production.json
+project/
+.bloop/
