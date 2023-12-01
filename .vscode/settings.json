@@ -1,4 +1,8 @@
 {
+  "files.watcherExclude": {
+    "**/target": true
+  },
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
   "editor.formatOnSave": true,
   "git.ignoreLimitWarning": true,
   "prettier.semi": false,
