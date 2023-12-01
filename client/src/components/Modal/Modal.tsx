@@ -1,5 +1,5 @@
 import { option } from 'fp-ts'
-import { PropsWithChildren, useEffect } from 'react'
+import { PropsWithChildren, ReactNode, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { composeClassName } from '../../misc/composeClassName'
 import { Panel } from '../Panel/Panel'
@@ -50,5 +50,5 @@ export function Modal(props: PropsWithChildren<Props>) {
       </Panel>
     </div>,
     document.body
-  )
+  ) as ReactNode
 }

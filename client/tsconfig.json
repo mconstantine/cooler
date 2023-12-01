@@ -28,5 +28,5 @@
     "noUnusedParameters": true,
     "noImplicitReturns": true
   },
-  "include": ["src"]
+  "include": ["src", "_stories"]
 }

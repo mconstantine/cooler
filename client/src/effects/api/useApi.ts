@@ -105,7 +105,7 @@ export function makeRequest<I, II, O, OO>(
       request.inputCodec.encode,
       data =>
         '?' +
-        Object.entries(data)
+        Object.entries(data as Record<string, any>)
           .filter(([, value]) => value !== null)
           .map(([key, value]) => [
             encodeURIComponent(key),

@@ -11,7 +11,7 @@ import './TextArea.scss'
 
 type Props = Omit<
   InputHTMLAttributes<HTMLTextAreaElement>,
-  'value' | 'onChange' | 'title'
+  'value' | 'onChange' | 'title' | 'onResize'
 > &
   FieldProps<string> & {
     label: LocalizedString
