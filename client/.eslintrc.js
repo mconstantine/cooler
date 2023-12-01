@@ -1,5 +1,5 @@
 module.exports = {
-  extends: ['react-app', 'plugin:fp-ts/all', 'plugin:cypress/recommended'],
+  extends: ['react-app', 'plugin:fp-ts/all', 'plugin:cypress/recommended', 'plugin:storybook/recommended'],
   plugins: ['fp-ts', 'cypress'],
   parserOptions: {
     tsconfigRootDir: __dirname,

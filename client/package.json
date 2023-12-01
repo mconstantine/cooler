@@ -30,8 +30,8 @@
     "test": "react-scripts test",
     "test:cypress": "cypress open",
     "eject": "react-scripts eject",
-    "storybook": "start-storybook -p 6006 -s public --no-manager-cache",
-    "build-storybook": "build-storybook -s public"
+    "storybook": "storybook dev -p 6006 -s public",
+    "build-storybook": "storybook build -s public"
   },
   "eslintConfig": {
     "extends": [
@@ -53,15 +53,14 @@
   },
   "devDependencies": {
     "@capacitor-community/electron": "^4.1.2",
-    "@storybook/addon-actions": "^6.5.12",
-    "@storybook/addon-essentials": "^6.5.12",
-    "@storybook/addon-links": "^6.5.12",
-    "@storybook/addons": "^6.5.12",
-    "@storybook/builder-webpack5": "^6.5.12",
-    "@storybook/manager-webpack5": "^6.5.12",
-    "@storybook/node-logger": "^6.5.12",
-    "@storybook/preset-create-react-app": "^4.1.2",
-    "@storybook/react": "^6.5.12",
+    "@storybook/addon-actions": "^7.6.2",
+    "@storybook/addon-essentials": "^7.6.2",
+    "@storybook/addon-links": "^7.6.2",
+    "@storybook/addons": "^7.6.2",
+    "@storybook/node-logger": "^7.6.2",
+    "@storybook/preset-create-react-app": "^7.6.2",
+    "@storybook/react": "^7.6.2",
+    "@storybook/react-webpack5": "^7.6.2",
     "@testing-library/cypress": "^8.0.3",
     "@testing-library/jest-dom": "^5.16.4",
     "@testing-library/react": "^13.3.0",
@@ -73,9 +72,11 @@
     "cypress": "^10.9.0",
     "eslint-plugin-cypress": "^2.11.2",
     "eslint-plugin-fp-ts": "^0.3.2",
+    "eslint-plugin-storybook": "^0.6.15",
     "fp-ts": "^2.12.1",
     "prettier": "^2.7.1",
-    "storybook-dark-mode": "^1.1.2",
+    "storybook": "^7.6.2",
+    "storybook-dark-mode": "^3.0.3",
     "webpack": "5"
   }
 }
