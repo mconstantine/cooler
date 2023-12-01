@@ -9,4 +9,9 @@
     margin-right: 8px;
     margin-top: 0;
   }
+
+  &.Panel:not(.framed) .Banner {
+    padding-left: 0;
+    padding-right: 0;
+  }
 }

@@ -3,7 +3,6 @@ import { Body, TextEmphasis } from '../components/Body/Body'
 import { colorControl } from './args'
 import { Content } from '../components/Content/Content'
 import { unsafeLocalizedString } from '../a18n'
-import '../index.scss'
 
 const meta: Meta<typeof Body> = {
   title: 'Cooler/Body',

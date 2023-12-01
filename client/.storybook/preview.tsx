@@ -1,6 +1,7 @@
 import React, { PropsWithChildren, useEffect } from 'react'
 import type { Decorator, Preview } from '@storybook/react'
 import { Theme, ThemeProvider, useTheme } from '../src/contexts/ThemeContext'
+import '../src/index.scss'
 
 function ThemedStory(props: PropsWithChildren<{ theme: Theme }>) {
   const { setTheme } = useTheme()
