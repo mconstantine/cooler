@@ -59,4 +59,5 @@ Update `appName`, `appVersion` and `scalaVersion` inside `compose.yml` if needed
 From the server:
 
 - If it changed, copy the `compose.yml` file into the server
+- `docker pull registry.mconst.it/cooler`
 - `docker compose up -d`

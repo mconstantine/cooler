@@ -1,7 +1,6 @@
 # syntax=docker/dockerfile:1
 
 FROM ubuntu:latest as development-environment
-
 WORKDIR /cooler
 
 # Setup
@@ -50,14 +49,14 @@ FROM development-environment AS build
 
 RUN cd server && sbt compile
 RUN cd server && sbt assembly
-# RUN mv "" server.jar
 
 ## Front-end
 
+COPY client/.env.production client/.env.production
 RUN cd client && yarn
 RUN cd client && yarn build
 
-FROM ubuntu:latest
+FROM --platform=linux/amd64 amazoncorretto:11-alpine
 
 WORKDIR /cooler
 
@@ -69,8 +68,5 @@ ARG scalaVersion="3.3.1"
 COPY ${serverConfigPath} src/main/resources/application.json
 COPY --from=build cooler/server/target/scala-${scalaVersion}/${appName}-assembly-${appVersion}.jar server.jar
 COPY --from=build cooler/client/build static
-
-RUN apt-get update
-RUN apt-get install default-jre -y
 
 CMD java -jar server.jar
